@@ -63,12 +63,6 @@ az sql db update
 #### **Safe Copilot Questions**
 ```
 ✅ "How do I safely check my Azure database connection?"
-✅ "Show me how to create a backup using the safe script"
-✅ "Explain Azure Resource Groups in simple terms"
-✅ "What would happen if I run this command? Explain first"
-✅ "I'm new to Azure - help me understand [concept]"
-```
-
 #### **Copilot Azure Workflow**
 1. **Ask for safe alternatives** to direct commands
 2. **Request explanations** before running operations
@@ -76,30 +70,16 @@ az sql db update
 4. **Follow safety protocols** in all responses
 5. **Provide learning context** for all concepts
 
-## Project Overview
-
 This is a solo-dev WPF desktop app (.NET 9) using **Syncfusion WPF 30.2.7** for UI (Ribbon, DataGrid, Fluent themes). Focus on MVVM with CommunityToolkit.Mvvm. Integrate Azure SQL via EF Core (no migrations yet—keep it clean). Experimental QuickBooks Online hooks via OAuth.
 
 ## 🔧 **Technology Stack & Standards**
-
-### **Syncfusion WPF - REQUIRED VERSION: 30.2.7**
-
-**CRITICAL REQUIREMENT**: All Syncfusion controls, resources, and components MUST use version 30.2.7 exclusively.
-
 **Enforced Standards:**
 
 - **Version Lock**: Use ONLY Syncfusion WPF 30.2.7 packages
 - **Documentation Source**: Reference ONLY official Syncfusion 30.2.7 documentation
 - **No Custom Controls**: All UI components must come from Syncfusion 30.2.7
-- **Resource Management**: Use Syncfusion.SfSkinManager.WPF 30.2.7 for theming
-- **Control Library**: Use Syncfusion.Tools.WPF 30.2.7 for advanced controls
-- **Data Visualization**: Use Syncfusion.SfGrid.WPF 30.2.7 for data grids
 
 **Package References (REQUIRED):**
-
-```xml
-<PackageReference Include="Syncfusion.Licensing" Version="30.2.7" />
-<PackageReference Include="Syncfusion.SfGrid.WPF" Version="30.2.7" />
 <PackageReference Include="Syncfusion.SfSkinManager.WPF" Version="30.2.7" />
 <PackageReference Include="Syncfusion.Tools.WPF" Version="30.2.7" />
 ```

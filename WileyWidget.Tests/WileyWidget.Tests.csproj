@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
@@ -30,3 +31,6 @@
   </ItemGroup>
 
 </Project>
+=======
+﻿
+>>>>>>> Stashed changes

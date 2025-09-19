@@ -34,7 +34,8 @@ try {
     $account = az account show | ConvertFrom-Json
     Write-Host "  ✓ Signed in as: $($account.user.name)" -ForegroundColor Green
     Write-Host "  ✓ Subscription: $($account.name)" -ForegroundColor Green
-} catch {
+}
+catch {
     Write-Host "  ❌ Not signed in to Azure CLI" -ForegroundColor Red
     Write-Host "  Run: az login" -ForegroundColor Yellow
     exit 1
@@ -53,7 +54,8 @@ if ($TestConnection) {
         $connection.Open()
         Write-Host "  ✓ Successfully connected to Azure SQL Database" -ForegroundColor Green
         $connection.Close()
-    } catch {
+    }
+    catch {
         Write-Host "  ❌ Failed to connect to Azure SQL Database" -ForegroundColor Red
         Write-Host "  Error: $($_.Exception.Message)" -ForegroundColor Red
     }

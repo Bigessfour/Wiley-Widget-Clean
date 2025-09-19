@@ -19,16 +19,33 @@ public static class DatabaseConfiguration
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        // Register DbContext with SQL Server
+        // Register DbContext with SQL Server (supports both LocalDB and Azure SQL)
         services.AddDbContext<AppDbContext>(options =>
         {
-            var connectionString = configuration.GetConnectionString("DefaultConnection");
+            // Try Azure SQL first, fallback to LocalDB
+            var azureConnectionString = configuration.GetConnectionString("AzureConnection");
+            var localConnectionString = configuration.GetConnectionString("DefaultConnection");
 
-            if (string.IsNullOrEmpty(connectionString))
+            string connectionString;
+
+            if (!string.IsNullOrEmpty(azureConnectionString) &&
+                !azureConnectionString.Contains("${AZURE_SQL_CONNECTION_STRING}"))
+            {
+                // Use Azure SQL if properly configured
+                connectionString = azureConnectionString;
+                Console.WriteLine("Using Azure SQL Database");
+            }
+            else if (!string.IsNullOrEmpty(localConnectionString))
+            {
+                // Fallback to LocalDB for development
+                connectionString = localConnectionString;
+                Console.WriteLine("Using LocalDB for development");
+            }
+            else
             {
                 throw new InvalidOperationException(
-                    "Database connection string 'DefaultConnection' is not configured. " +
-                    "Please check your appsettings.json or user secrets.");
+                    "No valid database connection string found. " +
+                    "Please configure either AzureConnection or DefaultConnection in appsettings.json");
             }
 
             options.UseSqlServer(connectionString, sqlOptions =>
@@ -92,10 +109,34 @@ public static class DatabaseConfiguration
             // Log the error - in a real app, you'd use a proper logging framework
             Console.WriteLine($"Database initialization failed: {ex.Message}");
 
-            // In production, you might want to throw or handle this differently
-            throw new InvalidOperationException(
-                "Failed to initialize database. Please check your connection string and database permissions.",
-                ex);
+            // For development, don't crash the app - just log the error
+            // The app can still run with limited functionality
+            Console.WriteLine("Application will continue without database connectivity.");
         }
     }
+<<<<<<< Updated upstream
+=======
+
+    /// <summary>
+    /// Validates the database schema by checking if required tables exist
+    /// </summary>
+    public static async Task ValidateDatabaseSchemaAsync(IServiceProvider serviceProvider)
+    {
+        using var scope = serviceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        try
+        {
+            // Check if Enterprises table exists by attempting a simple query
+            var enterpriseCount = await context.Enterprises.CountAsync();
+            Console.WriteLine($"Database health check passed: {enterpriseCount} enterprises found.");
+        }
+        catch (Exception ex)
+        {
+            // For development, don't crash the app - just log the error
+            Console.WriteLine($"Database schema validation failed: {ex.Message}");
+            Console.WriteLine("Application will continue with limited database functionality.");
+        }
+    }
+>>>>>>> Stashed changes
 }

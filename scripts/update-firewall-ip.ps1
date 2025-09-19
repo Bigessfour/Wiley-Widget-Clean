@@ -1,18 +1,18 @@
 # Dynamic IP Firewall Update Script
 param(
-    [Parameter(Mandatory=$true)]
+    [Parameter(Mandatory = $true)]
     [string]$ResourceGroup,
 
-    [Parameter(Mandatory=$true)]
+    [Parameter(Mandatory = $true)]
     [string]$SqlServer,
 
-    [Parameter(Mandatory=$false)]
+    [Parameter(Mandatory = $false)]
     [string]$NewIP,
 
-    [Parameter(Mandatory=$false)]
+    [Parameter(Mandatory = $false)]
     [switch]$AutoDetectIP,
 
-    [Parameter(Mandatory=$false)]
+    [Parameter(Mandatory = $false)]
     [int]$KeepLastNDays = 7
 )
 
@@ -35,16 +35,19 @@ function Get-CurrentPublicIP {
 if ($NewIP) {
     $targetIP = $NewIP
     Write-Host "📍 Using provided IP: $targetIP" -ForegroundColor Yellow
-} elseif ($AutoDetectIP) {
+}
+elseif ($AutoDetectIP) {
     Write-Host "🔍 Auto-detecting current public IP..." -ForegroundColor Yellow
     $targetIP = Get-CurrentPublicIP
     if ($targetIP) {
         Write-Host "📍 Detected IP: $targetIP" -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host "❌ Could not detect current IP" -ForegroundColor Red
         exit 1
     }
-} else {
+}
+else {
     Write-Host "❌ Please provide -NewIP or use -AutoDetectIP" -ForegroundColor Red
     exit 1
 }
@@ -62,7 +65,8 @@ try {
         --server $SqlServer `
         --query "[?contains(name, 'CurrentIP-')].{Name:name, StartIP:startIpAddress}" `
         -o json | ConvertFrom-Json
-} catch {
+}
+catch {
     Write-Host "⚠️  Could not retrieve existing rules" -ForegroundColor Yellow
     $existingRules = @()
 }
@@ -87,14 +91,16 @@ foreach ($rule in $existingRules) {
                 }
             }
         }
-    } catch {
+    }
+    catch {
         Write-Host "  • Could not remove rule: $($rule.Name)" -ForegroundColor Yellow
     }
 }
 
 if ($removedCount -gt 0) {
     Write-Host "✅ Cleaned up $removedCount old rules" -ForegroundColor Green
-} else {
+}
+else {
     Write-Host "ℹ️  No old rules to clean up" -ForegroundColor Blue
 }
 
@@ -107,7 +113,8 @@ $currentRules = az sql server firewall-rule list `
 
 if ($currentRules -and $currentRules.Count -gt 0) {
     Write-Host "ℹ️  IP $targetIP is already allowed (Rule: $($currentRules[0].name))" -ForegroundColor Blue
-} else {
+}
+else {
     # Add new rule
     Write-Host "➕ Adding new firewall rule for IP: $targetIP" -ForegroundColor Yellow
 
@@ -121,11 +128,13 @@ if ($currentRules -and $currentRules.Count -gt 0) {
 
         if ($LASTEXITCODE -eq 0) {
             Write-Host "✅ Successfully added firewall rule: $ruleName" -ForegroundColor Green
-        } else {
+        }
+        else {
             Write-Host "❌ Failed to add firewall rule" -ForegroundColor Red
             exit 1
         }
-    } catch {
+    }
+    catch {
         Write-Host "❌ Error adding firewall rule: $($_.Exception.Message)" -ForegroundColor Red
         exit 1
     }
@@ -138,7 +147,8 @@ try {
         --resource-group $ResourceGroup `
         --server $SqlServer `
         --output table
-} catch {
+}
+catch {
     Write-Host "⚠️  Could not list firewall rules" -ForegroundColor Yellow
 }
 
@@ -152,7 +162,8 @@ try {
     $connection.Open()
     Write-Host "✅ Database connectivity test passed" -ForegroundColor Green
     $connection.Close()
-} catch {
+}
+catch {
     Write-Host "⚠️  Connectivity test failed (expected with dummy credentials): $($_.Exception.Message)" -ForegroundColor Yellow
 }
 
@@ -162,7 +173,8 @@ $logFile = "firewall-updates.log"
 
 if (Test-Path $logFile) {
     Add-Content $logFile $logEntry
-} else {
+}
+else {
     $logEntry | Out-File $logFile -Encoding UTF8
 }
 

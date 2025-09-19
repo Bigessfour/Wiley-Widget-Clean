@@ -5,6 +5,18 @@
              StartupUri="MainWindow.xaml"
              ShutdownMode="OnMainWindowClose">
     <Application.Resources>
+<<<<<<< Updated upstream
 
+=======
+        <!-- Syncfusion Theme Resources - Temporarily commented out due to licensing issue -->
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!-- Fluent Dark Theme (default) - Commented out until license is configured -->
+                <!-- <ResourceDictionary Source="/Syncfusion.Themes.FluentDark.WPF;component/Themes/FluentDarkTheme.xaml" /> -->
+                <!-- Fluent Light Theme (fallback) - Commented out until license is configured -->
+                <!-- <ResourceDictionary Source="/Syncfusion.Themes.FluentLight.WPF;component/Themes/FluentLightTheme.xaml" /> -->
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+>>>>>>> Stashed changes
     </Application.Resources>
 </Application>

@@ -63,7 +63,8 @@ try {
         Write-Host "::set-output name=commit-hash::$($manifest.metadata.repository.commitHash)"
     }
 
-} catch {
+}
+catch {
     Write-Error "❌ CI/CD: Failed to generate manifest: $($_.Exception.Message)"
     exit 1
 }

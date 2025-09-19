@@ -1,0 +1,142 @@
+<Window x:Class="WileyWidget.EnterpriseView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:WileyWidget"
+        xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
+        mc:Ignorable="d"
+        Title="Enterprise Management" Height="700" Width="1200"
+        WindowStartupLocation="CenterScreen">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+    </Window.Resources>
+
+    <DockPanel>
+        <!-- Ribbon Toolbar -->
+        <syncfusion:Ribbon DockPanel.Dock="Top" x:Name="EnterpriseRibbon">
+            <syncfusion:RibbonTab Caption="Enterprise">
+                <syncfusion:RibbonBar Header="Actions">
+                    <syncfusion:RibbonButton Label="Load All" SizeForm="Large" Command="{Binding LoadEnterprisesAsyncCommand}" />
+                    <syncfusion:RibbonButton Label="Add New" SizeForm="Large" Command="{Binding AddEnterpriseAsyncCommand}" />
+                    <syncfusion:RibbonButton Label="Save" Command="{Binding SaveEnterpriseAsyncCommand}" />
+                    <syncfusion:RibbonButton Label="Delete" Command="{Binding DeleteEnterpriseAsyncCommand}" />
+                </syncfusion:RibbonBar>
+                <syncfusion:RibbonBar Header="Budget">
+                    <syncfusion:RibbonButton Label="Budget Summary" Command="{Binding UpdateBudgetSummaryCommand}" />
+                </syncfusion:RibbonBar>
+            </syncfusion:RibbonTab>
+        </syncfusion:Ribbon>
+
+        <!-- Main Content Area -->
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="350" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Enterprise List -->
+            <DockPanel Grid.Column="0">
+                <TextBlock DockPanel.Dock="Top" Text="Municipal Enterprises" FontSize="16" FontWeight="Bold" Margin="8" />
+
+                <syncfusion:SfDataGrid
+                    x:Name="EnterpriseGrid"
+                    ItemsSource="{Binding Enterprises}"
+                    SelectedItem="{Binding SelectedEnterprise, Mode=TwoWay}"
+                    AutoGenerateColumns="False"
+                    AllowSorting="True"
+                    AllowFiltering="True"
+                    AllowResizingColumns="True"
+                    GridLinesVisibility="Horizontal"
+                    RowHeight="32"
+                    AlternationCount="2"
+                    Margin="8,0,8,8">
+
+                    <syncfusion:SfDataGrid.Columns>
+                        <syncfusion:GridTextColumn HeaderText="ID" MappingName="Id" Width="60" />
+                        <syncfusion:GridTextColumn HeaderText="Enterprise Name" MappingName="Name" Width="200" />
+                        <syncfusion:GridNumericColumn HeaderText="Current Rate" MappingName="CurrentRate" Width="120" />
+                        <syncfusion:GridNumericColumn HeaderText="Monthly Revenue" MappingName="MonthlyRevenue" Width="140" />
+                        <syncfusion:GridNumericColumn HeaderText="Monthly Expenses" MappingName="MonthlyExpenses" Width="150" />
+                        <syncfusion:GridNumericColumn HeaderText="Monthly Balance" MappingName="MonthlyBalance" Width="140" />
+                        <syncfusion:GridNumericColumn HeaderText="Citizens Served" MappingName="CitizenCount" Width="120" />
+                        <syncfusion:GridTextColumn HeaderText="Notes" MappingName="Notes" Width="200" />
+                    </syncfusion:SfDataGrid.Columns>
+                </syncfusion:SfDataGrid>
+            </DockPanel>
+
+            <!-- Enterprise Details Panel -->
+            <Border Grid.Column="1" BorderBrush="LightGray" BorderThickness="1" Margin="0,8,8,8" CornerRadius="4">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="Enterprise Details" FontSize="14" FontWeight="Bold" Margin="8" />
+
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel Margin="8" Orientation="Vertical">
+                            <!-- Selected Enterprise Info -->
+                            <GroupBox Header="Selected Enterprise" Margin="0,0,0,8">
+                                <StackPanel>
+                                    <TextBlock Text="{Binding SelectedEnterprise.Name, StringFormat='Name: {0}'}" Margin="0,0,0,4" />
+                                    <TextBlock Text="{Binding SelectedEnterprise.Id, StringFormat='ID: {0}'}" Margin="0,0,0,4" />
+                                    <TextBlock Text="{Binding SelectedEnterprise.CitizenCount, StringFormat='Citizens: {0:N0}'}" Margin="0,0,0,4" />
+                                </StackPanel>
+                            </GroupBox>
+
+                            <!-- Edit Form -->
+                            <GroupBox Header="Edit Enterprise" Margin="0,0,0,8">
+                                <StackPanel>
+                                    <Label Content="Name:" />
+                                    <TextBox Text="{Binding SelectedEnterprise.Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                           Margin="0,0,0,8" />
+
+                                    <Label Content="Current Rate ($):" />
+                                    <syncfusion:DoubleTextBox Value="{Binding SelectedEnterprise.CurrentRate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                            Margin="0,0,0,8" />
+
+                                    <Label Content="Monthly Expenses ($):" />
+                                    <syncfusion:DoubleTextBox Value="{Binding SelectedEnterprise.MonthlyExpenses, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                            Margin="0,0,0,8" />
+
+                                    <Label Content="Citizens Served:" />
+                                    <syncfusion:IntegerTextBox Value="{Binding SelectedEnterprise.CitizenCount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                             Margin="0,0,0,8" />
+
+                                    <Label Content="Notes:" />
+                                    <TextBox Text="{Binding SelectedEnterprise.Notes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                           Height="60" TextWrapping="Wrap" AcceptsReturn="True" Margin="0,0,0,8" />
+                                </StackPanel>
+                            </GroupBox>
+
+                            <!-- Calculated Values -->
+                            <GroupBox Header="Calculated Values" Margin="0,0,0,8">
+                                <StackPanel>
+                                    <TextBlock Text="{Binding SelectedEnterprise.MonthlyRevenue, StringFormat='Monthly Revenue: {0:C2}'}" Margin="0,0,0,4" />
+                                    <TextBlock Text="{Binding SelectedEnterprise.MonthlyBalance, StringFormat='Monthly Balance: {0:C2}'}" Margin="0,0,0,4" />
+                                    <TextBlock Text="{Binding SelectedEnterprise.BreakEvenRate, StringFormat='Break-even Rate: {0:C2}'}" Margin="0,0,0,4" />
+                                </StackPanel>
+                            </GroupBox>
+
+                            <!-- Budget Summary -->
+                            <GroupBox Header="Budget Summary" Margin="0,0,0,8">
+                                <TextBlock Text="{Binding BudgetSummaryText}" TextWrapping="Wrap" />
+                            </GroupBox>
+                        </StackPanel>
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+        </Grid>
+
+        <!-- Status Bar -->
+        <StatusBar DockPanel.Dock="Bottom" Background="Transparent">
+            <StatusBarItem>
+                <TextBlock>
+                    <Run Text="Enterprises: "/><Run Text="{Binding Enterprises.Count, Mode=OneWay}" />
+                </TextBlock>
+            </StatusBarItem>
+            <StatusBarItem>
+                <TextBlock>
+                    <Run Text="Loading: "/><Run Text="{Binding IsLoading}" />
+                </TextBlock>
+            </StatusBarItem>
+        </StatusBar>
+    </DockPanel>
+</Window>

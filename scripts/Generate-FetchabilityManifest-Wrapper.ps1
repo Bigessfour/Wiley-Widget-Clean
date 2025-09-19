@@ -42,13 +42,16 @@ try {
         if ($Verbose) {
             Write-Host "Manifest generated successfully" -ForegroundColor Green
         }
-    } else {
+    }
+    else {
         throw "Manifest generation failed with exit code $($process.ExitCode)"
     }
 
-} catch {
+}
+catch {
     Write-Error "Failed to generate fetchability manifest: $($_.Exception.Message)"
     exit 1
-} finally {
+}
+finally {
     Pop-Location
 }

@@ -26,25 +26,28 @@ foreach ($tool in $tools) {
             Write-Host " ✅" -ForegroundColor Green
             $results += "$($tool.Name): Available"
             $available++
-        } else {
+        }
+        else {
             Write-Host " ❌" -ForegroundColor Red
             $results += "$($tool.Name): Failed"
         }
-    } catch {
+    }
+    catch {
         Write-Host " ❌" -ForegroundColor Red
         $results += "$($tool.Name): Error - $($_.Exception.Message)"
     }
 }
 
 Write-Host "`n📊 Results:" -ForegroundColor Cyan
-Write-Host "   Available: $available / $total tools" -ForegroundColor $(if ($available -eq $total) { "Green" } elseif ($available -gt $total/2) { "Yellow" } else { "Red" })
+Write-Host "   Available: $available / $total tools" -ForegroundColor $(if ($available -eq $total) { "Green" } elseif ($available -gt $total / 2) { "Yellow" } else { "Red" })
 
 Write-Host "`n🔍 Configuration Status:" -ForegroundColor Yellow
 
 # Check trunk config
 if (Test-Path ".\.trunk\trunk.yaml") {
     Write-Host "  ✅ Trunk configuration found" -ForegroundColor Green
-} else {
+}
+else {
     Write-Host "  ❌ Trunk configuration missing" -ForegroundColor Red
 }
 
@@ -52,7 +55,8 @@ if (Test-Path ".\.trunk\trunk.yaml") {
 if (Test-Path ".\.github\workflows") {
     $workflows = Get-ChildItem ".\.github\workflows\*.yml" -ErrorAction SilentlyContinue
     Write-Host "  ✅ GitHub Actions: $($workflows.Count) workflow(s)" -ForegroundColor Green
-} else {
+}
+else {
     Write-Host "  ❌ GitHub Actions workflows missing" -ForegroundColor Red
 }
 
@@ -60,7 +64,8 @@ if (Test-Path ".\.github\workflows") {
 if (Test-Path ".\scripts") {
     $scripts = Get-ChildItem ".\scripts\*.ps1" -ErrorAction SilentlyContinue
     Write-Host "  ✅ Build scripts: $($scripts.Count) PowerShell script(s)" -ForegroundColor Green
-} else {
+}
+else {
     Write-Host "  ❌ Build scripts directory missing" -ForegroundColor Red
 }
 

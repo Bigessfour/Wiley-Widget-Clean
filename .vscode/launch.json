@@ -39,6 +39,69 @@
       "type": "coreclr",
       "request": "attach",
       "processId": "${command:pickProcess}"
+<<<<<<< Updated upstream
+=======
+    },
+    {
+      "name": "Debug Syncfusion WPF Form",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/bin/Debug/net9.0-windows/WileyWidget.exe",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "console": "internalConsole",
+      "stopAtEntry": false,
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "SYNCFUSION_LICENSE_KEY": "${env:SYNCFUSION_LICENSE_KEY}"
+      },
+      "envFile": "${workspaceFolder}/.env"
+    },
+    {
+      "name": "Debug Python Startup Script",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/scripts/dev-start-debug.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "DEBUG_STARTUP": "true",
+        "PYTHONPATH": "${workspaceFolder}"
+      },
+      "args": ["--verbose"]
+    },
+    {
+      "name": "Debug Python Startup (Clean Only)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/scripts/dev-start-debug.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "DEBUG_STARTUP": "true",
+        "PYTHONPATH": "${workspaceFolder}"
+      },
+      "args": ["--clean-only", "--verbose"]
+    },
+    {
+      "name": "Debug Python Environment Loader",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/scripts/load-env.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "args": ["--status"]
+    },
+    {
+      "name": "Debug Python Cleanup Script",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/scripts/cleanup-dotnet.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "args": ["--dry-run"]
+>>>>>>> Stashed changes
     }
   ]
 }

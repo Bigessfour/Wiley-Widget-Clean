@@ -6,6 +6,8 @@ using WileyWidget.Services;
 using Intuit.Ipp.Data;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using Serilog;
+using System;
 
 namespace WileyWidget.ViewModels;
 
@@ -84,16 +86,62 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private bool quickBooksBusy;
 
+    [ObservableProperty]
+    private string quickBooksStatusMessage;
+
+    [ObservableProperty]
+    private string quickBooksErrorMessage;
+
+    [ObservableProperty]
+    private bool quickBooksHasError;
+
     [RelayCommand]
     private async System.Threading.Tasks.Task LoadQuickBooksCustomersAsync()
     {
-        if (_qb == null || QuickBooksBusy) return;
+        if (_qb == null)
+        {
+            QuickBooksErrorMessage = "QuickBooks service not configured. Please check settings.";
+            QuickBooksHasError = true;
+            Log.Warning("Attempted to load QuickBooks customers but service is not configured");
+            return;
+        }
+
+        if (QuickBooksBusy) return;
+
         try
         {
             QuickBooksBusy = true;
+            QuickBooksHasError = false;
+            QuickBooksErrorMessage = null;
+            QuickBooksStatusMessage = "Loading customers...";
+
             var items = await _qb.GetCustomersAsync();
             QuickBooksCustomers.Clear();
             foreach (var c in items) QuickBooksCustomers.Add(c);
+
+            QuickBooksStatusMessage = $"Loaded {items.Count} customers successfully";
+            Log.Information("Successfully loaded {Count} QuickBooks customers", items.Count);
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("token") || ex.Message.Contains("authorization"))
+        {
+            QuickBooksErrorMessage = "QuickBooks authorization failed. Please re-authenticate in Settings.";
+            QuickBooksHasError = true;
+            QuickBooksStatusMessage = "Authorization error";
+            Log.Error(ex, "QuickBooks authorization error while loading customers");
+        }
+        catch (System.Net.Http.HttpRequestException ex)
+        {
+            QuickBooksErrorMessage = "Network error connecting to QuickBooks. Please check your internet connection.";
+            QuickBooksHasError = true;
+            QuickBooksStatusMessage = "Network error";
+            Log.Error(ex, "Network error while loading QuickBooks customers");
+        }
+        catch (Exception ex)
+        {
+            QuickBooksErrorMessage = $"Failed to load customers: {ex.Message}";
+            QuickBooksHasError = true;
+            QuickBooksStatusMessage = "Load failed";
+            Log.Error(ex, "Unexpected error while loading QuickBooks customers");
         }
         finally
         {
@@ -104,17 +152,104 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private async System.Threading.Tasks.Task LoadQuickBooksInvoicesAsync()
     {
-        if (_qb == null || QuickBooksBusy) return;
+        if (_qb == null)
+        {
+            QuickBooksErrorMessage = "QuickBooks service not configured. Please check settings.";
+            QuickBooksHasError = true;
+            Log.Warning("Attempted to load QuickBooks invoices but service is not configured");
+            return;
+        }
+
+        if (QuickBooksBusy) return;
+
         try
         {
             QuickBooksBusy = true;
+            QuickBooksHasError = false;
+            QuickBooksErrorMessage = null;
+            QuickBooksStatusMessage = "Loading invoices...";
+
             var items = await _qb.GetInvoicesAsync();
             QuickBooksInvoices.Clear();
             foreach (var i in items) QuickBooksInvoices.Add(i);
+
+            QuickBooksStatusMessage = $"Loaded {items.Count} invoices successfully";
+            Log.Information("Successfully loaded {Count} QuickBooks invoices", items.Count);
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("token") || ex.Message.Contains("authorization"))
+        {
+            QuickBooksErrorMessage = "QuickBooks authorization failed. Please re-authenticate in Settings.";
+            QuickBooksHasError = true;
+            QuickBooksStatusMessage = "Authorization error";
+            Log.Error(ex, "QuickBooks authorization error while loading invoices");
+        }
+        catch (System.Net.Http.HttpRequestException ex)
+        {
+            QuickBooksErrorMessage = "Network error connecting to QuickBooks. Please check your internet connection.";
+            QuickBooksHasError = true;
+            QuickBooksStatusMessage = "Network error";
+            Log.Error(ex, "Network error while loading QuickBooks invoices");
+        }
+        catch (Exception ex)
+        {
+            QuickBooksErrorMessage = $"Failed to load invoices: {ex.Message}";
+            QuickBooksHasError = true;
+            QuickBooksStatusMessage = "Load failed";
+            Log.Error(ex, "Unexpected error while loading QuickBooks invoices");
         }
         finally
         {
             QuickBooksBusy = false;
         }
+    }
+
+    [RelayCommand]
+    private void Refresh()
+    {
+        // Refresh data grids and reload current data
+        Log.Information("Manual refresh triggered");
+        // Could implement actual refresh logic here
+    }
+
+    [RelayCommand]
+    private void OpenSettings()
+    {
+        // This will be handled by the MainWindow event handler
+        Log.Information("Settings shortcut triggered");
+    }
+
+    [RelayCommand]
+    private void OpenHelp()
+    {
+        // This will be handled by the MainWindow event handler
+        Log.Information("Help shortcut triggered");
+    }
+
+    [RelayCommand]
+    private void OpenEnterprise()
+    {
+        // This will be handled by the MainWindow event handler
+        Log.Information("Enterprise shortcut triggered");
+    }
+
+    [RelayCommand]
+    private void OpenBudget()
+    {
+        // This will be handled by the MainWindow event handler
+        Log.Information("Budget shortcut triggered");
+    }
+
+    [RelayCommand]
+    private void OpenDashboard()
+    {
+        // This will be handled by the MainWindow event handler
+        Log.Information("Dashboard shortcut triggered");
+    }
+
+    [RelayCommand]
+    private void OpenAIAssist()
+    {
+        // This will be handled by the MainWindow event handler
+        Log.Information("AI Assist shortcut triggered");
     }
 }

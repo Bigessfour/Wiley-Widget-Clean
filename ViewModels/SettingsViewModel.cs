@@ -1,0 +1,501 @@
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.Logging;
+using System;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Media;
+using WileyWidget.Data;
+using WileyWidget.Services;
+using Syncfusion.SfSkinManager;
+using Syncfusion.Windows.Shared;
+
+namespace WileyWidget.ViewModels
+{
+    public partial class SettingsViewModel : ObservableObject
+    {
+        private readonly ILogger<SettingsViewModel> _logger;
+        private readonly AppDbContext _dbContext;
+        private readonly IAzureKeyVaultService _azureKeyVaultService;
+        private readonly IQuickBooksService _quickBooksService;
+        private readonly ISyncfusionLicenseService _syncfusionLicenseService;
+
+        // General Settings
+        [ObservableProperty]
+        private ObservableCollection<string> availableThemes = new() { "FluentDark", "FluentLight" };
+
+        [ObservableProperty]
+        private string selectedTheme = "FluentDark";
+
+        partial void OnSelectedThemeChanged(string value)
+        {
+            // Apply the theme change immediately when selected in settings
+            ApplyThemeToAllWindows(value);
+        }
+
+        [ObservableProperty]
+        private int windowWidth = 1200;
+
+        [ObservableProperty]
+        private int windowHeight = 800;
+
+        [ObservableProperty]
+        private bool maximizeOnStartup;
+
+        [ObservableProperty]
+        private bool showSplashScreen = true;
+
+        // Database Settings
+        [ObservableProperty]
+        private string databaseConnectionString;
+
+        [ObservableProperty]
+        private string databaseStatus = "Checking...";
+
+        [ObservableProperty]
+        private Brush databaseStatusColor = Brushes.Orange;
+
+        // QuickBooks Settings
+        [ObservableProperty]
+        private string quickBooksClientId;
+
+        [ObservableProperty]
+        private string quickBooksClientSecret;
+
+        [ObservableProperty]
+        private string quickBooksRedirectUri;
+
+        [ObservableProperty]
+        private ObservableCollection<string> quickBooksEnvironments = new() { "Sandbox", "Production" };
+
+        [ObservableProperty]
+        private string selectedQuickBooksEnvironment = "Sandbox";
+
+        [ObservableProperty]
+        private string quickBooksConnectionStatus = "Not Connected";
+
+        [ObservableProperty]
+        private Brush quickBooksStatusColor = Brushes.Red;
+
+        // Syncfusion License
+        [ObservableProperty]
+        private string syncfusionLicenseKey;
+
+        [ObservableProperty]
+        private string syncfusionLicenseStatus = "Checking...";
+
+        [ObservableProperty]
+        private Brush syncfusionLicenseStatusColor = Brushes.Orange;
+
+        // Azure Settings
+        [ObservableProperty]
+        private string azureKeyVaultUrl;
+
+        [ObservableProperty]
+        private string azureConnectionStatus = "Not Connected";
+
+        [ObservableProperty]
+        private Brush azureStatusColor = Brushes.Red;
+
+        [ObservableProperty]
+        private string azureSqlServer;
+
+        [ObservableProperty]
+        private string azureSqlDatabase;
+
+        [ObservableProperty]
+        private ObservableCollection<string> azureAuthMethods = new() { "Managed Identity", "Service Principal", "Connection String" };
+
+        [ObservableProperty]
+        private string selectedAzureAuthMethod = "Managed Identity";
+
+        // Advanced Settings
+        [ObservableProperty]
+        private bool enableDynamicColumns = true;
+
+        [ObservableProperty]
+        private bool enableDataCaching = true;
+
+        [ObservableProperty]
+        private int cacheExpirationMinutes = 30;
+
+        [ObservableProperty]
+        private ObservableCollection<string> logLevels = new() { "Debug", "Information", "Warning", "Error", "Critical" };
+
+        [ObservableProperty]
+        private string selectedLogLevel = "Information";
+
+        [ObservableProperty]
+        private bool enableFileLogging = true;
+
+        [ObservableProperty]
+        private string logFilePath = "logs/wiley-widget.log";
+
+        // Status
+        [ObservableProperty]
+        private string settingsStatus = "Ready";
+
+        [ObservableProperty]
+        private string lastSaved = "Never";
+
+        [ObservableProperty]
+        private string systemInfo;
+
+        public bool HasUnsavedChanges { get; private set; }
+
+        public SettingsViewModel(
+            ILogger<SettingsViewModel> logger,
+            AppDbContext dbContext,
+            IAzureKeyVaultService azureKeyVaultService,
+            IQuickBooksService quickBooksService,
+            ISyncfusionLicenseService syncfusionLicenseService)
+        {
+            _logger = logger;
+            _dbContext = dbContext;
+            _azureKeyVaultService = azureKeyVaultService;
+            _quickBooksService = quickBooksService;
+            _syncfusionLicenseService = syncfusionLicenseService;
+
+            // Initialize system info
+            SystemInfo = $"OS: {Environment.OSVersion}\n" +
+                        $".NET Version: {Environment.Version}\n" +
+                        $"Machine: {Environment.MachineName}\n" +
+                        $"User: {Environment.UserName}";
+
+            // Set up property change tracking for unsaved changes
+            PropertyChanged += OnPropertyChanged;
+        }
+
+        private void OnPropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName != nameof(HasUnsavedChanges) &&
+                e.PropertyName != nameof(SettingsStatus) &&
+                e.PropertyName != nameof(LastSaved))
+            {
+                HasUnsavedChanges = true;
+            }
+        }
+
+        public async Task LoadSettingsAsync()
+        {
+            try
+            {
+                SettingsStatus = "Loading settings...";
+
+                // Load from configuration and database
+                await LoadGeneralSettingsAsync();
+                await LoadDatabaseSettingsAsync();
+                await LoadQuickBooksSettingsAsync();
+                await LoadSyncfusionSettingsAsync();
+                await LoadAzureSettingsAsync();
+                await LoadAdvancedSettingsAsync();
+
+                SettingsStatus = "Settings loaded successfully";
+                HasUnsavedChanges = false;
+                LastSaved = DateTime.Now.ToString("g");
+
+                _logger.LogInformation("Settings loaded successfully");
+            }
+            catch (Exception ex)
+            {
+                SettingsStatus = "Error loading settings";
+                _logger.LogError(ex, "Error loading settings");
+                MessageBox.Show($"Error loading settings: {ex.Message}", "Settings Error",
+                              MessageBoxButton.OK);
+            }
+        }
+
+        private async Task LoadGeneralSettingsAsync()
+        {
+            // Load from appsettings.json or database
+            // For now, use default values
+            SelectedTheme = "FluentDark";
+            WindowWidth = 1200;
+            WindowHeight = 800;
+            MaximizeOnStartup = false;
+            ShowSplashScreen = true;
+        }
+
+        private async Task LoadDatabaseSettingsAsync()
+        {
+            try
+            {
+                DatabaseConnectionString = "Connection string not available in this EF Core version";
+
+                // Test database connection
+                var canConnect = await _dbContext.Database.CanConnectAsync();
+                DatabaseStatus = canConnect ? "Connected" : "Connection Failed";
+                DatabaseStatusColor = canConnect ? Brushes.Green : Brushes.Red;
+            }
+            catch (Exception ex)
+            {
+                DatabaseStatus = $"Error: {ex.Message}";
+                DatabaseStatusColor = Brushes.Red;
+            }
+        }
+
+        private async Task LoadQuickBooksSettingsAsync()
+        {
+            try
+            {
+                // Load QuickBooks settings from secure storage
+                QuickBooksClientId = await _azureKeyVaultService.GetSecretAsync("QuickBooks-ClientId") ?? "";
+                QuickBooksClientSecret = await _azureKeyVaultService.GetSecretAsync("QuickBooks-ClientSecret") ?? "";
+                QuickBooksRedirectUri = await _azureKeyVaultService.GetSecretAsync("QuickBooks-RedirectUri") ?? "";
+                SelectedQuickBooksEnvironment = await _azureKeyVaultService.GetSecretAsync("QuickBooks-Environment") ?? "Sandbox";
+
+                // Test connection if credentials are available
+                if (!string.IsNullOrEmpty(QuickBooksClientId))
+                {
+                    var isConnected = await _quickBooksService.TestConnectionAsync();
+                    QuickBooksConnectionStatus = isConnected ? "Connected" : "Connection Failed";
+                    QuickBooksStatusColor = isConnected ? Brushes.Green : Brushes.Red;
+                }
+                else
+                {
+                    QuickBooksConnectionStatus = "Not Configured";
+                    QuickBooksStatusColor = Brushes.Orange;
+                }
+            }
+            catch (Exception ex)
+            {
+                QuickBooksConnectionStatus = $"Error: {ex.Message}";
+                QuickBooksStatusColor = Brushes.Red;
+            }
+        }
+
+        private async Task LoadSyncfusionSettingsAsync()
+        {
+            try
+            {
+                SyncfusionLicenseKey = await _azureKeyVaultService.GetSecretAsync("Syncfusion-LicenseKey") ?? "";
+
+                // Simple license validation - check if key exists and is not empty
+                var isValid = !string.IsNullOrEmpty(SyncfusionLicenseKey);
+                SyncfusionLicenseStatus = isValid ? "Valid" : "Invalid or Missing";
+                SyncfusionLicenseStatusColor = isValid ? Brushes.Green : Brushes.Red;
+            }
+            catch (Exception ex)
+            {
+                SyncfusionLicenseStatus = $"Error: {ex.Message}";
+                SyncfusionLicenseStatusColor = Brushes.Red;
+            }
+        }
+
+        private async Task LoadAzureSettingsAsync()
+        {
+            try
+            {
+                AzureKeyVaultUrl = await _azureKeyVaultService.GetSecretAsync("Azure-KeyVaultUrl") ?? "";
+                AzureSqlServer = await _azureKeyVaultService.GetSecretAsync("Azure-SqlServer") ?? "";
+                AzureSqlDatabase = await _azureKeyVaultService.GetSecretAsync("Azure-SqlDatabase") ?? "";
+
+                var isConnected = await _azureKeyVaultService.TestConnectionAsync();
+                AzureConnectionStatus = isConnected ? "Connected" : "Connection Failed";
+                AzureStatusColor = isConnected ? Brushes.Green : Brushes.Red;
+            }
+            catch (Exception ex)
+            {
+                AzureConnectionStatus = $"Error: {ex.Message}";
+                AzureStatusColor = Brushes.Red;
+            }
+        }
+
+        private async Task LoadAdvancedSettingsAsync()
+        {
+            // Load advanced settings from configuration
+            EnableDynamicColumns = true;
+            EnableDataCaching = true;
+            CacheExpirationMinutes = 30;
+            SelectedLogLevel = "Information";
+            EnableFileLogging = true;
+            LogFilePath = "logs/wiley-widget.log";
+        }
+
+        [RelayCommand]
+        private async Task SaveSettingsAsync()
+        {
+            try
+            {
+                SettingsStatus = "Saving settings...";
+
+                // Save to secure storage and configuration
+                await SaveGeneralSettingsAsync();
+                await SaveQuickBooksSettingsAsync();
+                await SaveSyncfusionSettingsAsync();
+                await SaveAzureSettingsAsync();
+                await SaveAdvancedSettingsAsync();
+
+                SettingsStatus = "Settings saved successfully";
+                HasUnsavedChanges = false;
+                LastSaved = DateTime.Now.ToString("g");
+
+                _logger.LogInformation("Settings saved successfully");
+            }
+            catch (Exception ex)
+            {
+                SettingsStatus = "Error saving settings";
+                _logger.LogError(ex, "Error saving settings");
+                MessageBox.Show($"Error saving settings: {ex.Message}", "Settings Error",
+                              MessageBoxButton.OK);
+            }
+        }
+
+        private async Task SaveGeneralSettingsAsync()
+        {
+            // Save general settings to configuration
+            // Implementation would save to appsettings.json or database
+        }
+
+        private async Task SaveQuickBooksSettingsAsync()
+        {
+            if (!string.IsNullOrEmpty(QuickBooksClientId))
+                await _azureKeyVaultService.SetSecretAsync("QuickBooks-ClientId", QuickBooksClientId);
+
+            if (!string.IsNullOrEmpty(QuickBooksClientSecret))
+                await _azureKeyVaultService.SetSecretAsync("QuickBooks-ClientSecret", QuickBooksClientSecret);
+
+            if (!string.IsNullOrEmpty(QuickBooksRedirectUri))
+                await _azureKeyVaultService.SetSecretAsync("QuickBooks-RedirectUri", QuickBooksRedirectUri);
+
+            await _azureKeyVaultService.SetSecretAsync("QuickBooks-Environment", SelectedQuickBooksEnvironment);
+        }
+
+        private async Task SaveSyncfusionSettingsAsync()
+        {
+            if (!string.IsNullOrEmpty(SyncfusionLicenseKey))
+                await _azureKeyVaultService.SetSecretAsync("Syncfusion-LicenseKey", SyncfusionLicenseKey);
+        }
+
+        private async Task SaveAzureSettingsAsync()
+        {
+            if (!string.IsNullOrEmpty(AzureKeyVaultUrl))
+                await _azureKeyVaultService.SetSecretAsync("Azure-KeyVaultUrl", AzureKeyVaultUrl);
+
+            if (!string.IsNullOrEmpty(AzureSqlServer))
+                await _azureKeyVaultService.SetSecretAsync("Azure-SqlServer", AzureSqlServer);
+
+            if (!string.IsNullOrEmpty(AzureSqlDatabase))
+                await _azureKeyVaultService.SetSecretAsync("Azure-SqlDatabase", AzureSqlDatabase);
+        }
+
+        private async Task SaveAdvancedSettingsAsync()
+        {
+            // Save advanced settings to configuration
+            // Implementation would save to appsettings.json
+        }
+
+        [RelayCommand]
+        private async Task ResetSettingsAsync()
+        {
+            var result = MessageBox.Show("Are you sure you want to reset all settings to default values?",
+                                       "Reset Settings", MessageBoxButton.YesNo);
+
+            if (result == MessageBoxResult.Yes)
+            {
+                await LoadSettingsAsync();
+            }
+        }
+
+        [RelayCommand]
+        private async Task TestConnectionAsync()
+        {
+            await LoadDatabaseSettingsAsync();
+        }
+
+        [RelayCommand]
+        private async Task TestQuickBooksConnectionAsync()
+        {
+            try
+            {
+                QuickBooksConnectionStatus = "Testing...";
+                QuickBooksStatusColor = Brushes.Orange;
+
+                var isConnected = await _quickBooksService.TestConnectionAsync();
+                QuickBooksConnectionStatus = isConnected ? "Connected" : "Connection Failed";
+                QuickBooksStatusColor = isConnected ? Brushes.Green : Brushes.Red;
+            }
+            catch (Exception ex)
+            {
+                QuickBooksConnectionStatus = $"Error: {ex.Message}";
+                QuickBooksStatusColor = Brushes.Red;
+            }
+        }
+
+        [RelayCommand]
+        private async Task ValidateLicenseAsync()
+        {
+            try
+            {
+                SyncfusionLicenseStatus = "Validating...";
+                SyncfusionLicenseStatusColor = Brushes.Orange;
+
+                var isValid = await _syncfusionLicenseService.ValidateLicenseAsync(SyncfusionLicenseKey);
+                SyncfusionLicenseStatus = isValid ? "Valid" : "Invalid";
+                SyncfusionLicenseStatusColor = isValid ? Brushes.Green : Brushes.Red;
+            }
+            catch (Exception ex)
+            {
+                SyncfusionLicenseStatus = $"Error: {ex.Message}";
+                SyncfusionLicenseStatusColor = Brushes.Red;
+            }
+        }
+
+        [RelayCommand]
+        private async Task TestAzureConnectionAsync()
+        {
+            try
+            {
+                AzureConnectionStatus = "Testing...";
+                AzureStatusColor = Brushes.Orange;
+
+                var isConnected = await _azureKeyVaultService.TestConnectionAsync();
+                AzureConnectionStatus = isConnected ? "Connected" : "Connection Failed";
+                AzureStatusColor = isConnected ? Brushes.Green : Brushes.Red;
+            }
+            catch (Exception ex)
+            {
+                AzureConnectionStatus = $"Error: {ex.Message}";
+                AzureStatusColor = Brushes.Red;
+            }
+        }
+
+        /// <summary>
+        /// Apply theme to all open windows in the application
+        /// </summary>
+        private void ApplyThemeToAllWindows(string themeName)
+        {
+            try
+            {
+                // Apply to main window
+                if (Application.Current.MainWindow != null)
+                {
+#pragma warning disable CA2000 // Dispose objects before losing scope - Theme objects are managed by SfSkinManager
+                    SfSkinManager.SetTheme(Application.Current.MainWindow, new Theme(themeName));
+#pragma warning restore CA2000 // Dispose objects before losing scope
+                }
+
+                // Apply to all other windows
+                foreach (Window window in Application.Current.Windows)
+                {
+                    if (window != Application.Current.MainWindow)
+                    {
+#pragma warning disable CA2000 // Dispose objects before losing scope - Theme objects are managed by SfSkinManager
+                        SfSkinManager.SetTheme(window, new Theme(themeName));
+#pragma warning restore CA2000 // Dispose objects before losing scope
+                    }
+                }
+
+                // Save the theme preference
+                SettingsService.Instance.Current.Theme = themeName;
+                SettingsService.Instance.Save();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to apply theme {ThemeName}", themeName);
+            }
+        }
+    }
+}

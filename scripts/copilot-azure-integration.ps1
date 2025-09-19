@@ -148,9 +148,9 @@ function Get-AzureLearningPath {
 
     $weeks = @(
         @{
-            Week = 1
-            Topic = "Azure Basics & Safety"
-            Goals = @(
+            Week     = 1
+            Topic    = "Azure Basics & Safety"
+            Goals    = @(
                 "Understand Azure concepts (Resource Groups, Subscriptions)",
                 "Learn safe Azure operations",
                 "Master the safe scripts",
@@ -162,9 +162,9 @@ function Get-AzureLearningPath {
             )
         },
         @{
-            Week = 2
-            Topic = "Database Operations"
-            Goals = @(
+            Week     = 2
+            Topic    = "Database Operations"
+            Goals    = @(
                 "Connect to Azure SQL safely",
                 "Understand connection strings",
                 "Learn backup and recovery",
@@ -176,9 +176,9 @@ function Get-AzureLearningPath {
             )
         },
         @{
-            Week = 3
-            Topic = "Resource Management"
-            Goals = @(
+            Week     = 3
+            Topic    = "Resource Management"
+            Goals    = @(
                 "Create and manage resources safely",
                 "Understand Azure pricing",
                 "Learn resource organization",
@@ -190,9 +190,9 @@ function Get-AzureLearningPath {
             )
         },
         @{
-            Week = 4
-            Topic = "Advanced Operations"
-            Goals = @(
+            Week     = 4
+            Topic    = "Advanced Operations"
+            Goals    = @(
                 "Deploy applications to Azure",
                 "Use Azure Functions",
                 "Monitor and troubleshoot",

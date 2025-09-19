@@ -1,21 +1,21 @@
 # Liberal Firewall Setup Script for Dynamic IP Addresses
 param(
-    [Parameter(Mandatory=$true)]
+    [Parameter(Mandatory = $true)]
     [string]$ResourceGroup,
 
-    [Parameter(Mandatory=$true)]
+    [Parameter(Mandatory = $true)]
     [string]$SqlServer,
 
-    [Parameter(Mandatory=$false)]
+    [Parameter(Mandatory = $false)]
     [switch]$AllowAllAzureServices,
 
-    [Parameter(Mandatory=$false)]
+    [Parameter(Mandatory = $false)]
     [switch]$SetupCommonISPRanges,
 
-    [Parameter(Mandatory=$false)]
+    [Parameter(Mandatory = $false)]
     [string]$CurrentIP,
 
-    [Parameter(Mandatory=$false)]
+    [Parameter(Mandatory = $false)]
     [switch]$EnableMonitoring
 )
 
@@ -47,7 +47,8 @@ if ($AllowAllAzureServices) {
 
         if ($LASTEXITCODE -eq 0) {
             Write-Host "✅ Azure services access enabled" -ForegroundColor Green
-        } else {
+        }
+        else {
             Write-Host "⚠️  Azure services rule may already exist" -ForegroundColor Yellow
         }
     }
@@ -59,7 +60,8 @@ if ($AllowAllAzureServices) {
 # Add current IP if provided or auto-detect
 if ($CurrentIP) {
     $ipToAdd = $CurrentIP
-} else {
+}
+else {
     Write-Host "🔍 Auto-detecting current public IP..." -ForegroundColor Yellow
     $ipToAdd = Get-CurrentPublicIP
 }
@@ -78,7 +80,8 @@ if ($ipToAdd) {
 
         if ($LASTEXITCODE -eq 0) {
             Write-Host "✅ Current IP added to firewall" -ForegroundColor Green
-        } else {
+        }
+        else {
             Write-Host "⚠️  Current IP rule may already exist" -ForegroundColor Yellow
         }
     }
@@ -92,13 +95,13 @@ if ($SetupCommonISPRanges) {
     Write-Host "🏢 Setting up common ISP ranges for dynamic IPs..." -ForegroundColor Yellow
 
     $commonRanges = @(
-        @{Name="Comcast-Xfinity"; Start="24.0.0.0"; End="24.255.255.255"},
-        @{Name="Spectrum-Charter"; Start="71.0.0.0"; End="71.255.255.255"},
-        @{Name="Cox-Communications"; Start="68.0.0.0"; End="68.255.255.255"},
-        @{Name="Verizon-FIOS"; Start="71.160.0.0"; End="71.191.255.255"},
-        @{Name="ATT-Uverse"; Start="99.0.0.0"; End="99.255.255.255"},
-        @{Name="CenturyLink"; Start="65.128.0.0"; End="65.255.255.255"},
-        @{Name="Frontier"; Start="74.40.0.0"; End="74.47.255.255"}
+        @{Name = "Comcast-Xfinity"; Start = "24.0.0.0"; End = "24.255.255.255" },
+        @{Name = "Spectrum-Charter"; Start = "71.0.0.0"; End = "71.255.255.255" },
+        @{Name = "Cox-Communications"; Start = "68.0.0.0"; End = "68.255.255.255" },
+        @{Name = "Verizon-FIOS"; Start = "71.160.0.0"; End = "71.191.255.255" },
+        @{Name = "ATT-Uverse"; Start = "99.0.0.0"; End = "99.255.255.255" },
+        @{Name = "CenturyLink"; Start = "65.128.0.0"; End = "65.255.255.255" },
+        @{Name = "Frontier"; Start = "74.40.0.0"; End = "74.47.255.255" }
     )
 
     foreach ($range in $commonRanges) {
@@ -113,7 +116,8 @@ if ($SetupCommonISPRanges) {
 
             if ($LASTEXITCODE -eq 0) {
                 Write-Host "    ✅ Added" -ForegroundColor Green
-            } else {
+            }
+            else {
                 Write-Host "    ⚠️  May already exist" -ForegroundColor Yellow
             }
         }
@@ -137,7 +141,8 @@ if ($EnableMonitoring) {
 
         if ($LASTEXITCODE -eq 0) {
             Write-Host "✅ Firewall monitoring enabled" -ForegroundColor Green
-        } else {
+        }
+        else {
             Write-Host "⚠️  Could not enable monitoring (may already exist)" -ForegroundColor Yellow
         }
     }
@@ -153,7 +158,8 @@ try {
         --resource-group $ResourceGroup `
         --server $SqlServer `
         --output table
-} catch {
+}
+catch {
     Write-Host "⚠️  Could not list firewall rules" -ForegroundColor Yellow
 }
 

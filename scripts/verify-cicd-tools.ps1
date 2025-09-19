@@ -1,10 +1,10 @@
 # CI/CD Tools Verification Script
 param(
-    [Parameter(Mandatory=$false)]
+    [Parameter(Mandatory = $false)]
     [switch]$Detailed,
-    [Parameter(Mandatory=$false)]
+    [Parameter(Mandatory = $false)]
     [switch]$FixIssues,
-    [Parameter(Mandatory=$false)]
+    [Parameter(Mandatory = $false)]
     [string]$LogFile = "cicd-verification.log"
 )
 
@@ -46,7 +46,8 @@ function Test-Tool {
                 if ($displayOutput.Length -gt 100) { $displayOutput = $displayOutput.Substring(0, 100) + "..." }
                 Write-Host "     Output: $displayOutput" -ForegroundColor Gray
             }
-        } else {
+        }
+        else {
             Write-Host " ❌" -ForegroundColor Red
             $results[$Name] = @{ Status = "FAIL"; Output = "$output`n$errorOutput"; ExitCode = $exitCode }
             if ($Required) {
@@ -58,7 +59,8 @@ function Test-Tool {
                 Write-Host "     Error: $displayError" -ForegroundColor Red
             }
         }
-    } catch {
+    }
+    catch {
         Write-Host " ❌" -ForegroundColor Red
         $results[$Name] = @{ Status = "ERROR"; Output = $_.Exception.Message; ExitCode = -1 }
         if ($Required) {
@@ -117,20 +119,23 @@ if (Test-Path $trunkConfig) {
         $configContent = Get-Content $trunkConfig -Raw
         if ($configContent -match "version:" -and $configContent -match "lint:") {
             Write-Host " ✅" -ForegroundColor Green
-            $linterCount = ($configContent | Select-String "enabled:" -Context 0,10 | ForEach-Object { $_.Context.PostContext -split "`n" | Where-Object { $_.Trim().StartsWith("- ") } }).Count
+            $linterCount = ($configContent | Select-String "enabled:" -Context 0, 10 | ForEach-Object { $_.Context.PostContext -split "`n" | Where-Object { $_.Trim().StartsWith("- ") } }).Count
             $results["Trunk Config"] = @{ Status = "OK"; Output = "Valid config with ~$linterCount linters"; ExitCode = 0 }
             if ($Detailed) {
                 Write-Host "     Contains linter configuration" -ForegroundColor Gray
             }
-        } else {
+        }
+        else {
             throw "Invalid trunk configuration format"
         }
-    } catch {
+    }
+    catch {
         Write-Host " ❌" -ForegroundColor Red
         $results["Trunk Config"] = @{ Status = "ERROR"; Output = $_.Exception.Message; ExitCode = -1 }
         $issues += "Trunk config error: $($_.Exception.Message)"
     }
-} else {
+}
+else {
     Write-Host "  🔍 Trunk Configuration... ❌" -ForegroundColor Red
     $results["Trunk Config"] = @{ Status = "MISSING"; Output = "File not found"; ExitCode = -1 }
     $issues += "Trunk configuration file missing"
@@ -149,11 +154,13 @@ if (Test-Path $githubWorkflows) {
                 Write-Host "     $($wf.Name)" -ForegroundColor Gray
             }
         }
-    } else {
+    }
+    else {
         Write-Host " ⚠️" -ForegroundColor Yellow
         $results["GitHub Actions"] = @{ Status = "WARN"; Output = "Directory exists but no workflows found"; ExitCode = 0 }
     }
-} else {
+}
+else {
     Write-Host "  🔍 GitHub Actions Workflows... ❌" -ForegroundColor Red
     $results["GitHub Actions"] = @{ Status = "MISSING"; Output = "Directory not found"; ExitCode = -1 }
     $issues += "GitHub Actions workflows directory missing"
@@ -172,11 +179,13 @@ if (Test-Path $scriptsDir) {
                 Write-Host "     $($script.Name)" -ForegroundColor Gray
             }
         }
-    } else {
+    }
+    else {
         Write-Host " ⚠️" -ForegroundColor Yellow
         $results["Build Scripts"] = @{ Status = "WARN"; Output = "Directory exists but no scripts found"; ExitCode = 0 }
     }
-} else {
+}
+else {
     Write-Host "  🔍 Build Scripts... ❌" -ForegroundColor Red
     $results["Build Scripts"] = @{ Status = "MISSING"; Output = "Directory not found"; ExitCode = -1 }
     $issues += "Scripts directory missing"
@@ -210,12 +219,14 @@ if ($issues.Count -gt 0) {
             try {
                 trunk init --force
                 Write-Host " ✅" -ForegroundColor Green
-            } catch {
+            }
+            catch {
                 Write-Host " ❌" -ForegroundColor Red
             }
         }
     }
-} else {
+}
+else {
     Write-Host "`n🎉 All checks passed!" -ForegroundColor Green
 }
 

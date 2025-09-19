@@ -16,6 +16,10 @@ public class MainWindowUITests : IDisposable
     private Application _app;
     private Window _mainWindow;
     private UIA3Automation _automation;
+#pragma warning disable CS0169, CS0649 // Fields used in commented test code
+    private Application _app;
+    private AutomationElement _mainWindow;
+#pragma warning restore CS0169, CS0649
 
     public MainWindowUITests()
     {
@@ -139,7 +143,9 @@ public class MainWindowUITests : IDisposable
         Assert.NotNull(desktop);
 #pragma warning disable CA1416 // Validate platform compatibility
         Assert.True(desktop.IsAvailable);
-        Assert.Equal("Desktop", desktop.ClassName);
+        // Desktop ClassName can vary between environments (Desktop, #32769)
+        var validDesktopClassNames = new[] { "Desktop", "#32769" };
+        Assert.Contains(desktop.ClassName, validDesktopClassNames);
 #pragma warning restore CA1416
     }
 
@@ -157,6 +163,7 @@ public class MainWindowUITests : IDisposable
         using var automation = new UIA3Automation();
 
         // Act - Test various control type access
+<<<<<<< Updated upstream
         var buttonType = ControlType.Button;
         var windowType = ControlType.Window;
         var textType = ControlType.Edit;
@@ -166,6 +173,18 @@ public class MainWindowUITests : IDisposable
         Assert.True(buttonType != 0);
         Assert.True(windowType != 0);
         Assert.True(textType != 0);
+=======
+#pragma warning disable CA1416 // Validate platform compatibility
+        // Control types are accessed to ensure they're available
+#pragma warning restore CA1416
+
+        // Assert - ControlType is an enum, so we just verify the values are defined
+#pragma warning disable CA1416 // Validate platform compatibility
+        Assert.NotEqual(ControlType.Unknown, ControlType.Button);
+        Assert.NotEqual(ControlType.Unknown, ControlType.Window);
+        Assert.NotEqual(ControlType.Unknown, ControlType.Edit);
+#pragma warning restore CA1416
+>>>>>>> Stashed changes
     }
 
     [Fact(Skip = "Requires application to be built and available")]
@@ -240,7 +259,12 @@ public class MainWindowUITests : IDisposable
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
 #pragma warning disable CA1416 // Validate platform compatibility
+<<<<<<< Updated upstream
             _automation?.Dispose();
+=======
+                _automation?.Dispose();
+                _app?.Dispose();
+>>>>>>> Stashed changes
 #pragma warning restore CA1416
         }
 #pragma warning disable CA1416 // Validate platform compatibility

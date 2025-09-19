@@ -57,7 +57,8 @@ if (!$SkipTests) {
     try {
         dotnet run --project "$phase1TestDir\WileyWidget.TestModels.csproj"
         $testExitCode = $LASTEXITCODE
-    } catch {
+    }
+    catch {
         $testExitCode = 1
         Write-Host "❌ Phase 1 test execution failed: $($_.Exception.Message)" -ForegroundColor Red
     }
@@ -76,6 +77,7 @@ if (!$CI) {
     Write-Host "1. Review test output for any issues" -ForegroundColor White
     Write-Host "2. If tests pass, proceed to Phase 2: UI Dashboards" -ForegroundColor White
     Write-Host "3. Update North Star document with Phase 1 completion" -ForegroundColor White
-} else {
+}
+else {
     Write-Host "::notice::Phase 1 validation completed successfully"
 }

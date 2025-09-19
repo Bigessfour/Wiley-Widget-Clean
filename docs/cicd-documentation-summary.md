@@ -70,7 +70,7 @@ This comprehensive documentation suite covers all aspects of the WileyWidget pro
 
 ### Code Quality & Linting
 
-- **Trunk**: 1.25.0 with 7 active linters
+- **Trunk**: 1.25.0 with 7 active linters (memory-optimized: 1 concurrent job)
 - **Coverage**: ≥70% line coverage required
 - **Security**: TruffleHog secret detection
 - **Formatting**: Prettier for consistent code style

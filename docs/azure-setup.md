@@ -30,7 +30,7 @@ Run the automated setup script to create all necessary Azure resources:
 cd "c:\Users\biges\Desktop\Wiley_Widget\scripts"
 
 # Run the Azure setup script
-.\setup-azure.ps1 -AzureSubscriptionId "your-subscription-id" -AzureResourceGroup "wileywidget-rg" -InstallMCP
+.\setup-azure.ps1 -AzureSubscriptionId "your-subscription-id" -AzureResourceGroup "wileywidget-rg"
 ```
 
 **Parameters:**
@@ -39,9 +39,23 @@ cd "c:\Users\biges\Desktop\Wiley_Widget\scripts"
 - `-AzureResourceGroup`: Resource group name (optional, defaults to "wileywidget-rg")
 - `-AzureLocation`: Azure region (optional, defaults to "East US")
 - `-SkipLogin`: Skip Azure login (use if already logged in)
-- `-InstallMCP`: Install Azure MCP Server extension
 
-### 2. Test Database Connectivity
+### 2. Test Azure CLI Connectivity
+
+After setup, verify Azure CLI is working:
+
+```powershell
+# Check Azure login status
+az account show --output table
+
+# List your resource groups
+az group list --output table
+
+# Test database connectivity (if SQL Database was created)
+# Connection details will be in the generated .env file
+```
+
+### 3. Test Database Connectivity
 
 After setup, test the database connection:
 
@@ -175,36 +189,107 @@ Update your `appsettings.json` to use environment variables:
 
 ### Installing Azure MCP Server
 
-The setup script can automatically install the Azure MCP Server extension:
+**⚠️ KNOWN ISSUE: Azure MCP Server Currently Unavailable**
 
-```powershell
-# Install during setup
-.\setup-azure.ps1 -InstallMCP
+The Azure MCP Server (`@azure/mcp` npm package) is currently experiencing dependency injection issues that prevent it from starting. This appears to be a bug in the package implementation.
 
-# Or install manually
-code --install-extension ms-azuretools.vscode-azure-mcp-server
-```
+**Current Status:**
+- ✅ Package installs successfully
+- ❌ Server fails to start with DI container errors
+- ❌ Cannot provide Azure resource management through GitHub Copilot
 
-### MCP Server Features
+**Issue Details:**
+The server fails during startup with errors related to:
+- `CommandGroupServerProvider` unable to resolve `CommandGroup` service
+- `RegistryServerProvider` unable to resolve `System.String` service
 
-The Azure MCP Server provides:
+**Workaround:**
+Until Microsoft fixes this issue, Azure operations must be performed manually using:
+- Azure CLI (`az` commands)
+- Azure Portal
+- Azure PowerShell modules
+
+**To re-enable when fixed:**
+1. Uncomment the Azure server configuration in `.vscode/mcp.json`
+2. Test with: `npx -y @azure/mcp@latest server start`
+3. Monitor Microsoft documentation for updates
+
+**Alternative Azure Integration:**
+Consider using Azure CLI directly in terminals or scripts for Azure operations until the MCP server is fixed.
+
+<!-- Original MCP Server Setup (commented out until package is fixed)
+The Azure MCP Server is configured through VS Code's MCP settings, not as an extension. The server uses the `@azure/mcp` npm package.
+
+#### Prerequisites
+- Node.js LTS installed
+- Azure account with active subscription
+- Azure resources must exist (server requires existing resources)
+- Appropriate RBAC roles and permissions for Azure resources
+
+#### Configuration in VS Code
+
+1. **Create MCP Configuration File**
+
+   Create a `.mcp.json` file in your workspace root (or use global/user config):
+
+   ```json
+   {
+     "mcpServers": {
+       "Azure MCP Server": {
+         "command": "npx",
+         "args": [
+           "-y",
+           "@azure/mcp@latest",
+           "server",
+           "start"
+         ]
+       }
+     }
+   }
+   ```
+
+2. **Alternative Locations for mcp.json:**
+   - `%USERPROFILE%\.mcp.json` - Global config for all VS Code instances
+   - `.vscode\mcp.json` - Workspace-specific (recommended for projects)
+   - `.mcp.json` - Solution-level (can be tracked in git)
+
+3. **Restart VS Code** after creating the config file.
+
+4. **Enable Agent Mode** in GitHub Copilot to access MCP tools.
+-->
+
+<!-- MCP Server Features (when available)
+The Azure MCP Server would provide:
 
 - **Azure Resource Management**: Create, update, and delete Azure resources
 - **Database Operations**: Execute queries against Azure SQL Database
 - **Monitoring**: Access Azure Monitor and Application Insights
 - **Security**: Manage Azure Active Directory and security policies
+-->
 
-### Using MCP Server
+### Azure Operations (Current Workaround)
 
-Once installed, the MCP server integrates with GitHub Copilot to provide Azure-specific assistance:
+Until the MCP server is fixed, perform Azure operations using Azure CLI:
 
 ```powershell
-# Example MCP server commands (available through Copilot)
-@azure create sql database
-@azure list resources
-@azure monitor database performance
-@azure backup database
+# List resource groups
+az group list --output table
+
+# Create a new resource group
+az group create --name "my-resource-group" --location "East US"
+
+# List SQL servers
+az sql server list --resource-group "wileywidget-rg" --output table
+
+# Create SQL database
+az sql db create --resource-group "wileywidget-rg" --server "my-sql-server" --name "MyDatabase" --service-objective "Basic"
+
+# Monitor resources
+az monitor metrics list --resource "/subscriptions/.../resourceGroups/wileywidget-rg" --metric "Percentage CPU"
 ```
+
+**Integration with Scripts:**
+The project includes PowerShell scripts in the `scripts/` directory for common Azure operations. These can be called from terminals or integrated into your development workflow.
 
 ## Database Schema
 

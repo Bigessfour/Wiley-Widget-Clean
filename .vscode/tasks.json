@@ -46,14 +46,58 @@
       "group": "build"
     },
     {
+      "label": "cleanup-dotnet",
+      "type": "shell",
+      "command": "python",
+      "args": [
+        "${workspaceFolder}/scripts/cleanup-dotnet.py",
+        "--force"
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "dev-start",
+      "type": "shell",
+      "command": "python",
+      "args": [
+        "${workspaceFolder}/scripts/dev-start.py"
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "load-env",
+      "type": "shell",
+      "command": "python",
+      "args": [
+        "${workspaceFolder}/scripts/load-env.py",
+        "--load"
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
       "label": "azure-setup",
       "type": "shell",
-      "command": "powershell",
+      "command": "python",
       "args": [
-        "-ExecutionPolicy",
-        "Bypass",
-        "-File",
-        "${workspaceFolder}/scripts/azure-setup.ps1"
+        "${workspaceFolder}/scripts/azure-setup.py"
       ],
       "group": "build",
       "presentation": {
@@ -66,13 +110,10 @@
     {
       "label": "azure-test-connection",
       "type": "shell",
-      "command": "powershell",
+      "command": "python",
       "args": [
-        "-ExecutionPolicy",
-        "Bypass",
-        "-File",
-        "${workspaceFolder}/scripts/azure-setup.ps1",
-        "-TestConnection"
+        "${workspaceFolder}/scripts/azure-setup.py",
+        "--test-connection"
       ],
       "group": "test",
       "presentation": {
@@ -81,6 +122,27 @@
         "focus": false,
         "panel": "shared"
       }
+    },
+    {
+      "label": "test-fast",
+      "type": "shell",
+      "command": "python",
+      "args": [
+        "-m",
+        "pytest",
+        "-m",
+        "unit or smoke",
+        "--tb=short",
+        "--maxfail=5"
+      ],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": []
     },
     {
       "label": "ef-migrations",

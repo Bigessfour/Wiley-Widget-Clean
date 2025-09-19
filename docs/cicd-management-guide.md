@@ -30,6 +30,20 @@ This document provides comprehensive documentation for the WileyWidget project's
 - **File**: `.trunk\trunk.yaml`
 - **Version**: 1.25.0
 - **Plugins**: Trunk official plugins v1.7.2
+- **Memory Optimization**: Limited to 1 concurrent job to prevent memory exhaustion
+
+#### CLI Options Configuration
+
+```yaml
+cli:
+  version: 1.25.0
+  # Memory optimization: Limit all trunk commands to 1 concurrent job
+  options:
+    - commands: [ALL]
+      args: --jobs=1
+```
+
+**Purpose**: Prevents `trunk.exe` from exceeding memory limits by ensuring only 1 job runs at a time across all Trunk operations.
 
 #### Active Linters
 

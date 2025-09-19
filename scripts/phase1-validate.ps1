@@ -24,7 +24,8 @@ foreach ($model in $models) {
     $modelPath = Join-Path $projectDir $model
     if (!(Test-Path $modelPath)) {
         $errors += "Missing model file: $model"
-    } else {
+    }
+    else {
         $content = Get-Content $modelPath -Raw
         if ($Detailed) {
             Write-Host "  ✅ Found $model" -ForegroundColor Green
@@ -45,7 +46,8 @@ foreach ($file in $dataFiles) {
     $filePath = Join-Path $projectDir $file
     if (!(Test-Path $filePath)) {
         $errors += "Missing data file: $file"
-    } else {
+    }
+    else {
         if ($Detailed) {
             Write-Host "  ✅ Found $file" -ForegroundColor Green
         }
@@ -62,7 +64,8 @@ foreach ($file in $vmFiles) {
     $filePath = Join-Path $projectDir $file
     if (!(Test-Path $filePath)) {
         $errors += "Missing ViewModel file: $file"
-    } else {
+    }
+    else {
         if ($Detailed) {
             Write-Host "  ✅ Found $file" -ForegroundColor Green
         }
@@ -80,7 +83,8 @@ foreach ($file in $testFiles) {
     $filePath = Join-Path $projectDir $file
     if (!(Test-Path $filePath)) {
         $errors += "Missing test file: $file"
-    } else {
+    }
+    else {
         if ($Detailed) {
             Write-Host "  ✅ Found $file" -ForegroundColor Green
         }
@@ -92,7 +96,8 @@ Write-Host "⚙️  Checking Project Configuration..." -ForegroundColor Yellow
 $csprojPath = Join-Path $projectDir "WileyWidget.csproj"
 if (!(Test-Path $csprojPath)) {
     $errors += "Missing project file: WileyWidget.csproj"
-} else {
+}
+else {
     $csprojContent = Get-Content $csprojPath -Raw
     $requiredPackages = @(
         "Microsoft.EntityFrameworkCore",
@@ -116,7 +121,8 @@ Write-Host "💾 Checking Database Configuration..." -ForegroundColor Yellow
 $appsettingsPath = Join-Path $projectDir "appsettings.json"
 if (!(Test-Path $appsettingsPath)) {
     $warnings += "Missing appsettings.json - database connection may not be configured"
-} else {
+}
+else {
     $appsettingsContent = Get-Content $appsettingsPath -Raw
     if ($appsettingsContent -notmatch "ConnectionStrings") {
         $warnings += "No ConnectionStrings found in appsettings.json"
@@ -131,11 +137,13 @@ Write-Host "🔄 Checking Migrations..." -ForegroundColor Yellow
 $migrationsPath = Join-Path $projectDir "Migrations"
 if (!(Test-Path $migrationsPath)) {
     $warnings += "No Migrations directory found - database may not be initialized"
-} else {
+}
+else {
     $migrationFiles = Get-ChildItem $migrationsPath -Filter "*.cs" | Where-Object { $_.Name -notmatch "Designer" -and $_.Name -notmatch "ModelSnapshot" }
     if ($null -eq $migrationFiles -or @($migrationFiles).Count -eq 0) {
         $warnings += "No migration files found in Migrations directory"
-    } else {
+    }
+    else {
         if ($Detailed) {
             Write-Host "  ✅ Found $(@($migrationFiles).Count) migration(s)" -ForegroundColor Green
         }
@@ -149,7 +157,8 @@ Write-Host "====================" -ForegroundColor Cyan
 
 if ($errors.Count -eq 0) {
     Write-Host "✅ All critical components present!" -ForegroundColor Green
-} else {
+}
+else {
     Write-Host "❌ Critical Issues Found:" -ForegroundColor Red
     foreach ($error in $errors) {
         Write-Host "  - $error" -ForegroundColor Red
@@ -172,6 +181,7 @@ Write-Host "📈 Summary: $foundComponents/$totalComponents components validated
 
 if ($errors.Count -eq 0) {
     Write-Host "🎉 Phase 1 validation complete! Ready for build and test." -ForegroundColor Green
-} else {
+}
+else {
     Write-Host "🔧 Please resolve critical issues before proceeding." -ForegroundColor Red
 }

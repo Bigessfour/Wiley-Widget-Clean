@@ -3,212 +3,64 @@
 ## Overview
 
 This document provides comprehensive information about the xUnit testing environment configured for the WileyWidget project, including setup details, package dependencies, and execution instructions.
+# WileyWidget Testing Guide (Python-first)
 
-## Test Environment Architecture
+We have standardized on Python (pytest) for all unit, integration, and UI automation testing. .NET/xUnit projects were retired to reduce redundancy and simplify CI.
 
-### Project Structure
+## What’s in use
 
-```text
-WileyWidget.sln
-├── WileyWidget.csproj (Main application)
-├── WileyWidget.Tests\ (Unit tests)
-│   └── WileyWidget.Tests.csproj
-└── WileyWidget.UiTests\ (UI tests)
-    └── WileyWidget.UiTests.csproj
-```
+- Test runner: pytest
+- Config: pytest.ini at repo root
+- Entry tasks: VS Code task “test-fast” (runs unit or smoke markers)
 
-### Test Types
-
-- **Unit Tests** (`WileyWidget.Tests`): Traditional unit testing for business logic, data access, and services
-- **UI Tests** (`WileyWidget.UiTests`): Automated UI testing using FlaUI framework for WPF application testing
-
-## Core Dependencies
-
-### xUnit Testing Framework
-
-| Package                     | Version | Purpose                                                       |
-| --------------------------- | ------- | ------------------------------------------------------------- |
-| `xunit`                     | 2.9.2   | Core testing framework providing test discovery and execution |
-| `xunit.runner.visualstudio` | 2.8.2   | Visual Studio Test Explorer integration                       |
-| `Microsoft.NET.Test.Sdk`    | 17.14.1 | .NET test host and test adapters                              |
-
-### Code Coverage
-
-| Package              | Version | Purpose                                |
-| -------------------- | ------- | -------------------------------------- |
-| `coverlet.collector` | 6.0.4   | Code coverage collection and reporting |
-
-### UI Testing (FlaUI)
-
-| Package      | Version | Purpose                                                 |
-| ------------ | ------- | ------------------------------------------------------- |
-| `FlaUI.Core` | 5.0.0   | Core UI automation framework                            |
-| `FlaUI.UIA3` | 5.0.0   | Windows UI Automation 3.0 provider for WPF applications |
-
-### Database Testing
-
-| Package                                  | Version | Purpose                                               |
-| ---------------------------------------- | ------- | ----------------------------------------------------- |
-| `Microsoft.EntityFrameworkCore.InMemory` | 9.0.8   | In-memory database provider for isolated unit testing |
-
-## Project Configuration
-
-### WileyWidget.Tests.csproj (Unit Tests)
-
-```xml
-<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <TargetFramework>net8.0-windows</TargetFramework>
-    <RuntimeIdentifier>win7-x64</RuntimeIdentifier>
-    <LangVersion>latest</LangVersion>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>disable</Nullable>
-    <IsPackable>false</IsPackable>
-    <NoWarn>$(NoWarn);NU1605</NoWarn>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
-    <PackageReference Include="xunit" Version="2.9.2" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2">
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
-    <PackageReference Include="coverlet.collector" Version="6.0.4">
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.8" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\WileyWidget.csproj" />
-  </ItemGroup>
-</Project>
-```
-
-### WileyWidget.UiTests.csproj (UI Tests)
-
-```xml
-<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <TargetFramework>net8.0-windows</TargetFramework>
-    <RuntimeIdentifier>win7-x64</RuntimeIdentifier>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>disable</Nullable>
-    <ShadowCopy>true</ShadowCopy>
-    <NoWarn>$(NoWarn);NU1605;MSB3026;MSB3027;MSB3021</NoWarn>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\WileyWidget.csproj" />
-    <PackageReference Include="FlaUI.Core" Version="5.0.0" />
-    <PackageReference Include="FlaUI.UIA3" Version="5.0.0" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
-    <PackageReference Include="xunit" Version="2.9.2" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2">
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
-    <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="9.0.0" PrivateAssets="all" />
-  </ItemGroup>
-</Project>
-```
-
-## SDK Configuration
-
-### global.json
-
-The project uses a specific .NET SDK version to ensure consistency across development environments:
-
-```json
-{
-  "sdk": {
-    "version": "8.0.413"
-  }
-}
-```
-
-## Configuration Details
-
-### Target Framework
-
-- **Framework**: .NET 8.0 Windows (`net8.0-windows`)
-- **Purpose**: Ensures compatibility with WPF and Windows-specific features
-
-### Runtime Identifier
-
-- **RID**: `win7-x64`
-- **Purpose**: Provides legacy Windows compatibility for test execution
-- **Note**: Required for FlaUI UI testing on Windows platforms
-
-### Key Settings
-
-| Setting          | Value             | Purpose                                                      |
-| ---------------- | ----------------- | ------------------------------------------------------------ |
-| `ImplicitUsings` | `enable`          | Reduces boilerplate using statements                         |
-| `Nullable`       | `disable`         | Follows project guidelines to avoid nullable reference types |
-| `ShadowCopy`     | `true` (UI tests) | Prevents file locking during UI test execution               |
-| `IsPackable`     | `false`           | Excludes test projects from NuGet packaging                  |
-
-### Warning Suppressions
-
-| Warning Code              | Reason                                                              |
-| ------------------------- | ------------------------------------------------------------------- |
-| `NU1605`                  | Suppresses package downgrade warnings from QuickBooks SDK conflicts |
-| `MSB3026/MSB3027/MSB3021` | Suppresses file copy warnings for UI test artifacts                 |
-
-## Running Tests
-
-### Execute All Tests
+## Quick start
 
 ```powershell
-# Run all tests in the solution
-dotnet test WileyWidget.sln
+# (Optional) Ensure Python deps are installed
+python -m pip install -r requirements-test.txt
+
+# Run fast suite (unit + smoke markers)
+python -m pytest -m "unit or smoke" --tb=short --maxfail=5
+
+# Run everything
+python -m pytest
 ```
 
-### Execute Specific Test Projects
+## Markers
+
+- unit – fast logic tests
+- smoke – minimal UI or integration checks
+- integration – slower end-to-end tests (opt in)
+
+Examples:
 
 ```powershell
-# Run only unit tests
-dotnet test WileyWidget.Tests\WileyWidget.Tests.csproj
-
-# Run only UI tests
-dotnet test WileyWidget.UiTests\WileyWidget.UiTests.csproj
-```
-
-### Run Tests with Code Coverage
-
-```powershell
-# Generate code coverage report
-dotnet test WileyWidget.sln --collect:"XPlat Code Coverage"
-```
-
-### Run Tests in Visual Studio
-
-1. Open Test Explorer (View → Test Explorer)
-2. Build the solution
-3. Click "Run All Tests" or select specific tests
-4. View results and coverage in Test Explorer
-
-### Run Tests from Command Line with Filters
-
-```powershell
-# Run tests with specific traits
-dotnet test --filter "Category=Unit"
-
-# Run tests with specific names
-dotnet test --filter "Name~WidgetTests"
-
 # Run tests in a specific class
 dotnet test --filter "ClassName=WileyWidget.Tests.WidgetTests"
 ```
 
 ## Test Organization
+
+
+## UI automation options
+
+If/when we need Windows UI automation for the WPF app from Python:
+- pywinauto – simple Windows UI automation, good for WPF
+- WinAppDriver + Appium (Python client) – more structured, CI-friendly
+
+Keep UI tests small and tagged as smoke to avoid slowing the pipeline.
+
+## CI integration
+
+- The approved CI workflow runs pytest via VS Code tasks and Trunk integration.
+- See docs/cicd-quick-reference.md for the pipeline sequence and how to monitor.
+
+## Removed legacy
+
+- .NET test projects (WileyWidget.Tests, WileyWidget.UiTests)
+- xUnit, coverlet, and FlaUI dependencies
+
+If you need to reference an old .NET test for logic, see the archived files under WileyWidget.Tests/ and WileyWidget.UiTests/ folders; their csproj files are disabled and excluded from the solution.
 
 ### Unit Test Structure
 

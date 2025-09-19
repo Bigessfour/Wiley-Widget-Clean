@@ -10,13 +10,26 @@
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
     </Window.Resources>
+
+    <!-- Keyboard Shortcuts -->
+    <Window.InputBindings>
+        <KeyBinding Key="C" Modifiers="Control" Command="{Binding SelectNextCommand}" />
+        <KeyBinding Key="N" Modifiers="Control" Command="{Binding AddWidgetCommand}" />
+        <KeyBinding Key="F5" Command="{Binding RefreshCommand}" />
+        <KeyBinding Key="S" Modifiers="Control" Command="{Binding OpenSettingsCommand}" />
+        <KeyBinding Key="F1" Command="{Binding OpenHelpCommand}" />
+        <KeyBinding Key="E" Modifiers="Control" Command="{Binding OpenEnterpriseCommand}" />
+        <KeyBinding Key="B" Modifiers="Control" Command="{Binding OpenBudgetCommand}" />
+        <KeyBinding Key="D" Modifiers="Control" Command="{Binding OpenDashboardCommand}" />
+        <KeyBinding Key="A" Modifiers="Control" Command="{Binding OpenAIAssistCommand}" />
+    </Window.InputBindings>
     <DockPanel>
         <!-- Basic Ribbon (Syncfusion.Tools.WPF) - documented usage pattern -->
     <syncfusion:Ribbon DockPanel.Dock="Top" x:Name="MainRibbon">
             <syncfusion:RibbonTab Caption="Home">
                 <syncfusion:RibbonBar Header="Clipboard">
-                    <syncfusion:RibbonButton Label="Copy" SizeForm="Large" />
-                    <syncfusion:RibbonButton Label="Paste" SizeForm="Large" />
+                    <syncfusion:RibbonButton Label="Copy" SizeForm="Large" Click="OnCopy" />
+                    <syncfusion:RibbonButton Label="Paste" SizeForm="Large" Click="OnPaste" />
                 </syncfusion:RibbonBar>
                 <syncfusion:RibbonBar Header="View">
                     <syncfusion:RibbonButton Label="Refresh" />
@@ -31,9 +44,14 @@
                     <StackPanel Orientation="Horizontal">
                         <syncfusion:RibbonButton Label="Next" ToolTip="Select next widget" Command="{Binding SelectNextCommand}" />
                         <syncfusion:RibbonButton Label="Add" ToolTip="Add a sample widget" Command="{Binding AddWidgetCommand}" />
+                        <syncfusion:RibbonButton Label="Enterprise" ToolTip="Open Enterprise Management" Click="OnEnterpriseManagement" />
+                        <syncfusion:RibbonButton Label="Budget" ToolTip="Open Budget Analysis" Click="OnBudgetAnalysis" />
+                        <syncfusion:RibbonButton Label="Dashboard" ToolTip="Open Dashboard" Click="OnDashboard" />
                     </StackPanel>
                 </syncfusion:RibbonBar>
                 <syncfusion:RibbonBar Header="Help">
+                    <syncfusion:RibbonButton Label="AI Assistant" Click="OnAIAssist" />
+                    <syncfusion:RibbonButton Label="Settings" Click="OnSettings" />
                     <syncfusion:RibbonButton Label="About" Click="OnAbout" />
                 </syncfusion:RibbonBar>
             </syncfusion:RibbonTab>
@@ -55,10 +73,29 @@
                 <TabItem Header="QuickBooks">
                     <DockPanel>
                         <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" Margin="4" >
+<<<<<<< Updated upstream
                             <Button Content="Load Customers" Command="{Binding LoadQuickBooksCustomersAsyncCommand}" Margin="0,0,6,0"/>
                             <Button Content="Load Invoices" Command="{Binding LoadQuickBooksInvoicesAsyncCommand}" Margin="0,0,6,0"/>
                             <TextBlock Text="Busy" Foreground="OrangeRed" Visibility="{Binding QuickBooksBusy, Converter={StaticResource BoolToVis}}"/>
+=======
+                            <syncfusion:ButtonAdv Label="Load Customers" Command="{Binding LoadQuickBooksCustomersAsyncCommand}" Margin="0,0,6,0"/>
+                            <syncfusion:ButtonAdv Label="Load Invoices" Command="{Binding LoadQuickBooksInvoicesAsyncCommand}" Margin="0,0,6,0"/>
+                            <syncfusion:ButtonAdv Label="Clear Error" Command="{Binding ClearQuickBooksErrorCommand}" Margin="0,0,6,0" IsEnabled="{Binding QuickBooksHasError}"/>
+>>>>>>> Stashed changes
                         </StackPanel>
+
+                        <!-- Status and Error Display -->
+                        <Border DockPanel.Dock="Top" Margin="4" Padding="8" Background="{DynamicResource {x:Static SystemColors.InfoBrushKey}}" Visibility="{Binding QuickBooksBusy, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Text="{Binding QuickBooksStatusMessage}" Foreground="Blue" FontWeight="Bold"/>
+                        </Border>
+
+                        <Border DockPanel.Dock="Top" Margin="4" Padding="8" Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}" BorderBrush="Red" BorderThickness="1" Visibility="{Binding QuickBooksHasError, Converter={StaticResource BoolToVis}}">
+                            <StackPanel>
+                                <TextBlock Text="QuickBooks Error:" Foreground="Red" FontWeight="Bold"/>
+                                <TextBlock Text="{Binding QuickBooksErrorMessage}" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Border>
+
                         <TabControl>
                             <TabItem Header="Customers">
                                 <syncfusion:SfDataGrid ItemsSource="{Binding QuickBooksCustomers}" AutoGenerateColumns="True" />

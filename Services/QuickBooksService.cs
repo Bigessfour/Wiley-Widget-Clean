@@ -16,7 +16,7 @@ namespace WileyWidget.Services;
 /// QuickBooks service using Intuit SDK + (placeholder) interactive flow. NOTE: MSAL does not directly broker Intuit auth codes; retained for future refinement.
 /// For now implement token refresh + DataService access; initial interactive acquisition still handled by prior manual flow (to be unified later).
 /// </summary>
-public sealed class QuickBooksService
+public sealed class QuickBooksService : IQuickBooksService
 {
     private readonly string _clientId = Environment.GetEnvironmentVariable("QBO_CLIENT_ID", EnvironmentVariableTarget.User) ?? throw new InvalidOperationException("QBO_CLIENT_ID not set.");
     private readonly string _clientSecret = Environment.GetEnvironmentVariable("QBO_CLIENT_SECRET", EnvironmentVariableTarget.User) ?? string.Empty; // optional
@@ -83,12 +83,30 @@ public sealed class QuickBooksService
         return (ctx, new DataService(ctx));
     }
 
+    public async System.Threading.Tasks.Task<bool> TestConnectionAsync()
+    {
+        try
+        {
+            await RefreshTokenIfNeededAsync();
+            var p = GetDataService();
+            // Try to fetch a small amount of data to test the connection
+            var customers = p.Ds.FindAll(new Customer(), 1, 1).ToList();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Serilog.Log.Error(ex, "QBO connection test failed");
+            return false;
+        }
+    }
+
     public async System.Threading.Tasks.Task<List<Customer>> GetCustomersAsync()
     {
         try
         {
             await RefreshTokenIfNeededAsync();
             var p = GetDataService();
+            // Fetch customers from QuickBooks
             return p.Ds.FindAll(new Customer(), 1, 100).ToList();
         }
         catch (Exception ex)

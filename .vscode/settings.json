@@ -37,14 +37,23 @@
   "powershell.powerShellDefaultVersion": "7.5.2",
   "powershell.powerShellExePath": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
   "powershell.enableProfileLoading": true,
+<<<<<<< Updated upstream
   "powershell.enableReferencesCodeLens": true,
   "powershell.enableScriptAnalysis": true,
+=======
+  "powershell.enableReferencesCodeLens": false,
+  "powershell.enableScriptAnalysis": false,  // Disabled for performance
+>>>>>>> Stashed changes
   "powershell.scriptAnalysis.settingsPath": ".vscode\\PSScriptAnalyzerSettings.psd1",
   "powershell.codeFormatting.preset": "OTBS",
-  "powershell.codeFormatting.autoCorrectAliases": true,
-  "powershell.codeFormatting.useCorrectCasing": true,
+  "powershell.codeFormatting.autoCorrectAliases": false,  // Disabled for performance
+  "powershell.codeFormatting.useCorrectCasing": false,  // Disabled for performance
   "powershell.integratedConsole.showOnStartup": false,
   "powershell.integratedConsole.focusConsoleOnExecute": false,
+<<<<<<< Updated upstream
+=======
+  "powershell.enableSignatureHelp": false,  // Disabled for performance
+>>>>>>> Stashed changes
   // GitHub Copilot Configuration
   "github.copilot.enable": {
     "*": true,
@@ -74,6 +83,8 @@
   },
   // MCP (Model Context Protocol) Configuration
   // Current: WebSocket Remote Server for real-time collaboration
+  // Temporarily disabled due to placeholder URL causing server initialization errors
+  /*
   "mcp": {
     "servers": {
       "github": {
@@ -87,6 +98,7 @@
       }
     }
   },
+  */
 
   // Alternative Remote Server Configurations (uncomment to use):
   /*
@@ -173,9 +185,109 @@
   // PowerShell formatting
   "powershell.codeFormatting.openBraceOnSameLine": true,
 
+<<<<<<< Updated upstream
+=======
+  // PowerShell Pro Tools Configuration (Official Features)
+  "powershellProTools.formDesigner.enabled": true,
+  "powershellProTools.variableExplorer.enabled": true,
+  "powershellProTools.performanceProfiler.enabled": true,
+  "powershellProTools.codeLens.enabled": true,
+  "powershellProTools.debugger.enhanced": true,
+  "powershellProTools.intelliSense.enhanced": true,
+  "powershellProTools.overrideDefaultFormatter": true,
+  "powershellProTools.astExplorer.enabled": true,
+  "powershellProTools.moduleExplorer.enabled": true,
+  "powershellProTools.scriptPackaging.enabled": true,
+  "powershellProTools.formGenerator.enabled": true,
+  "powershellProTools.oneClickAttach.enabled": true,
+  "powershellProTools.codeConversion.enabled": true,
+  "powershellProTools.rapidSense.enabled": true,
+
+  // Terminal Shell Integration (VS Code 1.74+)
+  "terminal.integrated.shellIntegration.enabled": true,
+  "terminal.integrated.shellIntegration.decorationsEnabled": "both",
+  "terminal.integrated.shellIntegration.suggestEnabled": true,
+  "terminal.integrated.shellIntegration.history": 100,
+  "terminal.integrated.shellIntegration.showCommandGuide": true,
+  "terminal.integrated.stickyScroll.enabled": true,
+
+>>>>>>> Stashed changes
   // XAML formatting
   "xml.format.splitAttributes": "splitNewLine",
 
   // Workspace-specific Copilot guidance
+<<<<<<< Updated upstream
   "github.copilot.chat.welcomeMessage": "Welcome to WileyWidget! This is a hobby WPF project focused on learning. I'll suggest practical patterns suitable for experimentation rather than production-level complexity."
+=======
+  "github.copilot.chat.welcomeMessage": "Welcome to WileyWidget! This is a hobby WPF project focused on learning. I'll suggest practical patterns suitable for experimentation rather than production-level complexity.",
+
+  // Auto-approval settings for all requests
+  "extensions.autoCheckUpdates": true,
+  "extensions.autoUpdate": "onlyEnabledExtensions",
+  "git.autofetch": true,
+  "git.confirmSync": false,
+  "git.enableSmartCommit": true,
+  "mcp.autoApprove": true,
+  "mcp.servers.github.autoApprove": true,
+  "terminal.integrated.confirmOnExit": "never",
+  "terminal.integrated.confirmOnKill": "never",
+
+  // File Watcher Exclusions - Critical for preventing OOM crashes
+  // Exclude build artifacts, dependencies, and large directories from file watching
+  "files.watcherExclude": {
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/node_modules/**": true,
+    "**/bin/**": true,
+    "**/obj/**": true,
+    "**/build/**": true,
+    "**/.venv/**": true,
+    "**/packages/**": true,
+    "**/TestResults/**": true,
+    "**/coverage/**": true,
+    "**/logs/**": true,
+    "**/*.log": true,
+    "**/publish/**": true,
+    "**/.vs/**": true,
+    "**/.trunk/**": true,
+    "**/.pytest_cache/**": true,
+    "**/TestsAndLogs/**": true,
+    "**/*.tmp": true,
+    "**/*.bak": true,
+    "**/*.backup*": true,
+    "**/*_backup*": true
+  },
+
+  // Memory optimization settings
+  "editor.largeFileOptimizations": true,
+  "files.maxMemoryForLargeFilesMB": 4096,
+  "search.maxResults": 10000,
+  "search.followSymlinks": false,
+  "git.enabled": true,
+  "git.autorefresh": false,
+
+  // Python Configuration
+  "python.defaultInterpreterPath": "./.venv/Scripts/python.exe",
+  "python.terminal.activateEnvironment": true,
+  "python.linting.enabled": true,
+  "python.linting.pylintEnabled": false,
+  "python.linting.flake8Enabled": false,
+  "python.formatting.provider": "black",
+  "python.formatting.blackArgs": ["--line-length", "120"],
+  "python.analysis.typeCheckingMode": "basic",
+  // Exclude common generated and environment folders from analysis to avoid third-party package lint noise
+  "files.exclude": {
+    "**/.venv/**": true,
+    "**/%APPDATA%/**": true,
+    "**/node_modules/**": true
+  },
+  "python.analysis.exclude": [
+    "**/.venv/**",
+    "**/%APPDATA%/**",
+    "**/node_modules/**"
+  ],
+  "python.analysis.useLibraryCodeForTypes": false,
+  "python.analysis.autoSearchPaths": false,
+  "python.analysis.logLevel": "Error"
+>>>>>>> Stashed changes
 }

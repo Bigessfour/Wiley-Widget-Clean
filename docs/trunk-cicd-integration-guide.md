@@ -31,16 +31,20 @@ This document outlines the comprehensive Trunk CI/CD integration for the Wiley W
 version: 0.1
 cli:
   version: 1.25.0
+  # Memory optimization: Limit all trunk commands to 1 concurrent job
+  options:
+    - commands: [ALL]
+      args: --jobs=1
 
 lint:
   enabled:
     - prettier@3.6.2          # Code formatting
     - trufflehog@3.90.5       # Secret detection
-    - dotnet-format@8.0.0     # .NET formatting
-    - psscriptanalyzer@1.21.0 # PowerShell analysis
+    - dotnet-format@9.0.0     # .NET formatting (updated)
+    - psscriptanalyzer@1.24.0 # PowerShell analysis (updated)
     - semgrep@1.68.0          # Security scanning
     - osv-scanner@1.7.4       # Vulnerability scanning
-    - gitleaks@8.18.2         # Git secret detection
+    - gitleaks@8.28.0         # Git secret detection (updated)
 
   disabled:
     - markdownlint            # Too aggressive on docs
@@ -48,6 +52,25 @@ lint:
     - actionlint              # Too picky on GitHub Actions
     - yamllint                # Conflicts with prettier
     - checkov                 # Too many false positives
+    - bandit                  # Memory-intensive, replaced by semgrep
+        - osv-scanner             # Disabled to prevent memory issues
+```
+
+### Memory Optimization
+
+**Concurrent Job Limiting**: All Trunk commands are limited to 1 concurrent job to prevent memory exhaustion:
+
+```yaml
+cli:
+  options:
+    - commands: [ALL]
+      args: --jobs=1
+```
+
+**Purpose**: Prevents `trunk.exe` from consuming excessive memory by ensuring only one linter/formatter runs at a time, which is crucial for resource-constrained environments.
+
+### File Exclusions
+```
 
 actions:
   enabled:

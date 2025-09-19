@@ -33,6 +33,12 @@ public partial class EnterpriseViewModel : ObservableObject
     private bool isLoading;
 
     /// <summary>
+    /// Budget summary text for display
+    /// </summary>
+    [ObservableProperty]
+    private string budgetSummaryText = "No budget data available";
+
+    /// <summary>
     /// Constructor with dependency injection
     /// </summary>
     public EnterpriseViewModel(IEnterpriseRepository enterpriseRepository)
@@ -41,10 +47,10 @@ public partial class EnterpriseViewModel : ObservableObject
     }
 
     /// <summary>
-    /// Loads all enterprises from the database
+    /// Loads all enterprises from the database (public for View access)
     /// </summary>
     [RelayCommand]
-    private async Task LoadEnterprisesAsync()
+    public async Task LoadEnterprisesAsync()
     {
         try
         {
@@ -138,6 +144,15 @@ public partial class EnterpriseViewModel : ObservableObject
             // TODO: Add proper error handling/logging
             Console.WriteLine($"Error deleting enterprise: {ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// Calculates and displays budget summary
+    /// </summary>
+    [RelayCommand]
+    private void UpdateBudgetSummary()
+    {
+        BudgetSummaryText = GetBudgetSummary();
     }
 
     /// <summary>

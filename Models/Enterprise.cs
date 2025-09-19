@@ -51,6 +51,23 @@ public class Enterprise
     public int CitizenCount { get; set; }
 
     /// <summary>
+    /// Total budget allocated for this enterprise
+    /// </summary>
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal TotalBudget { get; set; }
+
+    /// <summary>
+    /// Last modified date for this enterprise
+    /// </summary>
+    public DateTime? LastModified { get; set; }
+
+    /// <summary>
+    /// Type/category of the enterprise
+    /// </summary>
+    [StringLength(50, ErrorMessage = "Type cannot exceed 50 characters")]
+    public string Type { get; set; } = string.Empty;
+
+    /// <summary>
     /// Additional notes about the enterprise
     /// </summary>
     [StringLength(500, ErrorMessage = "Notes cannot exceed 500 characters")]
