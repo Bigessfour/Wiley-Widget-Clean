@@ -1,7 +1,50 @@
 {
-  // WileyWidget VS Code Workspace Settings
-  // See project-plan.md for True North vision and development roadmap
-  // See copilot-instructions.md for AI assistant guidelines
+  // Azure Theme Configuration for Database Development
+  "workbench.colorTheme": "Default Dark Modern",
+  "workbench.colorCustomizations": {
+    "[Default Dark Modern]": {
+      // Azure-inspired color scheme for database development
+      "editor.background": "#0f0f23",
+      "editor.foreground": "#cccccc",
+      "editor.lineHighlightBackground": "#1e1e2e",
+      "editor.selectionBackground": "#264f78",
+      "editor.inactiveSelectionBackground": "#3a3d4100"
+    }
+  },
+  "editor.tokenColorCustomizations": {
+    "[Default Dark Modern]": {
+      "textMateRules": [
+        {
+          "scope": "keyword.control.sql",
+          "settings": {
+            "foreground": "#569cd6"
+          }
+        },
+        {
+          "scope": "string.quoted.single.sql",
+          "settings": {
+            "foreground": "#ce9178"
+          }
+        },
+        {
+          "scope": "constant.numeric.sql",
+          "settings": {
+            "foreground": "#b5cea8"
+          }
+        },
+        {
+          "scope": "entity.name.function.sql",
+          "settings": {
+            "foreground": "#dcdcaa"
+          }
+        }
+      ]
+    }
+  },
+  "workbench.iconTheme": "vs-seti",
+  "workbench.editor.highlightModifiedTabs": true,
+  "workbench.editor.tabCloseButton": "left",
+  "workbench.tree.indent": 20,
   "cSpell.words": [
     "AZURECONNECTION",
     "biges",
@@ -33,27 +76,19 @@
     "winget",
     "Xfinity"
   ],
-  // PowerShell 7.5.2 Configuration
-  "powershell.powerShellDefaultVersion": "7.5.2",
+  // PowerShell 7.5.3 Configuration
+  "powershell.powerShellDefaultVersion": "PowerShell (x64)",
   "powershell.powerShellExePath": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
   "powershell.enableProfileLoading": true,
-<<<<<<< Updated upstream
-  "powershell.enableReferencesCodeLens": true,
-  "powershell.enableScriptAnalysis": true,
-=======
   "powershell.enableReferencesCodeLens": false,
   "powershell.enableScriptAnalysis": false,  // Disabled for performance
->>>>>>> Stashed changes
+  "powershell.enableSignatureHelp": false,  // Disabled for performance
   "powershell.scriptAnalysis.settingsPath": ".vscode\\PSScriptAnalyzerSettings.psd1",
   "powershell.codeFormatting.preset": "OTBS",
   "powershell.codeFormatting.autoCorrectAliases": false,  // Disabled for performance
   "powershell.codeFormatting.useCorrectCasing": false,  // Disabled for performance
   "powershell.integratedConsole.showOnStartup": false,
   "powershell.integratedConsole.focusConsoleOnExecute": false,
-<<<<<<< Updated upstream
-=======
-  "powershell.enableSignatureHelp": false,  // Disabled for performance
->>>>>>> Stashed changes
   // GitHub Copilot Configuration
   "github.copilot.enable": {
     "*": true,
@@ -75,76 +110,46 @@
     "*.psd1": "powershell"
   },
   // PowerShell-specific settings
-  "editor.defaultFormatter": "ms-vscode.powershell",
   "[powershell]": {
     "editor.defaultFormatter": "ms-vscode.powershell",
     "editor.formatOnSave": true,
     "editor.formatOnType": true
   },
   // MCP (Model Context Protocol) Configuration
-  // Current: WebSocket Remote Server for real-time collaboration
-  // Temporarily disabled due to placeholder URL causing server initialization errors
-  /*
   "mcp": {
     "servers": {
       "github": {
-        "url": "wss://your-mcp-server.example.com/github",
+        "url": "wss://mcp-github.example.com/github",
         "headers": {
           "Authorization": "Bearer ${env:GITHUB_PERSONAL_ACCESS_TOKEN}"
         },
         "reconnect": true,
         "reconnectInterval": 5000,
         "timeout": 30000
+      },
+      "microsoft-docs": {
+        "url": "https://mcp-microsoft-docs.example.com/docs",
+        "headers": {
+          "Authorization": "Bearer ${env:MICROSOFT_DOCS_TOKEN}"
+        },
+        "timeout": 30000
       }
     }
   },
-  */
 
-  // Alternative Remote Server Configurations (uncomment to use):
-  /*
-    // Option 1: HTTP Remote Server
-    "mcp": {
-        "servers": {
-            "github": {
-                "url": "https://your-mcp-server.example.com/github",
-                "headers": {
-                    "Authorization": "Bearer ${env:GITHUB_PERSONAL_ACCESS_TOKEN}",
-                    "X-API-Key": "${env:MCP_API_KEY}"
-                },
-                "timeout": 30000
-            }
-        }
-    },
+  // Azure MCP Service Principal Authentication
+  // IMPORTANT: Do not store secrets in repo. Configure these in your OS/user environment or .env (untracked).
+  // Example (PowerShell):
+  //   $env:AZURE_CLIENT_ID = "<guid>"
+  //   $env:AZURE_CLIENT_SECRET = "<secret>"
+  //   $env:AZURE_TENANT_ID = "<guid>"
+  // If you need to inject env vars into the integrated terminal, do it locally via user settings, not workspace.
+  // "terminal.integrated.env.windows": { }
 
-    // Option 2: WebSocket Remote Server
-    "mcp": {
-        "servers": {
-            "github": {
-                "url": "wss://your-mcp-server.example.com/github",
-                "headers": {
-                    "Authorization": "Bearer ${env:GITHUB_PERSONAL_ACCESS_TOKEN}"
-                },
-                "reconnect": true,
-                "reconnectInterval": 5000
-            }
-        }
-    },
-
-    // Option 3: Load Balanced Remote Servers
-    "mcp": {
-        "servers": {
-            "github": {
-                "urls": [
-                    "https://mcp-server-1.example.com/github",
-                    "https://mcp-server-2.example.com/github"
-                ],
-                "loadBalancing": "round-robin",
-                "headers": {
-                    "Authorization": "Bearer ${env:GITHUB_PERSONAL_ACCESS_TOKEN}"
-                }
-            }
-        }
-    */
+  // Azure MCP Extension Settings
+  "azureMcp.serverMode": "namespace",
+  "azureMcp.enabledServices": ["storage", "keyvault"],
+  "azureMcp.readOnly": false,
 
   // Enhanced context for C# development
   "dotnet.completion.showCompletionItemsFromUnimportedNamespaces": true,
@@ -168,6 +173,35 @@
     }
   ],
 
+  // SQL Server Extension Settings (ms-mssql.mssql)
+  "mssql.connections": [
+    {
+      "server": "${env:AZURE_SQL_SERVER},1433",
+      "database": "${env:AZURE_SQL_DATABASE}",
+      "authenticationType": "SqlLogin",
+      "user": "${env:AZURE_SQL_USER}",
+      "password": "${env:AZURE_SQL_PASSWORD}",
+      "savePassword": true,
+      "profileName": "Azure SQL Database",
+      "encrypt": true,
+      "trustServerCertificate": false,
+      "connectTimeout": 30
+    }
+  ],
+  "mssql.saveAsCsv.includeHeaders": true,
+  "mssql.saveAsCsv.delimiter": ",",
+  "mssql.saveAsCsv.lineSeparator": "\n",
+  "mssql.saveAsCsv.encoding": "utf-8",
+  "mssql.query.displayBitAsNumber": true,
+  "mssql.query.maxXmlCharsToStore": 2097152,
+  "mssql.query.maxCharsToStore": 65535,
+  "mssql.query.rowsToCache": 500,
+  "mssql.intelliSense.enableIntelliSense": true,
+  "mssql.intelliSense.enableErrorChecking": true,
+  "mssql.intelliSense.enableSuggestions": true,
+  "mssql.intelliSense.enableQuickInfo": true,
+  "mssql.intelliSense.lowerCaseSuggestions": false,
+
   // Azure Resource Manager Template Settings
   "azureResourceManagerTools.enableCodeLens": true,
   "azureResourceManagerTools.enableParameterFileCodeLens": true,
@@ -185,8 +219,6 @@
   // PowerShell formatting
   "powershell.codeFormatting.openBraceOnSameLine": true,
 
-<<<<<<< Updated upstream
-=======
   // PowerShell Pro Tools Configuration (Official Features)
   "powershellProTools.formDesigner.enabled": true,
   "powershellProTools.variableExplorer.enabled": true,
@@ -211,14 +243,10 @@
   "terminal.integrated.shellIntegration.showCommandGuide": true,
   "terminal.integrated.stickyScroll.enabled": true,
 
->>>>>>> Stashed changes
   // XAML formatting
   "xml.format.splitAttributes": "splitNewLine",
 
   // Workspace-specific Copilot guidance
-<<<<<<< Updated upstream
-  "github.copilot.chat.welcomeMessage": "Welcome to WileyWidget! This is a hobby WPF project focused on learning. I'll suggest practical patterns suitable for experimentation rather than production-level complexity."
-=======
   "github.copilot.chat.welcomeMessage": "Welcome to WileyWidget! This is a hobby WPF project focused on learning. I'll suggest practical patterns suitable for experimentation rather than production-level complexity.",
 
   // Auto-approval settings for all requests
@@ -267,27 +295,84 @@
   "git.autorefresh": false,
 
   // Python Configuration
-  "python.defaultInterpreterPath": "./.venv/Scripts/python.exe",
+  // Note: Using system Python since virtual environment setup is incomplete
+  // Consider setting up virtual environment with: python -m venv .venv
+  // Then update this path to: "${workspaceFolder}/.venv/Scripts/python.exe"
   "python.terminal.activateEnvironment": true,
   "python.linting.enabled": true,
   "python.linting.pylintEnabled": false,
   "python.linting.flake8Enabled": false,
   "python.formatting.provider": "black",
   "python.formatting.blackArgs": ["--line-length", "120"],
-  "python.analysis.typeCheckingMode": "basic",
   // Exclude common generated and environment folders from analysis to avoid third-party package lint noise
   "files.exclude": {
     "**/.venv/**": true,
     "**/%APPDATA%/**": true,
     "**/node_modules/**": true
   },
-  "python.analysis.exclude": [
-    "**/.venv/**",
-    "**/%APPDATA%/**",
-    "**/node_modules/**"
+  "python.analysis.logLevel": "Error",
+
+  // Testing Configuration
+  "testing.autoRun.mode": "rerun",
+  "testing.openTesting": "openOnTestStart",
+  "testing.defaultGutterClickAction": "run",
+  "testing.gutterEnabled": true,
+  "testing.countBadge": "failed",
+  "testing.followRunningTest": true,
+  "testing.saveBeforeTest": true,
+
+  // Test Coverage Configuration
+  "coverage-gutters.showGutterCoverage": true,
+  "coverage-gutters.showLineCoverage": true,
+  "coverage-gutters.showRulerCoverage": true,
+  "coverage-gutters.coverageFileNames": [
+    "lcov.info",
+    "cov.xml",
+    "coverage.xml",
+    "jacoco.xml",
+    "coverage.json"
   ],
-  "python.analysis.useLibraryCodeForTypes": false,
-  "python.analysis.autoSearchPaths": false,
-  "python.analysis.logLevel": "Error"
->>>>>>> Stashed changes
+  "coverage-gutters.coverageBaseDir": "${workspaceFolder}",
+  "coverage-gutters.coverageFileExtension": ".xml,.json,.info",
+
+  // Python Testing Configuration
+  "python.testing.pytestEnabled": true,
+  "python.testing.pytestArgs": [
+    "--verbose",
+    "--tb=short",
+    "--maxfail=5",
+    "-m",
+    "not slow"
+  ],
+  "python.testing.pytestPath": "pytest",
+
+  // C# Testing Configuration
+  "dotnet-test-explorer.testProjectPath": "**/*Test*.csproj",
+  "dotnet-test-explorer.enableTelemetry": false,
+  "dotnet-test-explorer.showCodeCoverage": true,
+  "dotnet-test-explorer.testResultFormat": "detailed",
+
+  // Test Explorer Configuration
+  "testExplorer.addToEditorContextMenu": true,
+  "testExplorer.codeLens": true,
+  "testExplorer.errorDecoration": true,
+  "testExplorer.gutterDecoration": true,
+  "testExplorer.mergeSuites": false,
+  "testExplorer.showCollapseButton": true,
+  "testExplorer.showExpandButton": true,
+  "testExplorer.showOnRunStart": true,
+  "testExplorer.sort": "byLocation",
+  "testExplorer.useNativeTesting": true,
+
+  // Pytest Runner Configuration
+  "pytestRunner.cwd": "${workspaceFolder}",
+  "pytestRunner.args": [
+    "--verbose",
+    "--tb=short",
+    "--maxfail=5"
+  ],
+  "pytestRunner.env": {
+    "PYTHONPATH": "${workspaceFolder}"
+  },
+  "testing.automaticallyOpenTestResults": "openOnTestStart"
 }

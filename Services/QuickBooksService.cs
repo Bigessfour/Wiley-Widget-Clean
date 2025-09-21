@@ -134,4 +134,55 @@ public sealed class QuickBooksService : IQuickBooksService
             throw;
         }
     }
+
+    public async System.Threading.Tasks.Task<List<Account>> GetChartOfAccountsAsync()
+    {
+        try
+        {
+            await RefreshTokenIfNeededAsync();
+            var p = GetDataService();
+            // Fetch all active accounts from QuickBooks
+            return p.Ds.FindAll(new Account(), 1, 500).ToList();
+        }
+        catch (Exception ex)
+        {
+            Serilog.Log.Error(ex, "QBO chart of accounts fetch failed");
+            throw;
+        }
+    }
+
+    public async System.Threading.Tasks.Task<List<JournalEntry>> GetJournalEntriesAsync(DateTime startDate, DateTime endDate)
+    {
+        try
+        {
+            await RefreshTokenIfNeededAsync();
+            var p = GetDataService();
+
+            // Query journal entries within date range
+            var query = $"SELECT * FROM JournalEntry WHERE TxnDate >= '{startDate:yyyy-MM-dd}' AND TxnDate <= '{endDate:yyyy-MM-dd}'";
+            var qs = new QueryService<JournalEntry>(p.Ctx);
+            return qs.ExecuteIdsQuery(query).ToList();
+        }
+        catch (Exception ex)
+        {
+            Serilog.Log.Error(ex, "QBO journal entries fetch failed");
+            throw;
+        }
+    }
+
+    public async System.Threading.Tasks.Task<List<Budget>> GetBudgetsAsync()
+    {
+        try
+        {
+            await RefreshTokenIfNeededAsync();
+            var p = GetDataService();
+            // Fetch budgets from QuickBooks
+            return p.Ds.FindAll(new Budget(), 1, 100).ToList();
+        }
+        catch (Exception ex)
+        {
+            Serilog.Log.Error(ex, "QBO budgets fetch failed");
+            throw;
+        }
+    }
 }

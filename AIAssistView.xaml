@@ -10,12 +10,31 @@
         WindowStartupLocation="CenterScreen">
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
+
+        <!-- Message styling converters -->
+        <local:UserMessageBackgroundConverter x:Key="UserMessageBackgroundConverter" />
+        <local:MessageAlignmentConverter x:Key="MessageAlignmentConverter" />
+        <local:MessageForegroundConverter x:Key="MessageForegroundConverter" />
     </Window.Resources>
 
     <DockPanel>
         <!-- Ribbon Toolbar -->
         <syncfusion:Ribbon DockPanel.Dock="Top" x:Name="AIAssistRibbon">
             <syncfusion:RibbonTab Caption="AI Assistant">
+                <syncfusion:RibbonBar Header="Conversation Mode">
+                    <syncfusion:RibbonButton Label="🤖 General"
+                                           Command="{Binding SetConversationModeCommand}"
+                                           CommandParameter="General" />
+                    <syncfusion:RibbonButton Label="💰 Service Charge"
+                                           Command="{Binding SetConversationModeCommand}"
+                                           CommandParameter="ServiceCharge" />
+                    <syncfusion:RibbonButton Label="🔮 What-If"
+                                           Command="{Binding SetConversationModeCommand}"
+                                           CommandParameter="WhatIf" />
+                    <syncfusion:RibbonButton Label="🎯 Proactive"
+                                           Command="{Binding SetConversationModeCommand}"
+                                           CommandParameter="Proactive" />
+                </syncfusion:RibbonBar>
                 <syncfusion:RibbonBar Header="Actions">
                     <syncfusion:RibbonButton Label="Clear Chat" Command="{Binding ClearChatCommand}" />
                     <syncfusion:RibbonButton Label="Export Chat" Command="{Binding ExportChatCommand}" />
@@ -31,11 +50,12 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
             <!-- Chat History Area -->
             <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" Margin="10">
-                <StackPanel x:Name="ChatHistory" Margin="5">
+                <StackPanel Margin="5">
                     <!-- Welcome Message -->
                     <Border Background="#E3F2FD" BorderBrush="#1976D2" BorderThickness="1"
                             CornerRadius="8" Padding="15" Margin="0,0,0,10">
@@ -44,23 +64,180 @@
                                      FontSize="16" FontWeight="Bold" Foreground="#1976D2" />
                             <TextBlock Text="Hello! I'm your AI assistant for Wiley Widget. I can help you with:"
                                      FontSize="12" Foreground="#424242" Margin="0,5,0,5" />
-                            <TextBlock Text="• Data analysis and insights"
+                            <TextBlock Text="• 💬 General conversation and application guidance"
                                      FontSize="11" Foreground="#666666" Margin="10,2,0,0" />
-                            <TextBlock Text="• Application guidance and troubleshooting"
+                            <TextBlock Text="• 💰 Service charge calculations based on actual expenses"
                                      FontSize="11" Foreground="#666666" Margin="10,2,0,0" />
-                            <TextBlock Text="• QuickBooks integration questions"
+                            <TextBlock Text="• 🔮 What-if scenario planning (pay raises, benefits, equipment)"
                                      FontSize="11" Foreground="#666666" Margin="10,2,0,0" />
-                            <TextBlock Text="• Enterprise management workflows"
+                            <TextBlock Text="• 🎯 Proactive recommendations and insights"
                                      FontSize="11" Foreground="#666666" Margin="10,2,0,0" />
-                            <TextBlock Text="Ask me anything!"
+                            <TextBlock Text="• 📊 Data analysis and enterprise management workflows"
+                                     FontSize="11" Foreground="#666666" Margin="10,2,0,0" />
+                            <TextBlock Text="• 🔗 QuickBooks integration questions"
+                                     FontSize="11" Foreground="#666666" Margin="10,2,0,0" />
+                            <TextBlock Text="Choose a conversation mode above to get started!"
                                      FontSize="12" Foreground="#1976D2" Margin="0,10,0,0" FontWeight="Bold" />
                         </StackPanel>
+                    </Border>
+
+                    <!-- Chat Messages -->
+                    <ItemsControl ItemsSource="{Binding ChatMessages}" Margin="0,10,0,0">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="{Binding IsUser, Converter={StaticResource UserMessageBackgroundConverter}}"
+                                        BorderBrush="#DDDDDD" BorderThickness="1" CornerRadius="8"
+                                        Padding="12" Margin="0,0,0,8"
+                                        HorizontalAlignment="{Binding IsUser, Converter={StaticResource MessageAlignmentConverter}}"
+                                        MaxWidth="400">
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding Content}" TextWrapping="Wrap"
+                                                 Foreground="{Binding IsUser, Converter={StaticResource MessageForegroundConverter}}"
+                                                 FontSize="12" />
+                                        <TextBlock Text="{Binding Timestamp, StringFormat='{}{0:HH:mm}'}"
+                                                 FontSize="10" Foreground="#888888"
+                                                 HorizontalAlignment="Right" Margin="0,5,0,0" />
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <!-- Typing Indicator -->
+                    <Border Background="#F5F5F5" BorderBrush="#DDDDDD" BorderThickness="1"
+                            CornerRadius="8" Padding="12" Margin="0,0,0,8"
+                            HorizontalAlignment="Left" MaxWidth="400"
+                            Visibility="{Binding IsTyping, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="🤖 AI is thinking..." Foreground="#666666" FontSize="12" FontStyle="Italic" />
                     </Border>
                 </StackPanel>
             </ScrollViewer>
 
+            <!-- Financial Input Forms -->
+            <Border Grid.Row="1" Background="#F8F9FA" BorderBrush="#E9ECEF" BorderThickness="1"
+                    Padding="15" Margin="10,0,10,10"
+                    Visibility="{Binding ShowFinancialInputs, Converter={StaticResource BoolToVis}}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Service Charge Calculator Inputs -->
+                    <GroupBox Grid.Row="0" Header="Service Charge Calculator"
+                             Visibility="{Binding IsServiceChargeMode, Converter={StaticResource BoolToVis}}"
+                             Margin="0,0,0,10">
+                        <Grid Margin="10">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Annual Expenses:"
+                                     VerticalAlignment="Center" Margin="0,0,10,5" />
+                            <syncfusion:DoubleTextBox Grid.Row="0" Grid.Column="1"
+                                                    Value="{Binding AnnualExpenses, Mode=TwoWay}"
+                                                    Margin="0,0,10,5" />
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Target Reserve %:"
+                                     VerticalAlignment="Center" Margin="0,0,10,5" />
+                            <syncfusion:DoubleTextBox Grid.Row="1" Grid.Column="1"
+                                                    Value="{Binding TargetReservePercentage, Mode=TwoWay}"
+                                                    Margin="0,0,10,5" />
+
+                            <syncfusion:ButtonAdv Grid.Row="0" Grid.Column="2" Grid.RowSpan="2"
+                                                Label="Calculate"
+                                                Command="{Binding CalculateServiceChargeCommand}"
+                                                Background="#28A745" Foreground="White"
+                                                VerticalAlignment="Center" />
+                        </Grid>
+                    </GroupBox>
+
+                    <!-- What-If Scenario Inputs -->
+                    <GroupBox Grid.Row="1" Header="What-If Scenario Planner"
+                             Visibility="{Binding IsWhatIfMode, Converter={StaticResource BoolToVis}}"
+                             Margin="0,0,0,10">
+                        <Grid Margin="10">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Pay Raise %:"
+                                     VerticalAlignment="Center" Margin="0,0,10,5" />
+                            <syncfusion:DoubleTextBox Grid.Row="0" Grid.Column="1"
+                                                    Value="{Binding PayRaisePercentage, Mode=TwoWay}"
+                                                    Margin="0,0,10,5" />
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Benefits Increase %:"
+                                     VerticalAlignment="Center" Margin="0,0,10,5" />
+                            <syncfusion:DoubleTextBox Grid.Row="1" Grid.Column="1"
+                                                    Value="{Binding BenefitsIncreasePercentage, Mode=TwoWay}"
+                                                    Margin="0,0,10,5" />
+
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Equipment Cost:"
+                                     VerticalAlignment="Center" Margin="0,0,10,5" />
+                            <syncfusion:DoubleTextBox Grid.Row="2" Grid.Column="1"
+                                                    Value="{Binding EquipmentCost, Mode=TwoWay}"
+                                                    Margin="0,0,10,5" />
+
+                            <TextBlock Grid.Row="3" Grid.Column="0" Text="Reserve Allocation %:"
+                                     VerticalAlignment="Center" Margin="0,0,10,5" />
+                            <syncfusion:DoubleTextBox Grid.Row="3" Grid.Column="1"
+                                                    Value="{Binding ReserveAllocationPercentage, Mode=TwoWay}"
+                                                    Margin="0,0,10,5" />
+
+                            <syncfusion:ButtonAdv Grid.Row="0" Grid.Column="2" Grid.RowSpan="4"
+                                                Label="Generate Scenario"
+                                                Command="{Binding GenerateWhatIfScenarioCommand}"
+                                                Background="#17A2B8" Foreground="White"
+                                                VerticalAlignment="Center" />
+                        </Grid>
+                    </GroupBox>
+
+                    <!-- Proactive Advisor Inputs -->
+                    <GroupBox Grid.Row="2" Header="Proactive Advisor"
+                             Visibility="{Binding IsProactiveMode, Converter={StaticResource BoolToVis}}"
+                             Margin="0,0,0,10">
+                        <Grid Margin="10">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Grid.Row="0" Grid.Column="0"
+                                     Text="Get proactive recommendations and insights based on your current data."
+                                     TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,0,10,0" />
+
+                            <syncfusion:ButtonAdv Grid.Row="0" Grid.Column="1"
+                                                Label="Get Advice"
+                                                Command="{Binding GetProactiveAdviceCommand}"
+                                                Background="#6F42C1" Foreground="White"
+                                                VerticalAlignment="Center" />
+                        </Grid>
+                    </GroupBox>
+                </Grid>
+            </Border>
+
             <!-- Input Area -->
-            <Border Grid.Row="1" Background="#F5F5F5" BorderBrush="#DDDDDD" BorderThickness="1,1,1,0"
+            <Border Grid.Row="2" Background="#F5F5F5" BorderBrush="#DDDDDD" BorderThickness="1,1,1,0"
                     Padding="10" Margin="10,0,10,10">
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -69,7 +246,7 @@
                     </Grid.ColumnDefinitions>
 
                     <syncfusion:SfTextBoxExt Grid.Column="0"
-                                           x:Name="MessageInput"
+                                           Text="{Binding CurrentMessage, UpdateSourceTrigger=PropertyChanged}"
                                            VerticalAlignment="Center"
                                            Margin="0,0,10,0"
                                            KeyDown="OnMessageInputKeyDown" />

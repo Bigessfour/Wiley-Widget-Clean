@@ -10,6 +10,9 @@ import subprocess
 import argparse
 from pathlib import Path
 
+# Azure CLI path
+AZ_CLI_PATH = r"C:\Program Files\Microsoft SDKs\Azure\CLI2\wbin\az.cmd"
+
 def load_env_file():
     """Load environment variables from .env file"""
     env_file = Path('.env')
@@ -48,7 +51,7 @@ def check_azure_cli():
     print("🔐 Checking Azure CLI authentication...")
 
     try:
-        result = subprocess.run(['az', 'account', 'show'],
+        result = subprocess.run([AZ_CLI_PATH, 'account', 'show'],
                               capture_output=True, text=True, check=True)
         import json
         account = json.loads(result.stdout)

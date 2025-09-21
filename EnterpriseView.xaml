@@ -22,8 +22,19 @@
                     <syncfusion:RibbonButton Label="Save" Command="{Binding SaveEnterpriseAsyncCommand}" />
                     <syncfusion:RibbonButton Label="Delete" Command="{Binding DeleteEnterpriseAsyncCommand}" />
                 </syncfusion:RibbonBar>
+                <syncfusion:RibbonBar Header="Data">
+                    <syncfusion:RibbonButton Label="Export Excel" Command="{Binding ExportToExcelCommand}" />
+                    <syncfusion:RibbonButton Label="Export CSV" Command="{Binding ExportToCsvCommand}" />
+                    <syncfusion:RibbonButton Label="Import Data" Command="{Binding ImportDataCommand}" />
+                </syncfusion:RibbonBar>
+                <syncfusion:RibbonBar Header="View">
+                    <syncfusion:RibbonButton Label="Group by Type" Command="{Binding GroupByTypeCommand}" />
+                    <syncfusion:RibbonButton Label="Group by Status" Command="{Binding GroupByStatusCommand}" />
+                    <syncfusion:RibbonButton Label="Clear Grouping" Command="{Binding ClearGroupingCommand}" />
+                </syncfusion:RibbonBar>
                 <syncfusion:RibbonBar Header="Budget">
                     <syncfusion:RibbonButton Label="Budget Summary" Command="{Binding UpdateBudgetSummaryCommand}" />
+                    <syncfusion:RibbonButton Label="Rate Analysis" Command="{Binding RateAnalysisCommand}" />
                 </syncfusion:RibbonBar>
             </syncfusion:RibbonTab>
         </syncfusion:Ribbon>
@@ -39,6 +50,29 @@
             <DockPanel Grid.Column="0">
                 <TextBlock DockPanel.Dock="Top" Text="Municipal Enterprises" FontSize="16" FontWeight="Bold" Margin="8" />
 
+                <!-- Search and Filter Bar -->
+                <Border DockPanel.Dock="Top" Background="#F5F5F5" BorderBrush="#E0E0E0" BorderThickness="0,0,0,1" Padding="8">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <syncfusion:SfTextBoxExt Grid.Column="0" x:Name="SearchTextBox"
+                                               Watermark="Search enterprises..."
+                                               Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                               Margin="0,0,8,0" />
+
+                        <ComboBox Grid.Column="1" x:Name="StatusFilterCombo"
+                                ItemsSource="{Binding StatusOptions}"
+                                SelectedItem="{Binding SelectedStatusFilter}"
+                                Margin="0,0,8,0" Width="120" />
+
+                        <Button Grid.Column="2" Content="Clear Filters" Command="{Binding ClearFiltersCommand}" Width="100" />
+                    </Grid>
+                </Border>
+
                 <syncfusion:SfDataGrid
                     x:Name="EnterpriseGrid"
                     ItemsSource="{Binding Enterprises}"
@@ -47,21 +81,55 @@
                     AllowSorting="True"
                     AllowFiltering="True"
                     AllowResizingColumns="True"
+                    AllowGrouping="True"
+                    AllowEditing="True"
                     GridLinesVisibility="Horizontal"
                     RowHeight="32"
                     AlternationCount="2"
+                    ShowGroupDropArea="True"
+                    SelectionMode="Single"
                     Margin="8,0,8,8">
 
+                    <!-- Context Menu -->
+                    <syncfusion:SfDataGrid.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="Add New Enterprise" Command="{Binding AddEnterpriseAsyncCommand}" />
+                            <MenuItem Header="Edit Selected" Command="{Binding EditEnterpriseCommand}" />
+                            <MenuItem Header="Delete Selected" Command="{Binding DeleteEnterpriseAsyncCommand}" />
+                            <Separator />
+                            <MenuItem Header="Export Selection" Command="{Binding ExportSelectionCommand}" />
+                            <MenuItem Header="Copy to Clipboard" Command="{Binding CopyToClipboardCommand}" />
+                        </ContextMenu>
+                    </syncfusion:SfDataGrid.ContextMenu>
+
+                    <!-- Data Grid Columns -->
                     <syncfusion:SfDataGrid.Columns>
-                        <syncfusion:GridTextColumn HeaderText="ID" MappingName="Id" Width="60" />
+                        <syncfusion:GridTextColumn HeaderText="ID" MappingName="Id" Width="60" IsReadOnly="True" />
                         <syncfusion:GridTextColumn HeaderText="Enterprise Name" MappingName="Name" Width="200" />
-                        <syncfusion:GridNumericColumn HeaderText="Current Rate" MappingName="CurrentRate" Width="120" />
-                        <syncfusion:GridNumericColumn HeaderText="Monthly Revenue" MappingName="MonthlyRevenue" Width="140" />
-                        <syncfusion:GridNumericColumn HeaderText="Monthly Expenses" MappingName="MonthlyExpenses" Width="150" />
-                        <syncfusion:GridNumericColumn HeaderText="Monthly Balance" MappingName="MonthlyBalance" Width="140" />
+                        <syncfusion:GridNumericColumn HeaderText="Current Rate" MappingName="CurrentRate" Width="120"
+                                                    NumberDecimalDigits="2" />
+                        <syncfusion:GridNumericColumn HeaderText="Monthly Revenue" MappingName="MonthlyRevenue" Width="140"
+                                                    NumberDecimalDigits="2" />
+                        <syncfusion:GridNumericColumn HeaderText="Monthly Expenses" MappingName="MonthlyExpenses" Width="150"
+                                                    NumberDecimalDigits="2" />
+                        <syncfusion:GridNumericColumn HeaderText="Monthly Balance" MappingName="MonthlyBalance" Width="140"
+                                                    NumberDecimalDigits="2" />
                         <syncfusion:GridNumericColumn HeaderText="Citizens Served" MappingName="CitizenCount" Width="120" />
+                        <syncfusion:GridTextColumn HeaderText="Status" MappingName="Status" Width="100" />
                         <syncfusion:GridTextColumn HeaderText="Notes" MappingName="Notes" Width="200" />
+                        <syncfusion:GridDateTimeColumn HeaderText="Last Updated" MappingName="LastUpdated" Width="120"
+                                                     Pattern="ShortDate" />
                     </syncfusion:SfDataGrid.Columns>
+
+                    <!-- Group Column Descriptions -->
+                    <syncfusion:SfDataGrid.GroupColumnDescriptions>
+                        <syncfusion:GroupColumnDescription ColumnName="Status" />
+                    </syncfusion:SfDataGrid.GroupColumnDescriptions>
+
+                    <!-- Sort Column Descriptions -->
+                    <syncfusion:SfDataGrid.SortColumnDescriptions>
+                        <syncfusion:SortColumnDescription ColumnName="Name" SortDirection="Ascending" />
+                    </syncfusion:SfDataGrid.SortColumnDescriptions>
                 </syncfusion:SfDataGrid>
             </DockPanel>
 
@@ -78,6 +146,20 @@
                                     <TextBlock Text="{Binding SelectedEnterprise.Name, StringFormat='Name: {0}'}" Margin="0,0,0,4" />
                                     <TextBlock Text="{Binding SelectedEnterprise.Id, StringFormat='ID: {0}'}" Margin="0,0,0,4" />
                                     <TextBlock Text="{Binding SelectedEnterprise.CitizenCount, StringFormat='Citizens: {0:N0}'}" Margin="0,0,0,4" />
+                                    <TextBlock Text="{Binding SelectedEnterprise.Status, StringFormat='Status: {0}'}" Margin="0,0,0,4" />
+                                    <TextBlock Text="{Binding SelectedEnterprise.LastUpdated, StringFormat='Last Updated: {0:g}'}" Margin="0,0,0,4" />
+                                </StackPanel>
+                            </GroupBox>
+
+                            <!-- Financial Overview -->
+                            <GroupBox Header="Financial Overview" Margin="0,0,0,8">
+                                <StackPanel>
+                                    <TextBlock Text="{Binding SelectedEnterprise.CurrentRate, StringFormat='Current Rate: {0:C2}'}" Margin="0,0,0,4" />
+                                    <TextBlock Text="{Binding SelectedEnterprise.MonthlyRevenue, StringFormat='Monthly Revenue: {0:C2}'}" Margin="0,0,0,4" />
+                                    <TextBlock Text="{Binding SelectedEnterprise.MonthlyExpenses, StringFormat='Monthly Expenses: {0:C2}'}" Margin="0,0,0,4" />
+                                    <TextBlock Text="{Binding SelectedEnterprise.MonthlyBalance, StringFormat='Monthly Balance: {0:C2}'}" Margin="0,0,0,4"
+                                             Foreground="{Binding SelectedEnterprise.MonthlyBalance, Converter={StaticResource BalanceColorConverter}}" />
+                                    <TextBlock Text="{Binding SelectedEnterprise.BreakEvenRate, StringFormat='Break-even Rate: {0:C2}'}" Margin="0,0,0,4" />
                                 </StackPanel>
                             </GroupBox>
 
@@ -100,18 +182,26 @@
                                     <syncfusion:IntegerTextBox Value="{Binding SelectedEnterprise.CitizenCount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                              Margin="0,0,0,8" />
 
+                                    <Label Content="Status:" />
+                                    <ComboBox ItemsSource="{Binding StatusOptions}"
+                                            SelectedItem="{Binding SelectedEnterprise.Status, Mode=TwoWay}"
+                                            Margin="0,0,0,8" />
+
                                     <Label Content="Notes:" />
                                     <TextBox Text="{Binding SelectedEnterprise.Notes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                            Height="60" TextWrapping="Wrap" AcceptsReturn="True" Margin="0,0,0,8" />
                                 </StackPanel>
                             </GroupBox>
 
-                            <!-- Calculated Values -->
-                            <GroupBox Header="Calculated Values" Margin="0,0,0,8">
+                            <!-- Quick Actions -->
+                            <GroupBox Header="Quick Actions" Margin="0,0,0,8">
                                 <StackPanel>
-                                    <TextBlock Text="{Binding SelectedEnterprise.MonthlyRevenue, StringFormat='Monthly Revenue: {0:C2}'}" Margin="0,0,0,4" />
-                                    <TextBlock Text="{Binding SelectedEnterprise.MonthlyBalance, StringFormat='Monthly Balance: {0:C2}'}" Margin="0,0,0,4" />
-                                    <TextBlock Text="{Binding SelectedEnterprise.BreakEvenRate, StringFormat='Break-even Rate: {0:C2}'}" Margin="0,0,0,4" />
+                                    <Button Content="Save Changes" Command="{Binding SaveEnterpriseAsyncCommand}"
+                                          Margin="0,0,0,4" />
+                                    <Button Content="Generate Report" Command="{Binding GenerateEnterpriseReportCommand}"
+                                          Margin="0,0,0,4" />
+                                    <Button Content="View History" Command="{Binding ViewEnterpriseHistoryCommand}"
+                                          Margin="0,0,0,4" />
                                 </StackPanel>
                             </GroupBox>
 

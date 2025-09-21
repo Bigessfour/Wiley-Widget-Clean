@@ -5,6 +5,8 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WileyWidget", "WileyWidget.csproj", "{08232EAA-D701-4145-969C-607B74EA470C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WileyWidget.Tests", "WileyWidget.Tests\WileyWidget.Tests.csproj", "{08232EAA-D701-4145-969C-607B74EA470D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,18 @@ Global
 		{08232EAA-D701-4145-969C-607B74EA470C}.Release|x64.Build.0 = Release|Any CPU
 		{08232EAA-D701-4145-969C-607B74EA470C}.Release|x86.ActiveCfg = Release|Any CPU
 		{08232EAA-D701-4145-969C-607B74EA470C}.Release|x86.Build.0 = Release|Any CPU
+		{08232EAA-D701-4145-969C-607B74EA470D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{08232EAA-D701-4145-969C-607B74EA470D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{08232EAA-D701-4145-969C-607B74EA470D}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{08232EAA-D701-4145-969C-607B74EA470D}.Debug|x64.Build.0 = Debug|Any CPU
+		{08232EAA-D701-4145-969C-607B74EA470D}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{08232EAA-D701-4145-969C-607B74EA470D}.Debug|x86.Build.0 = Debug|Any CPU
+		{08232EAA-D701-4145-969C-607B74EA470D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{08232EAA-D701-4145-969C-607B74EA470D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{08232EAA-D701-4145-969C-607B74EA470D}.Release|x64.ActiveCfg = Release|Any CPU
+		{08232EAA-D701-4145-969C-607B74EA470D}.Release|x64.Build.0 = Release|Any CPU
+		{08232EAA-D701-4145-969C-607B74EA470D}.Release|x86.ActiveCfg = Release|Any CPU
+		{08232EAA-D701-4145-969C-607B74EA470D}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

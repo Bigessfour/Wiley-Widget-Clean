@@ -5,6 +5,7 @@ using WileyWidget.Models;
 using WileyWidget.Data;
 using System.Threading.Tasks;
 using System.Linq;
+using Serilog;
 
 namespace WileyWidget.ViewModels;
 
@@ -76,6 +77,18 @@ public partial class BudgetViewModel : ObservableObject
     private string analysisStatus = "Ready";
 
     /// <summary>
+    /// Whether there's an error
+    /// </summary>
+    [ObservableProperty]
+    private bool hasError;
+
+    /// <summary>
+    /// Error message if any
+    /// </summary>
+    [ObservableProperty]
+    private string errorMessage = string.Empty;
+
+    /// <summary>
     /// Constructor with dependency injection
     /// </summary>
     public BudgetViewModel(IEnterpriseRepository enterpriseRepository)
@@ -92,6 +105,9 @@ public partial class BudgetViewModel : ObservableObject
         try
         {
             AnalysisStatus = "Loading...";
+            HasError = false;
+            ErrorMessage = string.Empty;
+
             var enterprises = await _enterpriseRepository.GetAllAsync();
 
             BudgetDetails.Clear();
@@ -124,11 +140,16 @@ public partial class BudgetViewModel : ObservableObject
 
             // Generate initial recommendations
             GenerateRecommendations();
+
+            Log.Information("Successfully refreshed budget data for {Count} enterprises", enterprises.Count());
         }
         catch (Exception ex)
         {
+            ErrorMessage = $"Failed to refresh budget data: {ex.Message}";
+            HasError = true;
+            // Tests expect the status to begin with "Error:" and include the exception message
             AnalysisStatus = $"Error: {ex.Message}";
-            Console.WriteLine($"Error refreshing budget data: {ex.Message}");
+            Log.Error(ex, "Failed to refresh budget data");
         }
     }
 
@@ -289,6 +310,18 @@ public partial class BudgetViewModel : ObservableObject
     {
         // TODO: Implement export functionality
         AnalysisStatus = "Export functionality not yet implemented";
+    }
+
+    /// <summary>
+    /// Clears any error state
+    /// </summary>
+    [RelayCommand]
+    private void ClearError()
+    {
+        ErrorMessage = string.Empty;
+        HasError = false;
+        AnalysisStatus = "Ready";
+        Log.Information("Error cleared by user");
     }
 }
 

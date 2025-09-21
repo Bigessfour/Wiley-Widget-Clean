@@ -4,6 +4,12 @@ using CommunityToolkit.Mvvm.Input;
 using WileyWidget.Data;
 using WileyWidget.Models;
 using System.Threading.Tasks;
+using System;
+using System.Linq;
+using Serilog;
+using System.Threading;
+using System.Globalization;
+using System.Diagnostics;
 
 namespace WileyWidget.ViewModels;
 
@@ -11,7 +17,7 @@ namespace WileyWidget.ViewModels;
 /// View model for managing municipal enterprises (Phase 1)
 /// Provides data binding for enterprise CRUD operations and budget calculations
 /// </summary>
-public partial class EnterpriseViewModel : ObservableObject
+public partial class EnterpriseViewModel : ObservableObject, IDisposable
 {
     private readonly IEnterpriseRepository _enterpriseRepository;
 
@@ -23,20 +29,139 @@ public partial class EnterpriseViewModel : ObservableObject
     /// <summary>
     /// Currently selected enterprise in the UI
     /// </summary>
-    [ObservableProperty]
-    private Enterprise selectedEnterprise;
+    private Enterprise _selectedEnterprise;
+    public Enterprise SelectedEnterprise
+    {
+        get => _selectedEnterprise;
+        set
+        {
+            if (_selectedEnterprise != value)
+            {
+                _selectedEnterprise = value;
+                OnPropertyChanged();
+            }
+        }
+    }
 
     /// <summary>
     /// Loading state for async operations
     /// </summary>
-    [ObservableProperty]
-    private bool isLoading;
+    private bool _isLoading;
+    public bool IsLoading
+    {
+        get => _isLoading;
+        set
+        {
+            if (_isLoading != value)
+            {
+                _isLoading = value;
+                OnPropertyChanged();
+            }
+        }
+    }
 
     /// <summary>
     /// Budget summary text for display
     /// </summary>
-    [ObservableProperty]
-    private string budgetSummaryText = "No budget data available";
+    private string _budgetSummaryText = "No budget data available";
+    public string BudgetSummaryText
+    {
+        get => _budgetSummaryText;
+        set
+        {
+            if (_budgetSummaryText != value)
+            {
+                _budgetSummaryText = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Semaphore to prevent concurrent loading operations
+    /// </summary>
+    private readonly SemaphoreSlim _loadSemaphore = new(1, 1);
+
+    /// <summary>
+    /// Executes an operation with retry logic and exponential backoff
+    /// </summary>
+    private async Task<T> ExecuteWithRetryAsync<T>(
+        Func<CancellationToken, Task<T>> operation,
+        int maxRetries = 3,
+        CancellationToken cancellationToken = default)
+    {
+        var delay = TimeSpan.FromMilliseconds(500);
+        
+        for (int attempt = 0; attempt <= maxRetries; attempt++)
+        {
+            try
+            {
+                return await operation(cancellationToken);
+            }
+            catch (Exception ex) when (attempt < maxRetries && 
+                                     !(ex is OperationCanceledException))
+            {
+                Log.Warning(ex, "Attempt {Attempt} failed, retrying in {DelayMs}ms", 
+                           attempt + 1, delay.TotalMilliseconds);
+                await System.Threading.Tasks.Task.Delay(delay, cancellationToken);
+                delay = delay * 2; // Exponential backoff
+            }
+        }
+        
+        throw new Exception($"Operation failed after {maxRetries + 1} attempts");
+    }
+
+    /// <summary>
+    /// Loads all enterprises from the database (public for View access)
+    /// </summary>
+    [RelayCommand]
+    public async Task LoadEnterprisesAsync(CancellationToken cancellationToken = default)
+    {
+        // Prevent concurrent loading operations
+        if (!await _loadSemaphore.WaitAsync(0, cancellationToken))
+        {
+            Log.Information("Enterprise loading already in progress, skipping duplicate request");
+            return;
+        }
+        
+        try
+        {
+            IsLoading = true;
+            
+            // Check for cancellation before starting
+            cancellationToken.ThrowIfCancellationRequested();
+            
+            var enterprises = await ExecuteWithRetryAsync(
+                async (ct) => await _enterpriseRepository.GetAllAsync(),
+                cancellationToken: cancellationToken);
+            
+            // Check for cancellation before updating UI
+            cancellationToken.ThrowIfCancellationRequested();
+            
+            Enterprises.Clear();
+            foreach (var enterprise in enterprises)
+            {
+                // Check for cancellation during UI updates
+                cancellationToken.ThrowIfCancellationRequested();
+                Enterprises.Add(enterprise);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Operation was cancelled, this is expected behavior
+            Log.Information("Enterprise loading was cancelled");
+        }
+        catch (Exception ex)
+        {
+            // TODO: Add proper error handling/logging
+            Log.Error(ex, "Error loading enterprises");
+        }
+        finally
+        {
+            IsLoading = false;
+            _loadSemaphore.Release();
+        }
+    }
 
     /// <summary>
     /// Constructor with dependency injection
@@ -44,34 +169,6 @@ public partial class EnterpriseViewModel : ObservableObject
     public EnterpriseViewModel(IEnterpriseRepository enterpriseRepository)
     {
         _enterpriseRepository = enterpriseRepository ?? throw new ArgumentNullException(nameof(enterpriseRepository));
-    }
-
-    /// <summary>
-    /// Loads all enterprises from the database (public for View access)
-    /// </summary>
-    [RelayCommand]
-    public async Task LoadEnterprisesAsync()
-    {
-        try
-        {
-            IsLoading = true;
-            var enterprises = await _enterpriseRepository.GetAllAsync();
-
-            Enterprises.Clear();
-            foreach (var enterprise in enterprises)
-            {
-                Enterprises.Add(enterprise);
-            }
-        }
-        catch (Exception ex)
-        {
-            // TODO: Add proper error handling/logging
-            Console.WriteLine($"Error loading enterprises: {ex.Message}");
-        }
-        finally
-        {
-            IsLoading = false;
-        }
     }
 
     /// <summary>
@@ -98,7 +195,7 @@ public partial class EnterpriseViewModel : ObservableObject
         catch (Exception ex)
         {
             // TODO: Add proper error handling/logging
-            Console.WriteLine($"Error adding enterprise: {ex.Message}");
+            Log.Error(ex, "Error adding enterprise");
         }
     }
 
@@ -118,7 +215,7 @@ public partial class EnterpriseViewModel : ObservableObject
         catch (Exception ex)
         {
             // TODO: Add proper error handling/logging
-            Console.WriteLine($"Error saving enterprise: {ex.Message}");
+            Log.Error(ex, "Error saving enterprise");
         }
     }
 
@@ -142,7 +239,7 @@ public partial class EnterpriseViewModel : ObservableObject
         catch (Exception ex)
         {
             // TODO: Add proper error handling/logging
-            Console.WriteLine($"Error deleting enterprise: {ex.Message}");
+            Log.Error(ex, "Error deleting enterprise");
         }
     }
 
@@ -168,10 +265,29 @@ public partial class EnterpriseViewModel : ObservableObject
         var totalBalance = totalRevenue - totalExpenses;
         var totalCitizens = Enterprises.Sum(e => e.CitizenCount);
 
-        return $"Total Revenue: ${totalRevenue:F2}\n" +
-               $"Total Expenses: ${totalExpenses:F2}\n" +
-               $"Monthly Balance: ${totalBalance:F2}\n" +
+        return $"Total Revenue: ${totalRevenue.ToString("N2", CultureInfo.InvariantCulture)}\n" +
+               $"Total Expenses: ${totalExpenses.ToString("N2", CultureInfo.InvariantCulture)}\n" +
+               $"Monthly Balance: ${totalBalance.ToString("N2", CultureInfo.InvariantCulture)}\n" +
                $"Citizens Served: {totalCitizens}\n" +
                $"Status: {(totalBalance >= 0 ? "Surplus" : "Deficit")}";
+}    /// <summary>
+    /// Disposes of managed resources
+    /// </summary>
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
+    /// Disposes of managed and unmanaged resources
+    /// </summary>
+    /// <param name="disposing">True if called from Dispose(), false if called from finalizer</param>
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _loadSemaphore?.Dispose();
+        }
     }
 }

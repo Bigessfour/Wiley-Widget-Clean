@@ -18,6 +18,7 @@ public class BudgetInteraction
     /// Foreign key to the primary enterprise
     /// </summary>
     [Required(ErrorMessage = "Primary enterprise is required")]
+    [Range(1, int.MaxValue, ErrorMessage = "Primary enterprise is required")] // Treat 0 as missing
     public int PrimaryEnterpriseId { get; set; }
 
     /// <summary>
@@ -47,6 +48,21 @@ public class BudgetInteraction
     public decimal MonthlyAmount { get; set; }
 
     /// <summary>
+    /// Amount of this interaction (alias for MonthlyAmount)
+    /// </summary>
+    [NotMapped]
+    public decimal Amount
+    {
+        get => MonthlyAmount;
+        set => MonthlyAmount = value;
+    }
+
+    /// <summary>
+    /// Date of the interaction
+    /// </summary>
+    public DateTime InteractionDate { get; set; }
+
+    /// <summary>
     /// Whether this is a cost (true) or revenue (false)
     /// </summary>
     [Required]
@@ -69,4 +85,14 @@ public class BudgetInteraction
     /// </summary>
     [ForeignKey("SecondaryEnterpriseId")]
     public virtual Enterprise SecondaryEnterprise { get; set; }
+
+    /// <summary>
+    /// Navigation property to primary enterprise (alias for PrimaryEnterprise)
+    /// </summary>
+    [NotMapped]
+    public virtual Enterprise Enterprise
+    {
+        get => PrimaryEnterprise;
+        set => PrimaryEnterprise = value;
+    }
 }

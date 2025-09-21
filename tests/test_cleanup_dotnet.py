@@ -24,6 +24,7 @@ spec.loader.exec_module(cleanup_dotnet)
 get_dotnet_processes = cleanup_dotnet.get_dotnet_processes
 cleanup_processes = cleanup_dotnet.cleanup_processes
 
+
 class TestGetDotnetProcesses:
     """Test the get_dotnet_processes function"""
 
@@ -32,7 +33,9 @@ class TestGetDotnetProcesses:
         """Test successful process listing"""
         # Mock successful tasklist output
         mock_result = MagicMock()
-        mock_result.stdout = '"dotnet.exe","1234","Console","1","10,000 K"\n"WileyWidget.exe","5678","Console","1","15,000 K"\n"notepad.exe","9999","Console","1","5,000 K"'
+        mock_result.stdout = ('"dotnet.exe","1234","Console","1","10,000 K"\n'
+                              '"WileyWidget.exe","5678","Console","1","15,000 K"\n'
+                              '"notepad.exe","9999","Console","1","5,000 K"')
         mock_result.returncode = 0
         mock_run.return_value = mock_result
 
@@ -46,7 +49,8 @@ class TestGetDotnetProcesses:
     def test_get_dotnet_processes_no_matches(self, mock_run):
         """Test when no .NET processes are found"""
         mock_result = MagicMock()
-        mock_result.stdout = '"notepad.exe","9999","Console","1","5,000 K"\n"explorer.exe","1111","Console","1","20,000 K"'
+        mock_result.stdout = ('"notepad.exe","9999","Console","1","5,000 K"\n'
+                              '"explorer.exe","1111","Console","1","20,000 K"')
         mock_result.returncode = 0
         mock_run.return_value = mock_result
 
@@ -62,6 +66,7 @@ class TestGetDotnetProcesses:
         processes = get_dotnet_processes()
 
         assert processes == []
+
 
 class TestCleanupProcesses:
     """Test the cleanup_processes function"""
@@ -103,6 +108,7 @@ class TestCleanupProcesses:
         assert result is True
         # Should not call taskkill in dry run
         mock_subprocess.assert_not_called()
+
 
 if __name__ == '__main__':
     pytest.main([__file__])

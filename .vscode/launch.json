@@ -6,7 +6,7 @@
       "type": "coreclr",
       "request": "launch",
       "preLaunchTask": "build",
-      "program": "${workspaceFolder}/bin/Debug/net8.0-windows/WileyWidget.exe",
+      "program": "${workspaceFolder}/bin/Debug/net9.0-windows/WileyWidget.exe",
       "args": [],
       "cwd": "${workspaceFolder}",
       "console": "internalConsole",
@@ -20,7 +20,7 @@
       "type": "coreclr",
       "request": "launch",
       "preLaunchTask": "build",
-      "program": "${workspaceFolder}/bin/Debug/net8.0-windows/WileyWidget.exe",
+      "program": "${workspaceFolder}/bin/Debug/net9.0-windows/WileyWidget.exe",
       "args": [],
       "cwd": "${workspaceFolder}",
       "console": "internalConsole",
@@ -39,8 +39,6 @@
       "type": "coreclr",
       "request": "attach",
       "processId": "${command:pickProcess}"
-<<<<<<< Updated upstream
-=======
     },
     {
       "name": "Debug Syncfusion WPF Form",
@@ -101,7 +99,100 @@
       "console": "integratedTerminal",
       "cwd": "${workspaceFolder}",
       "args": ["--dry-run"]
->>>>>>> Stashed changes
+    },
+    {
+      "name": "Debug All Python Tests",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "-v",
+        "--tb=short",
+        "--maxfail=5",
+        "-m",
+        "not slow",
+        "${workspaceFolder}/tests"
+      ],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}"
+      }
+    },
+    {
+      "name": "Debug Python Tests with Coverage",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "-v",
+        "--tb=short",
+        "--maxfail=5",
+        "--cov=${workspaceFolder}",
+        "--cov-report=html",
+        "--cov-report=term",
+        "${workspaceFolder}/tests"
+      ],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}"
+      }
+    },
+    {
+      "name": "Debug Current Python Test File",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "-v",
+        "--tb=short",
+        "${file}"
+      ],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}"
+      }
+    },
+    {
+      "name": "Debug C# Tests",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/WileyWidget.Tests/bin/Debug/net9.0/WileyWidget.Tests.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "console": "internalConsole",
+      "stopAtEntry": false
+    },
+    {
+      "name": "Debug C# UI Tests",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/WileyWidget.UiTests/bin/Debug/net9.0/WileyWidget.UiTests.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "console": "internalConsole",
+      "stopAtEntry": false
+    },
+    {
+      "name": "Debug C# Tests with Coverage",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/WileyWidget.Tests/bin/Debug/net9.0/WileyWidget.Tests.dll",
+      "args": [
+        "--collect:\"XPlat Code Coverage\"",
+        "--results-directory:${workspaceFolder}/TestResults/Coverage"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "internalConsole",
+      "stopAtEntry": false,
+      "env": {
+        "COVERAGE_FILE": "${workspaceFolder}/TestResults/Coverage/coverage.cobertura.xml"
+      }
     }
   ]
 }

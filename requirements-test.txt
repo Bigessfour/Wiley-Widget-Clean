@@ -4,3 +4,4 @@ pytest-mock>=3.10.0
 pytest-cov>=4.0.0
 pytest-xdist>=3.0.0  # For parallel test execution
 debugpy>=1.8.0  # For Python debugging support
+watchgod>=0.8.0  # For file watching in development

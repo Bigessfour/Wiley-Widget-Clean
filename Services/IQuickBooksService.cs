@@ -12,5 +12,8 @@ namespace WileyWidget.Services
         Task<bool> TestConnectionAsync();
         Task<List<Customer>> GetCustomersAsync();
         Task<List<Invoice>> GetInvoicesAsync(string enterprise = null);
+        Task<List<Account>> GetChartOfAccountsAsync();
+        Task<List<JournalEntry>> GetJournalEntriesAsync(DateTime startDate, DateTime endDate);
+        Task<List<Budget>> GetBudgetsAsync();
     }
 }

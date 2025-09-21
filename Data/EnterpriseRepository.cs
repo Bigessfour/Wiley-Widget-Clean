@@ -9,14 +9,14 @@ namespace WileyWidget.Data;
 /// </summary>
 public class EnterpriseRepository : IEnterpriseRepository
 {
-    private readonly AppDbContext _context;
+    private readonly IDbContextFactory<AppDbContext> _contextFactory;
 
     /// <summary>
     /// Constructor with dependency injection
     /// </summary>
-    public EnterpriseRepository(AppDbContext context)
+    public EnterpriseRepository(IDbContextFactory<AppDbContext> contextFactory)
     {
-        _context = context ?? throw new ArgumentNullException(nameof(context));
+        _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
     }
 
     /// <summary>
@@ -24,7 +24,9 @@ public class EnterpriseRepository : IEnterpriseRepository
     /// </summary>
     public async Task<IEnumerable<Enterprise>> GetAllAsync()
     {
-        return await _context.Enterprises
+        using var context = await _contextFactory.CreateDbContextAsync();
+        return await context.Enterprises
+            .AsNoTracking()
             .OrderBy(e => e.Name)
             .ToListAsync();
     }
@@ -34,7 +36,9 @@ public class EnterpriseRepository : IEnterpriseRepository
     /// </summary>
     public async Task<Enterprise> GetByIdAsync(int id)
     {
-        return await _context.Enterprises
+        using var context = await _contextFactory.CreateDbContextAsync();
+        return await context.Enterprises
+            .AsNoTracking()
             .FirstOrDefaultAsync(e => e.Id == id);
     }
 
@@ -43,7 +47,9 @@ public class EnterpriseRepository : IEnterpriseRepository
     /// </summary>
     public async Task<Enterprise> GetByNameAsync(string name)
     {
-        return await _context.Enterprises
+        using var context = await _contextFactory.CreateDbContextAsync();
+        return await context.Enterprises
+            .AsNoTracking()
             .FirstOrDefaultAsync(e => e.Name.ToLower(CultureInfo.InvariantCulture) == name.ToLower(CultureInfo.InvariantCulture));
     }
 
@@ -52,8 +58,9 @@ public class EnterpriseRepository : IEnterpriseRepository
     /// </summary>
     public async Task<Enterprise> AddAsync(Enterprise enterprise)
     {
-        _context.Enterprises.Add(enterprise);
-        await _context.SaveChangesAsync();
+        using var context = await _contextFactory.CreateDbContextAsync();
+        context.Enterprises.Add(enterprise);
+        await context.SaveChangesAsync();
         return enterprise;
     }
 
@@ -62,8 +69,9 @@ public class EnterpriseRepository : IEnterpriseRepository
     /// </summary>
     public async Task<Enterprise> UpdateAsync(Enterprise enterprise)
     {
-        _context.Enterprises.Update(enterprise);
-        await _context.SaveChangesAsync();
+        using var context = await _contextFactory.CreateDbContextAsync();
+        context.Enterprises.Update(enterprise);
+        await context.SaveChangesAsync();
         return enterprise;
     }
 
@@ -72,12 +80,23 @@ public class EnterpriseRepository : IEnterpriseRepository
     /// </summary>
     public async Task<bool> DeleteAsync(int id)
     {
-        var enterprise = await GetByIdAsync(id);
-        if (enterprise == null)
+        using var context = await _contextFactory.CreateDbContextAsync();
+        // Find the entity from the database; if not found, return false
+        var entity = await context.Enterprises.FindAsync(id);
+        if (entity == null)
+        {
             return false;
+        }
 
-        _context.Enterprises.Remove(enterprise);
-        await _context.SaveChangesAsync();
+        // Ensure we are not double-tracking a different instance
+        var local = context.Enterprises.Local.FirstOrDefault(e => e.Id == id);
+        if (local != null && !ReferenceEquals(local, entity))
+        {
+            context.Entry(local).State = EntityState.Detached;
+        }
+
+        context.Enterprises.Remove(entity);
+        await context.SaveChangesAsync();
         return true;
     }
 
@@ -86,7 +105,8 @@ public class EnterpriseRepository : IEnterpriseRepository
     /// </summary>
     public async Task<bool> ExistsByNameAsync(string name, int? excludeId = null)
     {
-        var query = _context.Enterprises.Where(e => e.Name.ToLower(CultureInfo.InvariantCulture) == name.ToLower(CultureInfo.InvariantCulture));
+        using var context = await _contextFactory.CreateDbContextAsync();
+        var query = context.Enterprises.Where(e => e.Name.ToLower(CultureInfo.InvariantCulture) == name.ToLower(CultureInfo.InvariantCulture));
 
         if (excludeId.HasValue)
         {
@@ -101,7 +121,8 @@ public class EnterpriseRepository : IEnterpriseRepository
     /// </summary>
     public async Task<int> GetCountAsync()
     {
-        return await _context.Enterprises.CountAsync();
+        using var context = await _contextFactory.CreateDbContextAsync();
+        return await context.Enterprises.AsNoTracking().CountAsync();
     }
 
     /// <summary>
@@ -109,7 +130,9 @@ public class EnterpriseRepository : IEnterpriseRepository
     /// </summary>
     public async Task<IEnumerable<Enterprise>> GetWithInteractionsAsync()
     {
-        return await _context.Enterprises
+        using var context = await _contextFactory.CreateDbContextAsync();
+        return await context.Enterprises
+            .AsNoTracking()
             .Include(e => e.BudgetInteractions)
             .OrderBy(e => e.Name)
             .ToListAsync();

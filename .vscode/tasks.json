@@ -62,19 +62,23 @@
       }
     },
     {
-      "label": "dev-start",
+      "label": "watch-py",
       "type": "shell",
       "command": "python",
       "args": [
+        "${workspaceFolder}/scripts/watch-py.py",
+        "python",
         "${workspaceFolder}/scripts/dev-start.py"
       ],
       "group": "build",
+      "isBackground": true,
       "presentation": {
         "echo": true,
         "reveal": "always",
         "focus": false,
         "panel": "shared"
-      }
+      },
+      "problemMatcher": []
     },
     {
       "label": "load-env",
@@ -143,6 +147,159 @@
         "panel": "shared"
       },
       "problemMatcher": []
+    },
+    {
+      "label": "test-all-python",
+      "type": "shell",
+      "command": "python",
+      "args": [
+        "-m",
+        "pytest",
+        "${workspaceFolder}/tests",
+        "--verbose",
+        "--tb=short",
+        "--maxfail=5",
+        "-m",
+        "not slow"
+      ],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "test-python-coverage",
+      "type": "shell",
+      "command": "python",
+      "args": [
+        "-m",
+        "pytest",
+        "${workspaceFolder}/tests",
+        "--verbose",
+        "--tb=short",
+        "--maxfail=5",
+        "--cov=${workspaceFolder}",
+        "--cov-report=html:htmlcov",
+        "--cov-report=term-missing",
+        "--cov-report=xml",
+        "-m",
+        "not slow"
+      ],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "test-csharp",
+      "dependsOn": [
+        "cleanup-dotnet"
+      ],
+      "type": "shell",
+      "command": "dotnet",
+      "args": [
+        "test",
+        "${workspaceFolder}/WileyWidget.Tests/WileyWidget.Tests.csproj",
+        "--verbosity",
+        "normal",
+        "--logger",
+        "console"
+      ],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "test-csharp-coverage",
+      "dependsOn": [
+        "cleanup-dotnet"
+      ],
+      "type": "shell",
+      "command": "dotnet",
+      "args": [
+        "test",
+        "${workspaceFolder}/WileyWidget.Tests/WileyWidget.Tests.csproj",
+        "--verbosity",
+        "normal",
+        "--logger",
+        "console",
+        "--collect:\"XPlat Code Coverage\"",
+        "--results-directory:${workspaceFolder}/TestResults/Coverage"
+      ],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "test-ui",
+      "dependsOn": [
+        "cleanup-dotnet"
+      ],
+      "type": "shell",
+      "command": "dotnet",
+      "args": [
+        "test",
+        "${workspaceFolder}/WileyWidget.UiTests/WileyWidget.UiTests.csproj",
+        "--verbosity",
+        "normal",
+        "--logger",
+        "console"
+      ],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "test-all",
+      "dependsOn": [
+        "test-all-python",
+        "test-csharp",
+        "test-ui"
+      ],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "test-all-with-coverage",
+      "dependsOn": [
+        "test-python-coverage",
+        "test-csharp-coverage"
+      ],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
     },
     {
       "label": "ef-migrations",

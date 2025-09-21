@@ -283,6 +283,7 @@ namespace WileyWidget.ViewModels
             {
                 _logger.LogError(ex, "Error loading activities");
             }
+            await Task.CompletedTask; // Suppress async warning for future async operations
         }
 
         private async Task LoadAlertsAsync()
@@ -327,6 +328,7 @@ namespace WileyWidget.ViewModels
             {
                 _logger.LogError(ex, "Error loading alerts");
             }
+            await Task.CompletedTask; // Suppress async warning for future async operations
         }
 
         private void UpdateNextRefreshTime()

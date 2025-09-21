@@ -46,6 +46,7 @@ namespace WileyWidget.Services
                     _logger.LogWarning("Syncfusion license key is empty");
                 }
 
+                await Task.CompletedTask; // Suppress async warning for future async operations
                 return isValid;
             }
             catch (Exception ex)

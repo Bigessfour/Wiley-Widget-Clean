@@ -31,6 +31,7 @@
         <!-- Main Content Area -->
         <Grid>
             <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
                 <RowDefinition Height="200" />
             </Grid.RowDefinitions>
@@ -72,6 +73,13 @@
                             <TextBlock Text="{Binding TotalCitizens}" FontSize="16" />
                         </StackPanel>
                     </Border>
+
+                    <Border BorderBrush="LightSteelBlue" BorderThickness="2" CornerRadius="4" Margin="4" Padding="8" Background="Azure">
+                        <StackPanel>
+                            <TextBlock Text="Avg Rate Increase" FontWeight="Bold" />
+                            <TextBlock Text="{Binding AverageRateIncrease, StringFormat=P1}" FontSize="16" Foreground="Blue" />
+                        </StackPanel>
+                    </Border>
                 </WrapPanel>
 
                 <!-- Budget Details Grid -->
@@ -100,24 +108,198 @@
                 </syncfusion:SfDataGrid>
             </Grid>
 
+            <!-- Analytics Charts Section -->
+            <Grid Grid.Row="1" Margin="8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Rate Trend Chart -->
+                <GroupBox Header="Rate Trends &amp; Projections" Margin="0,0,8,0" Padding="8">
+                    <syncfusion:SfChart Height="250">
+                        <syncfusion:SfChart.PrimaryAxis>
+                            <syncfusion:CategoryAxis LabelPlacement="BetweenTicks" />
+                        </syncfusion:SfChart.PrimaryAxis>
+                        <syncfusion:SfChart.SecondaryAxis>
+                            <syncfusion:NumericalAxis LabelFormat="C2" />
+                        </syncfusion:SfChart.SecondaryAxis>
+                        <syncfusion:LineSeries ItemsSource="{Binding RateTrendData}"
+                                             XBindingPath="Period"
+                                             YBindingPath="Rate"
+                                             Interior="#2196F3"
+                                             Label="Current Rate" />
+                        <syncfusion:LineSeries ItemsSource="{Binding ProjectedRateData}"
+                                             XBindingPath="Period"
+                                             YBindingPath="Rate"
+                                             Interior="#FF9800"
+                                             Label="Projected Rate"
+                                             StrokeDashArray="2,2" />
+                    </syncfusion:SfChart>
+                </GroupBox>
+
+                <!-- Budget Performance Chart -->
+                <GroupBox Header="Budget Performance Analysis" Margin="8,0,0,0" Padding="8">
+                    <syncfusion:SfChart Height="250">
+                        <syncfusion:SfChart.PrimaryAxis>
+                            <syncfusion:CategoryAxis />
+                        </syncfusion:SfChart.PrimaryAxis>
+                        <syncfusion:SfChart.SecondaryAxis>
+                            <syncfusion:NumericalAxis LabelFormat="C0" />
+                        </syncfusion:SfChart.SecondaryAxis>
+                        <syncfusion:ColumnSeries ItemsSource="{Binding BudgetPerformanceData}"
+                                                XBindingPath="Enterprise"
+                                                YBindingPath="Revenue"
+                                                Interior="#4CAF50"
+                                                Label="Revenue" />
+                        <syncfusion:ColumnSeries ItemsSource="{Binding BudgetPerformanceData}"
+                                                XBindingPath="Enterprise"
+                                                YBindingPath="Expenses"
+                                                Interior="#F44336"
+                                                Label="Expenses" />
+                    </syncfusion:SfChart>
+                </GroupBox>
+            </Grid>
+
             <!-- Analysis Panel -->
-            <Border Grid.Row="1" BorderBrush="LightGray" BorderThickness="1" Margin="8,0,8,8" CornerRadius="4">
+            <Border Grid.Row="2" BorderBrush="LightGray" BorderThickness="1" Margin="8,0,8,8" CornerRadius="4">
                 <DockPanel>
-                    <TextBlock DockPanel.Dock="Top" Text="Analysis &amp; Insights" FontSize="14" FontWeight="Bold" Margin="8" />
+                    <TextBlock DockPanel.Dock="Top" Text="Advanced Analytics &amp; Forecasting" FontSize="14" FontWeight="Bold" Margin="8" />
 
                     <TabControl Margin="8,0,8,8">
                         <TabItem Header="Break-even Analysis">
                             <ScrollViewer VerticalScrollBarVisibility="Auto">
                                 <StackPanel Margin="8">
-                                    <TextBlock Text="{Binding BreakEvenAnalysisText}" TextWrapping="Wrap" />
+                                    <TextBlock Text="{Binding BreakEvenAnalysisText}" TextWrapping="Wrap" Margin="0,0,0,8" />
+                                    <GroupBox Header="Break-even Calculator" Margin="0,8,0,0">
+                                        <Grid Margin="8">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
+
+                                            <Label Grid.Row="0" Grid.Column="0" Content="Fixed Costs:" Margin="0,0,8,4" />
+                                            <syncfusion:DoubleTextBox Grid.Row="0" Grid.Column="1" Value="{Binding CalculatorFixedCosts, Mode=TwoWay}" Margin="0,0,8,4" />
+
+                                            <Label Grid.Row="1" Grid.Column="0" Content="Variable Cost per Unit:" Margin="0,0,8,4" />
+                                            <syncfusion:DoubleTextBox Grid.Row="1" Grid.Column="1" Value="{Binding CalculatorVariableCost, Mode=TwoWay}" Margin="0,0,8,4" />
+
+                                            <Label Grid.Row="2" Grid.Column="0" Content="Price per Unit:" Margin="0,0,8,4" />
+                                            <syncfusion:DoubleTextBox Grid.Row="2" Grid.Column="1" Value="{Binding CalculatorPricePerUnit, Mode=TwoWay}" Margin="0,0,8,4" />
+
+                                            <Button Grid.Row="0" Grid.Column="2" Grid.RowSpan="3" Content="Calculate" Command="{Binding CalculateBreakEvenCommand}"
+                                                  VerticalAlignment="Center" Margin="8,0,0,0" />
+                                        </Grid>
+                                    </GroupBox>
                                 </StackPanel>
                             </ScrollViewer>
                         </TabItem>
 
-                        <TabItem Header="Budget Trends">
+                        <TabItem Header="Trend Analysis">
                             <ScrollViewer VerticalScrollBarVisibility="Auto">
                                 <StackPanel Margin="8">
-                                    <TextBlock Text="{Binding TrendAnalysisText}" TextWrapping="Wrap" />
+                                    <TextBlock Text="{Binding TrendAnalysisText}" TextWrapping="Wrap" Margin="0,0,0,8" />
+                                    <GroupBox Header="Trend Metrics" Margin="0,8,0,0">
+                                        <Grid Margin="8">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="Revenue Growth" FontWeight="Bold" />
+                                                <TextBlock Text="{Binding RevenueGrowthRate, StringFormat=P2}" FontSize="16" Foreground="Green" />
+                                            </StackPanel>
+
+                                            <StackPanel Grid.Column="1">
+                                                <TextBlock Text="Expense Growth" FontWeight="Bold" />
+                                                <TextBlock Text="{Binding ExpenseGrowthRate, StringFormat=P2}" FontSize="16" Foreground="Red" />
+                                            </StackPanel>
+
+                                            <StackPanel Grid.Column="2">
+                                                <TextBlock Text="Profit Margin" FontWeight="Bold" />
+                                                <TextBlock Text="{Binding ProfitMargin, StringFormat=P2}" FontSize="16"
+                                                         Foreground="{Binding ProfitMargin, Converter={StaticResource BalanceColorConverter}}" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </GroupBox>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </TabItem>
+
+                        <TabItem Header="Rate Forecasting">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <StackPanel Margin="8">
+                                    <TextBlock Text="Rate forecasting helps predict future service charge adjustments based on historical data and projected expenses."
+                                             TextWrapping="Wrap" Margin="0,0,0,8" />
+
+                                    <GroupBox Header="Forecasting Parameters" Margin="0,8,0,0">
+                                        <Grid Margin="8">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
+
+                                            <Label Grid.Row="0" Grid.Column="0" Content="Forecast Period (months):" Margin="0,0,8,4" />
+                                            <syncfusion:IntegerTextBox Grid.Row="0" Grid.Column="1" Value="{Binding ForecastPeriodMonths, Mode=TwoWay}" Margin="0,0,0,4" />
+
+                                            <Label Grid.Row="1" Grid.Column="0" Content="Expected Inflation Rate:" Margin="0,0,8,4" />
+                                            <syncfusion:DoubleTextBox Grid.Row="1" Grid.Column="1" Value="{Binding InflationRate, Mode=TwoWay}" Margin="0,0,0,4" />
+
+                                            <Label Grid.Row="2" Grid.Column="0" Content="Population Growth Rate:" Margin="0,0,8,4" />
+                                            <syncfusion:DoubleTextBox Grid.Row="2" Grid.Column="1" Value="{Binding PopulationGrowthRate, Mode=TwoWay}" Margin="0,0,0,4" />
+                                        </Grid>
+                                    </GroupBox>
+
+                                    <Button Content="Generate Forecast" Command="{Binding GenerateForecastCommand}"
+                                          Margin="0,8,0,0" HorizontalAlignment="Left" />
+                                </StackPanel>
+                            </ScrollViewer>
+                        </TabItem>
+
+                        <TabItem Header="Scenario Planning">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <StackPanel Margin="8">
+                                    <TextBlock Text="Explore different budget scenarios to understand potential outcomes and make informed decisions."
+                                             TextWrapping="Wrap" Margin="0,0,0,8" />
+
+                                    <GroupBox Header="Scenario Parameters" Margin="0,8,0,0">
+                                        <Grid Margin="8">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
+
+                                            <Label Grid.Row="0" Grid.Column="0" Content="Rate Increase (%):" Margin="0,0,8,4" />
+                                            <syncfusion:DoubleTextBox Grid.Row="0" Grid.Column="1" Value="{Binding ScenarioRateIncrease, Mode=TwoWay}" Margin="0,0,0,4" />
+
+                                            <Label Grid.Row="1" Grid.Column="0" Content="Cost Reduction (%):" Margin="0,0,8,4" />
+                                            <syncfusion:DoubleTextBox Grid.Row="1" Grid.Column="1" Value="{Binding ScenarioCostReduction, Mode=TwoWay}" Margin="0,0,0,4" />
+
+                                            <Label Grid.Row="2" Grid.Column="0" Content="New Citizens:" Margin="0,0,8,4" />
+                                            <syncfusion:IntegerTextBox Grid.Row="2" Grid.Column="1" Value="{Binding ScenarioNewCitizens, Mode=TwoWay}" Margin="0,0,0,4" />
+                                        </Grid>
+                                    </GroupBox>
+
+                                    <Button Content="Run Scenario" Command="{Binding RunScenarioCommand}"
+                                          Margin="0,8,0,0" HorizontalAlignment="Left" />
                                 </StackPanel>
                             </ScrollViewer>
                         </TabItem>

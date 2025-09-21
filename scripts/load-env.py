@@ -9,9 +9,10 @@ import sys
 import argparse
 from pathlib import Path
 
-def load_environment_variables():
-    """Load environment variables from .env file"""
-    env_file = Path(__file__).parent.parent / '.env'
+def load_environment_variables(env_file: Path | None = None):
+    """Load environment variables from a .env-style file"""
+    if env_file is None:
+        env_file = Path(__file__).parent.parent / '.env'
 
     if not env_file.exists():
         print(f"❌ .env file not found at: {env_file}")
@@ -100,9 +101,10 @@ def load_environment_variables():
 
     return error_count == 0
 
-def unload_environment_variables():
+def unload_environment_variables(env_file: Path | None = None):
     """Unload environment variables (reset to system defaults)"""
-    env_file = Path(__file__).parent.parent / '.env'
+    if env_file is None:
+        env_file = Path(__file__).parent.parent / '.env'
 
     if not env_file.exists():
         print(f"❌ .env file not found at: {env_file}")
@@ -240,6 +242,10 @@ def main():
                        help='Show current status')
     parser.add_argument('--test-connections', action='store_true',
                        help='Test Azure connections (requires Azure SDK)')
+    parser.add_argument('--production', action='store_true',
+                       help='Use .env.production instead of .env')
+    parser.add_argument('--env-file', type=str,
+                       help='Explicit path to .env-style file')
 
     args = parser.parse_args()
 
@@ -256,11 +262,18 @@ def main():
 
     success = True
 
+    # Resolve env file
+    env_path = None
+    if args.env_file:
+        env_path = Path(args.env_file)
+    elif args.production:
+        env_path = Path(__file__).parent.parent / '.env.production'
+
     if args.load:
-        success &= load_environment_variables()
+        success &= load_environment_variables(env_path)
 
     if args.unload:
-        success &= unload_environment_variables()
+        success &= unload_environment_variables(env_path)
 
     if args.status:
         success &= show_status()
