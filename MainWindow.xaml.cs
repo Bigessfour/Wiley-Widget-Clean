@@ -39,6 +39,7 @@ public partial class MainWindow : Window
         return FindName("Grid") as Syncfusion.UI.Xaml.Grid.SfDataGrid;
     }
 
+    // Keep a parameterless constructor for XAML/designer and legacy call sites
     public MainWindow()
     {
         var constructorTimer = Stopwatch.StartNew();
@@ -46,6 +47,8 @@ public partial class MainWindow : Window
 
         InitializeComponent();
 
+        // Try to resolve services from the global provider when available. If not available
+        // we'll continue and let UpdateAuthenticationUI be defensive.
         try
         {
             var provider = App.ServiceProvider;
@@ -53,23 +56,31 @@ public partial class MainWindow : Window
             {
                 provider = Application.Current.Properties["ServiceProvider"] as System.IServiceProvider;
             }
-            if (provider == null)
-                throw new System.InvalidOperationException("ServiceProvider is not initialized. Ensure DI container is built in App.OnStartup before creating MainWindow.");
 
-            // Store the provider for later use when creating scoped services
             _serviceProvider = provider;
 
-            // Get authentication service (singleton, safe to resolve from root)
-            _authService = provider.GetRequiredService<AuthenticationService>();
-            _authService.AuthenticationStateChanged += OnAuthenticationStateChanged;
+            if (_serviceProvider != null)
+            {
+                try
+                {
+                    _authService = _serviceProvider.GetService<AuthenticationService>();
+                    if (_authService != null)
+                    {
+                        _authService.AuthenticationStateChanged += OnAuthenticationStateChanged;
+                    }
+                }
+                catch (Exception innerEx)
+                {
+                    Log.Warning(innerEx, "Failed to resolve AuthenticationService from DI container during MainWindow construction");
+                }
+            }
 
             App.LogDebugEvent("VIEW_INIT", $"MainWindow services initialized in {constructorTimer.ElapsedMilliseconds}ms");
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Failed to initialize MainWindow services");
-            MessageBox.Show($"Failed to initialize application: {ex.Message}", "Initialization Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            Application.Current.Shutdown();
+            // Keep the constructor from crashing - log and continue; UpdateAuthenticationUI will be defensive
+            Log.Error(ex, "Unexpected error during MainWindow construction service resolution");
         }
 
         // Apply persisted theme or default
@@ -1017,46 +1028,84 @@ public partial class MainWindow : Window
     /// </summary>
     private void UpdateAuthenticationUI()
     {
-        if (_authService == null)
+        // Ensure we're on the UI thread
+        if (!Dispatcher.CheckAccess())
         {
-            // DI not initialized; avoid NRE during early failure paths
+            try
+            {
+                Dispatcher.Invoke(() => UpdateAuthenticationUI());
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Failed to invoke UpdateAuthenticationUI on UI thread");
+            }
             return;
         }
 
-        if (_authService.IsAuthenticated)
+        try
         {
-            var signInButton = FindName("BtnSignIn") as dynamic;
-            if (signInButton != null) signInButton.IsEnabled = false;
-            var signOutButton = FindName("BtnSignOut") as dynamic;
-            if (signOutButton != null) signOutButton.IsEnabled = true;
-
-            // Update the view model with current user info
-            var viewModel = DataContext as ViewModels.MainViewModel;
-            if (viewModel != null)
+            if (_authService == null)
             {
-                var userInfo = _authService.GetUserInfo();
-                viewModel.CurrentUserName = userInfo.Name;
-                viewModel.CurrentUserEmail = userInfo.Username; // For now, use username as email placeholder
-                viewModel.IsUserAdmin = userInfo.IsAdmin;
-                viewModel.UserRoles = userInfo.Roles;
+                Log.Debug("Authentication service is not available - skipping authentication UI update");
+                // Update DataContext to a signed-out safe state if possible
+                if (DataContext is ViewModels.MainViewModel vmFallback)
+                {
+                    vmFallback.CurrentUserName = "Not signed in";
+                    vmFallback.CurrentUserEmail = string.Empty;
+                    vmFallback.IsUserAdmin = false;
+                    vmFallback.UserRoles = new List<string>();
+                }
+                return;
+            }
+
+            if (_authService.IsAuthenticated)
+            {
+                var signInButton = FindName("BtnSignIn") as dynamic;
+                if (signInButton != null) signInButton.IsEnabled = false;
+                var signOutButton = FindName("BtnSignOut") as dynamic;
+                if (signOutButton != null) signOutButton.IsEnabled = true;
+
+                // Update the view model with current user info
+                var viewModel = DataContext as ViewModels.MainViewModel;
+                if (viewModel != null)
+                {
+                    var userInfo = _authService.GetUserInfo();
+                    if (userInfo != null)
+                    {
+                        viewModel.CurrentUserName = userInfo.Name ?? "";
+                        viewModel.CurrentUserEmail = userInfo.Username ?? string.Empty; // For now, use username as email placeholder
+                        viewModel.IsUserAdmin = userInfo.IsAdmin;
+                        viewModel.UserRoles = userInfo.Roles ?? new List<string>();
+                    }
+                    else
+                    {
+                        Log.Warning("AuthenticationService reported IsAuthenticated=true but GetUserInfo() returned null");
+                    }
+                }
+            }
+            else
+            {
+                var signInButton = FindName("BtnSignIn") as dynamic;
+                if (signInButton != null) signInButton.IsEnabled = true;
+                var signOutButton = FindName("BtnSignOut") as dynamic;
+                if (signOutButton != null) signOutButton.IsEnabled = false;
+
+                // Update the view model
+                var viewModel = DataContext as ViewModels.MainViewModel;
+                if (viewModel != null)
+                {
+                    viewModel.CurrentUserName = "Not signed in";
+                    viewModel.CurrentUserEmail = string.Empty;
+                    viewModel.IsUserAdmin = false;
+                    viewModel.UserRoles = new List<string>();
+                }
             }
         }
-        else
+        catch (Exception ex)
         {
-            var signInButton = FindName("BtnSignIn") as dynamic;
-            if (signInButton != null) signInButton.IsEnabled = true;
-            var signOutButton = FindName("BtnSignOut") as dynamic;
-            if (signOutButton != null) signOutButton.IsEnabled = false;
-
-            // Update the view model
-            var viewModel = DataContext as ViewModels.MainViewModel;
-            if (viewModel != null)
-            {
-                viewModel.CurrentUserName = "Not signed in";
-                viewModel.CurrentUserEmail = string.Empty;
-                viewModel.IsUserAdmin = false;
-                viewModel.UserRoles = new List<string>();
-            }
+            // Report and log but avoid crashing the UI
+            ErrorReportingService.Instance.ReportError(ex, "UpdateAuthenticationUI", showToUser: false);
+            Log.Error(ex, "Unhandled exception while updating authentication UI");
         }
     }
 
