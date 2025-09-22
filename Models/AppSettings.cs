@@ -17,6 +17,9 @@ public class AppSettings
     public double? WindowTop { get; set; }
     public bool? WindowMaximized { get; set; }
 
+    // Grid column preferences
+    public bool UseDynamicColumns { get; set; } = false;
+
     // Legacy QuickBooks token/property names (kept for one migration cycle)
     public string QuickBooksAccessToken { get; set; }
     public string QuickBooksRefreshToken { get; set; }

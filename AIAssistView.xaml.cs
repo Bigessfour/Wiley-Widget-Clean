@@ -12,20 +12,36 @@ namespace WileyWidget;
 /// </summary>
 public partial class AIAssistView : Window
 {
+    private readonly IServiceScope _viewScope;
     public AIAssistView()
     {
         InitializeComponent();
 
-        // Get AI service from DI container
-        var aiService = App.ServiceProvider.GetRequiredService<IAIService>();
-        var chargeCalculator = App.ServiceProvider.GetRequiredService<Services.ServiceChargeCalculatorService>();
-        var whatIfEngine = App.ServiceProvider.GetRequiredService<Services.WhatIfScenarioEngine>();
+        // Create a scope for the view to resolve scoped services
+        var provider = App.ServiceProvider ?? Application.Current.Properties["ServiceProvider"] as IServiceProvider;
+        if (provider == null) throw new InvalidOperationException("ServiceProvider is not available for AIAssistView");
+
+        _viewScope = provider.CreateScope();
+        // Resolve scoped services from the scope
+        var aiService = _viewScope.ServiceProvider.GetRequiredService<IAIService>();
+        var chargeCalculator = _viewScope.ServiceProvider.GetRequiredService<Services.ServiceChargeCalculatorService>();
+        var whatIfEngine = _viewScope.ServiceProvider.GetRequiredService<Services.WhatIfScenarioEngine>();
         DataContext = new ViewModels.AIAssistViewModel(aiService, chargeCalculator, whatIfEngine);
 
         // Apply current theme
         TryApplyTheme(SettingsService.Instance.Current.Theme);
 
         Log.Information("AI Assist View initialized");
+    }
+
+    protected override void OnClosed(System.EventArgs e)
+    {
+        try
+        {
+            _viewScope?.Dispose();
+        }
+        catch { /* ignore */ }
+        base.OnClosed(e);
     }
 
     private ViewModels.AIAssistViewModel ViewModel => DataContext as ViewModels.AIAssistViewModel;
@@ -55,35 +71,7 @@ public partial class AIAssistView : Window
     /// </summary>
     private void TryApplyTheme(string themeName)
     {
-        try
-        {
-            var canonical = NormalizeTheme(themeName);
-#pragma warning disable CA2000 // Dispose objects before losing scope - Theme objects are managed by SfSkinManager
-            SfSkinManager.SetTheme(this, new Theme(canonical));
-#pragma warning restore CA2000 // Dispose objects before losing scope
-        }
-        catch
-        {
-            if (themeName != "FluentLight")
-            {
-                // Fallback
-#pragma warning disable CA2000 // Dispose objects before losing scope - Theme objects are managed by SfSkinManager
-                try { SfSkinManager.SetTheme(this, new Theme("FluentLight")); } catch { /* ignore */ }
-#pragma warning restore CA2000 // Dispose objects before losing scope
-            }
-        }
-    }
-
-    private string NormalizeTheme(string raw)
-    {
-        if (string.IsNullOrWhiteSpace(raw)) return "FluentDark";
-        raw = raw.Replace(" ", string.Empty);
-        return raw switch
-        {
-            "FluentDark" => "FluentDark",
-            "FluentLight" => "FluentLight",
-            _ => "FluentDark"
-        };
+        Services.ThemeUtility.TryApplyTheme(this, themeName);
     }
 
     /// <summary>

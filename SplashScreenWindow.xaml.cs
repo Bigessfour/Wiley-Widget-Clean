@@ -291,24 +291,22 @@ public partial class SplashScreenWindow : Window, INotifyPropertyChanged
             SfSkinManager.SetTheme(this, fluentTheme);
         }
 
-        // Enhanced fade-in with bounce effect
-        var fadeIn = new DoubleAnimation(0, 1, TimeSpan.FromSeconds(1.2))
+        // Enhanced fade-in with smooth, faster transition
+        var fadeIn = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(600))
         {
-            EasingFunction = new BounceEase 
+            EasingFunction = new CubicEase 
             { 
-                EasingMode = EasingMode.EaseOut,
-                Bounces = 1,
-                Bounciness = 2
+                EasingMode = EasingMode.EaseOut
             }
         };
         BeginAnimation(OpacityProperty, fadeIn);
         
-        // Add subtle scale animation
-        var scaleX = new DoubleAnimation(0.95, 1, TimeSpan.FromSeconds(0.8))
+        // Add subtle scale animation with faster, smoother timing
+        var scaleX = new DoubleAnimation(0.98, 1, TimeSpan.FromMilliseconds(500))
         {
             EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
         };
-        var scaleY = new DoubleAnimation(0.95, 1, TimeSpan.FromSeconds(0.8))
+        var scaleY = new DoubleAnimation(0.98, 1, TimeSpan.FromMilliseconds(500))
         {
             EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
         };

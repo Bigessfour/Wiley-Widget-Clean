@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using WileyWidget.Attributes;
 
 namespace WileyWidget.Models;
 
@@ -38,6 +39,7 @@ public class Enterprise : INotifyPropertyChanged
     /// Unique identifier for the enterprise
     /// </summary>
     [Key]
+    [GridDisplay(99, 80, Visible = true)] // Put ID at the end
     public int Id { get; set; }
 
     /// <summary>
@@ -53,6 +55,7 @@ public class Enterprise : INotifyPropertyChanged
     /// </summary>
     [Required(ErrorMessage = "Enterprise name is required")]
     [StringLength(100, ErrorMessage = "Enterprise name cannot exceed 100 characters")]
+    [GridDisplay(1, 150)]
     public string Name
     {
         get => _name;
@@ -93,6 +96,7 @@ public class Enterprise : INotifyPropertyChanged
     [Required(ErrorMessage = "Current rate is required")]
     [Range(0.01, 9999.99, ErrorMessage = "Rate must be between 0.01 and 9999.99")]
     [Column(TypeName = "decimal(18,2)")]
+    [GridDisplay(3, 100, DecimalDigits = 2)]
     public decimal CurrentRate
     {
         get => _currentRate;
@@ -114,6 +118,7 @@ public class Enterprise : INotifyPropertyChanged
     [Required(ErrorMessage = "Monthly expenses are required")]
     [Range(0, double.MaxValue, ErrorMessage = "Monthly expenses cannot be negative")]
     [Column(TypeName = "decimal(18,2)")]
+    [GridDisplay(5, 120, DecimalDigits = 2)]
     public decimal MonthlyExpenses
     {
         get => _monthlyExpenses;
@@ -131,6 +136,7 @@ public class Enterprise : INotifyPropertyChanged
     /// Monthly revenue (calculated as CitizenCount * CurrentRate)
     /// </summary>
     [NotMapped]
+    [GridDisplay(6, 120, DecimalDigits = 2)]
     public decimal MonthlyRevenue => CitizenCount * CurrentRate;
 
     private int _citizenCount;
@@ -140,6 +146,7 @@ public class Enterprise : INotifyPropertyChanged
     /// </summary>
     [Required(ErrorMessage = "Citizen count is required")]
     [Range(1, int.MaxValue, ErrorMessage = "Citizen count must be at least 1")]
+    [GridDisplay(4, 80, DecimalDigits = 0)]
     public int CitizenCount
     {
         get => _citizenCount;
@@ -159,6 +166,7 @@ public class Enterprise : INotifyPropertyChanged
     /// Total budget allocated for this enterprise
     /// </summary>
     [Column(TypeName = "decimal(18,2)")]
+    [GridDisplay(8, 120, DecimalDigits = 2)]
     public decimal TotalBudget
     {
         get => _totalBudget;
@@ -202,6 +210,7 @@ public class Enterprise : INotifyPropertyChanged
     /// Type/category of the enterprise
     /// </summary>
     [StringLength(50, ErrorMessage = "Type cannot exceed 50 characters")]
+    [GridDisplay(2, 100)]
     public string Type
     {
         get => _type;
@@ -221,6 +230,7 @@ public class Enterprise : INotifyPropertyChanged
     /// Additional notes about the enterprise
     /// </summary>
     [StringLength(500, ErrorMessage = "Notes cannot exceed 500 characters")]
+    [GridDisplay(9, 200)]
     public string Notes
     {
         get => _notes;
@@ -243,6 +253,7 @@ public class Enterprise : INotifyPropertyChanged
     /// Calculated property: Monthly deficit/surplus (Revenue - Expenses)
     /// </summary>
     [NotMapped]
+    [GridDisplay(7, 120, DecimalDigits = 2)]
     public decimal MonthlyBalance => MonthlyRevenue - MonthlyExpenses;
 
     /// <summary>

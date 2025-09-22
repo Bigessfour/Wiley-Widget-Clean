@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using WileyWidget.Data;
 using Syncfusion.SfSkinManager;
 using Syncfusion.Windows.Shared;
+using Serilog;
 
 namespace WileyWidget;
 
@@ -15,16 +16,24 @@ namespace WileyWidget;
 /// </summary>
 public partial class BudgetView : Window
 {
+    private readonly IServiceScope _viewScope;
+
     public BudgetView()
     {
         InitializeComponent();
 
         // Apply current theme
-        TryApplyTheme(SettingsService.Instance.Current.Theme);
+        ThemeUtility.TryApplyTheme(this, SettingsService.Instance.Current.Theme);
 
-        // Get the BudgetViewModel from DI container
-        var enterpriseRepository = App.ServiceProvider.GetRequiredService<IEnterpriseRepository>();
-        DataContext = new BudgetViewModel(enterpriseRepository);
+    // Create a scope for the view and resolve the repository from the scope
+    var provider = App.ServiceProvider ?? Application.Current.Properties["ServiceProvider"] as IServiceProvider;
+    if (provider == null) throw new InvalidOperationException("ServiceProvider is not available for BudgetView");
+    _viewScope = provider.CreateScope();
+    var enterpriseRepository = _viewScope.ServiceProvider.GetRequiredService<IEnterpriseRepository>();
+    DataContext = new BudgetViewModel(enterpriseRepository);
+
+    // Dispose the scope when the window is closed
+    this.Closed += (_, _) => { try { _viewScope.Dispose(); } catch { } };
 
         // Load budget data when window opens
         Loaded += async (s, e) =>
@@ -52,42 +61,6 @@ public partial class BudgetView : Window
     {
         var window = new BudgetView();
         return window.ShowDialog();
-    }
-
-    /// <summary>
-    /// Attempt to apply a Syncfusion theme; falls back to Fluent Light if requested theme fails.
-    /// </summary>
-    private void TryApplyTheme(string themeName)
-    {
-        try
-        {
-            var canonical = NormalizeTheme(themeName);
-#pragma warning disable CA2000 // Dispose objects before losing scope - Theme objects are managed by SfSkinManager
-            SfSkinManager.SetTheme(this, new Theme(canonical));
-#pragma warning restore CA2000 // Dispose objects before losing scope
-        }
-        catch
-        {
-            if (themeName != "FluentLight")
-            {
-                // Fallback
-#pragma warning disable CA2000 // Dispose objects before losing scope - Theme objects are managed by SfSkinManager
-                try { SfSkinManager.SetTheme(this, new Theme("FluentLight")); } catch { /* ignore */ }
-#pragma warning restore CA2000 // Dispose objects before losing scope
-            }
-        }
-    }
-
-    private string NormalizeTheme(string raw)
-    {
-        if (string.IsNullOrWhiteSpace(raw)) return "FluentDark";
-        raw = raw.Replace(" ", string.Empty); // allow "Fluent Dark" legacy
-        return raw switch
-        {
-            "FluentDark" => "FluentDark",
-            "FluentLight" => "FluentLight",
-            _ => "FluentDark" // default
-        };
     }
 }
 

@@ -5,6 +5,7 @@ using WileyWidget.ViewModels;
 using Syncfusion.SfSkinManager;
 using Syncfusion.Windows.Shared;
 using WileyWidget.Services;
+using Serilog;
 
 namespace WileyWidget
 {
@@ -71,35 +72,7 @@ namespace WileyWidget
         /// </summary>
         private void TryApplyTheme(string themeName)
         {
-            try
-            {
-                var canonical = NormalizeTheme(themeName);
-#pragma warning disable CA2000 // Dispose objects before losing scope - Theme objects are managed by SfSkinManager
-                SfSkinManager.SetTheme(this, new Theme(canonical));
-#pragma warning restore CA2000 // Dispose objects before losing scope
-            }
-            catch
-            {
-                if (themeName != "FluentLight")
-                {
-                    // Fallback
-#pragma warning disable CA2000 // Dispose objects before losing scope - Theme objects are managed by SfSkinManager
-                    try { SfSkinManager.SetTheme(this, new Theme("FluentLight")); } catch { /* ignore */ }
-#pragma warning restore CA2000 // Dispose objects before losing scope
-                }
-            }
-        }
-
-        private string NormalizeTheme(string raw)
-        {
-            if (string.IsNullOrWhiteSpace(raw)) return "FluentDark";
-            raw = raw.Replace(" ", string.Empty); // allow "Fluent Dark" legacy
-            return raw switch
-            {
-                "FluentDark" => "FluentDark",
-                "FluentLight" => "FluentLight",
-                _ => "FluentDark" // default
-            };
+            Services.ThemeUtility.TryApplyTheme(this, themeName);
         }
     }
 }

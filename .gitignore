@@ -1,3 +1,7 @@
+# Build cache
+.buildcache/
+*.buildcache/
+
 # .NET / WPF standard ignores
 bin/
 obj/

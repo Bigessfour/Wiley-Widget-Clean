@@ -23,6 +23,9 @@ using WileyWidget.ViewModels;
 using System.Windows.Controls; // For Grid, TextBlock, Button
 using System.Windows.Controls.Primitives; // For GridLength, etc.
 using Microsoft.Extensions.Hosting; // Generic Host
+using System.Runtime.InteropServices;
+using System.Reflection;
+using System.Diagnostics;
 
 namespace WileyWidget;
 
@@ -33,6 +36,7 @@ namespace WileyWidget;
 /// - Immediate splash screen
 /// - Background service initialization
 /// - Better error handling and fallbacks
+/// - Enhanced debug instrumentation for startup analysis
 /// </summary>
 public partial class App : Application
 {
@@ -48,10 +52,100 @@ public partial class App : Application
 
     private IConfiguration _configuration;
     private SplashScreenWindow _splashScreen;
+
+    /// <summary>
+    /// Debug instrumentation for startup analysis
+    /// </summary>
+    private static readonly bool _enableDebugInstrumentation =
+        Environment.GetEnvironmentVariable("WILEY_DEBUG_STARTUP") == "true";
+
+    private static readonly string _debugLogPath =
+        Path.Combine(Path.GetTempPath(), "WileyWidget", "startup-debug.log");
+
+    private static StreamWriter _debugWriter;
+    private static readonly object _debugLock = new object();
+
+    /// <summary>
+    /// Initialize debug instrumentation if enabled
+    /// </summary>
+    private static void InitializeDebugInstrumentation()
+    {
+        if (!_enableDebugInstrumentation) return;
+
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(_debugLogPath));
+            _debugWriter = new StreamWriter(_debugLogPath, false) { AutoFlush = true };
+            LogDebugEvent("STARTUP_DEBUG", "Debug instrumentation initialized");
+            LogDebugEvent("SYSTEM_INFO", $"CLR Version: {Environment.Version}");
+            LogDebugEvent("SYSTEM_INFO", $"OS: {Environment.OSVersion}");
+            LogDebugEvent("SYSTEM_INFO", $"Process: {Process.GetCurrentProcess().ProcessName} (PID: {Process.GetCurrentProcess().Id})");
+            LogDebugEvent("SYSTEM_INFO", $"Architecture: {RuntimeInformation.ProcessArchitecture}");
+
+            // Hook into assembly loading events
+            AppDomain.CurrentDomain.AssemblyLoad += (sender, args) =>
+            {
+                LogDebugEvent("ASSEMBLY_LOAD", $"{args.LoadedAssembly.GetName().Name} v{args.LoadedAssembly.GetName().Version} from {args.LoadedAssembly.Location}");
+            };
+
+            // Hook into assembly resolve events
+            AppDomain.CurrentDomain.AssemblyResolve += (sender, args) =>
+            {
+                LogDebugEvent("ASSEMBLY_RESOLVE", $"Attempting to resolve: {args.Name}");
+                return null;
+            };
+
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Failed to initialize debug instrumentation");
+        }
+    }
+
+    /// <summary>
+    /// Log a debug event with timestamp
+    /// </summary>
+    public static void LogDebugEvent(string category, string message)
+    {
+        if (!_enableDebugInstrumentation || _debugWriter == null) return;
+
+        lock (_debugLock)
+        {
+            try
+            {
+                var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
+                _debugWriter.WriteLine($"{timestamp}|{category}|{message}");
+            }
+            catch { /* Ignore logging failures */ }
+        }
+    }
+
+    /// <summary>
+    /// Log performance timing for startup phases
+    /// </summary>
+    public static void LogStartupTiming(string phase, TimeSpan duration, string details = null)
+    {
+        if (!_enableDebugInstrumentation) return;
+
+        var message = $"{phase}: {duration.TotalMilliseconds:F2}ms";
+        if (!string.IsNullOrEmpty(details))
+            message += $" | {details}";
+
+        LogDebugEvent("TIMING", message);
+        Log.Information("Startup timing - {Phase}: {Duration:F2}ms", phase, duration.TotalMilliseconds);
+    }
+    private IHost _host; // Generic Host instance
     private HealthCheckConfiguration _healthCheckConfig;
     private Dictionary<string, HealthCheckCircuitBreaker> _circuitBreakers;
-    private IHost _host; // Generic Host instance
     // Removed unused private field _latestHealthReport to avoid CS0169 warning (LatestHealthReport static property is used instead)
+
+    /// <summary>
+    /// Allows hosted/background services to publish the latest health report in a single place.
+    /// </summary>
+    public static void UpdateLatestHealthReport(HealthCheckReport report)
+    {
+        LatestHealthReport = report;
+    }
 
     /// <summary>
     /// OPTIMIZED CONSTRUCTOR: Synchronous license registration before ANY Syncfusion components
@@ -73,16 +167,27 @@ public partial class App : Application
     /// </summary>
     protected override async void OnStartup(StartupEventArgs e)
     {
+        var startupStopwatch = System.Diagnostics.Stopwatch.StartNew();
+        var startupId = Guid.NewGuid().ToString("N")[..8];
+
+        // Initialize debug instrumentation FIRST
+        InitializeDebugInstrumentation();
+        LogDebugEvent("STARTUP_INIT", $"Startup session: {startupId}");
+
         try
         {
-            Log.Information("=== Application Startup (Optimized) ===");
+            Log.Information("=== Application Startup (Optimized) - ID: {StartupId} ===", startupId);
+            LogDebugEvent("STARTUP_PHASE", "Beginning application startup");
 
             // Prevent WPF from automatically creating MainWindow
             // We'll create it manually after DI is ready
             this.MainWindow = null;
 
             // 0. Initial setup (10%)
+            var phaseStopwatch = System.Diagnostics.Stopwatch.StartNew();
             _splashScreen?.UpdateProgress(10, "Configuring application...");
+            LogDebugEvent("STARTUP_PHASE", "Phase 0: Initial setup");
+            
             ConfigureGlobalExceptionHandling();
             SettingsService.Instance.Load();
             // Apply dark default early if none persisted (normalization happens in MainWindow).
@@ -93,27 +198,57 @@ public partial class App : Application
             {
                 TryScheduleLicenseDialogAutoClose();
             }
+            
+            // Register Syncfusion license asynchronously to avoid blocking startup
+            _ = Task.Run(() => RegisterSyncfusionLicense());
+            
+            Log.Information("Phase 0 - Initial setup completed in {ElapsedMs}ms [{StartupId}]", 
+                phaseStopwatch.ElapsedMilliseconds, startupId);
+            LogStartupTiming("Phase 0 - Initial Setup", phaseStopwatch.Elapsed);
+            LogDebugEvent("STARTUP_PHASE", $"Phase 0 completed in {phaseStopwatch.ElapsedMilliseconds}ms");
 
             // 1. Show splash screen IMMEDIATELY (perceived performance) (20%)
+            phaseStopwatch.Restart();
             _splashScreen?.UpdateProgress(20, "Initializing user interface...");
+            LogDebugEvent("STARTUP_PHASE", "Phase 1: Splash screen initialization");
             try
             {
                 ShowSplashScreen();
+                Log.Information("Phase 1 - Splash screen displayed in {ElapsedMs}ms [{StartupId}]", 
+                    phaseStopwatch.ElapsedMilliseconds, startupId);
+                LogStartupTiming("Phase 1 - Splash Screen", phaseStopwatch.Elapsed);
+                LogDebugEvent("STARTUP_PHASE", $"Phase 1 completed in {phaseStopwatch.ElapsedMilliseconds}ms");
             }
             catch (Exception ex)
             {
-                Log.Warning(ex, "Failed to show splash screen, continuing without it");
+                Log.Warning(ex, "Failed to show splash screen in {ElapsedMs}ms, continuing without it [{StartupId}]", 
+                    phaseStopwatch.ElapsedMilliseconds, startupId);
+                LogDebugEvent("STARTUP_WARNING", $"Splash screen failed: {ex.Message}");
             }
 
             // 2. Build Generic Host with enterprise configuration (40% - 70%)
+            phaseStopwatch.Restart();
             _splashScreen?.UpdateProgress(40, "Configuring services...");
+            LogDebugEvent("STARTUP_PHASE", "Phase 2: Host and DI configuration");
             ConfigureEssentialServices();
+            Log.Information("Phase 2a - Essential services configured in {ElapsedMs}ms [{StartupId}]", 
+                phaseStopwatch.ElapsedMilliseconds, startupId);
+            LogDebugEvent("STARTUP_PHASE", $"Phase 2a completed in {phaseStopwatch.ElapsedMilliseconds}ms");
 
             _splashScreen?.UpdateProgress(60, "Building host...");
+            LogDebugEvent("STARTUP_PHASE", "Phase 2b: Host building");
             var hostBuilder = Host.CreateApplicationBuilder();
+            // Register splash screen in DI container so HostedWpfApplication can access it
+            if (_splashScreen != null)
+            {
+                hostBuilder.Services.AddSingleton(_splashScreen);
+            }
             // Delegate DI, logging, config, DB services, hosted services to our extension
             hostBuilder.ConfigureWpfApplication();
             _host = hostBuilder.Build();
+            Log.Information("Phase 2b - Host built in {ElapsedMs}ms [{StartupId}]", 
+                phaseStopwatch.ElapsedMilliseconds, startupId);
+            LogDebugEvent("STARTUP_PHASE", $"Phase 2b completed in {phaseStopwatch.ElapsedMilliseconds}ms");
 
             // Expose ServiceProvider for legacy paths
             ServiceProvider = _host.Services;
@@ -123,52 +258,83 @@ public partial class App : Application
             InitializeEssentialServices();
 
             // Start the host (HostedWpfApplication will create and show MainWindow)
+            phaseStopwatch.Restart();
             _splashScreen?.UpdateProgress(70, "Starting services...");
-            await _host.StartAsync();
-
-            // Now call base.OnStartup to complete WPF initialization
-            base.OnStartup(e);
-
-            // Ensure splash closes once content is rendered
-            bool splashClosed = false;
-            if (Application.Current?.MainWindow != null)
+            LogDebugEvent("STARTUP_PHASE", "Phase 3: Host startup and MainWindow creation");
+            bool hostStartedSuccessfully = false;
+            try
             {
-                Application.Current.MainWindow.ContentRendered += async (_, __) =>
-                {
-                    if (_splashScreen != null && !splashClosed)
-                    {
-                        splashClosed = true;
-                        try
-                        {
-                            // Allow a brief moment for the completion message to be visible
-                            await Task.Delay(250);
-                            await _splashScreen.FadeOutAndCloseAsync();
-                            _splashScreen = null;
-                            Log.Information("Splash screen closed after MainWindow content rendered");
-                        }
-                        catch (Exception exClose)
-                        {
-                            Log.Warning(exClose, "Failed to fade/close splash, falling back to HideSplashScreen()");
-                            HideSplashScreen();
-                        }
-                    }
-                };
+                await _host.StartAsync();
+                hostStartedSuccessfully = true;
+                Log.Information("Phase 3 - Host started successfully in {ElapsedMs}ms [{StartupId}]", 
+                    phaseStopwatch.ElapsedMilliseconds, startupId);
+                LogStartupTiming("Phase 3 - Host Startup", phaseStopwatch.Elapsed);
+                LogDebugEvent("STARTUP_PHASE", $"Phase 3 completed in {phaseStopwatch.ElapsedMilliseconds}ms");
+            }
+            catch (Exception hostEx)
+            {
+                Log.Error(hostEx, "Failed to start application host after {ElapsedMs}ms - MainWindow creation failed [{StartupId}]", 
+                    phaseStopwatch.ElapsedMilliseconds, startupId);
+                LogDebugEvent("STARTUP_ERROR", $"Host startup failed: {hostEx.Message}");
+
+                // Close splash screen before showing fallback UI
+                await CloseSplashScreenOnFailureAsync();
+
+                // Show error dialog and exit gracefully
+                ShowFallbackUI(hostEx);
+                Shutdown();
+                return;
             }
 
-            // 5. Complete initialization (100%)
-            _splashScreen?.Complete();
+            // Only proceed with WPF initialization if host started successfully
+            if (hostStartedSuccessfully)
+            {
+                phaseStopwatch.Restart();
+                // Now call base.OnStartup to complete WPF initialization
+                base.OnStartup(e);
+                Log.Information("Phase 4 - WPF initialization completed in {ElapsedMs}ms [{StartupId}]", 
+                    phaseStopwatch.ElapsedMilliseconds, startupId);
 
-            // 6. Continue with background initialization (non-blocking)
-            _ = InitializeBackgroundServicesAsync();
+                // Splash screen closing is now handled by HostedWpfApplication when MainWindow ContentRendered fires
 
-            Log.Information("=== Application Startup Completed ===");
+                // 5. Complete initialization (100%)
+                _splashScreen?.Complete();
+
+                // 6. Background initialization is handled by hosted services now
+
+                Log.Information("=== Application Startup Completed in {TotalElapsedMs}ms - ID: {StartupId} ===", 
+                    startupStopwatch.ElapsedMilliseconds, startupId);
+            }
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Critical error during application startup");
+            Log.Error(ex, "Critical error during application startup after {ElapsedMs}ms [{StartupId}]", 
+                startupStopwatch.ElapsedMilliseconds, startupId);
+
+            // Close splash screen before showing fallback UI (only if not already closed)
+            if (_splashScreen != null)
+            {
+                try
+                {
+                    await _splashScreen.FadeOutAndCloseAsync();
+                    _splashScreen = null;
+                    Log.Information("Splash screen closed due to startup failure [{StartupId}]", startupId);
+                }
+                catch (Exception splashEx)
+                {
+                    Log.Warning(splashEx, "Failed to close splash screen during startup failure [{StartupId}]", startupId);
+                    // Fallback to HideSplashScreen
+                    HideSplashScreen();
+                }
+            }
+
             // Show error dialog and exit gracefully
             ShowFallbackUI(ex);
             Shutdown();
+        }
+        finally
+        {
+            startupStopwatch.Stop();
         }
     }
 
@@ -201,9 +367,6 @@ public partial class App : Application
             // Load configuration first to get license key
             LoadConfiguration();
 
-            // Initialize health check configuration
-            InitializeHealthCheckConfiguration();
-
             // Read license key from supported sources (env var, config, user secrets)
             var licenseKey = GetSyncfusionLicenseKey();
 
@@ -234,53 +397,21 @@ public partial class App : Application
             .AddEnvironmentVariables();
 
         _configuration = builder.Build();
-    }
 
-    private void InitializeHealthCheckConfiguration()
-    {
+        // Initialize health check configuration
         _healthCheckConfig = new HealthCheckConfiguration();
+        _configuration.GetSection("HealthChecks").Bind(_healthCheckConfig);
 
-        // Load health check settings from configuration
-        var healthCheckSection = _configuration.GetSection("HealthChecks");
-        if (healthCheckSection.Exists())
-        {
-            healthCheckSection.Bind(_healthCheckConfig);
-        }
-
-        // Override with environment variables if present
-        var defaultTimeout = Environment.GetEnvironmentVariable("HEALTHCHECK_DEFAULT_TIMEOUT");
-        if (!string.IsNullOrEmpty(defaultTimeout) && TimeSpan.TryParse(defaultTimeout, out var timeout))
-        {
-            _healthCheckConfig.DefaultTimeout = timeout;
-        }
-
-        var continueOnFailure = Environment.GetEnvironmentVariable("HEALTHCHECK_CONTINUE_ON_FAILURE");
-        if (!string.IsNullOrEmpty(continueOnFailure) && bool.TryParse(continueOnFailure, out var continueFlag))
-        {
-            _healthCheckConfig.ContinueOnFailure = continueFlag;
-        }
-
-        // Initialize circuit breakers for each service
-        _circuitBreakers = new Dictionary<string, HealthCheckCircuitBreaker>
-        {
-            ["Database"] = new HealthCheckCircuitBreaker(_healthCheckConfig.CircuitBreakerThreshold, _healthCheckConfig.CircuitBreakerTimeout),
-            ["Azure AD"] = new HealthCheckCircuitBreaker(_healthCheckConfig.CircuitBreakerThreshold, _healthCheckConfig.CircuitBreakerTimeout),
-            ["Azure Key Vault"] = new HealthCheckCircuitBreaker(_healthCheckConfig.CircuitBreakerThreshold, _healthCheckConfig.CircuitBreakerTimeout),
-            ["QuickBooks"] = new HealthCheckCircuitBreaker(_healthCheckConfig.CircuitBreakerThreshold, _healthCheckConfig.CircuitBreakerTimeout),
-            ["AI Service"] = new HealthCheckCircuitBreaker(_healthCheckConfig.CircuitBreakerThreshold, _healthCheckConfig.CircuitBreakerTimeout),
-            ["External Dependencies"] = new HealthCheckCircuitBreaker(_healthCheckConfig.CircuitBreakerThreshold, _healthCheckConfig.CircuitBreakerTimeout)
-        };
-
-        Log.Information("Health check configuration initialized with timeout: {Timeout}s, continue on failure: {Continue}, circuit breaker threshold: {Threshold}",
-            _healthCheckConfig.DefaultTimeout.TotalSeconds, _healthCheckConfig.ContinueOnFailure, _healthCheckConfig.CircuitBreakerThreshold);
+        // Initialize circuit breakers dictionary
+        _circuitBreakers = new Dictionary<string, HealthCheckCircuitBreaker>();
     }
+
 
     private void ConfigureLogging()
     {
+        // Enhanced Serilog configuration using appsettings.json
         Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Debug()
-            .WriteTo.File("logs/wiley-widget-.log", rollingInterval: RollingInterval.Day)
-            .WriteTo.Debug()
+            .ReadFrom.Configuration(_configuration)
             .CreateLogger();
     }
 
@@ -311,6 +442,7 @@ public partial class App : Application
             .AddApplicationLifecycleHealthCheck();
 
         // Add custom health check service
+        services.Configure<HealthCheckConfiguration>(_configuration.GetSection("HealthChecks"));
         services.AddSingleton<HealthCheckConfiguration>();
         services.AddSingleton<WileyWidget.Services.HealthCheckService>();
     }
@@ -360,22 +492,20 @@ public partial class App : Application
         AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
         {
             var ex = (Exception)args.ExceptionObject;
-            Log.Fatal(ex, "Unhandled exception - application will terminate");
+            Services.ErrorReportingService.Instance.ReportError(ex, "AppDomain_Unhandled", showToUser: false, level: LogEventLevel.Fatal);
             ShowCriticalErrorDialog(ex);
         };
 
         DispatcherUnhandledException += (sender, args) =>
         {
-            Log.Error(args.Exception, "Dispatcher unhandled exception");
+            Services.ErrorReportingService.Instance.ReportError(args.Exception, "Dispatcher_Unhandled", showToUser: true);
             args.Handled = true;
-            ShowRecoverableErrorDialog(args.Exception);
         };
 
         TaskScheduler.UnobservedTaskException += (sender, args) =>
         {
-            Log.Error(args.Exception, "Unobserved task exception");
+            Services.ErrorReportingService.Instance.ReportError(args.Exception, "Task_Unobserved", showToUser: false);
             args.SetObserved();
-            ShowRecoverableErrorDialog(args.Exception);
         };
     }
 
@@ -424,16 +554,21 @@ public partial class App : Application
 
     private void ShowSplashScreen()
     {
+        var splashStopwatch = System.Diagnostics.Stopwatch.StartNew();
         try
         {
             // Create custom splash screen window with progress tracking
             _splashScreen = new SplashScreenWindow();
             _splashScreen.Show();
-            Log.Information("Custom splash screen displayed successfully");
+            Log.Information("Custom splash screen displayed successfully in {ElapsedMs}ms", splashStopwatch.ElapsedMilliseconds);
         }
         catch (Exception ex)
         {
-            Log.Warning(ex, "Failed to show splash screen, continuing without it");
+            Log.Warning(ex, "Failed to show splash screen after {ElapsedMs}ms, continuing without it", splashStopwatch.ElapsedMilliseconds);
+        }
+        finally
+        {
+            splashStopwatch.Stop();
         }
     }
 
@@ -876,7 +1011,9 @@ public partial class App : Application
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
         try
         {
-            var qbService = ServiceProvider.GetService<IQuickBooksService>();
+            // Resolve scoped QuickBooks service from a created scope to avoid resolving scoped service from root
+            using var scope = ServiceProvider.CreateScope();
+            var qbService = scope.ServiceProvider.GetService<IQuickBooksService>();
             if (qbService == null)
             {
                 return Task.FromResult(HealthCheckResult.Unavailable("QuickBooks", "QuickBooks service not available"));
@@ -942,7 +1079,9 @@ public partial class App : Application
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
         try
         {
-            var aiService = ServiceProvider.GetService<IAIService>();
+            // Resolve AI service from a scope to respect scoped lifetime
+            using var scope = ServiceProvider.CreateScope();
+            var aiService = scope.ServiceProvider.GetService<IAIService>();
             if (aiService == null)
             {
                 return Task.FromResult(HealthCheckResult.Unavailable("AI Service", "AI service not configured"));
@@ -1284,6 +1423,24 @@ public partial class App : Application
         };
     }
 
+    private async Task CloseSplashScreenOnFailureAsync()
+    {
+        if (_splashScreen != null)
+        {
+            try
+            {
+                await _splashScreen.FadeOutAndCloseAsync();
+                _splashScreen = null;
+                Log.Information("Splash screen closed due to startup failure");
+            }
+            catch (Exception splashEx)
+            {
+                Log.Warning(splashEx, "Failed to close splash screen during startup failure");
+                HideSplashScreen();
+            }
+        }
+    }
+
     private void ShowFallbackUI(Exception ex)
     {
         try
@@ -1364,15 +1521,29 @@ public partial class App : Application
     {
         try
         {
-            // 1) Environment variable
+            // 1) Environment variable (check all scopes: Process, User, Machine)
             var key = Environment.GetEnvironmentVariable("SYNCFUSION_LICENSE_KEY");
             if (!string.IsNullOrWhiteSpace(key) && key != "${SYNCFUSION_LICENSE_KEY}")
+            {
+                System.Diagnostics.Debug.WriteLine($"Syncfusion license found in environment variables (scope: Process/User/Machine)");
                 return key.Trim();
+            }
+
+            // Explicitly check machine scope (where user said it's stored)
+            key = Environment.GetEnvironmentVariable("SYNCFUSION_LICENSE_KEY", EnvironmentVariableTarget.Machine);
+            if (!string.IsNullOrWhiteSpace(key) && key != "${SYNCFUSION_LICENSE_KEY}")
+            {
+                System.Diagnostics.Debug.WriteLine("Syncfusion license found in machine scope environment variable");
+                return key.Trim();
+            }
 
             // 2) Configuration
             key = _configuration?["Syncfusion:LicenseKey"];
             if (!string.IsNullOrWhiteSpace(key) && key != "${SYNCFUSION_LICENSE_KEY}")
+            {
+                System.Diagnostics.Debug.WriteLine("Syncfusion license found in configuration");
                 return key.Trim();
+            }
 
             // 3) User secrets (development)
             try
@@ -1382,15 +1553,21 @@ public partial class App : Application
                     .Build();
                 key = userSecretsConfig["Syncfusion:LicenseKey"];
                 if (!string.IsNullOrWhiteSpace(key) && key != "${SYNCFUSION_LICENSE_KEY}")
+                {
+                    System.Diagnostics.Debug.WriteLine("Syncfusion license found in user secrets");
                     return key.Trim();
+                }
             }
             catch
             {
                 // ignore if user secrets unavailable
             }
+
+            System.Diagnostics.Debug.WriteLine("Syncfusion license key not found in any source");
         }
-        catch
+        catch (Exception ex)
         {
+            System.Diagnostics.Debug.WriteLine($"Error resolving Syncfusion license key: {ex.Message}");
             // ignore resolution errors and fall through
         }
 

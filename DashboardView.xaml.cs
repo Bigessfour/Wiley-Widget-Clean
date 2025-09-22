@@ -5,6 +5,7 @@ using WileyWidget.ViewModels;
 using Syncfusion.SfSkinManager;
 using Syncfusion.Windows.Shared;
 using WileyWidget.Services;
+using Serilog;
 
 namespace WileyWidget
 {
@@ -41,11 +42,33 @@ namespace WileyWidget
             // Load dashboard data when window opens
             Loaded += DashboardView_Loaded;
             Closing += DashboardView_Closing;
+            StateChanged += DashboardView_StateChanged;
         }
 
         private async void DashboardView_Loaded(object sender, RoutedEventArgs e)
         {
             await _viewModel.LoadDashboardDataAsync();
+        }
+
+        private void DashboardView_StateChanged(object sender, EventArgs e)
+        {
+            if (_refreshTimer == null) return;
+
+            if (WindowState == WindowState.Minimized)
+            {
+                // Pause timer when window is minimized to save resources
+                _refreshTimer.Stop();
+                Log.Debug("Dashboard auto-refresh paused due to window minimization");
+            }
+            else if (WindowState == WindowState.Normal || WindowState == WindowState.Maximized)
+            {
+                // Resume timer when window is restored
+                if (_viewModel.AutoRefreshEnabled)
+                {
+                    _refreshTimer.Start();
+                    Log.Debug("Dashboard auto-refresh resumed after window restoration");
+                }
+            }
         }
 
         private void DashboardView_Closing(object sender, System.ComponentModel.CancelEventArgs e)
@@ -83,35 +106,7 @@ namespace WileyWidget
         /// </summary>
         private void TryApplyTheme(string themeName)
         {
-            try
-            {
-                var canonical = NormalizeTheme(themeName);
-#pragma warning disable CA2000 // Dispose objects before losing scope - Theme objects are managed by SfSkinManager
-                SfSkinManager.SetTheme(this, new Theme(canonical));
-#pragma warning restore CA2000 // Dispose objects before losing scope
-            }
-            catch
-            {
-                if (themeName != "FluentLight")
-                {
-                    // Fallback
-#pragma warning disable CA2000 // Dispose objects before losing scope - Theme objects are managed by SfSkinManager
-                    try { SfSkinManager.SetTheme(this, new Theme("FluentLight")); } catch { /* ignore */ }
-#pragma warning restore CA2000 // Dispose objects before losing scope
-                }
-            }
-        }
-
-        private string NormalizeTheme(string raw)
-        {
-            if (string.IsNullOrWhiteSpace(raw)) return "FluentDark";
-            raw = raw.Replace(" ", string.Empty); // allow "Fluent Dark" legacy
-            return raw switch
-            {
-                "FluentDark" => "FluentDark",
-                "FluentLight" => "FluentLight",
-                _ => "FluentDark" // default
-            };
+            Services.ThemeUtility.TryApplyTheme(this, themeName);
         }
     }
 }

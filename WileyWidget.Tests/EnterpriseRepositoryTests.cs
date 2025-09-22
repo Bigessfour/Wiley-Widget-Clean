@@ -372,6 +372,112 @@ public class EnterpriseRepositoryTests : IDisposable
         Assert.Equal("Zeta Corp", enterprises[1].Name);
     }
 
+    [Fact]
+    public void CreateFromHeaderMapping_WithValidHeaders_MapsPropertiesCorrectly()
+    {
+        // Arrange
+        var headerValueMap = new Dictionary<string, string>
+        {
+            { "Name", "Test Enterprise" },
+            { "Description", "A test enterprise" },
+            { "CurrentRate", "10.50" },
+            { "MonthlyExpenses", "2500.00" },
+            { "CitizenCount", "300" },
+            { "Type", "Utility" },
+            { "Notes", "Test notes" }
+        };
+
+        // Act
+        var result = _repository.CreateFromHeaderMapping(headerValueMap);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal("Test Enterprise", result.Name);
+        Assert.Equal("A test enterprise", result.Description);
+        Assert.Equal(10.50m, result.CurrentRate);
+        Assert.Equal(2500.00m, result.MonthlyExpenses);
+        Assert.Equal(300, result.CitizenCount);
+        Assert.Equal("Utility", result.Type);
+        Assert.Equal("Test notes", result.Notes);
+    }
+
+    [Fact]
+    public void CreateFromHeaderMapping_WithAlternativeHeaders_MapsPropertiesCorrectly()
+    {
+        // Arrange
+        var headerValueMap = new Dictionary<string, string>
+        {
+            { "Enterprise Name", "Water Utility" },
+            { "Rate", "5.25" },
+            { "Monthly Expenses", "1500.75" },
+            { "Citizen Count", "450" },
+            { "Budget", "10000.00" }
+        };
+
+        // Act
+        var result = _repository.CreateFromHeaderMapping(headerValueMap);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal("Water Utility", result.Name);
+        Assert.Equal(5.25m, result.CurrentRate);
+        Assert.Equal(1500.75m, result.MonthlyExpenses);
+        Assert.Equal(450, result.CitizenCount);
+        Assert.Equal(10000.00m, result.TotalBudget);
+    }
+
+    [Fact]
+    public void CreateFromHeaderMapping_WithInvalidValues_SkipsInvalidProperties()
+    {
+        // Arrange
+        var headerValueMap = new Dictionary<string, string>
+        {
+            { "Name", "Valid Name" },
+            { "CurrentRate", "invalid_rate" },
+            { "CitizenCount", "not_a_number" },
+            { "Type", "Valid Type" }
+        };
+
+        // Act
+        var result = _repository.CreateFromHeaderMapping(headerValueMap);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal("Valid Name", result.Name);
+        Assert.Equal("Valid Type", result.Type);
+        // Invalid values should not be set (remain default)
+        Assert.Equal(0m, result.CurrentRate);
+        Assert.Equal(0, result.CitizenCount);
+    }
+
+    [Fact]
+    public void CreateFromHeaderMapping_WithNullMap_ThrowsArgumentNullException()
+    {
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => _repository.CreateFromHeaderMapping(null));
+    }
+
+    [Fact]
+    public void CreateFromHeaderMapping_WithEmptyValues_SkipsEmptyProperties()
+    {
+        // Arrange
+        var headerValueMap = new Dictionary<string, string>
+        {
+            { "Name", "" },
+            { "Description", "   " },
+            { "CurrentRate", "15.00" }
+        };
+
+        // Act
+        var result = _repository.CreateFromHeaderMapping(headerValueMap);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(string.Empty, result.Name); // Empty string is still valid for string properties
+        Assert.Equal(string.Empty, result.Description);
+        Assert.Equal(15.00m, result.CurrentRate);
+    }
+
     protected virtual void Dispose(bool disposing)
     {
         if (disposing)

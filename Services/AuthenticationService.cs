@@ -1,8 +1,10 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Timers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Identity.Client;
+using Serilog;
 #nullable enable
 
 namespace WileyWidget.Services
@@ -11,11 +13,12 @@ namespace WileyWidget.Services
     /// Service for handling Azure AD authentication via MSAL.
     /// This implementation replaces prior corrupted/duplicated content.
     /// </summary>
-    public class AuthenticationService
+    public class AuthenticationService : IDisposable
     {
         private IPublicClientApplication? _app;
         private readonly AzureAdConfig _config;
         private readonly bool _isConfigured;
+        private System.Timers.Timer? _tokenRefreshTimer;
 
         public event EventHandler<AuthenticationEventArgs>? AuthenticationStateChanged;
 
@@ -92,6 +95,12 @@ namespace WileyWidget.Services
                 {
                     System.Diagnostics.Debug.WriteLine($"Broker not available: {ex.Message}");
                 }
+
+                // Initialize token refresh timer (30 minutes)
+                _tokenRefreshTimer = new System.Timers.Timer(30 * 60 * 1000);
+                _tokenRefreshTimer.Elapsed += OnTokenRefreshTimerElapsed;
+                _tokenRefreshTimer.AutoReset = true;
+                _tokenRefreshTimer.Start();
             }
             catch (Exception ex)
             {
@@ -113,7 +122,8 @@ namespace WileyWidget.Services
         public async Task<AuthenticationResult> SignInAsync()
         {
             EnsureConfigured();
-            try
+
+            async Task<AuthenticationResult> PerformSignIn()
             {
                 var accounts = await _app!.GetAccountsAsync();
                 AuthenticationResult result;
@@ -133,11 +143,36 @@ namespace WileyWidget.Services
                 }
 
                 OnAuthenticationStateChanged(true);
+                Log.Information("User successfully authenticated: {UserName}", result.Account.Username);
                 return result;
+            }
+
+            try
+            {
+                // Try to sign in with retry mechanism
+                var recovered = await ErrorReportingService.Instance.TryRecoverAsync(
+                    null, // No initial exception
+                    "Authentication",
+                    async () => {
+                        var result = await PerformSignIn();
+                        return true; // Success
+                    });
+
+                if (recovered)
+                {
+                    // If recovery succeeded, we need to get the result again
+                    return await PerformSignIn();
+                }
+                else
+                {
+                    // If no recovery or recovery failed, try once more without recovery
+                    return await PerformSignIn();
+                }
             }
             catch (MsalException ex)
             {
                 OnAuthenticationStateChanged(false);
+                ErrorReportingService.Instance.ReportError(ex, "Authentication_SignIn", showToUser: true);
                 throw new AuthenticationException($"Authentication failed: {ex.Message}", ex);
             }
         }
@@ -169,7 +204,8 @@ namespace WileyWidget.Services
         public async Task<string> GetAccessTokenAsync()
         {
             EnsureConfigured();
-            try
+
+            async Task<string> AcquireToken()
             {
                 var accounts = await _app!.GetAccountsAsync();
                 if (!accounts.Any())
@@ -180,10 +216,35 @@ namespace WileyWidget.Services
                 var result = await _app.AcquireTokenSilent(new[] { "User.Read" }, accounts.First())
                     .ExecuteAsync();
 
+                Log.Debug("Access token acquired successfully for user: {UserName}", result.Account.Username);
                 return result.AccessToken;
+            }
+
+            try
+            {
+                // Try to acquire token with retry mechanism
+                var recovered = await ErrorReportingService.Instance.TryRecoverAsync(
+                    null, // No initial exception
+                    "Authentication",
+                    async () => {
+                        await AcquireToken();
+                        return true; // Success
+                    });
+
+                if (recovered)
+                {
+                    // If recovery succeeded, we need to get the token again
+                    return await AcquireToken();
+                }
+                else
+                {
+                    // If no recovery or recovery failed, try once more without recovery
+                    return await AcquireToken();
+                }
             }
             catch (MsalException ex)
             {
+                ErrorReportingService.Instance.ReportError(ex, "Authentication_GetToken", showToUser: true);
                 throw new AuthenticationException($"Failed to acquire access token: {ex.Message}", ex);
             }
         }
@@ -200,17 +261,61 @@ namespace WileyWidget.Services
                 throw new AuthenticationException("No user is signed in");
             }
 
-            return new UserInfo
+            var userInfo = new UserInfo
             {
                 Username = account.Username,
                 Name = account.Username, // Could be enhanced to get display name from Graph API
                 AccountId = account.HomeAccountId?.Identifier ?? string.Empty
             };
+
+            // Simple role assignment logic (can be enhanced with Azure AD groups later)
+            userInfo.Roles = new List<string> { "User" }; // Default role
+
+            // Assign Admin role based on username/email patterns (customize as needed)
+            if (account.Username.Contains("admin", StringComparison.OrdinalIgnoreCase) ||
+                account.Username.EndsWith("@yourcompany.com", StringComparison.OrdinalIgnoreCase))
+            {
+                userInfo.Roles.Add("Admin");
+            }
+
+            return userInfo;
         }
 
         private void OnAuthenticationStateChanged(bool isAuthenticated)
         {
             AuthenticationStateChanged?.Invoke(this, new AuthenticationEventArgs(isAuthenticated));
+        }
+
+        private async void OnTokenRefreshTimerElapsed(object? sender, ElapsedEventArgs e)
+        {
+            if (!IsAuthenticated) return;
+
+            try
+            {
+                // Try to refresh the token silently
+                await GetAccessTokenAsync();
+                System.Diagnostics.Debug.WriteLine("Token refreshed successfully");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Token refresh failed: {ex.Message}");
+                // If refresh fails, the user might need to re-authenticate
+                OnAuthenticationStateChanged(false);
+            }
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                _tokenRefreshTimer?.Dispose();
+            }
         }
     }
 
@@ -235,6 +340,9 @@ namespace WileyWidget.Services
         public string Username { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
         public string AccountId { get; set; } = string.Empty;
+        public List<string> Roles { get; set; } = new List<string>();
+        public bool IsAdmin => Roles.Contains("Admin", StringComparer.OrdinalIgnoreCase);
+        public bool IsUser => Roles.Contains("User", StringComparer.OrdinalIgnoreCase);
     }
 
     /// <summary>

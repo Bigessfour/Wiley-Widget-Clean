@@ -180,7 +180,7 @@
       "database": "${env:AZURE_SQL_DATABASE}",
       "authenticationType": "SqlLogin",
       "user": "${env:AZURE_SQL_USER}",
-      "password": "${env:AZURE_SQL_PASSWORD}",
+      "password": "",
       "savePassword": true,
       "profileName": "Azure SQL Database",
       "encrypt": true,
@@ -374,5 +374,6 @@
   "pytestRunner.env": {
     "PYTHONPATH": "${workspaceFolder}"
   },
-  "testing.automaticallyOpenTestResults": "openOnTestStart"
+  "testing.automaticallyOpenTestResults": "openOnTestStart",
+  "workbench.editor.tabActionLocation": "left"
 }

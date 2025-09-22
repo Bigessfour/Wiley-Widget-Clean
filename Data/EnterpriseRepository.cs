@@ -137,4 +137,140 @@ public class EnterpriseRepository : IEnterpriseRepository
             .OrderBy(e => e.Name)
             .ToListAsync();
     }
+
+    /// <summary>
+    /// Creates a new Enterprise instance by mapping values from headers to properties
+    /// </summary>
+    /// <param name="headerValueMap">Dictionary mapping header names to values</param>
+    /// <returns>A new Enterprise instance with mapped properties</returns>
+    public Enterprise CreateFromHeaderMapping(IDictionary<string, string> headerValueMap)
+    {
+        if (headerValueMap == null)
+            throw new ArgumentNullException(nameof(headerValueMap));
+
+        var enterprise = new Enterprise();
+
+        // Define explicit mappings from common header names to property names
+        var propertyMappings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            // Direct property names
+            { "Name", "Name" },
+            { "Description", "Description" },
+            { "Type", "Type" },
+            { "Notes", "Notes" },
+            { "CitizenCount", "CitizenCount" },
+            { "CurrentRate", "CurrentRate" },
+            { "MonthlyExpenses", "MonthlyExpenses" },
+            { "TotalBudget", "TotalBudget" },
+            { "BudgetAmount", "BudgetAmount" },
+            { "LastModified", "LastModified" },
+
+            // Common alternative header names
+            { "Enterprise Name", "Name" },
+            { "EnterpriseName", "Name" },
+            { "Service Name", "Name" },
+            { "ServiceName", "Name" },
+            { "Utility Name", "Name" },
+            { "UtilityName", "Name" },
+
+            { "Rate", "CurrentRate" },
+            { "Monthly Rate", "CurrentRate" },
+            { "MonthlyRate", "CurrentRate" },
+            { "Current Rate", "CurrentRate" },
+
+            { "Expenses", "MonthlyExpenses" },
+            { "Monthly Expenses", "MonthlyExpenses" },
+            { "Operating Expenses", "MonthlyExpenses" },
+            { "OperatingExpenses", "MonthlyExpenses" },
+
+            { "Citizens", "CitizenCount" },
+            { "Citizen Count", "CitizenCount" },
+            { "Population", "CitizenCount" },
+            { "Customer Count", "CitizenCount" },
+            { "CustomerCount", "CitizenCount" },
+
+            { "Budget", "TotalBudget" },
+            { "Total Budget", "TotalBudget" },
+            { "Allocated Budget", "TotalBudget" },
+            { "AllocatedBudget", "TotalBudget" },
+
+            { "Budget Amount", "BudgetAmount" },
+
+            { "Modified", "LastModified" },
+            { "Last Modified", "LastModified" },
+            { "Date Modified", "LastModified" },
+            { "DateModified", "LastModified" },
+            { "Updated", "LastModified" },
+            { "Last Updated", "LastModified" }
+        };
+
+        foreach (var kvp in headerValueMap)
+        {
+            var headerName = kvp.Key;
+            var value = kvp.Value;
+
+            // Skip empty headers or values
+            if (string.IsNullOrWhiteSpace(headerName) || string.IsNullOrWhiteSpace(value))
+                continue;
+
+            // Try to find the property mapping
+            if (propertyMappings.TryGetValue(headerName, out var propertyName))
+            {
+                SetPropertyValue(enterprise, propertyName, value);
+            }
+            else
+            {
+                // Try direct property name match using reflection
+                SetPropertyValue(enterprise, headerName, value);
+            }
+        }
+
+        return enterprise;
+    }
+
+    /// <summary>
+    /// Sets a property value on an Enterprise instance with type conversion
+    /// </summary>
+    private void SetPropertyValue(Enterprise enterprise, string propertyName, string value)
+    {
+        var property = typeof(Enterprise).GetProperty(propertyName);
+        if (property == null || !property.CanWrite)
+            return; // Property doesn't exist or is read-only
+
+        try
+        {
+            object convertedValue = null;
+
+            // Handle different property types
+            if (property.PropertyType == typeof(string))
+            {
+                convertedValue = value;
+            }
+            else if (property.PropertyType == typeof(int) || property.PropertyType == typeof(int?))
+            {
+                if (int.TryParse(value, out var intValue))
+                    convertedValue = intValue;
+            }
+            else if (property.PropertyType == typeof(decimal) || property.PropertyType == typeof(decimal?))
+            {
+                if (decimal.TryParse(value, NumberStyles.Currency | NumberStyles.Number, CultureInfo.InvariantCulture, out var decimalValue))
+                    convertedValue = decimalValue;
+            }
+            else if (property.PropertyType == typeof(DateTime) || property.PropertyType == typeof(DateTime?))
+            {
+                if (DateTime.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dateValue))
+                    convertedValue = dateValue;
+            }
+
+            // Set the value if conversion was successful
+            if (convertedValue != null)
+            {
+                property.SetValue(enterprise, convertedValue);
+            }
+        }
+        catch
+        {
+            // Silently ignore conversion errors - the property won't be set
+        }
+    }
 }

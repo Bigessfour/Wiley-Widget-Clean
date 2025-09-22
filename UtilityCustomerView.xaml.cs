@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using WileyWidget.Data;
 using Syncfusion.SfSkinManager;
 using Syncfusion.Windows.Shared;
+using Serilog;
 
 namespace WileyWidget;
 
@@ -13,16 +14,24 @@ namespace WileyWidget;
 /// </summary>
 public partial class UtilityCustomerView : Window
 {
+    private readonly IServiceScope _viewScope;
+
     public UtilityCustomerView()
     {
         InitializeComponent();
 
         // Apply current theme
-        TryApplyTheme(SettingsService.Instance.Current.Theme);
+        ThemeUtility.TryApplyTheme(this, SettingsService.Instance.Current.Theme);
 
-        // Get the UtilityCustomerViewModel from DI container
-        var customerRepository = App.ServiceProvider.GetRequiredService<IUtilityCustomerRepository>();
-        DataContext = new UtilityCustomerViewModel(customerRepository);
+    // Create a scope for the view and resolve the repository from the scope
+    var provider = App.ServiceProvider ?? Application.Current.Properties["ServiceProvider"] as IServiceProvider;
+    if (provider == null) throw new InvalidOperationException("ServiceProvider is not available for UtilityCustomerView");
+    _viewScope = provider.CreateScope();
+    var customerRepository = _viewScope.ServiceProvider.GetRequiredService<IUtilityCustomerRepository>();
+    DataContext = new UtilityCustomerViewModel(customerRepository);
+
+    // Dispose the scope when the window is closed
+    this.Closed += (_, _) => { try { _viewScope.Dispose(); } catch { } };
 
         // Load customers when window opens
         Loaded += async (s, e) =>
@@ -50,22 +59,5 @@ public partial class UtilityCustomerView : Window
     {
         var window = new UtilityCustomerView();
         return window.ShowDialog();
-    }
-
-    /// <summary>
-    /// Attempts to apply the specified theme to the window
-    /// </summary>
-    private void TryApplyTheme(string themeName)
-    {
-        try
-        {
-#pragma warning disable CA2000 // Call System.IDisposable.Dispose on object created by 'new Theme(themeName)' before all references to it are out of scope
-            SfSkinManager.SetTheme(this, new Theme(themeName));
-#pragma warning restore CA2000
-        }
-        catch
-        {
-            // Ignore theme application errors
-        }
     }
 }

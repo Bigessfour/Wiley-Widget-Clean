@@ -371,6 +371,7 @@ public static class DatabaseConfiguration
         options.ConfigureWarnings(warnings =>
         {
             warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.MultipleCollectionIncludeWarning);
+
         });
 
         // Add logging

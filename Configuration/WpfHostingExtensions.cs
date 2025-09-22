@@ -5,6 +5,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using WileyWidget.Services.Hosting;
+using WileyWidget.Services.Caching;
+using WileyWidget.Services.Threading;
 using WileyWidget.ViewModels;
 using WileyWidget.Services;
 using WileyWidget.Configuration;
@@ -108,11 +110,18 @@ public static class WpfHostingExtensions
         // Register Azure services
         services.AddSingleton<IAzureKeyVaultService, AzureKeyVaultService>();
 
+    // Register HttpClient factory for efficient, pooled HTTP usage across the app
+    services.AddHttpClient();
+
         // Register health check services
         services.AddSingleton<WileyWidget.Services.HealthCheckService>();
         services.AddHealthChecks()
             .AddResourceUtilizationHealthCheck()
             .AddApplicationLifecycleHealthCheck();
+
+        // Note: Performance optimization services will be added after namespace compilation is resolved
+        // services.AddSingleton<StartupCacheService>();
+        // services.AddHostedService<ParallelStartupService>();
     }
 
     /// <summary>
@@ -136,10 +145,20 @@ public static class WpfHostingExtensions
     /// </summary>
     private static void ConfigureHostedServices(IServiceCollection services)
     {
+        NewMethod(services);
+
+        // Perform background initialization tasks (database migrations, Azure init)
+        services.AddHostedService<BackgroundInitializationService>();
+    }
+
+    private static void NewMethod(IServiceCollection services)
+    {
         // Background services will be added in later phases
         // services.AddHostedService<LicenseManagementService>();
-        // services.AddHostedService<HealthMonitoringService>();
         // services.AddHostedService<AzureIntegrationService>();
+
+        // Run health checks during startup and periodically if desired
+        services.AddHostedService<HealthCheckHostedService>();
     }
 }
 
