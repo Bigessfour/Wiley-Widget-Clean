@@ -6,6 +6,9 @@ using Azure.Identity;
 using System;
 using System.Threading.Tasks;
 using System.Diagnostics;
+using System.Text;
+using System.Text.Json;
+using System.Linq;
 using Microsoft.Data.SqlClient;
 using WileyWidget.Data;
 using WileyWidget.Services;
@@ -43,7 +46,7 @@ public static class DatabaseConfiguration
         {
             var logger = sp.GetRequiredService<ILogger<DefaultAzureCredential>>();
 
-            // Configure Azure Identity with comprehensive credential sources
+            // Configure Azure Identity with comprehensive credential sources and diagnostics
             var credential = new DefaultAzureCredential(new DefaultAzureCredentialOptions
             {
                 // Exclude interactive browser for production scenarios
@@ -51,13 +54,41 @@ public static class DatabaseConfiguration
                 // Diagnostic options for troubleshooting
                 Diagnostics =
                 {
-                    LoggedHeaderNames = { "x-ms-request-id" },
+                    LoggedHeaderNames = { "x-ms-request-id", "x-ms-return-client-request-id", "x-ms-client-request-id" },
                     LoggedQueryParameters = { "api-version" },
                     IsLoggingEnabled = true,
                     IsDistributedTracingEnabled = true,
                     IsTelemetryEnabled = true
                 }
             });
+
+            // Only test credential acquisition in production or when explicitly requested
+            var isProductionEnvironment = IsProductionEnvironment();
+            var forceAzureAd = string.Equals(Environment.GetEnvironmentVariable("AZURE_SQL_FORCE_AAD"), "true", StringComparison.OrdinalIgnoreCase);
+
+            if (isProductionEnvironment || forceAzureAd)
+            {
+                Task.Run(async () =>
+                {
+                    try
+                    {
+                        logger.LogInformation("Testing Azure credential acquisition...");
+                        var token = await credential.GetTokenAsync(
+                            new Azure.Core.TokenRequestContext(new[] { "https://database.windows.net/.default" }),
+                            CancellationToken.None);
+                        logger.LogInformation("Azure credential test successful - token acquired for database.windows.net");
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogError(ex, "Azure credential test failed - this may cause database connection issues");
+                        logger.LogError("Credential error details: {Message}", ex.Message);
+                    }
+                });
+            }
+            else
+            {
+                logger.LogInformation("Skipping Azure credential test in development environment");
+            }
 
             logger.LogInformation("Azure Identity configured with DefaultAzureCredential");
             return credential;
@@ -86,9 +117,20 @@ public static class DatabaseConfiguration
                 sqlOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
             });
 
-            // Add smart Azure AD connection interceptor that handles both Azure SQL and local connections
-            options.AddInterceptors(new AzureAdConnectionInterceptor(credential, logger));
-            logger.LogInformation("Smart Azure AD connection interceptor added - will apply only to Azure SQL connections");
+            // Only add Azure AD interceptor in production or when explicitly requested
+            var isProductionEnvironment = IsProductionEnvironment();
+            var forceAzureAd = string.Equals(Environment.GetEnvironmentVariable("AZURE_SQL_FORCE_AAD"), "true", StringComparison.OrdinalIgnoreCase);
+
+            if (isProductionEnvironment || forceAzureAd)
+            {
+                // Add smart Azure AD connection interceptor that handles both Azure SQL and local connections
+                options.AddInterceptors(new AzureAdConnectionInterceptor(credential, logger));
+                logger.LogInformation("Azure AD connection interceptor added for production environment");
+            }
+            else
+            {
+                logger.LogInformation("Azure AD authentication disabled in development environment - using connection string credentials");
+            }
 
             // Configure DbContext options
             ConfigureEnterpriseDbContextOptions(options, logger);
@@ -190,70 +232,95 @@ public static class DatabaseConfiguration
     }
 
     /// <summary>
-    /// Builds enterprise-grade connection string with passwordless authentication
-    /// Falls back to local SQL Server for development when Azure SQL variables are not configured
+    /// Builds enterprise-grade connection string with conditional authentication
+    /// In development: Always uses local SQL Server with Trusted_Connection
+    /// In production: Uses Azure SQL with passwordless authentication
     /// </summary>
     internal static string BuildEnterpriseConnectionString(IConfiguration config, ILogger logger)
     {
+        var isProductionEnvironment = IsProductionEnvironment();
+        var isDevelopmentEnvironment = IsDevelopmentEnvironment();
+
+        logger?.LogDebug("Environment detection - Production: {IsProduction}, Development: {IsDevelopment}",
+            isProductionEnvironment, isDevelopmentEnvironment);
+        logger?.LogDebug("Environment variables - ASPNETCORE_ENVIRONMENT: {AspNetCore}, DOTNET_ENVIRONMENT: {DotNet}",
+            Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"),
+            Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT"));
+
+        // DEVELOPMENT ENVIRONMENT: Always use local SQL Server
+        if (isDevelopmentEnvironment)
+        {
+            // Check if developer wants to force Azure SQL testing in development
+            var forceAzureSql = string.Equals(Environment.GetEnvironmentVariable("FORCE_AZURE_SQL_DEV"), "true", StringComparison.OrdinalIgnoreCase);
+            
+            if (forceAzureSql)
+            {
+                logger?.LogWarning("🔧 FORCE_AZURE_SQL_DEV is set - attempting Azure SQL connection in development mode");
+                
+                // Try to build Azure SQL connection with SQL auth fallback
+                try
+                {
+                    var azureServer = Environment.GetEnvironmentVariable("AZURE_SQL_SERVER");
+                    var azureDatabase = Environment.GetEnvironmentVariable("AZURE_SQL_DATABASE");
+                    var azureUser = Environment.GetEnvironmentVariable("AZURE_SQL_USER");
+                    var azurePassword = Environment.GetEnvironmentVariable("AZURE_SQL_PASSWORD");
+                    
+                    if (!string.IsNullOrEmpty(azureServer) && !string.IsNullOrEmpty(azureDatabase) &&
+                        !string.IsNullOrEmpty(azureUser) && !string.IsNullOrEmpty(azurePassword))
+                    {
+                        var fallbackConnection = $"Server={azureServer};Database={azureDatabase};User Id={azureUser};Password={azurePassword};Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;";
+                        logger?.LogInformation("Using Azure SQL with SQL authentication fallback in development: {Server}", azureServer);
+                        return fallbackConnection;
+                    }
+                    else
+                    {
+                        logger?.LogWarning("FORCE_AZURE_SQL_DEV set but missing required environment variables (AZURE_SQL_SERVER, AZURE_SQL_DATABASE, AZURE_SQL_USER, AZURE_SQL_PASSWORD)");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    logger?.LogError(ex, "Failed to build Azure SQL fallback connection in development");
+                }
+            }
+
+            logger?.LogInformation("✅ DEVELOPMENT ENVIRONMENT DETECTED - using local SQL Server connection");
+
+            var devConnection = config.GetConnectionString("DefaultConnection");
+            if (string.IsNullOrWhiteSpace(devConnection))
+            {
+                throw new InvalidOperationException(
+                    "Development environment requires DefaultConnection in appsettings.json. " +
+                    "Please configure a valid local SQL Server connection string.");
+            }
+
+            if (!ValidateLocalConnectionString(devConnection, logger))
+            {
+                throw new InvalidOperationException(
+                    "DefaultConnection in appsettings.json is not valid for development. " +
+                    "Expected format: Server=(local)\\SQLEXPRESS;Database=...;Trusted_Connection=True;...");
+            }
+
+            logger?.LogInformation("Using local SQL Server connection string for development: {Server}",
+                ExtractServerFromConnectionString(devConnection));
+            return devConnection;
+        }
+
+        // PRODUCTION ENVIRONMENT: Use Azure SQL with environment variables
+        logger?.LogInformation("🏭 PRODUCTION ENVIRONMENT DETECTED - configuring Azure SQL connection");
+
         var rawServer = Environment.GetEnvironmentVariable("AZURE_SQL_SERVER");
         var rawDatabase = Environment.GetEnvironmentVariable("AZURE_SQL_DATABASE");
         var server = string.IsNullOrWhiteSpace(rawServer) || rawServer == "${AZURE_SQL_SERVER}" ? null : rawServer.Trim();
         var database = string.IsNullOrWhiteSpace(rawDatabase) || rawDatabase == "${AZURE_SQL_DATABASE}" ? null : rawDatabase.Trim();
 
-        // Determine environment context
-        var isProductionEnvironment = IsProductionEnvironment();
-        var isDevelopmentEnvironment = IsDevelopmentEnvironment();
-        
-        logger?.LogDebug("Environment detection - Production: {IsProduction}, Development: {IsDevelopment}", 
-            isProductionEnvironment, isDevelopmentEnvironment);
-
-        // In Development, prefer local DefaultConnection unless explicitly overridden
-        if (isDevelopmentEnvironment && !string.Equals(Environment.GetEnvironmentVariable("AZURE_SQL_USE_IN_DEVELOPMENT"), "1", StringComparison.Ordinal))
-        {
-            logger?.LogInformation("Development environment detected - preferring local DefaultConnection");
-            var devConnection = config.GetConnectionString("DefaultConnection");
-            if (!string.IsNullOrWhiteSpace(devConnection) && ValidateLocalConnectionString(devConnection, logger))
-            {
-                logger?.LogInformation("Using local SQL Server connection string for development: {Server}", 
-                    ExtractServerFromConnectionString(devConnection));
-                return devConnection;
-            }
-            logger?.LogWarning("Local DefaultConnection invalid or missing; will evaluate Azure env vars as fallback");
-        }
-
         if (string.IsNullOrEmpty(server) || string.IsNullOrEmpty(database))
         {
-            if (isProductionEnvironment)
-            {
-                logger?.LogError("Azure SQL environment variables are required in production but not found");
-                throw new InvalidOperationException(
-                    "Production environment requires Azure SQL configuration. " +
-                    "Please configure AZURE_SQL_SERVER and AZURE_SQL_DATABASE environment variables.");
-            }
-
-            logger?.LogWarning("Azure SQL environment variables not found, falling back to local SQL Server for development");
-
-            // Fall back to local SQL Server connection string from configuration
-            var fallbackConnection = config.GetConnectionString("DefaultConnection");
-            if (!string.IsNullOrEmpty(fallbackConnection))
-            {
-                logger?.LogInformation("Using local SQL Server connection string for development: {Server}", 
-                    ExtractServerFromConnectionString(fallbackConnection));
-                
-                // Validate the connection string format
-                if (ValidateLocalConnectionString(fallbackConnection, logger))
-                {
-                    return fallbackConnection;
-                }
-            }
-
             throw new InvalidOperationException(
-                "Azure SQL connection information not found and no valid fallback connection available. " +
-                "Please configure AZURE_SQL_SERVER and AZURE_SQL_DATABASE environment variables, " +
-                "or ensure a valid DefaultConnection is configured in appsettings.json.");
+                "Production environment requires Azure SQL configuration. " +
+                "Please configure AZURE_SQL_SERVER and AZURE_SQL_DATABASE environment variables.");
         }
 
-        logger?.LogInformation("Building Azure SQL connection string for server: {Server}, database: {Database}", 
+        logger?.LogInformation("Building Azure SQL connection string for server: {Server}, database: {Database}",
             server, database);
 
         // Build passwordless connection string. The access token will be provided by the interceptor.
@@ -462,11 +529,11 @@ public class MemoryHealthCheck : Microsoft.Extensions.Diagnostics.HealthChecks.I
 /// </summary>
 public class DatabaseHealthCheck : Microsoft.Extensions.Diagnostics.HealthChecks.IHealthCheck
 {
-    private readonly IConfiguration _configuration;
+    private readonly IDbContextFactory<AppDbContext> _dbContextFactory;
 
-    public DatabaseHealthCheck(IConfiguration configuration)
+    public DatabaseHealthCheck(IDbContextFactory<AppDbContext> dbContextFactory)
     {
-        _configuration = configuration;
+        _dbContextFactory = dbContextFactory;
     }
 
     public async Task<Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult> CheckHealthAsync(
@@ -475,16 +542,13 @@ public class DatabaseHealthCheck : Microsoft.Extensions.Diagnostics.HealthChecks
     {
         try
         {
-            var connectionString = DatabaseConfiguration.BuildEnterpriseConnectionString(_configuration, null);
-            using var connection = new SqlConnection(connectionString);
-            await connection.OpenAsync(cancellationToken);
+            using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
 
-            // Simple query to test connectivity
-            using var command = new SqlCommand("SELECT 1", connection);
-            var result = await command.ExecuteScalarAsync(cancellationToken);
+            // Simple query to test connectivity and authentication
+            var count = await dbContext.Enterprises.CountAsync(cancellationToken);
 
             return Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy(
-                "Database connection successful");
+                $"Database connection successful - {count} enterprises found");
         }
         catch (Exception ex)
         {
@@ -568,18 +632,18 @@ public class AzureAdConnectionInterceptor : DbConnectionInterceptor
         CancellationToken cancellationToken = default)
     {
         var sqlConnection = (SqlConnection)connection;
-        
+
         // Only apply Azure AD authentication to Azure SQL Database connections
         // Check if this is an Azure SQL Database connection by examining the data source
         var connectionString = sqlConnection.ConnectionString;
         var isAzureSqlConnection = connectionString.Contains(".database.windows.net", StringComparison.OrdinalIgnoreCase);
-        
+
         if (!isAzureSqlConnection)
         {
             _logger.LogDebug("Skipping Azure AD token for local SQL Server connection: {DataSource}", sqlConnection.DataSource);
             return result;
         }
-        
+
         // Check if the connection already has Integrated Security enabled, which conflicts with AccessToken
         var builder = new SqlConnectionStringBuilder(connectionString);
         if (builder.IntegratedSecurity)
@@ -588,14 +652,29 @@ public class AzureAdConnectionInterceptor : DbConnectionInterceptor
             return result;
         }
 
+        _logger.LogInformation("Attempting Azure AD token acquisition for database connection to {DataSource}", sqlConnection.DataSource);
+
         return await DatabaseConfiguration.CircuitBreaker.ExecuteAsync(async () =>
         {
-            var token = await _credential.GetTokenAsync(
-                new Azure.Core.TokenRequestContext(new[] { "https://database.windows.net/.default" }),
-                cancellationToken);
-            sqlConnection.AccessToken = token.Token;
-            _logger.LogInformation("Azure AD access token provided for database connection.");
-            return result;
+            try
+            {
+                var token = await _credential.GetTokenAsync(
+                    new Azure.Core.TokenRequestContext(new[] { "https://database.windows.net/.default" }),
+                    cancellationToken);
+
+                // Log non-sensitive token metadata (expiry). Token claim parsing was temporary and removed.
+                _logger.LogInformation("Token acquired. ExpiresOn: {Exp}", token.ExpiresOn);
+
+                sqlConnection.AccessToken = token.Token;
+                _logger.LogInformation("Azure AD access token successfully applied to database connection for {DataSource}", sqlConnection.DataSource);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to acquire Azure AD token for database connection to {DataSource}", sqlConnection.DataSource);
+                _logger.LogError("Token acquisition error details: {Message}", ex.Message);
+                throw; // Re-throw to let the circuit breaker handle it
+            }
         });
     }
 }
