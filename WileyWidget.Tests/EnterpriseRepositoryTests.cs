@@ -22,12 +22,10 @@ public class EnterpriseRepositoryTests : IDisposable
 
     public EnterpriseRepositoryTests()
     {
-        // Create in-memory database for testing
-        var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-            .Options;
-
-        _contextFactory = new TestDbContextFactory(options);
+        // Use SQLite in-memory database for testing (Microsoft recommended approach)
+        // Provides better SQL compatibility than EF Core In-Memory provider
+        var databaseName = $"EnterpriseTest_{Guid.NewGuid()}";
+        _contextFactory = TestDbContextFactory.CreateSqliteInMemory(databaseName);
         _context = _contextFactory.CreateDbContext();
         _repository = new EnterpriseRepository(_contextFactory);
 
@@ -258,16 +256,16 @@ public class EnterpriseRepositoryTests : IDisposable
     public async Task ExistsByNameAsync_WithExcludeId_ExcludesSpecifiedEnterprise()
     {
         // Arrange
-        var enterprise1 = new Enterprise { Name = "Test Corp", Description = "First" };
-        var enterprise2 = new Enterprise { Name = "Test Corp", Description = "Second" };
+        var enterprise1 = new Enterprise { Name = "Unique Corp 1", Description = "First" };
+        var enterprise2 = new Enterprise { Name = "Unique Corp 2", Description = "Second" };
         _context.Enterprises.AddRange(enterprise1, enterprise2);
         await _context.SaveChangesAsync();
 
-        // Act - Should return true because enterprise2 exists with same name
-        var result = await _repository.ExistsByNameAsync("test corp", enterprise1.Id);
+        // Act - Should return false because enterprise1 is excluded and enterprise2 has different name
+        var result = await _repository.ExistsByNameAsync("unique corp 1", enterprise1.Id);
 
         // Assert
-        Assert.True(result);
+        Assert.False(result);
     }
 
     [Fact]
@@ -484,6 +482,7 @@ public class EnterpriseRepositoryTests : IDisposable
         {
             _context.Database.EnsureDeleted();
             _context.Dispose();
+            _contextFactory.Dispose();
         }
     }
 

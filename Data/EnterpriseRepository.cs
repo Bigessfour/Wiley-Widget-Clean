@@ -48,9 +48,12 @@ public class EnterpriseRepository : IEnterpriseRepository
     public async Task<Enterprise> GetByNameAsync(string name)
     {
         using var context = await _contextFactory.CreateDbContextAsync();
-        return await context.Enterprises
-            .AsNoTracking()
-            .FirstOrDefaultAsync(e => e.Name.ToLower(CultureInfo.InvariantCulture) == name.ToLower(CultureInfo.InvariantCulture));
+        // Use client-side evaluation for case-insensitive comparison to ensure cross-provider compatibility
+        return await Task.Run(() =>
+            context.Enterprises
+                .AsNoTracking()
+                .AsEnumerable() // Switch to client-side evaluation
+                .FirstOrDefault(e => string.Equals(e.Name, name, StringComparison.OrdinalIgnoreCase)));
     }
 
     /// <summary>
@@ -106,14 +109,14 @@ public class EnterpriseRepository : IEnterpriseRepository
     public async Task<bool> ExistsByNameAsync(string name, int? excludeId = null)
     {
         using var context = await _contextFactory.CreateDbContextAsync();
-        var query = context.Enterprises.Where(e => e.Name.ToLower(CultureInfo.InvariantCulture) == name.ToLower(CultureInfo.InvariantCulture));
+        // Use client-side evaluation for case-insensitive comparison to ensure cross-provider compatibility
+        var enterprises = await context.Enterprises
+            .AsNoTracking()
+            .ToListAsync();
 
-        if (excludeId.HasValue)
-        {
-            query = query.Where(e => e.Id != excludeId.Value);
-        }
-
-        return await query.AnyAsync();
+        return enterprises.Any(e =>
+            string.Equals(e.Name, name, StringComparison.OrdinalIgnoreCase) &&
+            (!excludeId.HasValue || e.Id != excludeId.Value));
     }
 
     /// <summary>

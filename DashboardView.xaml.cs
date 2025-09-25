@@ -25,19 +25,28 @@ namespace WileyWidget
             TryApplyTheme(SettingsService.Instance.Current.Theme);
 
             // Get the ViewModel from the service provider
-            _viewModel = (DashboardViewModel)App.ServiceProvider.GetService(typeof(DashboardViewModel));
-            if (_viewModel == null)
+            if (App.ServiceProvider != null)
             {
-                MessageBox.Show("Dashboard ViewModel could not be loaded. Please check the application configuration.",
-                              "Configuration Error", MessageBoxButton.OK);
-                Close();
-                return;
+                _viewModel = (DashboardViewModel)App.ServiceProvider.GetService(typeof(DashboardViewModel));
+                if (_viewModel == null)
+                {
+                    MessageBox.Show("Dashboard ViewModel could not be loaded. Please check the application configuration.",
+                                  "Configuration Error", MessageBoxButton.OK);
+                    Close();
+                    return;
+                }
+
+                DataContext = _viewModel;
+
+                // Set up auto-refresh timer
+                SetupAutoRefreshTimer();
             }
-
-            DataContext = _viewModel;
-
-            // Set up auto-refresh timer
-            SetupAutoRefreshTimer();
+            else
+            {
+                // For testing purposes, allow view to load without ViewModel
+                _viewModel = null;
+                DataContext = null;
+            }
 
             // Load dashboard data when window opens
             Loaded += DashboardView_Loaded;
@@ -47,7 +56,8 @@ namespace WileyWidget
 
         private async void DashboardView_Loaded(object sender, RoutedEventArgs e)
         {
-            await _viewModel.LoadDashboardDataAsync();
+            if (_viewModel != null)
+                await _viewModel.LoadDashboardDataAsync();
         }
 
         private void DashboardView_StateChanged(object sender, EventArgs e)

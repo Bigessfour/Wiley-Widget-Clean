@@ -102,12 +102,18 @@ public class UtilityCustomerRepository : IUtilityCustomerRepository
     public async Task<IEnumerable<UtilityCustomer>> GetCustomersWithBalanceAsync()
     {
         using var context = await _contextFactory.CreateDbContextAsync();
-        return await context.UtilityCustomers
+
+        // For SQLite compatibility, filter on server but order on client
+        // This avoids SQLite's limitation with decimal ordering
+        var customers = await context.UtilityCustomers
             .AsNoTracking()
             .Where(c => c.CurrentBalance > 0)
+            .ToListAsync();
+
+        return customers
             .OrderByDescending(c => c.CurrentBalance)
             .ThenBy(c => c.LastName)
-            .ToListAsync();
+            .ToList();
     }
 
     /// <summary>
@@ -121,15 +127,18 @@ public class UtilityCustomerRepository : IUtilityCustomerRepository
         }
 
         using var context = await _contextFactory.CreateDbContextAsync();
-        var term = searchTerm.ToLower(CultureInfo.InvariantCulture);
+
+        // For SQLite compatibility, use case-insensitive LIKE operations
+        // This works across different database providers
+        var term = $"%{searchTerm}%";
         return await context.UtilityCustomers
             .AsNoTracking()
             .Where(c =>
-                c.FirstName.ToLower(CultureInfo.InvariantCulture).Contains(term) ||
-                c.LastName.ToLower(CultureInfo.InvariantCulture).Contains(term) ||
-                (c.CompanyName != null && c.CompanyName.ToLower(CultureInfo.InvariantCulture).Contains(term)) ||
-                c.AccountNumber.ToLower(CultureInfo.InvariantCulture).Contains(term) ||
-                (c.MeterNumber != null && c.MeterNumber.ToLower(CultureInfo.InvariantCulture).Contains(term)))
+                EF.Functions.Like(c.FirstName, term) ||
+                EF.Functions.Like(c.LastName, term) ||
+                (c.CompanyName != null && EF.Functions.Like(c.CompanyName, term)) ||
+                EF.Functions.Like(c.AccountNumber, term) ||
+                (c.MeterNumber != null && EF.Functions.Like(c.MeterNumber, term)))
             .OrderBy(c => c.LastName)
             .ThenBy(c => c.FirstName)
             .ToListAsync();

@@ -7,6 +7,13 @@ using WileyWidget.Attributes;
 
 namespace WileyWidget.Models;
 
+public enum EnterpriseStatus
+{
+    Active,
+    Inactive,
+    Suspended
+}
+
 /// <summary>
 /// Represents a municipal enterprise (Water, Sewer, Trash, Apartments)
 /// </summary>
@@ -243,6 +250,31 @@ public class Enterprise : INotifyPropertyChanged
             }
         }
     }
+
+    private EnterpriseStatus _status = EnterpriseStatus.Active;
+
+    /// <summary>
+    /// Operational status of the enterprise for grouping and filtering
+    /// </summary>
+    [GridDisplay(7, 100)]
+    public EnterpriseStatus Status
+    {
+        get => _status;
+        set
+        {
+            if (_status != value)
+            {
+                _status = value;
+                OnPropertyChanged(nameof(Status));
+            }
+        }
+    }
+
+    /// <summary>
+    /// Convenience: Last updated timestamp (for UI binding)
+    /// </summary>
+    [NotMapped]
+    public DateTime LastUpdated => DateTime.Now;
 
     /// <summary>
     /// Navigation property for budget interactions

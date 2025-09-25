@@ -43,7 +43,8 @@ try {
     if (-not $ForceRestore -and -not $packagesChanged) {
         Write-Information "Packages unchanged, using incremental build (--no-restore)..." -InformationAction Continue
         $buildArgs += "--no-restore"
-    } else {
+    }
+    else {
         Write-Information "Restoring packages and building..." -InformationAction Continue
         # Update the hash file after successful restore
         $currentHash = Get-FileHash $projectFile -Algorithm SHA256 | Select-Object -ExpandProperty Hash
@@ -55,11 +56,13 @@ try {
 
     if ($LASTEXITCODE -eq 0) {
         Write-Information "Build completed successfully" -InformationAction Continue
-    } else {
+    }
+    else {
         Write-Error "Build failed with exit code $LASTEXITCODE"
         exit $LASTEXITCODE
     }
 
-} finally {
+}
+finally {
     Pop-Location
 }

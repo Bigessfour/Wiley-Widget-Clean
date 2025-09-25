@@ -126,10 +126,7 @@
       "label": "cleanup-dotnet",
       "type": "shell",
       "command": "python",
-      "args": [
-        "${workspaceFolder}/scripts/cleanup-dotnet.py",
-        "--force"
-      ],
+      "args": ["${workspaceFolder}/scripts/cleanup-dotnet.py", "--force"],
       "group": "build",
       "presentation": {
         "echo": true,
@@ -161,10 +158,7 @@
       "label": "load-env",
       "type": "shell",
       "command": "python",
-      "args": [
-        "${workspaceFolder}/scripts/load-env.py",
-        "--load"
-      ],
+      "args": ["${workspaceFolder}/scripts/load-env.py", "--load"],
       "group": "build",
       "presentation": {
         "echo": true,
@@ -177,9 +171,7 @@
       "label": "azure-setup",
       "type": "shell",
       "command": "python",
-      "args": [
-        "${workspaceFolder}/scripts/azure-setup.py"
-      ],
+      "args": ["${workspaceFolder}/scripts/azure-setup.py"],
       "group": "build",
       "presentation": {
         "echo": true,
@@ -277,9 +269,7 @@
     },
     {
       "label": "test-csharp",
-      "dependsOn": [
-        "cleanup-dotnet"
-      ],
+      "dependsOn": ["cleanup-dotnet"],
       "type": "shell",
       "command": "dotnet",
       "args": [
@@ -300,10 +290,50 @@
       "problemMatcher": "$msCompile"
     },
     {
-      "label": "test-csharp-coverage",
-      "dependsOn": [
-        "cleanup-dotnet"
+      "label": "test-stafact",
+      "dependsOn": ["cleanup-dotnet"],
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}/scripts/test-stafact-with-cleanup.ps1",
+        "-Verbosity",
+        "normal"
       ],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "test-stafact-phase2",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}/scripts/test-stafact-phase2.ps1",
+        "-Quick"
+      ],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "test-csharp-coverage",
+      "dependsOn": ["cleanup-dotnet"],
       "type": "shell",
       "command": "dotnet",
       "args": [
@@ -327,18 +357,17 @@
     },
     {
       "label": "test-ui",
-      "dependsOn": [
-        "cleanup-dotnet"
-      ],
       "type": "shell",
-      "command": "dotnet",
+      "command": "pwsh",
       "args": [
-        "test",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}/scripts/test-with-kill.ps1",
+        "-Project",
         "${workspaceFolder}/WileyWidget.UiTests/WileyWidget.UiTests.csproj",
-        "--verbosity",
-        "normal",
-        "--logger",
-        "console"
+        "-Verbosity",
+        "normal"
       ],
       "group": "test",
       "presentation": {
@@ -351,11 +380,7 @@
     },
     {
       "label": "test-all",
-      "dependsOn": [
-        "test-all-python",
-        "test-csharp",
-        "test-ui"
-      ],
+      "dependsOn": ["test-all-python", "test-csharp", "test-ui"],
       "group": "test",
       "presentation": {
         "echo": true,
@@ -366,10 +391,7 @@
     },
     {
       "label": "test-all-with-coverage",
-      "dependsOn": [
-        "test-python-coverage",
-        "test-csharp-coverage"
-      ],
+      "dependsOn": ["test-python-coverage", "test-csharp-coverage"],
       "group": "test",
       "presentation": {
         "echo": true,
@@ -398,10 +420,7 @@
       "label": "debug-startup-debugpy",
       "type": "shell",
       "command": "python",
-      "args": [
-        "${workspaceFolder}/scripts/dev-start-debugpy.py",
-        "--timing"
-      ],
+      "args": ["${workspaceFolder}/scripts/dev-start-debugpy.py", "--timing"],
       "group": "build",
       "presentation": {
         "echo": true,
@@ -421,15 +440,27 @@
       "label": "test-debugpy",
       "type": "shell",
       "command": "python",
-      "args": [
-        "${workspaceFolder}/scripts/test-debugpy.py"
-      ],
+      "args": ["${workspaceFolder}/scripts/test-debugpy.py"],
       "group": "test",
       "presentation": {
         "echo": true,
         "reveal": "always",
         "focus": false,
         "panel": "new"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "verify-cicd-tools",
+      "type": "shell",
+      "command": "python",
+      "args": ["${workspaceFolder}/scripts/verify-cicd-tools.py"],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
       },
       "problemMatcher": []
     }

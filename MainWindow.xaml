@@ -1395,6 +1395,11 @@
                         <Run Text="Items: "/><Run Text="{Binding Widgets.Count, Mode=OneWay}" />
                     </TextBlock>
                 </StatusBarItem>
+                <Separator />
+                <!-- Transient status message area for brief notifications (e.g., paste results, theme changes) -->
+                <StatusBarItem>
+                    <TextBlock x:Name="StatusTextBlock" Text="Ready" Opacity="0.9"/>
+                </StatusBarItem>
                 <StatusBarItem HorizontalAlignment="Right">
                     <StackPanel Orientation="Horizontal">
                         <Button Content="🏠" ToolTip="Dashboard" Command="{Binding OpenDashboardCommand}"

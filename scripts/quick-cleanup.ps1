@@ -30,7 +30,8 @@ if (Test-Path $profileToDelete) {
     Write-Host "   2. Test that everything still works" -ForegroundColor White
     Write-Host "   3. Delete backup file if satisfied" -ForegroundColor White
 
-} else {
+}
+else {
     Write-Host "❌ Profile not found: $profileToDelete" -ForegroundColor Red
     Write-Host "   (Already clean or path incorrect)" -ForegroundColor Gray
 }

@@ -18,7 +18,7 @@ namespace WileyWidget;
 /// <summary>
 /// Custom splash screen window with progress tracking
 /// </summary>
-public partial class SplashScreenWindow : Window, INotifyPropertyChanged
+public partial class SplashScreenWindow : Window, INotifyPropertyChanged, IDisposable
 {
     private string _statusText = "Initializing application...";
     private double _progressValue = 0;
@@ -34,6 +34,9 @@ public partial class SplashScreenWindow : Window, INotifyPropertyChanged
         [80] = "Finalizing setup...",
         [100] = "Ready to launch!"
     };
+
+    private readonly TimeSpan _maxLifetime = TimeSpan.FromSeconds(10); // Hard timeout safeguard
+    private readonly System.Threading.CancellationTokenSource _lifetimeCts = new();
 
     public event PropertyChangedEventHandler PropertyChanged;
 
@@ -128,6 +131,9 @@ public partial class SplashScreenWindow : Window, INotifyPropertyChanged
             // Adjust font sizes proportionally
             ScaleFonts(dpiScale);
         }
+
+        // Schedule forced close if something hangs
+        _ = EnforceLifetimeAsync();
     }
 
     /// <summary>
@@ -353,26 +359,35 @@ public partial class SplashScreenWindow : Window, INotifyPropertyChanged
     /// </summary>
     public async Task FadeOutAndCloseAsync()
     {
-        await Dispatcher.InvokeAsync(() =>
+        try
         {
-            var fadeOut = new DoubleAnimation(1, 0, TimeSpan.FromSeconds(0.5));
-            BeginAnimation(OpacityProperty, fadeOut);
-        });
+            using var timeoutCts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(2));
+            await Dispatcher.InvokeAsync(() =>
+            {
+                var fadeOut = new DoubleAnimation(1, 0, TimeSpan.FromSeconds(0.5));
+                BeginAnimation(OpacityProperty, fadeOut);
+            });
 
-        await Task.Delay(500);
+            await Task.Delay(500, timeoutCts.Token);
 
-        await Dispatcher.InvokeAsync(() =>
+            await Dispatcher.InvokeAsync(() =>
+            {
+                try
+                {
+                    Close();
+                }
+                catch
+                {
+                    // Fallback to Hide if Close throws due to lifecycle edge cases
+                    try { Hide(); } catch { /* no-op */ }
+                }
+            });
+        }
+        catch (TaskCanceledException)
         {
-            try
-            {
-                Close();
-            }
-            catch
-            {
-                // Fallback to Hide if Close throws due to lifecycle edge cases
-                try { Hide(); } catch { /* no-op */ }
-            }
-        });
+            // Timeout—force close without animation
+            try { Dispatcher.Invoke(() => { Opacity = 0; Close(); }); } catch { }
+        }
     }
 
     protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
@@ -417,5 +432,65 @@ public partial class SplashScreenWindow : Window, INotifyPropertyChanged
             await Task.Delay(200);
             Complete();
         });
+    }
+
+    /// <summary>
+    /// Allows external callers (e.g., startup phases or health checks) to push real-time status & progress.
+    /// Clamps progress; ignores if already completed.
+    /// </summary>
+    public void SetExternalProgress(double progress, string message)
+    {
+        if (progress >= 100 || ProgressValue >= 100) return;
+        Dispatcher.Invoke(() =>
+        {
+            UpdateProgress(Math.Max(0, Math.Min(99, progress)), message);
+        });
+    }
+
+    private async Task EnforceLifetimeAsync()
+    {
+        try
+        {
+            await Task.Delay(_maxLifetime, _lifetimeCts.Token);
+            if (ProgressValue < 100)
+            {
+                // Force fast completion to avoid hanging splash
+                Dispatcher.Invoke(() =>
+                {
+                    StatusText = "Continuing (startup taking longer)...";
+                    ProgressValue = 95; // near completion
+                    IsIndeterminate = true;
+                });
+                // Attempt close soon after
+                await Task.Delay(1000, _lifetimeCts.Token);
+                await FadeOutAndCloseAsync();
+            }
+        }
+        catch (TaskCanceledException) { /* normal */ }
+    }
+
+    protected override void OnClosed(EventArgs e)
+    {
+        _lifetimeCts.Cancel();
+        _lifetimeCts.Dispose();
+        base.OnClosed(e);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            if (!_lifetimeCts.IsCancellationRequested)
+            {
+                try { _lifetimeCts.Cancel(); } catch { }
+            }
+            _lifetimeCts.Dispose();
+        }
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
     }
 }

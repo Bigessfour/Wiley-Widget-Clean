@@ -526,18 +526,81 @@ public class HealthCheckHostedService : IHostedService, IDisposable
             }
 
             // Check configuration
-            var openAiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
-            var azureAiEndpoint = _configuration["Azure:AI:Endpoint"];
+            var openAiKey = _configuration["Secrets:OpenAI:ApiKey"] ?? _configuration["OpenAI:ApiKey"] ?? Environment.GetEnvironmentVariable("OPENAI_API_KEY");
+            var azureAiEndpoint = _configuration["Secrets:AzureAI:Endpoint"] ?? _configuration["Azure:AI:Endpoint"];        
 
             if (string.IsNullOrEmpty(openAiKey) && string.IsNullOrEmpty(azureAiEndpoint))
             {
                 return Task.FromResult(HealthCheckResult.Unavailable("AI Service", "Neither OpenAI API key nor Azure AI endpoint configured"));
             }
+            // Perform lightweight connectivity probe (2s budget)
+            using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(2));
+            var clientFactory = scope.ServiceProvider.GetService<System.Net.Http.IHttpClientFactory>();
+            var httpClient = clientFactory != null ? clientFactory.CreateClient("AIHealthCheck") : null;
+            httpClient.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", "WileyWidget-AIHealthCheck/1.0");
+            System.Net.Http.HttpResponseMessage response = null;
+            string target = null;
+            bool usedOpenAi = false;
 
-            // Basic connectivity check would go here
-            // For now, just validate configuration
+            try
+            {
+                using var transientClient = httpClient ?? new System.Net.Http.HttpClient();
+                var activeClient = transientClient;
+
+                if (!string.IsNullOrWhiteSpace(azureAiEndpoint))
+                {
+                    var endpoint = azureAiEndpoint.TrimEnd('/');
+                    target = endpoint + "/openai/deployments?api-version=2023-05-01";
+                    response = activeClient.GetAsync(target, cts.Token).GetAwaiter().GetResult();
+                }
+                else if (!string.IsNullOrWhiteSpace(openAiKey))
+                {
+                    usedOpenAi = true;
+                    activeClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", openAiKey);
+                    target = "https://api.openai.com/v1/models";
+                    response = activeClient.GetAsync(target, cts.Token).GetAwaiter().GetResult();
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                stopwatch.Stop();
+                return Task.FromResult(HealthCheckResult.Degraded("AI Service", "Connectivity probe timed out", stopwatch.Elapsed));
+            }
+            catch (System.Net.Http.HttpRequestException ex)
+            {
+                stopwatch.Stop();
+                return Task.FromResult(HealthCheckResult.Unavailable("AI Service", $"Connectivity error: {ex.Message}", ex, stopwatch.Elapsed));
+            }
+
+            if (response == null)
+            {
+                stopwatch.Stop();
+                return Task.FromResult(HealthCheckResult.Unavailable("AI Service", "Probe did not execute (no endpoint chosen)", null, stopwatch.Elapsed));
+            }
+
+            var status = (int)response.StatusCode;
+            string detail = $"Probe {(usedOpenAi ? "OpenAI" : "Azure AI")} status {(int)response.StatusCode} {response.ReasonPhrase}";
+
+            HealthCheckResult result;
+            if (status == 200)
+            {
+                result = HealthCheckResult.Healthy("AI Service", detail, stopwatch.Elapsed);
+            }
+            else if (status == 401 || status == 403)
+            {
+                result = HealthCheckResult.Unhealthy("AI Service", detail, null, stopwatch.Elapsed);
+            }
+            else if (status == 429 || (status >= 500 && status <= 599))
+            {
+                result = HealthCheckResult.Degraded("AI Service", detail, stopwatch.Elapsed);
+            }
+            else
+            {
+                result = HealthCheckResult.Degraded("AI Service", detail, stopwatch.Elapsed);
+            }
+
             stopwatch.Stop();
-            return Task.FromResult(HealthCheckResult.Healthy("AI Service", "AI service configuration validated", stopwatch.Elapsed));
+            return Task.FromResult(result);
         }
         catch (Exception ex)
         {

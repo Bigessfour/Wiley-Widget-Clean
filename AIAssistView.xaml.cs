@@ -18,15 +18,17 @@ public partial class AIAssistView : Window
         InitializeComponent();
 
         // Create a scope for the view to resolve scoped services
-        var provider = App.ServiceProvider ?? Application.Current.Properties["ServiceProvider"] as IServiceProvider;
-        if (provider == null) throw new InvalidOperationException("ServiceProvider is not available for AIAssistView");
+        // Prefer the statically-initialized App.ServiceProvider; fall back to Application.Current.Properties when available
+        var provider = App.ServiceProvider ?? Application.Current?.Properties["ServiceProvider"] as IServiceProvider;
+        if (provider == null)
+            throw new InvalidOperationException("ServiceProvider is not available for AIAssistView");
 
         _viewScope = provider.CreateScope();
         // Resolve scoped services from the scope
-        var aiService = _viewScope.ServiceProvider.GetRequiredService<IAIService>();
-        var chargeCalculator = _viewScope.ServiceProvider.GetRequiredService<Services.ServiceChargeCalculatorService>();
-        var whatIfEngine = _viewScope.ServiceProvider.GetRequiredService<Services.WhatIfScenarioEngine>();
-        DataContext = new ViewModels.AIAssistViewModel(aiService, chargeCalculator, whatIfEngine);
+    var aiService = _viewScope.ServiceProvider.GetRequiredService<IAIService>();
+    var chargeCalculator = _viewScope.ServiceProvider.GetRequiredService<IChargeCalculatorService>();
+    var whatIfEngine = _viewScope.ServiceProvider.GetRequiredService<IWhatIfScenarioEngine>();
+    DataContext = new ViewModels.AIAssistViewModel(aiService, chargeCalculator, whatIfEngine);
 
         // Apply current theme
         TryApplyTheme(SettingsService.Instance.Current.Theme);

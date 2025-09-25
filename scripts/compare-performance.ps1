@@ -39,11 +39,11 @@ Write-Host "  Time saved: $([math]::Round(($currentLoadTime - $optimizedLoadTime
 # Breakdown of optimizations
 Write-Host "`n🔧 Optimization Breakdown:" -ForegroundColor Yellow
 $optimizations = @(
-    @{Name = "Lazy loading for Azure modules"; Impact = "High"; TimeSaved = "2000ms"},
-    @{Name = "Background Key Vault loading"; Impact = "High"; TimeSaved = "3000ms"},
-    @{Name = "Conditional module loading"; Impact = "Medium"; TimeSaved = "1000ms"},
-    @{Name = "Cached environment data"; Impact = "Low"; TimeSaved = "500ms"},
-    @{Name = "Simplified prompt"; Impact = "Low"; TimeSaved = "200ms"}
+    @{Name = "Lazy loading for Azure modules"; Impact = "High"; TimeSaved = "2000ms" },
+    @{Name = "Background Key Vault loading"; Impact = "High"; TimeSaved = "3000ms" },
+    @{Name = "Conditional module loading"; Impact = "Medium"; TimeSaved = "1000ms" },
+    @{Name = "Cached environment data"; Impact = "Low"; TimeSaved = "500ms" },
+    @{Name = "Simplified prompt"; Impact = "Low"; TimeSaved = "200ms" }
 )
 
 foreach ($opt in $optimizations) {

@@ -5,8 +5,10 @@ Tests the main application window and its basic functionality
 
 import pytest
 import time
-import os
-from pathlib import Path
+
+from pywinauto.base_wrapper import ElementNotEnabled
+from pywinauto.findwindows import ElementNotFoundError
+from pywinauto.timings import TimeoutError as PywinautoTimeoutError
 
 
 @pytest.mark.ui
@@ -32,7 +34,7 @@ class TestMainWindow:
             # Look for ribbon control (Syncfusion)
             ribbon = ui_main_window.child_window(class_name="Ribbon")
             assert ribbon.exists()
-        except:
+        except (ElementNotFoundError, ElementNotEnabled, PywinautoTimeoutError):
             # Ribbon might not be immediately available, check for basic controls
             pass
 
@@ -86,7 +88,7 @@ class TestMainWindow:
             if menu.exists():
                 assert menu.is_visible()
                 assert menu.is_enabled()
-        except:
+        except (ElementNotFoundError, ElementNotEnabled, PywinautoTimeoutError):
             # Menu might be implemented differently
             pass
 
@@ -152,7 +154,6 @@ class TestViewNavigation:
             ui_main_window.child_window(title_re=".*About.*", control_type="MenuItem")
         ]
 
-        about_opened = False
         for elem in about_elements:
             if elem.exists():
                 try:
@@ -161,11 +162,10 @@ class TestViewNavigation:
                     # Check if about dialog opened
                     about_dialog = ui_main_window.child_window(title_re=".*About.*")
                     if about_dialog.exists():
-                        about_opened = True
                         # Close the dialog
                         about_dialog.close()
                         break
-                except:
+                except (ElementNotFoundError, ElementNotEnabled, PywinautoTimeoutError):
                     continue
 
         # About dialog is not strictly required to be accessible from main window

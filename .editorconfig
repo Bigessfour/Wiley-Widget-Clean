@@ -36,6 +36,18 @@ indent_size = 2
 indent_style = space
 indent_size = 2
 
+# Python files
+[*.{py,pyi}]
+indent_style = space
+indent_size = 4
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+# Python requirements files
+[requirements*.txt]
+indent_style = space
+indent_size = 4
+
 # Markdown files
 [*.md]
 trim_trailing_whitespace = false

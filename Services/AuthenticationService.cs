@@ -22,7 +22,7 @@ namespace WileyWidget.Services
 
         public event EventHandler<AuthenticationEventArgs>? AuthenticationStateChanged;
 
-        public bool IsAuthenticated
+    public virtual bool IsAuthenticated
         {
             get
             {
@@ -31,7 +31,7 @@ namespace WileyWidget.Services
             }
         }
 
-        public IAccount? CurrentAccount
+    public virtual IAccount? CurrentAccount
         {
             get
             {
@@ -108,6 +108,17 @@ namespace WileyWidget.Services
                 _isConfigured = false;
                 _app = null;
             }
+        }
+
+        /// <summary>
+        /// Parameterless constructor used by tests and scenarios where configuration is not available.
+        /// Creates the service in an unconfigured state.
+        /// </summary>
+        public AuthenticationService()
+        {
+            _config = new AzureAdConfig();
+            _isConfigured = false;
+            _app = null;
         }
 
         private void EnsureConfigured()
@@ -252,7 +263,7 @@ namespace WileyWidget.Services
         /// <summary>
         /// Gets user information from the current account
         /// </summary>
-        public UserInfo GetUserInfo()
+    public virtual UserInfo GetUserInfo()
         {
             EnsureConfigured();
             var account = CurrentAccount;
@@ -265,15 +276,17 @@ namespace WileyWidget.Services
             {
                 Username = account.Username,
                 Name = account.Username, // Could be enhanced to get display name from Graph API
-                AccountId = account.HomeAccountId?.Identifier ?? string.Empty
+                AccountId = account.HomeAccountId?.Identifier ?? string.Empty,
+                Email = account.Username?.Contains("@") == true ? account.Username : string.Empty
             };
 
             // Simple role assignment logic (can be enhanced with Azure AD groups later)
             userInfo.Roles = new List<string> { "User" }; // Default role
 
             // Assign Admin role based on username/email patterns (customize as needed)
-            if (account.Username.Contains("admin", StringComparison.OrdinalIgnoreCase) ||
-                account.Username.EndsWith("@yourcompany.com", StringComparison.OrdinalIgnoreCase))
+            var uname = account.Username ?? string.Empty;
+            if (uname.Contains("admin", StringComparison.OrdinalIgnoreCase) ||
+                uname.EndsWith("@yourcompany.com", StringComparison.OrdinalIgnoreCase))
             {
                 userInfo.Roles.Add("Admin");
             }
@@ -340,6 +353,7 @@ namespace WileyWidget.Services
         public string Username { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
         public string AccountId { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
         public List<string> Roles { get; set; } = new List<string>();
         public bool IsAdmin => Roles.Contains("Admin", StringComparer.OrdinalIgnoreCase);
         public bool IsUser => Roles.Contains("User", StringComparer.OrdinalIgnoreCase);

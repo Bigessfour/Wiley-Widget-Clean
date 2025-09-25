@@ -63,7 +63,7 @@ def quick_inspect():
                                 'visible': elem.is_visible(),
                                 'enabled': elem.is_enabled()
                             })
-                        except:
+                        except Exception:
                             continue
 
                     print(f"📊 Found {len(elements)} elements")

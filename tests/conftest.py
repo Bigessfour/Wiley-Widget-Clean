@@ -2,7 +2,6 @@
 Pytest configuration and fixtures for Wiley Widget tests
 """
 import pytest
-import os
 import time
 import subprocess
 from pathlib import Path
@@ -58,7 +57,7 @@ def ui_app(ui_app_path):
             main_window = app.window(title_re=".*Wiley.*Widget.*", class_name="#32770")
             if main_window.exists():
                 break
-        except:
+        except Exception:
             pass
         time.sleep(1)
 
@@ -70,7 +69,7 @@ def ui_app(ui_app_path):
     # Cleanup
     try:
         app.kill()
-    except:
+    except (ProcessLookupError, OSError):
         pass
 
 

@@ -33,6 +33,18 @@ public class GridDisplayAttribute : Attribute
     /// </summary>
     public int DecimalDigits { get; set; } = -1; // -1 means use default based on type
 
+    /// <summary>
+    /// Optional: Converter type to apply to the column's binding when generating dynamic columns.
+    /// The type must implement IValueConverter and have a parameterless constructor.
+    /// </summary>
+    public Type ConverterType { get; set; }
+
+    /// <summary>
+    /// Optional: Resource key for a converter declared in XAML resources. If provided, this will be
+    /// resolved via FindResource and used when generating the column binding.
+    /// </summary>
+    public string ConverterResourceKey { get; set; }
+
     public GridDisplayAttribute(int order = 50, double width = 120)
     {
         Order = order;

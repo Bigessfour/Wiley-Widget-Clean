@@ -11,6 +11,7 @@ namespace WileyWidget.Tests;
 
 /// <summary>
 /// Comprehensive integration tests for database operations and critical workflows
+/// Uses SQLite in-memory database following Microsoft best practices
 /// </summary>
 public class ComprehensiveDatabaseIntegrationTests : IDisposable
 {
@@ -19,21 +20,20 @@ public class ComprehensiveDatabaseIntegrationTests : IDisposable
     private readonly EnterpriseRepository _enterpriseRepository;
     private readonly MunicipalAccountRepository _municipalAccountRepository;
     private readonly UtilityCustomerRepository _utilityCustomerRepository;
+    private bool _disposed;
 
     public ComprehensiveDatabaseIntegrationTests()
     {
-        // Create in-memory database for testing
-        var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-            .Options;
-
-        _contextFactory = new TestDbContextFactory(options);
+        // Use SQLite in-memory database with unique name for each test
+        // This ensures complete isolation between tests following Microsoft best practices
+        var databaseName = $"ComprehensiveTest_{Guid.NewGuid()}";
+        _contextFactory = TestDbContextFactory.CreateSqliteInMemory(databaseName);
         _context = _contextFactory.CreateDbContext();
         _enterpriseRepository = new EnterpriseRepository(_contextFactory);
         _municipalAccountRepository = new MunicipalAccountRepository(_contextFactory);
         _utilityCustomerRepository = new UtilityCustomerRepository(_contextFactory);
 
-        // Seed the database
+        // Ensure database is created and migrations are applied
         _context.Database.EnsureCreated();
         SeedTestData();
     }
@@ -331,10 +331,18 @@ public class ComprehensiveDatabaseIntegrationTests : IDisposable
 
     protected virtual void Dispose(bool disposing)
     {
-        if (disposing)
+        if (!_disposed && disposing)
         {
             _context.Database.EnsureDeleted();
             _context.Dispose();
+
+            // Dispose the SQLite connection if it exists
+            if (_contextFactory is IDisposable disposableFactory)
+            {
+                disposableFactory.Dispose();
+            }
+
+            _disposed = true;
         }
     }
 

@@ -26,7 +26,7 @@ def inspect_ui_elements(app_path: str, output_file: Optional[str] = None):
 
     # Wait for main window
     main_window = None
-    for i in range(30):
+    for attempt in range(30):
         try:
             # Try different title patterns
             for pattern in [".*Wiley.*", ".*Widget.*", "MainWindow"]:
@@ -34,13 +34,13 @@ def inspect_ui_elements(app_path: str, output_file: Optional[str] = None):
                     main_window = app.window(title_re=pattern)
                     if main_window.exists():
                         break
-                except:
+                except Exception:
                     continue
             if main_window and main_window.exists():
                 break
-        except:
+        except Exception:
             pass
-        print(f"⏳ Waiting for window... ({i+1}/30)")
+        print(f"⏳ Waiting for window... ({attempt + 1}/30)")
         time.sleep(1)
 
     if not main_window or not main_window.exists():
@@ -60,7 +60,7 @@ def inspect_ui_elements(app_path: str, output_file: Optional[str] = None):
         print(f"💾 Element inspection saved to: {output_file}")
 
     # Print summary
-    print(f"\n📊 UI Inspection Summary:")
+    print("\n📊 UI Inspection Summary:")
     print(f"   Total elements found: {len(elements)}")
 
     # Count by control type
@@ -71,7 +71,7 @@ def inspect_ui_elements(app_path: str, output_file: Optional[str] = None):
 
     print("   Elements by type:")
     for ctrl_type, count in sorted(control_types.items()):
-        print(f"     {ctrl_type}: {count}")
+            print("     {}: {}".format(ctrl_type, count))
 
     app.kill()
 
@@ -114,10 +114,10 @@ def inspect_window_elements(window, max_depth: int = 3, current_depth: int = 0) 
                     try:
                         child_elements = inspect_window_elements(child, max_depth, current_depth + 1)
                         elements.extend(child_elements)
-                    except:
+                    except Exception:
                         pass  # Skip if can't inspect children
 
-            except Exception as e:
+            except Exception:
                 # Skip elements that can't be inspected
                 continue
 
@@ -143,13 +143,14 @@ def take_ui_screenshot(app_path: str, output_file: str):
 
     # Wait for main window
     main_window = None
-    for i in range(30):
+    for attempt in range(30):
         try:
             main_window = app.window(title_re=".*Wiley.*Widget.*")
             if main_window.exists():
                 break
-        except:
+        except Exception:
             pass
+        print(f"⏳ Waiting for window... ({attempt + 1}/30)")
         time.sleep(1)
 
     if not main_window or not main_window.exists():
@@ -186,13 +187,14 @@ def test_ui_interactions(app_path: str, interaction_file: Optional[str] = None):
 
     # Wait for main window
     main_window = None
-    for i in range(30):
+    for attempt in range(30):
         try:
             main_window = app.window(title_re=".*Wiley.*Widget.*")
             if main_window.exists():
                 break
-        except:
+        except Exception:
             pass
+        print(f"⏳ Waiting for window... ({attempt + 1}/30)")
         time.sleep(1)
 
     if not main_window or not main_window.exists():

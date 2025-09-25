@@ -4,28 +4,28 @@ Simple UI Testing Verification Script
 Tests that the UI testing framework is properly set up
 """
 
+from importlib import util as importlib_util
+
+
+def _module_available(module_name: str) -> bool:
+    """Return True if the given module can be imported."""
+    return importlib_util.find_spec(module_name) is not None
+
+
 def test_imports():
     """Test that all required UI testing imports work"""
-    try:
-        import pywinauto
-        print("✅ pywinauto imported successfully")
-    except ImportError as e:
-        print(f"❌ pywinauto import failed: {e}")
-        return False
+    checks = [
+        ("pywinauto", "pywinauto"),
+        ("Pillow", "PIL"),
+        ("psutil", "psutil"),
+    ]
 
-    try:
-        from PIL import Image
-        print("✅ PIL imported successfully")
-    except ImportError as e:
-        print(f"❌ PIL import failed: {e}")
-        return False
-
-    try:
-        import psutil
-        print("✅ psutil imported successfully")
-    except ImportError as e:
-        print(f"❌ psutil import failed: {e}")
-        return False
+    for display_name, module_name in checks:
+        if _module_available(module_name):
+            print(f"✅ {display_name} available")
+        else:
+            print(f"❌ {display_name} not installed")
+            return False
 
     return True
 
@@ -50,7 +50,7 @@ def test_pytest_fixtures():
     """Test that pytest fixtures are available"""
     try:
         import pytest
-        print("✅ pytest imported successfully")
+        print(f"✅ pytest imported successfully (version {pytest.__version__})")
 
         # Simple check - just verify pytest is working
         print("✅ pytest basic functionality verified")

@@ -23,7 +23,8 @@ foreach ($path in $profilePaths) {
         $fileInfo = Get-Item $path
         $size = [math]::Round($fileInfo.Length / 1KB, 2)
         Write-Host "  ✅ $($fileInfo.Name) - ${size}KB" -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host "  ❌ $(Split-Path $path -Leaf) - Not found" -ForegroundColor Red
     }
 }
@@ -83,7 +84,8 @@ foreach ($path in $profilePaths) {
     if (Test-Path $path) {
         try {
             . $path
-        } catch {
+        }
+        catch {
             Write-Host "  ❌ Error loading $(Split-Path $path -Leaf): $($_.Exception.Message)" -ForegroundColor Red
         }
     }
@@ -94,10 +96,12 @@ $loadTimeMs = [math]::Round($loadTime.TotalMilliseconds, 2)
 if ($loadTimeMs -gt 3000) {
     $color = "Red"
     $recommendation = "🚨 CRITICAL: Profile is very slow (>3s)"
-} elseif ($loadTimeMs -gt 1000) {
+}
+elseif ($loadTimeMs -gt 1000) {
     $color = "Yellow"
     $recommendation = "⚠️  SLOW: Consider optimization"
-} else {
+}
+else {
     $color = "Green"
     $recommendation = "✅ FAST: Good performance"
 }

@@ -8,8 +8,8 @@ param(
     [string]$LogFile = "cicd-verification.log"
 )
 
-Write-Host "🔧 WileyWidget CI/CD Tools Verification" -ForegroundColor Cyan
-Write-Host "=====================================" -ForegroundColor Cyan
+Write-Information "🔧 WileyWidget CI/CD Tools Verification" -InformationAction Continue
+Write-Information "=====================================" -InformationAction Continue
 
 $startTime = Get-Date
 $results = @{}
@@ -19,7 +19,7 @@ function Write-Log {
     param([string]$Message, [string]$Level = "INFO")
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
     $logEntry = "[$timestamp] [$Level] $Message"
-    Write-Host $logEntry -ForegroundColor $(if ($Level -eq "ERROR") { "Red" } elseif ($Level -eq "WARN") { "Yellow" } else { "White" })
+    Write-Information $logEntry -InformationAction Continue
     Add-Content $LogFile $logEntry
 }
 
@@ -84,6 +84,8 @@ Test-Tool "Node.js" "node --version" "v"
 Test-Tool "NPM" "npm --version" -Required $false
 Test-Tool "PowerShell" "pwsh --version" "PowerShell"
 Test-Tool ".NET SDK" "dotnet --version" -Required $false
+Test-Tool "Python" "python --version" "Python 3."
+Test-Tool "Pip" "python -m pip --version" "pip" -Required $false
 
 # Check Trunk and Linters
 Write-Host "`n🔍 Trunk & Linters:" -ForegroundColor Yellow

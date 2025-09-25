@@ -209,7 +209,7 @@ class TestDashboardPerformance:
             try:
                 interaction()
                 time.sleep(0.5)
-            except:
+            except Exception:
                 continue  # Some interactions may not be available
 
         final_memory = process.memory_info().rss

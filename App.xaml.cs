@@ -26,6 +26,8 @@ using Microsoft.Extensions.Hosting; // Generic Host
 using System.Runtime.InteropServices;
 using System.Reflection;
 using System.Diagnostics;
+using System.Windows.Media; // For brushes/colors
+using System.Windows.Automation; // For AutomationProperties
 
 namespace WileyWidget;
 
@@ -38,6 +40,7 @@ namespace WileyWidget;
 /// - Better error handling and fallbacks
 /// - Enhanced debug instrumentation for startup analysis
 /// </summary>
+#pragma warning disable CA1001 // Type 'App' owns disposable field(s) '_splashScreen' but is not disposable
 public partial class App : Application
 {
     /// <summary>
@@ -56,14 +59,21 @@ public partial class App : Application
     /// <summary>
     /// Debug instrumentation for startup analysis
     /// </summary>
-    private static readonly bool _enableDebugInstrumentation =
-        Environment.GetEnvironmentVariable("WILEY_DEBUG_STARTUP") == "true";
+    private static readonly bool _enableDebugInstrumentation;
 
-    private static readonly string _debugLogPath =
-        Path.Combine(Path.GetTempPath(), "WileyWidget", "startup-debug.log");
+    private static readonly string _debugLogPath;
 
     private static StreamWriter _debugWriter;
     private static readonly object _debugLock = new object();
+
+    /// <summary>
+    /// Static constructor to initialize debug instrumentation
+    /// </summary>
+    static App()
+    {
+        _enableDebugInstrumentation = Environment.GetEnvironmentVariable("WILEY_DEBUG_STARTUP") == "true";
+        _debugLogPath = Path.Combine(Path.GetTempPath(), "WileyWidget", "startup-debug.log");
+    }
 
     /// <summary>
     /// Initialize debug instrumentation if enabled
@@ -152,14 +162,10 @@ public partial class App : Application
     /// </summary>
     public App()
     {
-        // CRITICAL: Register Syncfusion license SYNCHRONOUSLY before ANY Syncfusion components are created
-        // This method loads configuration internally and registers the license
-        RegisterSyncfusionLicenseSynchronously();
-
-        // Logging is configured later via Generic Host (Serilog). Avoid double initialization here.
-        // Register Syncfusion license using configuration too (non-blocking follow-up)
-        RegisterSyncfusionLicense();
-        Log.Information("=== Application Constructor Initialized ===");
+        // CRITICAL: Perform early configuration load + single-pass Syncfusion license registration
+        // Must occur before any Syncfusion control types are referenced/initialized.
+        InitializeConfigurationAndRegisterSyncfusionLicense();
+        Log.Information("=== Application Constructor Initialized (early config & license) ===");
     }
 
     /// <summary>
@@ -199,8 +205,7 @@ public partial class App : Application
                 TryScheduleLicenseDialogAutoClose();
             }
             
-            // Register Syncfusion license asynchronously to avoid blocking startup
-            _ = Task.Run(() => RegisterSyncfusionLicense());
+            // (Removed) Redundant async license registration call eliminated; handled once in constructor.
             
             Log.Information("Phase 0 - Initial setup completed in {ElapsedMs}ms [{StartupId}]", 
                 phaseStopwatch.ElapsedMilliseconds, startupId);
@@ -237,6 +242,18 @@ public partial class App : Application
 
             _splashScreen?.UpdateProgress(60, "Building host...");
             LogDebugEvent("STARTUP_PHASE", "Phase 2b: Host building");
+            // Bootstrap logger (console) BEFORE full host so early failures are visible
+            var bootstrapLogDir = Path.Combine(Path.GetTempPath(), "WileyWidget", "logs");
+            try { Directory.CreateDirectory(bootstrapLogDir); } catch { }
+            var bootstrapLogFile = Path.Combine(bootstrapLogDir, "bootstrap.log");
+            var bootstrapLogger = new LoggerConfiguration()
+                .MinimumLevel.Debug()
+                .WriteTo.Console(outputTemplate: "[BOOTSTRAP {Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
+                .WriteTo.File(bootstrapLogFile, rollingInterval: RollingInterval.Day, retainedFileCountLimit: 3, shared: true,
+                    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff}|{Level:u3}|{Message:lj}{NewLine}{Exception}")
+                .CreateLogger();
+            Serilog.Log.Logger = bootstrapLogger;
+
             var hostBuilder = Host.CreateApplicationBuilder();
             // Register splash screen in DI container so HostedWpfApplication can access it
             if (_splashScreen != null)
@@ -245,7 +262,19 @@ public partial class App : Application
             }
             // Delegate DI, logging, config, DB services, hosted services to our extension
             hostBuilder.ConfigureWpfApplication();
-            _host = hostBuilder.Build();
+            try
+            {
+                _host = hostBuilder.Build();
+            }
+            catch (Exception earlyEx)
+            {
+                Console.Error.WriteLine("EARLY HOST BUILD FAILURE: " + earlyEx.Message);
+                Console.Error.WriteLine(earlyEx);
+                try { Serilog.Log.Fatal(earlyEx, "Host build failed before full logging initialization"); } catch { }
+                ShowFallbackUI(earlyEx);
+                Shutdown();
+                return;
+            }
             Log.Information("Phase 2b - Host built in {ElapsedMs}ms [{StartupId}]", 
                 phaseStopwatch.ElapsedMilliseconds, startupId);
             LogDebugEvent("STARTUP_PHASE", $"Phase 2b completed in {phaseStopwatch.ElapsedMilliseconds}ms");
@@ -256,6 +285,16 @@ public partial class App : Application
 
             // Initialize essential services that require the ServiceProvider
             InitializeEssentialServices();
+
+            // In development, ensure the SQLite database is created before health checks
+            try
+            {
+                await DatabaseConfiguration.EnsureDevDatabaseIfNeededAsync(ServiceProvider);
+            }
+            catch (Exception ensureDbEx)
+            {
+                Log.Warning(ensureDbEx, "Dev database ensure failed; continuing");
+            }
 
             // Start the host (HostedWpfApplication will create and show MainWindow)
             phaseStopwatch.Restart();
@@ -289,6 +328,7 @@ public partial class App : Application
             // Only proceed with WPF initialization if host started successfully
             if (hostStartedSuccessfully)
             {
+                // Replace bootstrap logger with fully configured logger is already done inside ConfigureWpfApplication
                 phaseStopwatch.Restart();
                 // Now call base.OnStartup to complete WPF initialization
                 base.OnStartup(e);
@@ -304,12 +344,34 @@ public partial class App : Application
 
                 Log.Information("=== Application Startup Completed in {TotalElapsedMs}ms - ID: {StartupId} ===", 
                     startupStopwatch.ElapsedMilliseconds, startupId);
+
+                // Record startup metrics
+                try
+                {
+                    var metricsService = ServiceProvider?.GetService<ApplicationMetricsService>();
+                    metricsService?.RecordStartup(startupStopwatch.Elapsed.TotalMilliseconds, true);
+                }
+                catch (Exception metricsEx)
+                {
+                    Log.Warning(metricsEx, "Failed to record startup metrics");
+                }
             }
         }
         catch (Exception ex)
         {
             Log.Error(ex, "Critical error during application startup after {ElapsedMs}ms [{StartupId}]", 
                 startupStopwatch.ElapsedMilliseconds, startupId);
+
+            // Record startup failure metrics
+            try
+            {
+                var metricsService = ServiceProvider?.GetService<ApplicationMetricsService>();
+                metricsService?.RecordStartup(startupStopwatch.Elapsed.TotalMilliseconds, false);
+            }
+            catch (Exception metricsEx)
+            {
+                Log.Warning(metricsEx, "Failed to record startup failure metrics");
+            }
 
             // Close splash screen before showing fallback UI (only if not already closed)
             if (_splashScreen != null)
@@ -342,6 +404,11 @@ public partial class App : Application
     {
         try
         {
+            if (_splashScreen != null)
+            {
+                try { _splashScreen.Dispose(); } catch { }
+                _splashScreen = null;
+            }
             if (_host != null)
             {
                 // Stop and dispose the host cleanly
@@ -360,40 +427,88 @@ public partial class App : Application
         base.OnExit(e);
     }
 
-    private void RegisterSyncfusionLicenseSynchronously()
+    // Tracking fields for improved license handling lifecycle
+    private static bool _syncfusionLicenseAttempted;
+    private static bool _syncfusionLicenseRegistered;
+    private static string _syncfusionLicenseValidationMessage;
+
+    /// <summary>
+    /// Loads configuration (if not already loaded) and performs a single-pass Syncfusion license resolution + registration.
+    /// This replaces the previous dual synchronous + async registration pattern to avoid redundant calls and potential race conditions.
+    /// </summary>
+    private void InitializeConfigurationAndRegisterSyncfusionLicense()
     {
+        if (_configuration == null)
+        {
+            LoadConfiguration();
+        }
+
         try
         {
-            // Load configuration first to get license key
-            LoadConfiguration();
-
-            // Read license key from supported sources (env var, config, user secrets)
             var licenseKey = GetSyncfusionLicenseKey();
+            _syncfusionLicenseAttempted = true;
 
-            if (!string.IsNullOrEmpty(licenseKey))
+            if (string.IsNullOrWhiteSpace(licenseKey))
             {
-                // Register the license with Syncfusion SYNCHRONOUSLY before any components are created
-                Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense(licenseKey);
-                System.Diagnostics.Debug.WriteLine("Syncfusion license registered successfully from configuration/environment");
+                _syncfusionLicenseValidationMessage = "License key not found (env/config/user-secrets).";
+                System.Diagnostics.Debug.WriteLine("[Syncfusion] No license key found. Evaluation mode likely.");
+                return; // Do not throw – allow app to run in eval for dev.
             }
-            else
+
+            if (licenseKey == "${SYNCFUSION_LICENSE_KEY}")
             {
-                System.Diagnostics.Debug.WriteLine("Syncfusion license key not found in configuration. Evaluation dialogs may appear.");
+                _syncfusionLicenseValidationMessage = "Placeholder license key detected; replace with a real key.";
+                System.Diagnostics.Debug.WriteLine("[Syncfusion] Placeholder key detected; skipping registration.");
+                return;
             }
+
+            if (licenseKey.Length < 32)
+            {
+                _syncfusionLicenseValidationMessage = "License key appears invalid (too short).";
+                System.Diagnostics.Debug.WriteLine("[Syncfusion] Key too short; skipping registration.");
+                return;
+            }
+
+            // Register exactly once. Syncfusion's RegisterLicense is idempotent but we still guard for clarity.
+            SyncfusionLicenseProvider.RegisterLicense(licenseKey);
+            _syncfusionLicenseRegistered = true;
+            _syncfusionLicenseValidationMessage = "License registration succeeded.";
+            System.Diagnostics.Debug.WriteLine("[Syncfusion] License registered successfully.");
         }
         catch (Exception ex)
         {
-            // License registration failed, but don't crash the app
-            System.Diagnostics.Debug.WriteLine($"Syncfusion license registration failed: {ex.Message}");
+            _syncfusionLicenseRegistered = false;
+            _syncfusionLicenseValidationMessage = $"Registration exception: {ex.Message}";
+            System.Diagnostics.Debug.WriteLine($"[Syncfusion] License registration failed: {ex.Message}");
         }
+
+        // Emit structured log after attempt (Serilog may not yet be fully configured; use both Debug + minimal Console fallback)
+        try
+        {
+            var status = _syncfusionLicenseRegistered ? "Registered" : "NotRegistered";
+            var attempted = _syncfusionLicenseAttempted ? "Yes" : "No";
+            var msg = _syncfusionLicenseValidationMessage;
+            System.Diagnostics.Debug.WriteLine($"[Syncfusion] Status={status} Attempted={attempted} Details={msg}");
+            // Use Console early in case logger not wired yet
+            Console.WriteLine($"[Syncfusion] Status={status}; Details={msg}");
+        }
+        catch { /* swallow */ }
     }
 
     private void LoadConfiguration()
     {
+        // Determine environment - default to Development for debugging
+        var aspnetEnv = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+        var dotnetEnv = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT");
+        var environment = aspnetEnv ?? dotnetEnv ?? "Development";
+
+        LogDebugEvent("CONFIG", $"Environment variables - ASPNETCORE_ENVIRONMENT: '{aspnetEnv}', DOTNET_ENVIRONMENT: '{dotnetEnv}'");
+        LogDebugEvent("CONFIG", $"Loading configuration for environment: {environment}");
+
         var builder = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
             .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-            .AddJsonFile("appsettings.Production.json", optional: true, reloadOnChange: true)
+            .AddJsonFile($"appsettings.{environment}.json", optional: true, reloadOnChange: true)
             .AddEnvironmentVariables();
 
         _configuration = builder.Build();
@@ -447,45 +562,8 @@ public partial class App : Application
         services.AddSingleton<WileyWidget.Services.HealthCheckService>();
     }
 
-    private void RegisterSyncfusionLicense()
-    {
-        try
-        {
-            // Resolve license key from unified helper (env var, config, user secrets)
-            var licenseKey = GetSyncfusionLicenseKey();
-
-            if (!string.IsNullOrEmpty(licenseKey) && licenseKey != "${SYNCFUSION_LICENSE_KEY}")
-            {
-                // Register the license with Syncfusion
-                Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense(licenseKey);
-                Log.Information("Syncfusion license registered successfully");
-            }
-            else
-            {
-                // Provide detailed guidance for license setup
-                Log.Warning("Syncfusion license key not found. To prevent evaluation dialogs, set one of the following:");
-                Log.Warning("  1. Environment variable: SYNCFUSION_LICENSE_KEY");
-                Log.Warning("  2. Configuration file: appsettings.json -> Syncfusion:LicenseKey");
-                Log.Warning("  3. User secrets: dotnet user-secrets set Syncfusion:LicenseKey <your-key>");
-                Log.Warning("  Get a license key from: https://www.syncfusion.com/account/license");
-
-                // For development environments, we can continue without crashing
-                // In production, you might want to throw an exception here
-#if DEBUG
-                Log.Warning("Continuing in DEBUG mode without license - evaluation dialogs may appear");
-#else
-                Log.Error("Production environment requires valid Syncfusion license key");
-                // In production, you might want to exit or show a dialog
-#endif
-            }
-        }
-        catch (Exception ex)
-        {
-            // License registration failed, but don't crash the app
-            Log.Error(ex, "Syncfusion license registration failed");
-            Log.Warning("Application will continue but may show evaluation dialogs");
-        }
-    }
+    // Deprecated previous async follow-up registration; kept as stub for backward compatibility if referenced elsewhere.
+    private void RegisterSyncfusionLicense() { /* Unified into InitializeConfigurationAndRegisterSyncfusionLicense */ }
 
     private void ConfigureGlobalExceptionHandling()
     {
@@ -745,31 +823,47 @@ public partial class App : Application
             // Execute health checks with resilience patterns
             var healthCheckTasks = new List<Task<HealthCheckResult>>();
 
-            // Core services (always checked)
-            healthCheckTasks.Add(ExecuteHealthCheckWithResilienceAsync("Configuration", CheckConfigurationHealthAsync()));
-            healthCheckTasks.Add(ExecuteHealthCheckWithResilienceAsync("Database", CheckDatabaseHealthAsync()));
+            // Determine which services are critical (from config) and which are non-critical
+            var criticalSet = new HashSet<string>(_healthCheckConfig.CriticalServices, StringComparer.OrdinalIgnoreCase);
 
-            // External services (with circuit breakers)
-            if (!IsServiceSkipped("Azure AD"))
-                healthCheckTasks.Add(ExecuteHealthCheckWithResilienceAsync("Azure AD", CheckAzureAdHealthAsync()));
+            // Helper local function to enqueue a check respecting skip list and deferral
+            void Enqueue(string name, Func<Task<HealthCheckResult>> factory)
+            {
+                if (IsServiceSkipped(name)) return;
+                if (_healthCheckConfig.DeferNonCriticalChecks && !criticalSet.Contains(name))
+                {
+                    // Defer execution by scheduling on thread pool AFTER initial critical checks complete
+                    Task.Run(async () =>
+                    {
+                        var deferredResult = await ExecuteHealthCheckWithResilienceAsync(name, factory());
+                        lock(report)
+                        {
+                            report.Results.Add(deferredResult);
+                            // Update overall status if worsened
+                            report.OverallStatus = DetermineOverallHealthStatus(report.Results);
+                            UpdateLatestHealthReport(report);
+                        }
+                        Log.Information("Deferred health check completed: {Service} -> {Status}", name, deferredResult.Status);
+                    });
+                }
+                else
+                {
+                    healthCheckTasks.Add(ExecuteHealthCheckWithResilienceAsync(name, factory()));
+                }
+            }
 
-            if (!IsServiceSkipped("Azure Key Vault"))
-                healthCheckTasks.Add(ExecuteHealthCheckWithResilienceAsync("Azure Key Vault", CheckAzureKeyVaultHealthAsync()));
+            // Core services (always checked immediately)
+            Enqueue("Configuration", CheckConfigurationHealthAsync);
+            Enqueue("Database", CheckDatabaseHealthAsync);
+            Enqueue("Syncfusion License", CheckSyncfusionLicenseHealthAsync);
 
-            if (!IsServiceSkipped("QuickBooks"))
-                healthCheckTasks.Add(ExecuteHealthCheckWithResilienceAsync("QuickBooks", CheckQuickBooksHealthAsync()));
-
-            if (!IsServiceSkipped("Syncfusion License"))
-                healthCheckTasks.Add(ExecuteHealthCheckWithResilienceAsync("Syncfusion License", CheckSyncfusionLicenseHealthAsync()));
-
-            if (!IsServiceSkipped("AI Service"))
-                healthCheckTasks.Add(ExecuteHealthCheckWithResilienceAsync("AI Service", CheckAIServiceHealthAsync()));
-
-            if (!IsServiceSkipped("External Dependencies"))
-                healthCheckTasks.Add(ExecuteHealthCheckWithResilienceAsync("External Dependencies", CheckExternalDependenciesHealthAsync()));
-
-            if (!IsServiceSkipped("System Resources"))
-                healthCheckTasks.Add(ExecuteHealthCheckWithResilienceAsync("System Resources", CheckSystemResourcesHealthAsync()));
+            // External services (may be deferred)
+            Enqueue("Azure AD", CheckAzureAdHealthAsync);
+            Enqueue("Azure Key Vault", CheckAzureKeyVaultHealthAsync);
+            Enqueue("QuickBooks", CheckQuickBooksHealthAsync);
+            Enqueue("AI Service", CheckAIServiceHealthAsync);
+            Enqueue("External Dependencies", CheckExternalDependenciesHealthAsync);
+            Enqueue("System Resources", CheckSystemResourcesHealthAsync);
 
             // Wait for all health checks to complete with overall timeout
             var timeoutTask = Task.Delay(_healthCheckConfig.DefaultTimeout);
@@ -982,22 +1076,26 @@ public partial class App : Application
                 return HealthCheckResult.Unavailable("Azure Key Vault", "Azure Key Vault URL not configured");
             }
 
-            // Attempt to list secrets (this validates connectivity and permissions)
-            // Note: This is a basic check and may fail in production due to permissions
+            // Use service level TestConnection with timeout budget (3s)
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+            bool connected = false;
             try
             {
-                // We don't actually list secrets, just check if the client can be created
-                await Task.CompletedTask; // Placeholder for actual connectivity check
+                connected = await keyVaultService.TestConnectionAsync();
             }
-            catch
+            catch (Exception ex)
             {
-                // If we can't connect, mark as degraded rather than unhealthy
+                Log.Debug(ex, "Azure Key Vault test connection threw");
+            }
+            finally
+            {
                 stopwatch.Stop();
-                return HealthCheckResult.Degraded("Azure Key Vault", "Azure Key Vault connectivity could not be verified", stopwatch.Elapsed);
             }
 
-            stopwatch.Stop();
-            return HealthCheckResult.Healthy("Azure Key Vault", "Azure Key Vault service configured and accessible", stopwatch.Elapsed);
+            if (connected)
+                return HealthCheckResult.Healthy("Azure Key Vault", "Azure Key Vault reachable", stopwatch.Elapsed);
+
+            return HealthCheckResult.Degraded("Azure Key Vault", "Azure Key Vault unreachable or insufficient permissions", stopwatch.Elapsed);
         }
         catch (Exception ex)
         {
@@ -1028,10 +1126,15 @@ public partial class App : Application
                 return Task.FromResult(HealthCheckResult.Unhealthy("QuickBooks", "QuickBooks Client ID or Realm ID not configured"));
             }
 
-            // Check if token is valid
-            if (qbService is QuickBooksService concreteService && !concreteService.HasValidAccessToken())
+            // Check if token is valid; attempt silent refresh once if invalid
+            if (qbService is QuickBooksService concreteService)
             {
-                return Task.FromResult(HealthCheckResult.Degraded("QuickBooks", "QuickBooks access token is expired or not available"));
+                if (!concreteService.HasValidAccessToken())
+                {
+                    // Silent refresh method not yet implemented; classify as degraded and allow startup
+                    stopwatch.Stop();
+                    return Task.FromResult(HealthCheckResult.Degraded("QuickBooks", "Access token missing/expired (no silent refresh available)", stopwatch.Elapsed));
+                }
             }
 
             stopwatch.Stop();
@@ -1049,23 +1152,49 @@ public partial class App : Application
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
         try
         {
-            // Use unified resolution for the license key (env/config/user secrets)
-            var licenseKey = GetSyncfusionLicenseKey();
-            if (string.IsNullOrEmpty(licenseKey))
+            // Evaluate status flags produced during early startup
+            if (!_syncfusionLicenseAttempted)
             {
-                return Task.FromResult(HealthCheckResult.Unhealthy("Syncfusion License", "Syncfusion license key not configured"));
+                stopwatch.Stop();
+                return Task.FromResult(HealthCheckResult.Unavailable("Syncfusion License", "License registration not attempted yet", null, stopwatch.Elapsed));
             }
 
-            // Validate license format (basic check)
-            if (licenseKey.Length < 32)
+            if (_syncfusionLicenseRegistered)
             {
-                return Task.FromResult(HealthCheckResult.Unhealthy("Syncfusion License", "Syncfusion license key appears to be invalid (too short)"));
+                stopwatch.Stop();
+                return Task.FromResult(HealthCheckResult.Healthy("Syncfusion License", _syncfusionLicenseValidationMessage, stopwatch.Elapsed)); // assuming existing signature matches
             }
 
-            // Check if license is registered (this would require checking Syncfusion's internal state)
-            // For now, we assume it's valid if configured
+            // Not registered – determine severity based on reason
+            var message = _syncfusionLicenseValidationMessage ?? "License not registered for unknown reason";
+
+            // Placeholder or missing key -> Unhealthy (action required)
+            if (message.Contains("not found", StringComparison.OrdinalIgnoreCase) ||
+                message.Contains("placeholder", StringComparison.OrdinalIgnoreCase))
+            {
+                stopwatch.Stop();
+                return Task.FromResult(HealthCheckResult.Unhealthy("Syncfusion License", message, null, stopwatch.Elapsed));
+            }
+
+            // Format issue -> Unhealthy
+            if (message.Contains("invalid", StringComparison.OrdinalIgnoreCase) ||
+                message.Contains("short", StringComparison.OrdinalIgnoreCase))
+            {
+                stopwatch.Stop();
+                return Task.FromResult(HealthCheckResult.Unhealthy("Syncfusion License", message, null, stopwatch.Elapsed));
+            }
+
+            // Registration exception -> Degraded (app can continue in eval mode)
+            if (message.Contains("exception", StringComparison.OrdinalIgnoreCase) ||
+                message.Contains("failed", StringComparison.OrdinalIgnoreCase))
+            {
+                stopwatch.Stop();
+                return Task.FromResult(HealthCheckResult.Degraded("Syncfusion License", message, stopwatch.Elapsed));
+            }
+
+            // Fallback classification
             stopwatch.Stop();
-            return Task.FromResult(HealthCheckResult.Healthy("Syncfusion License", "Syncfusion license key configured and validated", stopwatch.Elapsed));
+            return Task.FromResult(HealthCheckResult.Degraded("Syncfusion License", message, stopwatch.Elapsed));
         }
         catch (Exception ex)
         {
@@ -1088,18 +1217,84 @@ public partial class App : Application
             }
 
             // Check configuration
-            var openAiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
-            var azureAiEndpoint = _configuration["Azure:AI:Endpoint"];
+            // Prefer configuration (Key Vault injected) before falling back to environment
+            var openAiKey = _configuration["Secrets:OpenAI:ApiKey"] ?? _configuration["OpenAI:ApiKey"] ?? Environment.GetEnvironmentVariable("OPENAI_API_KEY");
+            var azureAiEndpoint = _configuration["Secrets:AzureAI:Endpoint"] ?? _configuration["Azure:AI:Endpoint"];    
 
             if (string.IsNullOrEmpty(openAiKey) && string.IsNullOrEmpty(azureAiEndpoint))
             {
                 return Task.FromResult(HealthCheckResult.Unavailable("AI Service", "Neither OpenAI API key nor Azure AI endpoint configured"));
             }
+            // Perform lightweight connectivity probe (2s budget)
+            using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(2));
+            var clientFactory = scope.ServiceProvider.GetService<System.Net.Http.IHttpClientFactory>();
+            using var httpClient = clientFactory != null ? clientFactory.CreateClient("AIHealthCheck") : new System.Net.Http.HttpClient();
+            httpClient.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", "WileyWidget-AIHealthCheck/1.0");
+            System.Net.Http.HttpResponseMessage response = null;
+            string target = null;
+            bool usedOpenAi = false;
 
-            // Basic connectivity check would go here
-            // For now, just validate configuration
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(azureAiEndpoint))
+                {
+                    // Normalize endpoint
+                    var endpoint = azureAiEndpoint.TrimEnd('/');
+                    // Use a metadata style call (models list is provider-specific; we just check reachability)
+                    target = endpoint + "/openai/deployments?api-version=2023-05-01"; // harmless list request (may 401)
+                    response = httpClient.GetAsync(target, cts.Token).GetAwaiter().GetResult();
+                }
+                else if (!string.IsNullOrWhiteSpace(openAiKey))
+                {
+                    usedOpenAi = true;
+                    httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", openAiKey);
+                    target = "https://api.openai.com/v1/models";
+                    response = httpClient.GetAsync(target, cts.Token).GetAwaiter().GetResult();
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                stopwatch.Stop();
+                return Task.FromResult(HealthCheckResult.Degraded("AI Service", "Connectivity probe timed out", stopwatch.Elapsed));
+            }
+            catch (System.Net.Http.HttpRequestException ex)
+            {
+                stopwatch.Stop();
+                return Task.FromResult(HealthCheckResult.Unavailable("AI Service", $"Connectivity error: {ex.Message}", ex, stopwatch.Elapsed));
+            }
+
+            if (response == null)
+            {
+                stopwatch.Stop();
+                return Task.FromResult(HealthCheckResult.Unavailable("AI Service", "Probe did not execute (no endpoint chosen)", null, stopwatch.Elapsed));
+            }
+
+            var status = (int)response.StatusCode;
+            string detail = $"Probe {(usedOpenAi ? "OpenAI" : "Azure AI")} status {(int)response.StatusCode} {response.ReasonPhrase}";
+
+            HealthCheckResult result;
+            if (status == 200)
+            {
+                result = HealthCheckResult.Healthy("AI Service", detail, stopwatch.Elapsed);
+            }
+            else if (status == 401 || status == 403)
+            {
+                // Auth/config issue – user action required
+                result = HealthCheckResult.Unhealthy("AI Service", detail, null, stopwatch.Elapsed);
+            }
+            else if (status == 429 || (status >= 500 && status <= 599))
+            {
+                // Transient or capacity issue
+                result = HealthCheckResult.Degraded("AI Service", detail, stopwatch.Elapsed);
+            }
+            else
+            {
+                // Unexpected but reachable
+                result = HealthCheckResult.Degraded("AI Service", detail, stopwatch.Elapsed);
+            }
+
             stopwatch.Stop();
-            return Task.FromResult(HealthCheckResult.Healthy("AI Service", "AI service configuration validated", stopwatch.Elapsed));
+            return Task.FromResult(result);
         }
         catch (Exception ex)
         {
@@ -1273,7 +1468,10 @@ public partial class App : Application
         // Get circuit breaker for this service
         if (!_circuitBreakers.TryGetValue(serviceName, out var circuitBreaker))
         {
-            circuitBreaker = new HealthCheckCircuitBreaker();
+            var metricsService = ServiceProvider?.GetService<ApplicationMetricsService>();
+            circuitBreaker = new HealthCheckCircuitBreaker(
+                metricsService: metricsService, 
+                serviceName: serviceName);
             _circuitBreakers[serviceName] = circuitBreaker;
         }
 
@@ -1366,9 +1564,10 @@ public partial class App : Application
         var totalFailures = report.UnhealthyCount + report.UnavailableCount;
         var failureRate = (double)totalFailures / report.TotalCount;
 
-        if (failureRate > 0.5) // More than 50% services failing
+        var threshold = _healthCheckConfig.CriticalFailureRateThreshold <= 0 ? 0.5 : _healthCheckConfig.CriticalFailureRateThreshold;
+        if (failureRate > threshold)
         {
-            Log.Error("Application cannot start: {FailureRate:P0} of services are failing", failureRate);
+            Log.Error("Application cannot start: {FailureRate:P0} of services are failing (threshold {Threshold:P0})", failureRate, threshold);
             return false;
         }
 
@@ -1445,53 +1644,17 @@ public partial class App : Application
     {
         try
         {
-            // Create a minimal fallback window
+            // Themed fallback window (FluentDark-like) with copy diagnostics
             var fallbackWindow = new Window
             {
                 Title = "Wiley Widget - Startup Error",
-                Width = 400,
-                Height = 200,
-                WindowStartupLocation = WindowStartupLocation.CenterScreen
+                Width = 520,
+                Height = 320,
+                WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                Background = new SolidColorBrush(Color.FromRgb(30, 30, 34)),
+                Foreground = Brushes.White,
+                Content = BuildFallbackContent(ex)
             };
-
-            var grid = new Grid();
-            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-
-            var titleText = new TextBlock
-            {
-                Text = "Application Startup Failed",
-                FontSize = 16,
-                FontWeight = FontWeights.Bold,
-                Margin = new Thickness(10),
-                HorizontalAlignment = HorizontalAlignment.Center
-            };
-            Grid.SetRow(titleText, 0);
-
-            var errorText = new TextBlock
-            {
-                Text = $"Error: {ex.Message}",
-                TextWrapping = TextWrapping.Wrap,
-                Margin = new Thickness(10),
-                VerticalAlignment = VerticalAlignment.Center
-            };
-            Grid.SetRow(errorText, 1);
-
-            var closeButton = new Button
-            {
-                Content = "Close Application",
-                Margin = new Thickness(10),
-                HorizontalAlignment = HorizontalAlignment.Center
-            };
-            closeButton.Click += (s, e) => Shutdown();
-            Grid.SetRow(closeButton, 2);
-
-            grid.Children.Add(titleText);
-            grid.Children.Add(errorText);
-            grid.Children.Add(closeButton);
-
-            fallbackWindow.Content = grid;
             fallbackWindow.Show();
         }
         catch
@@ -1504,10 +1667,76 @@ public partial class App : Application
         }
     }
 
-    private void TryScheduleLicenseDialogAutoClose()
+    private UIElement BuildFallbackContent(Exception ex)
     {
-        // TODO: Implement license dialog auto-close for testing
-        // This method would schedule automatic dismissal of Syncfusion license dialogs in test environments
+        var grid = new Grid { Margin = new Thickness(12) };
+        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+        var titleText = new TextBlock
+        {
+            Text = "Application Startup Failed",
+            FontSize = 18,
+            FontWeight = FontWeights.Bold,
+            Margin = new Thickness(0,0,0,8),
+            HorizontalAlignment = HorizontalAlignment.Left
+        };
+        Grid.SetRow(titleText, 0);
+
+        var details = new TextBox
+        {
+            Text = $"Message: {ex.Message}{Environment.NewLine}Type: {ex.GetType().FullName}{Environment.NewLine}Stack Trace:{Environment.NewLine}{ex.StackTrace}",
+            IsReadOnly = true,
+            TextWrapping = TextWrapping.Wrap,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+            Background = new SolidColorBrush(Color.FromRgb(45,45,50)),
+            Foreground = Brushes.Gainsboro,
+            BorderBrush = new SolidColorBrush(Color.FromRgb(70,70,78))
+        };
+        AutomationProperties.SetName(details, "Error details");
+        Grid.SetRow(details, 1);
+
+        var buttonPanel = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Margin = new Thickness(0,8,0,0)
+        };
+
+        Button copyButton = new()
+        {
+            Content = "Copy Details",
+            Margin = new Thickness(0,0,8,0),
+            Padding = new Thickness(12,4,12,4)
+        };
+        copyButton.Click += (s, e) =>
+        {
+            try
+            {
+                Clipboard.SetText(details.Text);
+            }
+            catch { }
+        };
+        AutomationProperties.SetName(copyButton, "Copy error details to clipboard");
+
+        Button closeButton = new()
+        {
+            Content = "Close",
+            Padding = new Thickness(16,4,16,4)
+        };
+        closeButton.Click += (s, e) => Shutdown();
+        AutomationProperties.SetName(closeButton, "Close application");
+
+        buttonPanel.Children.Add(copyButton);
+        buttonPanel.Children.Add(closeButton);
+        Grid.SetRow(buttonPanel, 2);
+
+        grid.Children.Add(titleText);
+        grid.Children.Add(details);
+        grid.Children.Add(buttonPanel);
+        return grid;
     }
 
     /// <summary>
@@ -1564,6 +1793,29 @@ public partial class App : Application
             }
 
             System.Diagnostics.Debug.WriteLine("Syncfusion license key not found in any source");
+            // 4) Azure Key Vault (final fallback) if service already constructed
+            try
+            {
+                if (ServiceProvider != null)
+                {
+                    using var scope = ServiceProvider.CreateScope();
+                    var kv = scope.ServiceProvider.GetService<IAzureKeyVaultService>();
+                    if (kv != null)
+                    {
+                        var secretName = _configuration?["Syncfusion:KeyVaultSecretName"] ?? "Syncfusion-LicenseKey";
+                        var kvValue = kv.GetSecretAsync(secretName).GetAwaiter().GetResult();
+                        if (!string.IsNullOrWhiteSpace(kvValue) && kvValue != "${SYNCFUSION_LICENSE_KEY}")
+                        {
+                            System.Diagnostics.Debug.WriteLine("Syncfusion license retrieved from Azure Key Vault");
+                            return kvValue.Trim();
+                        }
+                    }
+                }
+            }
+            catch (Exception kvEx)
+            {
+                System.Diagnostics.Debug.WriteLine($"Azure Key Vault license retrieval failed: {kvEx.Message}");
+            }
         }
         catch (Exception ex)
         {
@@ -1572,5 +1824,89 @@ public partial class App : Application
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Schedules automatic closure of Syncfusion license dialogs after a configurable timeout
+    /// </summary>
+    private void TryScheduleLicenseDialogAutoClose()
+    {
+        try
+        {
+            // Get configurable timeout from environment or use default (30 seconds)
+            var timeoutSeconds = Environment.GetEnvironmentVariable("WILEYWIDGET_LICENSE_DIALOG_TIMEOUT_SECONDS");
+            if (!int.TryParse(timeoutSeconds, out var timeout) || timeout <= 0)
+            {
+                timeout = 30; // Default 30 seconds
+            }
+
+            Log.Information("Scheduling license dialog auto-close after {TimeoutSeconds} seconds", timeout);
+
+            // Use DispatcherTimer for UI thread safety
+            var timer = new System.Windows.Threading.DispatcherTimer
+            {
+                Interval = TimeSpan.FromSeconds(timeout)
+            };
+
+            timer.Tick += (sender, args) =>
+            {
+                try
+                {
+                    timer.Stop();
+                    CloseLicenseDialogs();
+                    Log.Information("License dialog auto-close timer executed");
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "Failed to auto-close license dialogs");
+                }
+            };
+
+            timer.Start();
+            Log.Debug("License dialog auto-close timer started");
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Failed to schedule license dialog auto-close");
+        }
+    }
+
+    /// <summary>
+    /// Attempts to close any open Syncfusion license dialogs
+    /// </summary>
+    private void CloseLicenseDialogs()
+    {
+        try
+        {
+            // Find and close windows with titles containing "Syncfusion" or "License"
+            var licenseDialogs = System.Windows.Application.Current.Windows
+                .Cast<System.Windows.Window>()
+                .Where(w => w.Title.Contains("Syncfusion", StringComparison.OrdinalIgnoreCase) ||
+                           w.Title.Contains("License", StringComparison.OrdinalIgnoreCase) ||
+                           w.Title.Contains("Evaluation", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            foreach (var dialog in licenseDialogs)
+            {
+                try
+                {
+                    Log.Information("Auto-closing license dialog: {Title}", dialog.Title);
+                    dialog.Close();
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "Failed to close license dialog: {Title}", dialog.Title);
+                }
+            }
+
+            if (licenseDialogs.Any())
+            {
+                Log.Information("Auto-closed {Count} license dialogs", licenseDialogs.Count);
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Error while attempting to close license dialogs");
+        }
     }
 }

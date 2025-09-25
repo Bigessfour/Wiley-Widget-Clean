@@ -16,7 +16,7 @@ namespace WileyWidget.Tests
         public FakeAuthService(bool isAuthenticated)
         {
             _isAuthenticated = isAuthenticated;
-            _userInfo = isAuthenticated ? new UserInfo { Name = "Test User", Username = "test@example.com", IsAdmin = true, Roles = new System.Collections.Generic.List<string> { "Admin" } } : null;
+            _userInfo = isAuthenticated ? new UserInfo { Name = "Test User", Username = "test@example.com", Roles = new System.Collections.Generic.List<string> { "Admin" } } : null;
         }
 
         public override bool IsAuthenticated => _isAuthenticated;
@@ -27,52 +27,53 @@ namespace WileyWidget.Tests
         }
     }
 
-    public class MainWindowAuthTests
+    public class MainWindowAuthTests : TestApplication
     {
         [StaFact]
         public void UpdateAuthenticationUI_NotAuthenticated_DoesNotThrow()
         {
             var services = new ServiceCollection();
+#pragma warning disable CA2000 // The service provider will dispose the service
             services.AddSingleton<AuthenticationService>(new FakeAuthService(false));
-            var provider = services.BuildServiceProvider();
+#pragma warning restore CA2000
+            using var provider = services.BuildServiceProvider();
 
-            // Ensure Application exists for WPF types used in MainWindow
-            if (Application.Current == null)
+            // Run on UI thread to ensure proper WPF context
+            RunOnUIThread(() =>
             {
-                new Application();
-            }
+                var window = new MainWindow();
+                // Inject the fake service via reflection to avoid changing MainWindow API in tests
+                var field = typeof(MainWindow).GetField("_authService", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                field?.SetValue(window, provider.GetService<AuthenticationService>());
 
-            var window = new MainWindow();
-            // Inject the fake service via reflection to avoid changing MainWindow API in tests
-            var field = typeof(MainWindow).GetField("_authService", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            field?.SetValue(window, provider.GetService<AuthenticationService>());
+                // Ensure DataContext is a safe ViewModel
+                window.DataContext = new MainViewModel();
 
-            // Ensure DataContext is a safe ViewModel
-            window.DataContext = new MainViewModel();
-
-            // Call the method under test
-            window.Dispatcher.Invoke(() => window.GetType().GetMethod("UpdateAuthenticationUI", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).Invoke(window, null));
+                // Call the method under test
+                window.GetType().GetMethod("UpdateAuthenticationUI", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).Invoke(window, null);
+            });
         }
 
         [StaFact]
         public void UpdateAuthenticationUI_Authenticated_DoesNotThrow()
         {
             var services = new ServiceCollection();
+#pragma warning disable CA2000 // The service provider will dispose the service
             services.AddSingleton<AuthenticationService>(new FakeAuthService(true));
-            var provider = services.BuildServiceProvider();
+#pragma warning restore CA2000
+            using var provider = services.BuildServiceProvider();
 
-            if (Application.Current == null)
+            // Run on UI thread to ensure proper WPF context
+            RunOnUIThread(() =>
             {
-                new Application();
-            }
+                var window = new MainWindow();
+                var field = typeof(MainWindow).GetField("_authService", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                field?.SetValue(window, provider.GetService<AuthenticationService>());
 
-            var window = new MainWindow();
-            var field = typeof(MainWindow).GetField("_authService", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            field?.SetValue(window, provider.GetService<AuthenticationService>());
+                window.DataContext = new MainViewModel();
 
-            window.DataContext = new MainViewModel();
-
-            window.Dispatcher.Invoke(() => window.GetType().GetMethod("UpdateAuthenticationUI", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).Invoke(window, null));
+                window.GetType().GetMethod("UpdateAuthenticationUI", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).Invoke(window, null);
+            });
         }
     }
 }

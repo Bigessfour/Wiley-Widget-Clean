@@ -5,6 +5,7 @@ using Serilog;
 using Serilog.Events;
 using System.Collections.Generic;
 using System.Linq;
+using System.Collections.Concurrent;
 
 namespace WileyWidget.Services;
 
@@ -18,6 +19,7 @@ public class ErrorReportingService
     public static ErrorReportingService Instance => _instance.Value;
 
     private readonly Dictionary<string, ErrorRecoveryStrategy> _recoveryStrategies = new();
+    private readonly ConcurrentDictionary<string, long> _counters = new();
 
     private ErrorReportingService()
     {
@@ -48,6 +50,51 @@ public class ErrorReportingService
         {
             Application.Current.Dispatcher.InvokeAsync(() =>
                 ShowErrorDialog(exception, context, correlationId));
+        }
+    }
+
+    /// <summary>
+    /// Lightweight telemetry: records an event with optional properties.
+    /// Uses structured logging so it can be aggregated by sinks.
+    /// </summary>
+    public void TrackEvent(string eventName, IDictionary<string, object> properties = null)
+    {
+        try
+        {
+            var logger = Log.ForContext("TelemetryEvent", eventName);
+            if (properties != null)
+            {
+                // Destructure properties so they remain structured in sinks
+                logger = logger.ForContext("Properties", properties, destructureObjects: true);
+            }
+            logger.Information("Telemetry event: {Event}", eventName);
+        }
+        catch
+        {
+            // Best effort only
+        }
+    }
+
+    /// <summary>
+    /// Lightweight telemetry: increments a named counter and logs occasionally.
+    /// </summary>
+    public long IncrementCounter(string name, long value = 1)
+    {
+        try
+        {
+            var current = _counters.AddOrUpdate(name, value, (_, existing) => existing + value);
+            // Periodically emit snapshot (every ~100 increments)
+            if (current % 100 == 0)
+            {
+                Log.ForContext("Counter", name)
+                   .ForContext("Value", current)
+                   .Information("Telemetry counter snapshot {Counter} = {Value}", name, current);
+            }
+            return current;
+        }
+        catch
+        {
+            return -1;
         }
     }
 

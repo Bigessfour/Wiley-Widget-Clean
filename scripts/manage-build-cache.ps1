@@ -52,7 +52,8 @@ try {
                 $size = ($_.Group | Measure-Object Length -Sum).Sum
                 Write-Information "  $($_.Name): $($_.Count) files, $([math]::Round($size / 1MB, 2)) MB" -InformationAction Continue
             }
-        } else {
+        }
+        else {
             Write-Information "No build cache found" -InformationAction Continue
         }
 
@@ -71,6 +72,7 @@ try {
     Write-Information "  - Reference assemblies" -InformationAction Continue
     Write-Information "  - Shared compilation artifacts" -InformationAction Continue
 
-} finally {
+}
+finally {
     Pop-Location
 }

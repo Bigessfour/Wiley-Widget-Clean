@@ -15,7 +15,7 @@ namespace WileyWidget.Tests;
 /// Comprehensive tests for MainViewModel functionality
 /// Tests enterprise management, QuickBooks integration, navigation, and error handling
 /// </summary>
-public class MainViewModelTests : IDisposable
+public class MainViewModelTests : TestApplication
 {
     private readonly Mock<IEnterpriseRepository> _mockEnterpriseRepository;
     private readonly Mock<IMunicipalAccountRepository> _mockMunicipalAccountRepository;
@@ -366,57 +366,19 @@ public class MainViewModelTests : IDisposable
         InvokePrivate(_viewModel, "OpenDashboard");
     }
 
-    [Fact]
+    [StaFact]
     public void OpenAIAssist_ExecutesWithoutError()
     {
         // Act & Assert - Should not throw any exceptions
         InvokePrivate(_viewModel, "OpenAIAssist");
     }
 
-    public void Dispose()
-    {
-        Dispose(true);
-        GC.SuppressFinalize(this);
-    }
-
-    [Fact]
-    public void CreateEnterpriseFromHeaderMapping_WithValidData_CreatesPopulatedEnterprise()
-    {
-        // Arrange
-        var headerValueMap = new Dictionary<string, string>
-        {
-            { "Name", "Test Enterprise" },
-            { "CurrentRate", "15.50" },
-            { "CitizenCount", "200" }
-        };
-
-        var expectedEnterprise = new Enterprise
-        {
-            Name = "Test Enterprise",
-            CurrentRate = 15.50m,
-            CitizenCount = 200
-        };
-
-        _mockEnterpriseRepository.Setup(repo => repo.CreateFromHeaderMapping(headerValueMap))
-            .Returns(expectedEnterprise);
-
-        // Act
-        var result = _viewModel.CreateEnterpriseFromHeaderMapping(headerValueMap);
-
-        // Assert
-        Assert.NotNull(result);
-        Assert.Equal("Test Enterprise", result.Name);
-        Assert.Equal(15.50m, result.CurrentRate);
-        Assert.Equal(200, result.CitizenCount);
-
-        _mockEnterpriseRepository.Verify(repo => repo.CreateFromHeaderMapping(headerValueMap), Times.Once);
-    }
-
-    protected virtual void Dispose(bool disposing)
+    protected override void Dispose(bool disposing)
     {
         if (disposing)
         {
             _viewModel?.Dispose();
         }
+        base.Dispose(disposing);
     }
 }

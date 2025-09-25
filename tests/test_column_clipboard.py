@@ -6,9 +6,6 @@ Run with: pytest tests/test_column_clipboard.py
 """
 
 import pytest
-from unittest.mock import patch, MagicMock, mock_open
-import json
-import os
 
 
 class MockColumnBuilder:

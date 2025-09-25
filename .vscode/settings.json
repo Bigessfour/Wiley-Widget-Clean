@@ -81,12 +81,12 @@
   "powershell.powerShellExePath": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
   "powershell.enableProfileLoading": true,
   "powershell.enableReferencesCodeLens": false,
-  "powershell.enableScriptAnalysis": false,  // Disabled for performance
-  "powershell.enableSignatureHelp": false,  // Disabled for performance
+  "powershell.enableScriptAnalysis": false, // Disabled for performance
+  "powershell.enableSignatureHelp": false, // Disabled for performance
   "powershell.scriptAnalysis.settingsPath": ".vscode\\PSScriptAnalyzerSettings.psd1",
   "powershell.codeFormatting.preset": "OTBS",
-  "powershell.codeFormatting.autoCorrectAliases": false,  // Disabled for performance
-  "powershell.codeFormatting.useCorrectCasing": false,  // Disabled for performance
+  "powershell.codeFormatting.autoCorrectAliases": false, // Disabled for performance
+  "powershell.codeFormatting.useCorrectCasing": false, // Disabled for performance
   "powershell.integratedConsole.showOnStartup": false,
   "powershell.integratedConsole.focusConsoleOnExecute": false,
   // GitHub Copilot Configuration
@@ -183,7 +183,7 @@
       "password": "",
       "savePassword": true,
       "profileName": "Azure SQL Database",
-      "encrypt": true,
+      "encrypt": "Mandatory",
       "trustServerCertificate": false,
       "connectTimeout": 30
     }
@@ -366,11 +366,7 @@
 
   // Pytest Runner Configuration
   "pytestRunner.cwd": "${workspaceFolder}",
-  "pytestRunner.args": [
-    "--verbose",
-    "--tb=short",
-    "--maxfail=5"
-  ],
+  "pytestRunner.args": ["--verbose", "--tb=short", "--maxfail=5"],
   "pytestRunner.env": {
     "PYTHONPATH": "${workspaceFolder}"
   },

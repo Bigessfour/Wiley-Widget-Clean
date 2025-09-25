@@ -12,9 +12,9 @@ namespace WileyWidget.Tests.Hosting;
 /// <summary>
 /// Tests for Phase 1 implementation of the Enterprise Host Infrastructure.
 /// </summary>
-public class Phase1HostInfrastructureTests
+public class Phase1HostInfrastructureTests : TestApplication
 {
-    [Fact]
+    [StaFact]
     public async Task HostBuilder_ShouldConfigureServicesCorrectly()
     {
         // Arrange
@@ -48,7 +48,7 @@ public class Phase1HostInfrastructureTests
         }
     }
 
-    [Fact]
+    [StaFact]
     public void WpfHostingExtensions_ShouldRegisterRequiredServices()
     {
         // Arrange - Set dummy Azure AD environment variables for testing
@@ -79,7 +79,7 @@ public class Phase1HostInfrastructureTests
         }
     }
 
-    [Fact]
+    [StaFact]
     public void ConfigurationOptions_ShouldBindCorrectly()
     {
         // Arrange

@@ -6,8 +6,8 @@ Installs dependencies and runs UI tests using Python
 
 import subprocess
 import sys
-import os
 from pathlib import Path
+from typing import Optional
 
 
 def install_ui_dependencies():
@@ -58,7 +58,7 @@ def run_ui_tests(test_filter: str = "ui", verbose: bool = False):
     return result.returncode == 0
 
 
-def run_ui_inspection(app_path: str, output_file: str = None):
+def run_ui_inspection(app_path: str, output_file: Optional[str] = None):
     """Run UI inspection using the debug script"""
     print("🔍 Running UI inspection...")
 

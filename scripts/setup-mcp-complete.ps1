@@ -26,7 +26,8 @@ if (Test-Path $envFile) {
             Write-Host "  ✅ $key" -ForegroundColor Green
         }
     }
-} else {
+}
+else {
     Write-Host "  ❌ .env file not found" -ForegroundColor Red
 }
 
@@ -36,7 +37,8 @@ try {
     $azAccount = az account show 2>$null | ConvertFrom-Json
     Write-Host "  ✅ Azure CLI authenticated as: $($azAccount.user.name)" -ForegroundColor Green
     Write-Host "  📍 Subscription: $($azAccount.name)" -ForegroundColor White
-} catch {
+}
+catch {
     Write-Host "  ⚠️  Azure CLI not authenticated. Run 'az login' if needed." -ForegroundColor Yellow
 }
 
@@ -49,7 +51,8 @@ foreach ($var in $mcpVars) {
     if ($value) {
         $masked = $value.Substring(0, [Math]::Min(10, $value.Length)) + "..."
         Write-Host "  ✅ $var`: $masked" -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host "  ❌ $var`: NOT SET" -ForegroundColor Red
     }
 }
@@ -60,7 +63,8 @@ try {
     $secrets = az keyvault secret list --vault-name "wiley-widget-secrets" --query "[].name" -o tsv 2>$null
     $secretCount = ($secrets | Measure-Object).Count
     Write-Host "  ✅ Key Vault accessible: $secretCount secrets found" -ForegroundColor Green
-} catch {
+}
+catch {
     Write-Host "  ❌ Key Vault access failed: $($_.Exception.Message)" -ForegroundColor Red
 }
 
@@ -72,16 +76,19 @@ if (Test-Path $mcpConfig) {
     if ($config.servers.azure) {
         Write-Host "  ✅ Azure MCP Server configured" -ForegroundColor Green
         Write-Host "  📦 Package: $($config.servers.azure.args[1])" -ForegroundColor White
-    } else {
+    }
+    else {
         Write-Host "  ❌ Azure MCP Server not configured" -ForegroundColor Red
     }
 
     if ($config.servers.github) {
         Write-Host "  ✅ GitHub MCP Server configured" -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host "  ❌ GitHub MCP Server not configured" -ForegroundColor Red
     }
-} else {
+}
+else {
     Write-Host "  ❌ MCP configuration file not found" -ForegroundColor Red
 }
 
@@ -96,13 +103,16 @@ try {
         $dotnetVersion = dotnet --version 2>$null
         if ($LASTEXITCODE -eq 0) {
             Write-Host "  ✅ .NET SDK available: $dotnetVersion" -ForegroundColor Green
-        } else {
+        }
+        else {
             Write-Host "  ❌ .NET SDK not found" -ForegroundColor Red
         }
-    } else {
+    }
+    else {
         Write-Host "  ❌ Project file not found" -ForegroundColor Red
     }
-} catch {
+}
+catch {
     Write-Host "  ❌ Error checking application: $($_.Exception.Message)" -ForegroundColor Red
 }
 

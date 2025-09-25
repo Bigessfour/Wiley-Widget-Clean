@@ -5,12 +5,9 @@ This version includes debugpy for advanced debugging capabilities
 """
 
 import os
-import sys
 import time
 import subprocess
 import argparse
-import threading
-from pathlib import Path
 
 # Import debugpy for remote debugging
 import debugpy
@@ -234,7 +231,7 @@ def monitor_startup_timing(skip_cleanup=False):
     if build_success:
         # Phase 4: Application startup
         phase_start = time.time()
-        process = run_application()
+        run_application()
         phases.append(("Application Start", time.time() - phase_start))
     
     total_time = time.time() - start_time

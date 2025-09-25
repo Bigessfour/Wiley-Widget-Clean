@@ -6,6 +6,8 @@ using WileyWidget.Configuration;
 using WileyWidget.Data;
 using Microsoft.EntityFrameworkCore;
 
+#nullable enable
+
 Console.WriteLine("🔍 Testing Enterprise Database Connection (tools/DbConnTest)...");
 
 // Locate appsettings.json by walking up parent directories so the test works
@@ -46,6 +48,24 @@ try
     var factory = sp.GetRequiredService<IDbContextFactory<AppDbContext>>();
     await using var ctx = await factory.CreateDbContextAsync();
     Console.WriteLine("✅ DbContext created");
+    var connection = ctx.Database.GetDbConnection();
+    await connection.OpenAsync();
+    try
+    {
+    try
+    {
+        await ctx.Database.MigrateAsync();
+        Console.WriteLine("✅ Database migrations applied");
+    }
+    catch (Exception migrateEx)
+    {
+        Console.WriteLine($"⚠️ Database migration failed ({migrateEx.Message}). Falling back to EnsureCreated.");
+        var created = await ctx.Database.EnsureCreatedAsync();
+        if (created)
+        {
+            Console.WriteLine("✅ Database schema created via EnsureCreated fallback");
+        }
+    }
     var canConnect = await ctx.Database.CanConnectAsync();
     Console.WriteLine($"✅ Database.CanConnectAsync: {canConnect}");
     if (canConnect)
@@ -54,6 +74,11 @@ try
         Console.WriteLine($"Connected to: {conn.DataSource} / {conn.Database}");
         var count = await ctx.Enterprises.CountAsync();
         Console.WriteLine($"Enterprise count: {count}");
+    }
+    }
+    finally
+    {
+        await connection.CloseAsync();
     }
 }
 catch (Exception ex)

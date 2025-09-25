@@ -13,6 +13,10 @@ using System;
 using System.Reflection;
 using WileyWidget.Attributes;
 using System.Diagnostics;
+using System.Collections.Generic;
+using System.Windows.Data;
+using System.Windows.Media.Animation;
+using System.Collections.Concurrent;
 
 namespace WileyWidget;
 
@@ -33,6 +37,8 @@ public partial class MainWindow : Window
     private readonly AuthenticationService _authService;
     private readonly IServiceProvider _serviceProvider;
     private IServiceScope _viewScope; // keep scoped services alive for the window lifetime
+    // Cache Enterprise property metadata to avoid repeated reflection when building dynamic columns
+    private static readonly ConcurrentDictionary<Type, (PropertyInfo Prop, WileyWidget.Attributes.GridDisplayAttribute Attr)[]> _columnPropertyCache = new();
 
     private Syncfusion.UI.Xaml.Grid.SfDataGrid GetDataGrid()
     {
@@ -97,7 +103,7 @@ public partial class MainWindow : Window
         App.LogStartupTiming("MainWindow Constructor", constructorTimer.Elapsed);
     }
 
-    private void OnWindowLoaded(object sender, RoutedEventArgs e)
+    private async void OnWindowLoaded(object sender, RoutedEventArgs e)
     {
         var loadTimer = Stopwatch.StartNew();
         App.LogDebugEvent("VIEW_INIT", "MainWindow.OnWindowLoaded started");
@@ -121,7 +127,7 @@ public partial class MainWindow : Window
             // Now that DataContext and visual tree are ready, apply maximized state and auth UI
             App.LogDebugEvent("VIEW_INIT", "Applying window state and authentication UI");
             ApplyMaximized();
-            UpdateAuthenticationUI();
+            await UpdateAuthenticationUIAsyncInternal();
             
             // Initialize grid columns based on current setting
             var grid = GetDataGrid();
@@ -176,6 +182,14 @@ public partial class MainWindow : Window
                 _viewScope = null;
             }
             catch { /* ignore */ }
+        };
+
+        // Additional safety in case Closing isn't invoked
+        this.Closed += (_, _) =>
+        {
+            try { if (_authService != null) _authService.AuthenticationStateChanged -= OnAuthenticationStateChanged; } catch { }
+            try { if (DataContext is ViewModels.MainViewModel vm) vm.PropertyChanged -= OnViewModelPropertyChanged; } catch { }
+            try { _viewScope?.Dispose(); _viewScope = null; } catch { }
         };
     }
 
@@ -237,35 +251,48 @@ public partial class MainWindow : Window
             grid.AutoGenerateColumns = false;
             grid.Columns.Clear();
 
-            // Get the Enterprise type to build columns from its properties
+            // Get the Enterprise type to build columns from its properties (cached)
             var enterpriseType = typeof(WileyWidget.Models.Enterprise);
-            var properties = enterpriseType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
-                .Where(p => p.CanRead && !p.GetGetMethod().IsVirtual) // Exclude navigation properties
-                .Select(p => new
-                {
-                    Property = p,
-                    DisplayAttribute = p.GetCustomAttribute(typeof(WileyWidget.Attributes.GridDisplayAttribute)) as WileyWidget.Attributes.GridDisplayAttribute
-                })
-                .Where(x => x.DisplayAttribute?.Visible != false) // Exclude properties marked as not visible
-                .OrderBy(x => x.DisplayAttribute?.Order ?? 50)
-                .Select(x => x.Property)
-                .ToArray();
-
-            foreach (var prop in properties)
+            var properties = _columnPropertyCache.GetOrAdd(enterpriseType, t =>
             {
-                var mappingName = prop.Name;
+                return t.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                    .Where(p => p.CanRead && !p.GetGetMethod().IsVirtual) // Exclude navigation/navigation-like
+                    .Select(p => (
+                        Prop: p,
+                        Attr: p.GetCustomAttribute(typeof(WileyWidget.Attributes.GridDisplayAttribute)) as WileyWidget.Attributes.GridDisplayAttribute
+                    ))
+                    .Where(x => x.Attr?.Visible != false) // Exclude properties marked as not visible
+                    .OrderBy(x => x.Attr?.Order ?? 50)
+                    .ToArray();
+            });
 
-                // Get display attribute for formatting information
-                var displayAttr = prop.GetCustomAttribute(typeof(WileyWidget.Attributes.GridDisplayAttribute)) as WileyWidget.Attributes.GridDisplayAttribute;
-
-                var headerText = displayAttr?.HeaderText ?? SplitCamelCase(prop.Name);
-
-                // Create appropriate column type based on property type
-                var column = CreateColumnForProperty(prop, mappingName, headerText, displayAttr);
-                if (column != null)
+            var hadPropertyErrors = false;
+            foreach (var entry in properties)
+            {
+                try
                 {
-                    grid.Columns.Add(column);
+                    var prop = entry.Prop;
+                    var displayAttr = entry.Attr;
+                    var mappingName = prop.Name;
+                    var headerText = displayAttr?.HeaderText ?? SplitCamelCase(prop.Name);
+
+                    // Create appropriate column type based on property type
+                    var column = CreateColumnForProperty(prop, mappingName, headerText, displayAttr);
+                    if (column != null)
+                    {
+                        grid.Columns.Add(column);
+                    }
                 }
+                catch (Exception propEx)
+                {
+                    hadPropertyErrors = true;
+                    Log.Warning(propEx, "Dynamic column creation failed for property {Property}", entry.Prop?.Name);
+                }
+            }
+
+            if (hadPropertyErrors)
+            {
+                Log.Warning("One or more properties failed to generate dynamic columns; remaining columns were loaded");
             }
 
             Log.Information("Dynamic columns built successfully for {TypeName} with {ColumnCount} columns", 
@@ -311,6 +338,27 @@ public partial class MainWindow : Window
         if (underlyingType.IsClass && underlyingType != typeof(string))
         {
             return null; // Skip navigation properties and complex objects
+        }
+
+        // Handle enums using a ComboBox column
+        if (underlyingType.IsEnum)
+        {
+            try
+            {
+                return new GridComboBoxColumn
+                {
+                    MappingName = mappingName,
+                    HeaderText = headerText,
+                    ItemsSource = Enum.GetValues(underlyingType),
+                    Width = displayAttr?.Width ?? 120,
+                    AllowSorting = true,
+                    AllowFiltering = true
+                };
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Failed to create enum ComboBox column for {Property}", mappingName);
+            }
         }
 
         if (underlyingType == typeof(int) || underlyingType == typeof(long) ||
@@ -375,7 +423,7 @@ public partial class MainWindow : Window
         else
         {
             // Default to text column for strings and other types
-            return new GridTextColumn
+            var col = new GridTextColumn
             {
                 MappingName = mappingName,
                 HeaderText = headerText,
@@ -384,6 +432,38 @@ public partial class MainWindow : Window
                 AllowFiltering = true,
                 AllowEditing = mappingName != "Id" // Don't allow editing ID column
             };
+
+            // Apply converter if specified on attribute
+            if (displayAttr != null && (displayAttr.ConverterType != null || !string.IsNullOrWhiteSpace(displayAttr.ConverterResourceKey)))
+            {
+                try
+                {
+                    var binding = new Binding(mappingName) { Mode = BindingMode.TwoWay };
+                    if (!string.IsNullOrWhiteSpace(displayAttr.ConverterResourceKey))
+                    {
+                        var converterObj = TryFindResource(displayAttr.ConverterResourceKey);
+                        if (converterObj is IValueConverter resConv)
+                        {
+                            binding.Converter = resConv;
+                        }
+                    }
+                    else if (displayAttr.ConverterType != null)
+                    {
+                        if (Activator.CreateInstance(displayAttr.ConverterType) is IValueConverter conv)
+                        {
+                            binding.Converter = conv;
+                        }
+                    }
+
+                    // GridTextColumn supports ValueBinding
+                    col.ValueBinding = binding;
+                }
+                catch (Exception convEx)
+                {
+                    Log.Warning(convEx, "Failed to apply converter for column {MappingName}", mappingName);
+                }
+            }
+            return col;
         }
     }
 
@@ -484,6 +564,9 @@ public partial class MainWindow : Window
 
         try
         {
+            ErrorReportingService.Instance.TrackEvent("GridPasteStarted");
+            // show busy cursor for large pastes
+            Mouse.OverrideCursor = Cursors.Wait;
             if (!Clipboard.ContainsText())
             {
                 MessageBox.Show("Clipboard does not contain text data.",
@@ -512,6 +595,7 @@ public partial class MainWindow : Window
             var headers = lines[0].Split('\t').Select(h => h.Trim()).ToArray();
             var pastedCount = 0;
             var skippedCount = 0;
+            var rowErrors = 0;
 
             // Create new items from data rows
             for (int i = 1; i < lines.Length; i++)
@@ -549,6 +633,24 @@ public partial class MainWindow : Window
                     // Create new Enterprise instance using repository mapping
                     var newEnterprise = vm.CreateEnterpriseFromHeaderMapping(headerValueMap);
 
+                    // Best-effort recovery for culture-specific numbers or formatting issues
+                    if (newEnterprise.CurrentRate == 0 && TryGetHeaderValue(headerValueMap, out var rateRaw, "currentrate", "rate", "current rate", "monthly rate"))
+                    {
+                        if (TryParseDecimal(rateRaw, out var rateParsed)) newEnterprise.CurrentRate = rateParsed;
+                    }
+                    if (newEnterprise.MonthlyExpenses == 0 && TryGetHeaderValue(headerValueMap, out var expRaw, "monthlyexpenses", "expenses", "operating expenses", "monthly expenses"))
+                    {
+                        if (TryParseDecimal(expRaw, out var expParsed)) newEnterprise.MonthlyExpenses = expParsed;
+                    }
+                    if (newEnterprise.TotalBudget == 0 && TryGetHeaderValue(headerValueMap, out var budgetRaw, "totalbudget", "budget", "allocated budget"))
+                    {
+                        if (TryParseDecimal(budgetRaw, out var budgetParsed)) newEnterprise.TotalBudget = budgetParsed;
+                    }
+                    if (newEnterprise.CitizenCount == 0 && TryGetHeaderValue(headerValueMap, out var countRaw, "citizencount", "citizens", "population", "customer count"))
+                    {
+                        if (TryParseInt(countRaw, out var countParsed)) newEnterprise.CitizenCount = countParsed;
+                    }
+
                     // Set default values for required properties if not provided
                     if (string.IsNullOrWhiteSpace(newEnterprise.Name))
                         newEnterprise.Name = $"Imported Enterprise {vm.Enterprises.Count + 1}";
@@ -564,9 +666,16 @@ public partial class MainWindow : Window
                     if (newEnterprise.CitizenCount == 0 && !WasFieldProvided(headerValueMap, "citizencount", "citizens", "count", "citizen count"))
                         newEnterprise.CitizenCount = 100;
 
-                    // Generate unique ID
+                    // Generate unique ID (ignore any pasted ID to avoid collisions)
                     var nextId = vm.Enterprises.Count == 0 ? 1 : vm.Enterprises.Max(e => e.Id) + 1;
                     newEnterprise.Id = nextId;
+
+                    // Ensure name uniqueness if duplicates exist
+                    if (!string.IsNullOrWhiteSpace(newEnterprise.Name) &&
+                        vm.Enterprises.Any(e => string.Equals(e.Name, newEnterprise.Name, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        newEnterprise.Name = GenerateUniqueName(vm, newEnterprise.Name);
+                    }
 
                     // Add to collection
                     vm.Enterprises.Add(newEnterprise);
@@ -576,24 +685,98 @@ public partial class MainWindow : Window
                 {
                     Log.Warning(ex, "Failed to create enterprise from clipboard row {Row}", i + 1);
                     skippedCount++;
+                    rowErrors++;
+                    // Centralize row-specific error logging
+                    ErrorReportingService.Instance.ReportError(ex, "Grid_OnPaste_Row", showToUser: false);
                 }
             }
 
-            // Show results to user
+            // Show results to user (brief toast-like status)
             var message = $"Successfully pasted {pastedCount} enterprise(s).";
             if (skippedCount > 0)
                 message += $" {skippedCount} row(s) were skipped due to errors.";
 
-            MessageBox.Show(message, "Paste Complete",
-                          MessageBoxButton.OK,
-                          pastedCount > 0 ? MessageBoxImage.Information : MessageBoxImage.Warning);
+            // Prefer non-blocking brief notification: update StatusBar text if present
+            try
+            {
+                var statusText = this.FindName("StatusTextBlock") as System.Windows.Controls.TextBlock;
+                if (statusText != null)
+                {
+                    statusText.Text = message;
+                    var fade = new DoubleAnimation(1.0, 0.6, new Duration(TimeSpan.FromSeconds(3)));
+                    statusText.BeginAnimation(System.Windows.UIElement.OpacityProperty, fade);
+                }
+                else
+                {
+                    // Fallback to dialog
+                    MessageBox.Show(message, "Paste Complete",
+                        MessageBoxButton.OK,
+                        pastedCount > 0 ? MessageBoxImage.Information : MessageBoxImage.Warning);
+                }
+            }
+            catch
+            {
+                MessageBox.Show(message, "Paste Complete",
+                    MessageBoxButton.OK,
+                    pastedCount > 0 ? MessageBoxImage.Information : MessageBoxImage.Warning);
+            }
 
             Log.Information("Pasted {PastedCount} items from clipboard, skipped {SkippedCount}", pastedCount, skippedCount);
+            ErrorReportingService.Instance.TrackEvent("GridPasteCompleted", new Dictionary<string, object>
+            {
+                ["RowsPasted"] = pastedCount,
+                ["RowsSkipped"] = skippedCount,
+                ["RowErrors"] = rowErrors,
+                ["HeaderCount"] = headers.Length
+            });
+            ErrorReportingService.Instance.IncrementCounter("GridPaste.TotalRows", pastedCount + skippedCount);
+            if (rowErrors > 0) ErrorReportingService.Instance.IncrementCounter("GridPaste.RowErrors", rowErrors);
         }
         catch (Exception ex)
         {
             ErrorReportingService.Instance.ReportError(ex, "Grid_OnPaste", showToUser: true);
+            ErrorReportingService.Instance.TrackEvent("GridPasteFailed", new Dictionary<string, object>
+            {
+                ["Message"] = ex.Message
+            });
         }
+        finally
+        {
+            Mouse.OverrideCursor = null;
+        }
+    }
+
+    private bool TryGetHeaderValue(IDictionary<string, string> headerValueMap, out string value, params string[] fieldNames)
+    {
+        value = null;
+        foreach (var kvp in headerValueMap)
+        {
+            var normalizedHeader = kvp.Key.Replace(" ", string.Empty).Replace("-", string.Empty).Replace("_", string.Empty).ToLowerInvariant();
+            if (fieldNames.Any(field => normalizedHeader.Contains(field.Replace(" ", string.Empty).ToLowerInvariant())))
+            {
+                value = kvp.Value;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private bool TryParseInt(string value, out int result)
+    {
+        var clean = value?.Replace(",", string.Empty)?.Trim();
+        return int.TryParse(clean, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.CurrentCulture, out result);
+    }
+
+    private string GenerateUniqueName(ViewModels.MainViewModel vm, string baseName)
+    {
+        var suffix = 1;
+        var candidate = baseName;
+        while (vm.Enterprises.Any(e => string.Equals(e.Name, candidate, StringComparison.OrdinalIgnoreCase)))
+        {
+            suffix++;
+            candidate = $"{baseName} ({suffix})";
+        }
+        return candidate;
     }
 
     /// <summary>
@@ -664,6 +847,9 @@ public partial class MainWindow : Window
         SettingsService.Instance.Save();
     Log.Information("Theme changed to {Theme}", "Fluent Dark");
     UpdateThemeToggleVisuals();
+        // transient status
+        var statusText = this.FindName("StatusTextBlock") as System.Windows.Controls.TextBlock;
+        if (statusText != null) statusText.Text = "Theme: Fluent Dark";
     }
     /// <summary>Switch to Fluent Light theme and persist choice.</summary>
     private void OnFluentLight(object sender, RoutedEventArgs e)
@@ -673,18 +859,21 @@ public partial class MainWindow : Window
         SettingsService.Instance.Save();
     Log.Information("Theme changed to {Theme}", "Fluent Light");
         UpdateThemeToggleVisuals();
+        // transient status
+        var statusText = this.FindName("StatusTextBlock") as System.Windows.Controls.TextBlock;
+        if (statusText != null) statusText.Text = "Theme: Fluent Light";
     }
 
     private void UpdateThemeToggleVisuals()
     {
         var current = Services.ThemeUtility.NormalizeTheme(SettingsService.Instance.Current.Theme);
-        var btnDark = FindName("BtnFluentDark") as RibbonButton;
+        RibbonButton btnDark = FindName("BtnFluentDark") as RibbonButton;
         if (btnDark != null)
         {
             btnDark.IsEnabled = current != "FluentDark";
             btnDark.Label = current == "FluentDark" ? "✔ Fluent Dark" : "Fluent Dark";
         }
-        var btnLight = FindName("BtnFluentLight") as RibbonButton;
+        RibbonButton btnLight = FindName("BtnFluentLight") as RibbonButton;
         if (btnLight != null)
         {
             btnLight.IsEnabled = current != "FluentLight";
@@ -913,9 +1102,38 @@ public partial class MainWindow : Window
         if ((Keyboard.Modifiers & ModifierKeys.Control) != ModifierKeys.Control)
             return;
 
+        // Scope copy/paste to when focus is within the main SfDataGrid to avoid conflicts
+        bool focusInMainGrid = false;
+        try
+        {
+            var focused = Keyboard.FocusedElement as DependencyObject;
+            var grid = GetDataGrid();
+            if (focused != null && grid != null)
+            {
+                focusInMainGrid = IsAncestorOf(grid, focused);
+            }
+        }
+        catch { /* best effort */ }
+
         string action = null;
         switch (e.Key)
         {
+            case Key.V:
+                if (focusInMainGrid)
+                {
+                    OnPaste(null, null);
+                    e.Handled = true;
+                    return;
+                }
+                break;
+            case Key.C:
+                if (focusInMainGrid)
+                {
+                    OnCopy(null, null);
+                    e.Handled = true;
+                    return;
+                }
+                break;
             case Key.S:
                 if ((Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift)
                     action = "Settings";
@@ -946,13 +1164,39 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
+    /// Returns true if ancestor is an ancestor of element in either visual or logical tree
+    /// </summary>
+    private static bool IsAncestorOf(DependencyObject ancestor, DependencyObject element)
+    {
+        if (ancestor == null || element == null) return false;
+
+        // Visual tree walk
+        var current = element;
+        for (int i = 0; i < 200 && current != null; i++)
+        {
+            if (ReferenceEquals(current, ancestor)) return true;
+            current = System.Windows.Media.VisualTreeHelper.GetParent(current);
+        }
+
+        // Logical tree fallback
+        current = element;
+        for (int i = 0; i < 200 && current != null; i++)
+        {
+            if (ReferenceEquals(current, ancestor)) return true;
+            current = System.Windows.LogicalTreeHelper.GetParent(current);
+        }
+
+        return false;
+    }
+
+    /// <summary>
     /// Handles Azure AD sign in
     /// </summary>
     private async void OnSignIn(object sender, RoutedEventArgs e)
     {
         try
         {
-            var signInButton = FindName("BtnSignIn") as dynamic;
+            var signInButton = FindName("BtnSignIn") as RibbonButton;
             if (signInButton != null) signInButton.IsEnabled = false;
             var result = await _authService.SignInAsync();
 
@@ -961,7 +1205,7 @@ public partial class MainWindow : Window
                           MessageBoxButton.OK,
                           MessageBoxImage.Information);
 
-            UpdateAuthenticationUI();
+            await UpdateAuthenticationUIAsyncInternal();
         }
         catch (AuthenticationException ex)
         {
@@ -979,7 +1223,7 @@ public partial class MainWindow : Window
         }
         finally
         {
-            var signInButton = FindName("BtnSignIn") as dynamic;
+            var signInButton = FindName("BtnSignIn") as RibbonButton;
             if (signInButton != null) signInButton.IsEnabled = true;
         }
     }
@@ -991,7 +1235,7 @@ public partial class MainWindow : Window
     {
         try
         {
-            var signOutButton = FindName("BtnSignOut") as dynamic;
+            var signOutButton = FindName("BtnSignOut") as RibbonButton;
             if (signOutButton != null) signOutButton.IsEnabled = false;
             await _authService.SignOutAsync();
 
@@ -1031,82 +1275,33 @@ public partial class MainWindow : Window
         // Ensure we're on the UI thread
         if (!Dispatcher.CheckAccess())
         {
-            try
-            {
-                Dispatcher.Invoke(() => UpdateAuthenticationUI());
-            }
-            catch (Exception ex)
-            {
-                Log.Warning(ex, "Failed to invoke UpdateAuthenticationUI on UI thread");
-            }
+            _ = Dispatcher.InvokeAsync(async () => await UpdateAuthenticationUIAsyncInternal());
             return;
         }
 
-        try
-        {
-            if (_authService == null)
-            {
-                Log.Debug("Authentication service is not available - skipping authentication UI update");
-                // Update DataContext to a signed-out safe state if possible
-                if (DataContext is ViewModels.MainViewModel vmFallback)
-                {
-                    vmFallback.CurrentUserName = "Not signed in";
-                    vmFallback.CurrentUserEmail = string.Empty;
-                    vmFallback.IsUserAdmin = false;
-                    vmFallback.UserRoles = new List<string>();
-                }
-                return;
-            }
+        // On UI thread: run async version but don't block
+        _ = UpdateAuthenticationUIAsyncInternal();
+    }
 
-            if (_authService.IsAuthenticated)
-            {
-                var signInButton = FindName("BtnSignIn") as dynamic;
-                if (signInButton != null) signInButton.IsEnabled = false;
-                var signOutButton = FindName("BtnSignOut") as dynamic;
-                if (signOutButton != null) signOutButton.IsEnabled = true;
+    private string TryExtractEmailFromUserInfo(UserInfo userInfo)
+    {
+        if (userInfo == null) return string.Empty;
 
-                // Update the view model with current user info
-                var viewModel = DataContext as ViewModels.MainViewModel;
-                if (viewModel != null)
-                {
-                    var userInfo = _authService.GetUserInfo();
-                    if (userInfo != null)
-                    {
-                        viewModel.CurrentUserName = userInfo.Name ?? "";
-                        viewModel.CurrentUserEmail = userInfo.Username ?? string.Empty; // For now, use username as email placeholder
-                        viewModel.IsUserAdmin = userInfo.IsAdmin;
-                        viewModel.UserRoles = userInfo.Roles ?? new List<string>();
-                    }
-                    else
-                    {
-                        Log.Warning("AuthenticationService reported IsAuthenticated=true but GetUserInfo() returned null");
-                    }
-                }
-            }
-            else
-            {
-                var signInButton = FindName("BtnSignIn") as dynamic;
-                if (signInButton != null) signInButton.IsEnabled = true;
-                var signOutButton = FindName("BtnSignOut") as dynamic;
-                if (signOutButton != null) signOutButton.IsEnabled = false;
+        // Prefer explicit Email if available
+        var email = userInfo.Email;
+        if (!string.IsNullOrWhiteSpace(email) && email.Contains("@"))
+            return email;
 
-                // Update the view model
-                var viewModel = DataContext as ViewModels.MainViewModel;
-                if (viewModel != null)
-                {
-                    viewModel.CurrentUserName = "Not signed in";
-                    viewModel.CurrentUserEmail = string.Empty;
-                    viewModel.IsUserAdmin = false;
-                    viewModel.UserRoles = new List<string>();
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            // Report and log but avoid crashing the UI
-            ErrorReportingService.Instance.ReportError(ex, "UpdateAuthenticationUI", showToUser: false);
-            Log.Error(ex, "Unhandled exception while updating authentication UI");
-        }
+        // Fall back to username if it looks like an email
+        var candidate = userInfo.Username;
+        if (!string.IsNullOrWhiteSpace(candidate) && candidate.Contains("@"))
+            return candidate;
+
+        // As a last resort, attempt to detect an email-like token in Name
+        if (!string.IsNullOrWhiteSpace(userInfo.Name) && userInfo.Name.Contains("@"))
+            return userInfo.Name;
+
+        return string.Empty;
     }
 
     /// <summary>
@@ -1123,8 +1318,15 @@ public partial class MainWindow : Window
             var contentControl = FindName(panelName) as System.Windows.Controls.ContentControl;
             if (contentControl == null) return;
 
-            // Set the state to Document to make it active/visible
-            Syncfusion.Windows.Tools.Controls.DockingManager.SetState(contentControl, Syncfusion.Windows.Tools.Controls.DockState.Document);
+            // If already open, bring to front; else set as document
+            try
+            {
+                dockingManager.ActiveWindow = contentControl;
+            }
+            catch
+            {
+                Syncfusion.Windows.Tools.Controls.DockingManager.SetState(contentControl, Syncfusion.Windows.Tools.Controls.DockState.Document);
+            }
         }
         catch (Exception ex)
         {
@@ -1137,8 +1339,77 @@ public partial class MainWindow : Window
     /// </summary>
     private void OnAuthenticationStateChanged(object sender, AuthenticationEventArgs e)
     {
-        // Update UI on UI thread
-        Dispatcher.Invoke(() => UpdateAuthenticationUI());
+        // Update UI on UI thread asynchronously to avoid blocking
+        _ = Dispatcher.InvokeAsync(async () => await UpdateAuthenticationUIAsyncInternal());
+    }
+
+    // Async version used internally to support awaited flows from sign in/out
+    private async System.Threading.Tasks.Task UpdateAuthenticationUIAsyncInternal()
+    {
+        await System.Windows.Threading.Dispatcher.Yield(System.Windows.Threading.DispatcherPriority.Background);
+        try
+        {
+            if (_authService == null)
+            {
+                Log.Debug("Authentication service is not available - skipping authentication UI update");
+                if (DataContext is ViewModels.MainViewModel vmFallback)
+                {
+                    vmFallback.CurrentUserName = "Not signed in";
+                    vmFallback.CurrentUserEmail = string.Empty;
+                    vmFallback.IsUserAdmin = false;
+                    vmFallback.UserRoles = new List<string>();
+                }
+                return;
+            }
+
+            if (_authService.IsAuthenticated)
+            {
+                var signInButton = FindName("BtnSignIn") as RibbonButton;
+                if (signInButton != null) signInButton.IsEnabled = false;
+                var signOutButton = FindName("BtnSignOut") as RibbonButton;
+                if (signOutButton != null) signOutButton.IsEnabled = true;
+
+                if (DataContext is ViewModels.MainViewModel viewModel)
+                {
+                    var userInfo = _authService.GetUserInfo();
+                    if (userInfo != null)
+                    {
+                        viewModel.CurrentUserName = string.IsNullOrWhiteSpace(userInfo.Name) ? userInfo.Username ?? Environment.UserName : userInfo.Name;
+                        viewModel.CurrentUserEmail = TryExtractEmailFromUserInfo(userInfo);
+                        viewModel.IsUserAdmin = userInfo.IsAdmin;
+                        viewModel.UserRoles = userInfo.Roles ?? new List<string>();
+                    }
+                    else
+                    {
+                        Log.Warning("AuthenticationService reported IsAuthenticated=true but GetUserInfo() returned null");
+                        viewModel.CurrentUserName = Environment.UserName ?? "Signed in";
+                        viewModel.CurrentUserEmail = string.Empty;
+                        viewModel.IsUserAdmin = false;
+                        viewModel.UserRoles = new List<string>();
+                    }
+                }
+            }
+            else
+            {
+                var signInButton = FindName("BtnSignIn") as RibbonButton;
+                if (signInButton != null) signInButton.IsEnabled = true;
+                var signOutButton = FindName("BtnSignOut") as RibbonButton;
+                if (signOutButton != null) signOutButton.IsEnabled = false;
+
+                if (DataContext is ViewModels.MainViewModel viewModel)
+                {
+                    viewModel.CurrentUserName = "Not signed in";
+                    viewModel.CurrentUserEmail = string.Empty;
+                    viewModel.IsUserAdmin = false;
+                    viewModel.UserRoles = new List<string>();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorReportingService.Instance.ReportError(ex, "UpdateAuthenticationUIAsync", showToUser: false);
+            Log.Error(ex, "Unhandled exception while updating authentication UI (async)");
+        }
     }
 
     /// <summary>
@@ -1146,11 +1417,12 @@ public partial class MainWindow : Window
     /// </summary>
     private void OnAIMessageKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
     {
-        if (e.Key == System.Windows.Input.Key.Enter && !System.Windows.Input.Keyboard.IsKeyDown(System.Windows.Input.Key.LeftShift))
+        if (e.Key == System.Windows.Input.Key.Enter && (System.Windows.Input.Keyboard.Modifiers & System.Windows.Input.ModifierKeys.Shift) == 0)
         {
             // Send message on Enter (but allow Shift+Enter for new lines)
             if (DataContext is ViewModels.MainViewModel vm && vm.SendAIMessageCommand.CanExecute(null))
             {
+                ActivateDockingPanel("AIAssistPanel");
                 vm.SendAIMessageCommand.Execute(null);
                 e.Handled = true;
             }

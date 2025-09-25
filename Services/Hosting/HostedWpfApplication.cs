@@ -425,9 +425,18 @@ public class HostedWpfApplication : IHostedService, IDisposable
         {
             _startupSemaphore?.Dispose();
             
-            if (Application.Current != null)
+            // Unregister WPF event handlers on the correct thread
+            if (Application.Current != null && Application.Current.Dispatcher != null)
             {
-                Application.Current.Exit -= OnApplicationExit;
+                if (Application.Current.Dispatcher.CheckAccess())
+                {
+                    Application.Current.Exit -= OnApplicationExit;
+                }
+                else
+                {
+                    Application.Current.Dispatcher.Invoke(() => 
+                        Application.Current.Exit -= OnApplicationExit);
+                }
             }
         }
     }

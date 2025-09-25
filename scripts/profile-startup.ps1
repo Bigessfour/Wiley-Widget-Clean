@@ -91,7 +91,8 @@ function Measure-StartupTime {
         if ($windowFound) {
             $startupTimes += $startupTime
             Write-Information "Iteration $i completed in $([math]::Round($startupTime, 2))s" -InformationAction Continue
-        } else {
+        }
+        else {
             Write-Information "Iteration $i failed to start within timeout" -InformationAction Continue
         }
 
@@ -121,10 +122,10 @@ if ($ColdStart) {
     Write-Information "=== Cold Start Performance ===" -InformationAction Continue
     $coldTimes = Measure-StartupTime -IsColdStart $true
     $results.ColdStart = @{
-        Times = $coldTimes
+        Times   = $coldTimes
         Average = [math]::Round(($coldTimes | Measure-Object -Average).Average, 2)
-        Min = [math]::Round(($coldTimes | Measure-Object -Minimum).Minimum, 2)
-        Max = [math]::Round(($coldTimes | Measure-Object -Maximum).Maximum, 2)
+        Min     = [math]::Round(($coldTimes | Measure-Object -Minimum).Minimum, 2)
+        Max     = [math]::Round(($coldTimes | Measure-Object -Maximum).Maximum, 2)
     }
     Write-Information "Cold Start - Average: $($results.ColdStart.Average)s, Min: $($results.ColdStart.Min)s, Max: $($results.ColdStart.Max)s" -InformationAction Continue
     Write-Information "" -InformationAction Continue
@@ -133,10 +134,10 @@ if ($ColdStart) {
 Write-Information "=== Warm Start Performance ===" -InformationAction Continue
 $warmTimes = Measure-StartupTime -IsColdStart $false
 $results.WarmStart = @{
-    Times = $warmTimes
+    Times   = $warmTimes
     Average = [math]::Round(($warmTimes | Measure-Object -Average).Average, 2)
-    Min = [math]::Round(($warmTimes | Measure-Object -Minimum).Minimum, 2)
-    Max = [math]::Round(($warmTimes | Measure-Object -Maximum).Maximum, 2)
+    Min     = [math]::Round(($warmTimes | Measure-Object -Minimum).Minimum, 2)
+    Max     = [math]::Round(($warmTimes | Measure-Object -Maximum).Maximum, 2)
 }
 
 Write-Information "Warm Start - Average: $($results.WarmStart.Average)s, Min: $($results.WarmStart.Min)s, Max: $($results.WarmStart.Max)s" -InformationAction Continue
