@@ -50,15 +50,15 @@ Write-Host "🔍 Indexing Remote Repository: $Owner/$Repo" -ForegroundColor Cyan
 Write-Host "=" * 50 -ForegroundColor Cyan
 
 $index = @{
-    metadata = @{
-        repository = "$Owner/$Repo"
+    metadata        = @{
+        repository   = "$Owner/$Repo"
         generated_at = (Get-Date).ToString("yyyy-MM-ddTHH:mm:ssZ")
         tool_version = "1.0.0"
     }
-    repository = @{}
-    branches = @()
-    structure = @{}
-    statistics = @{}
+    repository      = @{}
+    branches        = @()
+    structure       = @{}
+    statistics      = @{}
     recent_activity = @{}
 }
 
@@ -67,28 +67,29 @@ Write-Host "📋 Getting repository metadata..." -ForegroundColor Yellow
 try {
     $repoData = gh api "repos/$Owner/$Repo" | ConvertFrom-Json
     $index.repository = @{
-        name = $repoData.name
-        full_name = $repoData.full_name
-        description = $repoData.description
-        language = $repoData.language
-        size_kb = $repoData.size
-        created_at = $repoData.created_at
-        updated_at = $repoData.updated_at
-        pushed_at = $repoData.pushed_at
-        default_branch = $repoData.default_branch
-        is_private = $repoData.private
-        has_issues = $repoData.has_issues
-        has_projects = $repoData.has_projects
-        has_wiki = $repoData.has_wiki
-        has_pages = $repoData.has_pages
-        forks_count = $repoData.forks_count
-        network_count = $repoData.network_count
+        name              = $repoData.name
+        full_name         = $repoData.full_name
+        description       = $repoData.description
+        language          = $repoData.language
+        size_kb           = $repoData.size
+        created_at        = $repoData.created_at
+        updated_at        = $repoData.updated_at
+        pushed_at         = $repoData.pushed_at
+        default_branch    = $repoData.default_branch
+        is_private        = $repoData.private
+        has_issues        = $repoData.has_issues
+        has_projects      = $repoData.has_projects
+        has_wiki          = $repoData.has_wiki
+        has_pages         = $repoData.has_pages
+        forks_count       = $repoData.forks_count
+        network_count     = $repoData.network_count
         subscribers_count = $repoData.subscribers_count
-        stargazers_count = $repoData.stargazers_count
-        watchers_count = $repoData.watchers_count
+        stargazers_count  = $repoData.stargazers_count
+        watchers_count    = $repoData.watchers_count
     }
     Write-Host "✅ Repository metadata retrieved" -ForegroundColor Green
-} catch {
+}
+catch {
     Write-Warning "Failed to get repository metadata: $_"
 }
 
@@ -98,14 +99,15 @@ try {
     $branchesData = gh api "repos/$Owner/$Repo/branches" | ConvertFrom-Json
     $index.branches = $branchesData | ForEach-Object {
         @{
-            name = $_.name
-            protected = $_.protected
+            name       = $_.name
+            protected  = $_.protected
             commit_sha = $_.commit.sha
             commit_url = $_.commit.url
         }
     }
     Write-Host "✅ Found $($index.branches.Count) branches" -ForegroundColor Green
-} catch {
+}
+catch {
     Write-Warning "Failed to get branch information: $_"
 }
 
@@ -119,9 +121,9 @@ try {
     $totalSize = 0
 
     $index.structure = @{
-        root_items = @()
+        root_items  = @()
         directories = @{}
-        files = @{}
+        files       = @{}
     }
 
     foreach ($item in $contentsData) {
@@ -130,7 +132,7 @@ try {
             type = $item.type
             size = $item.size
             path = $item.path
-            url = $item.url
+            url  = $item.url
         }
 
         $index.structure.root_items += $itemInfo
@@ -139,9 +141,10 @@ try {
             $dirCount++
             $index.structure.directories[$item.name] = @{
                 path = $item.path
-                url = $item.url
+                url  = $item.url
             }
-        } else {
+        }
+        else {
             $fileCount++
             $totalSize += $item.size
             $index.structure.files[$item.name] = $itemInfo
@@ -149,15 +152,16 @@ try {
     }
 
     $index.statistics = @{
-        total_files = $fileCount
+        total_files       = $fileCount
         total_directories = $dirCount
-        total_size_bytes = $totalSize
-        total_size_kb = [math]::Round($totalSize / 1024, 2)
-        root_items_count = $contentsData.Count
+        total_size_bytes  = $totalSize
+        total_size_kb     = [math]::Round($totalSize / 1024, 2)
+        root_items_count  = $contentsData.Count
     }
 
     Write-Host "✅ Structure analyzed: $fileCount files, $dirCount directories" -ForegroundColor Green
-} catch {
+}
+catch {
     Write-Warning "Failed to analyze repository structure: $_"
 }
 
@@ -167,31 +171,32 @@ try {
     $commitsData = gh api "repos/$Owner/$Repo/commits?per_page=10" | ConvertFrom-Json
     $index.recent_activity = @{
         recent_commits = @()
-        last_commit = @{}
+        last_commit    = @{}
     }
 
     $index.recent_activity.recent_commits = $commitsData | ForEach-Object {
         @{
-            sha = $_.sha
+            sha     = $_.sha
             message = $_.commit.message
-            author = $_.commit.author.name
-            date = $_.commit.author.date
-            url = $_.html_url
+            author  = $_.commit.author.name
+            date    = $_.commit.author.date
+            url     = $_.html_url
         }
     }
 
     if ($commitsData.Count -gt 0) {
         $index.recent_activity.last_commit = @{
-            sha = $commitsData[0].sha
+            sha     = $commitsData[0].sha
             message = $commitsData[0].commit.message
-            author = $commitsData[0].commit.author.name
-            date = $commitsData[0].commit.author.date
-            url = $commitsData[0].html_url
+            author  = $commitsData[0].commit.author.name
+            date    = $commitsData[0].commit.author.date
+            url     = $commitsData[0].html_url
         }
     }
 
     Write-Host "✅ Retrieved $($commitsData.Count) recent commits" -ForegroundColor Green
-} catch {
+}
+catch {
     Write-Warning "Failed to get recent commits: $_"
 }
 
@@ -201,7 +206,8 @@ try {
     $languagesData = gh api "repos/$Owner/$Repo/languages" | ConvertFrom-Json
     $index.repository.languages = $languagesData
     Write-Host "✅ Language statistics retrieved" -ForegroundColor Green
-} catch {
+}
+catch {
     Write-Warning "Failed to get language statistics: $_"
 }
 
@@ -211,18 +217,20 @@ if ($IncludeContents) {
     $index.structure.file_contents = @{}
 
     foreach ($file in $index.structure.files.GetEnumerator()) {
-        if ($file.Value.size -lt 10000) { # Only get contents for files under 10KB
+        if ($file.Value.size -lt 10000) {
+            # Only get contents for files under 10KB
             try {
                 $contentData = gh api "repos/$Owner/$Repo/contents/$($file.Value.path)" | ConvertFrom-Json
                 if ($contentData.encoding -eq "base64") {
                     $decodedContent = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($contentData.content))
                     $index.structure.file_contents[$file.Name] = @{
-                        content = $decodedContent
+                        content  = $decodedContent
                         encoding = $contentData.encoding
-                        size = $contentData.size
+                        size     = $contentData.size
                     }
                 }
-            } catch {
+            }
+            catch {
                 Write-Warning "Failed to get content for $($file.Name): $_"
             }
         }
@@ -246,7 +254,8 @@ try {
     Write-Host "   Primary Language: $($index.repository.language)" -ForegroundColor White
     Write-Host "   Last Updated: $($index.repository.updated_at)" -ForegroundColor White
 
-} catch {
+}
+catch {
     Write-Error "Failed to save repository index: $_"
     exit 1
 }

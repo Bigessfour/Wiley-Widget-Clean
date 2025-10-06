@@ -144,11 +144,7 @@
       "type": "debugpy",
       "request": "launch",
       "module": "pytest",
-      "args": [
-        "-v",
-        "--tb=short",
-        "${file}"
-      ],
+      "args": ["-v", "--tb=short", "${file}"],
       "console": "integratedTerminal",
       "cwd": "${workspaceFolder}",
       "env": {
@@ -193,6 +189,52 @@
       "env": {
         "COVERAGE_FILE": "${workspaceFolder}/TestResults/Coverage/coverage.cobertura.xml"
       }
+    },
+    {
+      "name": "Python: Attach to debugpy",
+      "type": "debugpy",
+      "request": "attach",
+      "connect": {
+        "host": "localhost",
+        "port": 5678
+      },
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}",
+          "remoteRoot": "${workspaceFolder}"
+        }
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "Debug Startup with debugpy",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/scripts/dev-start-debugpy.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "args": ["--debug-port", "5678", "--timing"],
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}",
+        "DEBUG_STARTUP": "true"
+      },
+      "justMyCode": false,
+      "stopOnEntry": false
+    },
+    {
+      "name": "Debug Startup (No Wait)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/scripts/dev-start-debugpy.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "args": ["--debug-port", "5678", "--no-wait", "--timing"],
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}",
+        "DEBUG_STARTUP": "true"
+      },
+      "justMyCode": false,
+      "stopOnEntry": false
     }
   ]
 }

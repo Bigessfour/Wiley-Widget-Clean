@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using WileyWidget.Data;
 using Syncfusion.SfSkinManager;
 using Syncfusion.Windows.Shared;
+using Serilog;
 
 namespace WileyWidget;
 
@@ -13,6 +14,8 @@ namespace WileyWidget;
 /// </summary>
 public partial class EnterpriseView : Window
 {
+    private readonly IServiceScope _viewScope;
+
     public EnterpriseView()
     {
         InitializeComponent();
@@ -20,9 +23,23 @@ public partial class EnterpriseView : Window
         // Apply current theme
         TryApplyTheme(SettingsService.Instance.Current.Theme);
 
-        // Get the EnterpriseViewModel from DI container
-        var enterpriseRepository = App.ServiceProvider.GetRequiredService<IEnterpriseRepository>();
-        DataContext = new EnterpriseViewModel(enterpriseRepository);
+        // Create a scope for the view and resolve the repository from the scope
+        var provider = App.ServiceProvider ?? Application.Current?.Properties["ServiceProvider"] as IServiceProvider;
+        if (provider != null)
+        {
+            _viewScope = provider.CreateScope();
+            var enterpriseRepository = _viewScope.ServiceProvider.GetRequiredService<IEnterpriseRepository>();
+            DataContext = new EnterpriseViewModel(enterpriseRepository);
+
+            // Dispose the scope when the window is closed
+            this.Closed += (_, _) => { try { _viewScope.Dispose(); } catch { } };
+        }
+        else
+        {
+            // For testing purposes, allow view to load without ViewModel
+            _viewScope = null;
+            DataContext = null;
+        }
 
         // Load enterprises when window opens
         Loaded += async (s, e) =>
@@ -57,34 +74,6 @@ public partial class EnterpriseView : Window
     /// </summary>
     private void TryApplyTheme(string themeName)
     {
-        try
-        {
-            var canonical = NormalizeTheme(themeName);
-#pragma warning disable CA2000 // Dispose objects before losing scope - Theme objects are managed by SfSkinManager
-            SfSkinManager.SetTheme(this, new Theme(canonical));
-#pragma warning restore CA2000 // Dispose objects before losing scope
-        }
-        catch
-        {
-            if (themeName != "FluentLight")
-            {
-                // Fallback
-#pragma warning disable CA2000 // Dispose objects before losing scope - Theme objects are managed by SfSkinManager
-                try { SfSkinManager.SetTheme(this, new Theme("FluentLight")); } catch { /* ignore */ }
-#pragma warning restore CA2000 // Dispose objects before losing scope
-            }
-        }
-    }
-
-    private string NormalizeTheme(string raw)
-    {
-        if (string.IsNullOrWhiteSpace(raw)) return "FluentDark";
-        raw = raw.Replace(" ", string.Empty); // allow "Fluent Dark" legacy
-        return raw switch
-        {
-            "FluentDark" => "FluentDark",
-            "FluentLight" => "FluentLight",
-            _ => "FluentDark" // default
-        };
+        Services.ThemeUtility.TryApplyTheme(this, themeName);
     }
 }

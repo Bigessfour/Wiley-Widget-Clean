@@ -8,7 +8,7 @@ $vaultName = "wiley-widget-secrets"
 
 # Mapping of Key Vault secret names to environment variable names
 $secretMapping = @{
-    "GITHUB-PAT" = "GITHUB_TOKEN"
+    "GITHUB-PAT"  = "GITHUB_TOKEN"
     "XAI-API-KEY" = "XAI_API_KEY"
     # Note: Azure service principal credentials may need to be created separately
     # "AZURE-CLIENT-ID" = "AZURE_CLIENT_ID"
@@ -32,10 +32,12 @@ foreach ($kvSecret in $secretMapping.Keys) {
             # Set as environment variable
             [Environment]::SetEnvironmentVariable($envVar, $secretValue, "User")
             Write-Host "  ✅ Successfully set $envVar" -ForegroundColor Green
-        } else {
+        }
+        else {
             Write-Host "  ❌ Failed to retrieve $kvSecret from Key Vault" -ForegroundColor Red
         }
-    } catch {
+    }
+    catch {
         Write-Host "  ❌ Error retrieving $kvSecret`: $($_.Exception.Message)" -ForegroundColor Red
     }
 }
@@ -47,7 +49,8 @@ foreach ($envVar in $secretMapping.Values) {
     if ($value) {
         $maskedValue = $value.Substring(0, [Math]::Min(10, $value.Length)) + "..."
         Write-Host "  ✅ $envVar`: $maskedValue" -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host "  ❌ $envVar`: NOT SET" -ForegroundColor Red
     }
 }

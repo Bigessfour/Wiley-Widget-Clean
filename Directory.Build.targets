@@ -5,4 +5,24 @@
     <FileVersion>0.1.0.0</FileVersion>
     <InformationalVersion>0.1.0+local</InformationalVersion>
   </PropertyGroup>
+
+  <!-- Build Caching Targets -->
+  <Target Name="PrepareForBuildCache" BeforeTargets="Build">
+    <Message Text="Preparing build cache optimization..." Importance="low" />
+
+    <!-- Create cache directory if it doesn't exist -->
+    <MakeDir Directories="$(MSBuildProjectDirectory)\.buildcache" Condition="!Exists('$(MSBuildProjectDirectory)\.buildcache')" />
+
+    <!-- Set cache properties -->
+    <PropertyGroup>
+      <BuildCacheDir>$(MSBuildProjectDirectory)\.buildcache</BuildCacheDir>
+      <UseBuildCache>true</UseBuildCache>
+    </PropertyGroup>
+  </Target>
+
+  <!-- Clean build cache when doing clean builds -->
+  <Target Name="CleanBuildCache" AfterTargets="Clean">
+    <RemoveDir Directories="$(MSBuildProjectDirectory)\.buildcache" />
+    <Message Text="Build cache cleaned" Importance="normal" />
+  </Target>
 </Project>

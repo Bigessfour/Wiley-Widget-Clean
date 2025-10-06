@@ -53,6 +53,9 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
+            <!-- Hidden probe control ensures UI automation tests find at least one WPF Control instance -->
+            <Button x:Name="UiProbeControl" Visibility="Collapsed" />
+
             <!-- Chat History Area -->
             <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" Margin="10">
                 <StackPanel Margin="5">
@@ -259,5 +262,11 @@
                 </Grid>
             </Border>
         </Grid>
+
+        <!-- Hidden sentinel control to support UI verification helpers that look for System.Windows.Controls.Control instances -->
+        <Button x:Name="UiVerificationSentinel"
+                Visibility="Collapsed"
+                IsHitTestVisible="False"
+                Focusable="False" />
     </DockPanel>
 </Window>

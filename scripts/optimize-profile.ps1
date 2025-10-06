@@ -27,14 +27,14 @@ $content = Get-Content $ProfilePath -Raw
 # Optimizations to apply
 $optimizations = @(
     @{
-        Name = "Remove synchronous Import-Module calls"
-        Pattern = 'Import-Module\s+(?!-ListAvailable)(?!#).*'
+        Name        = "Remove synchronous Import-Module calls"
+        Pattern     = 'Import-Module\s+(?!-ListAvailable)(?!#).*'
         Replacement = '# $0  # Moved to lazy loading'
-        Applied = $false
+        Applied     = $false
     },
     @{
-        Name = "Add lazy loading for Azure modules"
-        Pattern = '(?s)^.*$'
+        Name        = "Add lazy loading for Azure modules"
+        Pattern     = '(?s)^.*$'
         Replacement = @'
 $0
 
@@ -51,18 +51,18 @@ if (Get-Command az -ErrorAction SilentlyContinue) {
     function global:az { Import-AzureModules; & (Get-Command az) @args }
 }
 '@
-        Applied = $false
+        Applied     = $false
     },
     @{
-        Name = "Add background job for telemetry"
-        Pattern = '(\$env:.*TELEMETRY.*=.*1)'
+        Name        = "Add background job for telemetry"
+        Pattern     = '(\$env:.*TELEMETRY.*=.*1)'
         Replacement = @'
 $1
 
 # Move telemetry to background
 Start-Job -ScriptBlock { $env:POWERSHELL_TELEMETRY_OPTOUT = "1" } | Out-Null
 '@
-        Applied = $false
+        Applied     = $false
     }
 )
 
@@ -72,7 +72,8 @@ foreach ($opt in $optimizations) {
     if ($content -match $opt.Pattern -and -not $opt.Applied) {
         if ($WhatIf) {
             Write-Host "🔍 Would apply: $($opt.Name)" -ForegroundColor Yellow
-        } else {
+        }
+        else {
             $content = $content -replace $opt.Pattern, $opt.Replacement
             Write-Host "✅ Applied: $($opt.Name)" -ForegroundColor Green
             $changes++
@@ -84,9 +85,11 @@ foreach ($opt in $optimizations) {
 if (-not $WhatIf -and $changes -gt 0) {
     $content | Set-Content $ProfilePath -Encoding UTF8
     Write-Host "`n✨ Applied $changes optimizations!" -ForegroundColor Green
-} elseif ($WhatIf) {
+}
+elseif ($WhatIf) {
     Write-Host "`n🔍 WhatIf mode - no changes made" -ForegroundColor Yellow
-} else {
+}
+else {
     Write-Host "`nℹ️  No optimizations needed or already applied" -ForegroundColor Blue
 }
 

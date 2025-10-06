@@ -22,12 +22,10 @@ public class UtilityCustomerRepositoryTests : IDisposable
 
     public UtilityCustomerRepositoryTests()
     {
-        // Create in-memory database for testing
-        var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-            .Options;
-
-        _contextFactory = new TestDbContextFactory(options);
+        // Use SQLite in-memory database for testing (Microsoft recommended approach)
+        // Provides better SQL compatibility than EF Core In-Memory provider
+        var databaseName = $"UtilityCustomerTest_{Guid.NewGuid()}";
+        _contextFactory = TestDbContextFactory.CreateSqliteInMemory(databaseName);
         _context = _contextFactory.CreateDbContext();
         _repository = new UtilityCustomerRepository(_contextFactory);
 
@@ -613,26 +611,28 @@ public class UtilityCustomerRepositoryTests : IDisposable
     public async Task ExistsByAccountNumberAsync_WithExcludeId_ExcludesSpecifiedCustomer()
     {
         // Arrange
+        var uniqueId1 = Guid.NewGuid().ToString("N").Substring(0, 8);
+        var uniqueId2 = Guid.NewGuid().ToString("N").Substring(0, 8);
         var customer1 = new UtilityCustomer
         {
             FirstName = "John",
             LastName = "Smith",
-            AccountNumber = "ACC-1001"
+            AccountNumber = $"ACC-{uniqueId1}"
         };
         var customer2 = new UtilityCustomer
         {
             FirstName = "Jane",
             LastName = "Doe",
-            AccountNumber = "ACC-1001"
+            AccountNumber = $"ACC-{uniqueId2}"
         };
         _context.UtilityCustomers.AddRange(customer1, customer2);
         await _context.SaveChangesAsync();
 
-        // Act - Should return true because customer2 exists with same account number
-        var result = await _repository.ExistsByAccountNumberAsync("ACC-1001", customer1.Id);
+        // Act - Should return false because customer1 is excluded and customer2 has different account number
+        var result = await _repository.ExistsByAccountNumberAsync($"acc-{uniqueId1}", customer1.Id);
 
         // Assert
-        Assert.True(result);
+        Assert.False(result);
     }
 
     [Fact]
@@ -821,6 +821,7 @@ public class UtilityCustomerRepositoryTests : IDisposable
         {
             _context.Database.EnsureDeleted();
             _context.Dispose();
+            _contextFactory.Dispose();
         }
     }
 

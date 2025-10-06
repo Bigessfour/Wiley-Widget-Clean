@@ -9,7 +9,6 @@ import sys
 import subprocess
 import argparse
 import shutil
-from pathlib import Path
 
 def get_dotnet_processes():
     """Get all .NET-related processes"""
@@ -24,7 +23,7 @@ def get_dotnet_processes():
                 if len(parts) >= 2:
                     name = parts[0].strip('"')
                     pid = parts[1].strip('"')
-                    if 'dotnet' in name.lower() or name == 'WileyWidget.exe':
+                    if 'dotnet' in name.lower() or 'testhost' in name.lower() or name == 'WileyWidget.exe':
                         processes.append((name, pid))
 
         return processes

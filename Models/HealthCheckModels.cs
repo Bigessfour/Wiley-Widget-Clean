@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Serilog;
+using WileyWidget.Services;
 
 namespace WileyWidget.Models;
 
@@ -228,6 +229,7 @@ public class HealthCheckReport
 
 /// <summary>
 /// Circuit breaker for health checks to prevent cascading failures
+/// Tuned for startup resilience: 3 failures, 2 minute recovery for critical services
 /// </summary>
 public class HealthCheckCircuitBreaker
 {
@@ -237,11 +239,16 @@ public class HealthCheckCircuitBreaker
     private DateTime _lastFailureTime;
     private readonly int _failureThreshold;
     private readonly TimeSpan _timeoutPeriod;
+    private readonly ApplicationMetricsService _metricsService;
+    private readonly string _serviceName;
 
-    public HealthCheckCircuitBreaker(int failureThreshold = 3, TimeSpan? timeoutPeriod = null)
+    public HealthCheckCircuitBreaker(int failureThreshold = 3, TimeSpan timeoutPeriod = default, 
+        ApplicationMetricsService metricsService = null, string serviceName = "unknown")
     {
         _failureThreshold = failureThreshold;
-        _timeoutPeriod = timeoutPeriod ?? TimeSpan.FromMinutes(5);
+        _timeoutPeriod = timeoutPeriod == default ? TimeSpan.FromMinutes(2) : timeoutPeriod; // Reduced from 5 minutes for faster recovery
+        _metricsService = metricsService;
+        _serviceName = serviceName;
     }
 
     public enum CircuitBreakerState
@@ -286,17 +293,30 @@ public class HealthCheckCircuitBreaker
 
     private void OnSuccess()
     {
+        CircuitBreakerState previousState;
         lock (_lock)
         {
+            previousState = _state;
             _failureCount = 0;
             _state = CircuitBreakerState.Closed;
+        }
+
+        // Record state transition if it changed
+        if (previousState != CircuitBreakerState.Closed)
+        {
+            _metricsService?.RecordCircuitBreakerTransition(
+                previousState.ToString(), 
+                CircuitBreakerState.Closed.ToString(), 
+                _serviceName);
         }
     }
 
     private void OnFailure()
     {
+        CircuitBreakerState previousState;
         lock (_lock)
         {
+            previousState = _state;
             _failureCount++;
             _lastFailureTime = DateTime.UtcNow;
 
@@ -304,6 +324,15 @@ public class HealthCheckCircuitBreaker
             {
                 _state = CircuitBreakerState.Open;
             }
+        }
+
+        // Record state transition if it changed
+        if (previousState != _state)
+        {
+            _metricsService?.RecordCircuitBreakerTransition(
+                previousState.ToString(), 
+                _state.ToString(), 
+                _serviceName);
         }
     }
 }
@@ -411,4 +440,14 @@ public class HealthCheckConfiguration
     /// Services that are critical and must be healthy for app startup
     /// </summary>
     public List<string> CriticalServices { get; set; } = new() { "Database", "Configuration" };
+
+    /// <summary>
+    /// Maximum allowed overall unhealthy+unavailable failure rate (0-1) before startup aborts (if ContinueOnFailure is false). Default 0.5 (50%).
+    /// </summary>
+    public double CriticalFailureRateThreshold { get; set; } = 0.5;
+
+    /// <summary>
+    /// If true, only critical services are checked during initial startup; non-critical services run later (e.g., via background task).
+    /// </summary>
+    public bool DeferNonCriticalChecks { get; set; } = false;
 }

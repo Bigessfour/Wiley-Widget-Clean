@@ -1,4 +1,4 @@
-﻿# Clean up orphaned .NET processes during development
+# Clean up orphaned .NET processes during development
 # Run this before starting new development sessions to prevent conflicts
 
 param(

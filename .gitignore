@@ -1,3 +1,7 @@
+# Build cache
+.buildcache/
+*.buildcache/
+
 # .NET / WPF standard ignores
 bin/
 obj/
@@ -75,6 +79,9 @@ build.log
 # Development/debug scripts
 check_imports.py
 debug_harness.py
+
+# WPF temporary project files
+*_wpftmp.csproj
 
 # Installers and large binaries
 *.msi

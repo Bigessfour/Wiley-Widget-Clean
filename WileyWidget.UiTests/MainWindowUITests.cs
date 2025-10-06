@@ -13,8 +13,6 @@ namespace WileyWidget.UiTests;
 /// </summary>
 public class MainWindowUITests : IDisposable
 {
-    private Application _app;
-    private Window _mainWindow;
     private UIA3Automation _automation;
 
     public MainWindowUITests()
@@ -163,10 +161,10 @@ public class MainWindowUITests : IDisposable
         var windowType = ControlType.Window;
         var textType = ControlType.Edit;
 
-        // Assert - ControlType is an enum, so we just verify the values are defined
-        Assert.True(buttonType != 0);
-        Assert.True(windowType != 0);
-        Assert.True(textType != 0);
+        // Assert - ControlType enum values are properly defined
+        Assert.NotEqual((ControlType)0, buttonType);
+        Assert.NotEqual((ControlType)0, windowType);
+        Assert.NotEqual((ControlType)0, textType);
     }
 
     [Fact(Skip = "Requires application to be built and available")]
@@ -238,12 +236,18 @@ public class MainWindowUITests : IDisposable
 
     public void Dispose()
     {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposing)
         {
-            _automation?.Dispose();
-            _app?.Dispose();
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                _automation?.Dispose();
+            }
         }
-        _app?.Close();
-        _app?.Dispose();
     }
 }

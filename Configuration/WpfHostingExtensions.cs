@@ -5,11 +5,20 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using WileyWidget.Services.Hosting;
+using WileyWidget.Services.Caching;
+using WileyWidget.Services.Threading;
 using WileyWidget.ViewModels;
 using WileyWidget.Services;
 using WileyWidget.Configuration;
 using WileyWidget.Data;
 using Serilog;
+using Microsoft.ApplicationInsights;
+using Microsoft.ApplicationInsights.Extensibility;
+using WileyWidget.Services.Telemetry;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Azure.Security.KeyVault.Secrets;
+using Azure.Identity;
+using Azure.Extensions.AspNetCore.Configuration.Secrets;
 
 namespace WileyWidget.Configuration;
 
@@ -20,6 +29,8 @@ namespace WileyWidget.Configuration;
 /// </summary>
 public static class WpfHostingExtensions
 {
+    public static object TelemetryConfiguration { get; private set; }
+
     /// <summary>
     /// Configures the host application builder for a WPF application with enterprise-grade services.
     /// This method sets up configuration, logging, dependency injection, and WPF-specific services.
@@ -69,6 +80,25 @@ public static class WpfHostingExtensions
         {
             builder.Configuration.AddUserSecrets<App>();
         }
+
+        // After base config assembled, attempt to add Azure Key Vault provider if a vault name is configured.
+        var tempConfig = builder.Configuration.Build();
+        var keyVaultName = tempConfig["Azure:KeyVaultName"]; // expected config key
+        if (!string.IsNullOrWhiteSpace(keyVaultName))
+        {
+            try
+            {
+                var vaultUri = new Uri($"https://{keyVaultName}.vault.azure.net/");
+                var credential = new DefaultAzureCredential();
+                var secretClient = new SecretClient(vaultUri, credential);
+                builder.Configuration.AddAzureKeyVault(secretClient, new KeyVaultSecretManager());
+                Log.Information("Azure Key Vault configuration provider added for vault {Vault}", keyVaultName);
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Failed to add Azure Key Vault configuration provider for vault {Vault}", keyVaultName);
+            }
+        }
     }
 
     /// <summary>
@@ -87,6 +117,41 @@ public static class WpfHostingExtensions
 
         // Set the global Serilog logger
         Log.Logger = logger;
+
+        // Application Insights (optional) - support ConnectionString or InstrumentationKey
+        var aiConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"];
+        var aiInstrumentationKey = builder.Configuration["ApplicationInsights:InstrumentationKey"]; // legacy
+        if (!string.IsNullOrWhiteSpace(aiConnectionString) || !string.IsNullOrWhiteSpace(aiInstrumentationKey))
+        {
+            var isDevelopment = builder.Environment.IsDevelopment();
+
+            // Create + register TelemetryConfiguration manually for non-ASP.NET WPF host
+            builder.Services.AddSingleton(sp =>
+            {
+                var cfg = Microsoft.ApplicationInsights.Extensibility.TelemetryConfiguration.CreateDefault();
+                if (!string.IsNullOrWhiteSpace(aiConnectionString))
+                    cfg.ConnectionString = aiConnectionString;
+                else if (!string.IsNullOrWhiteSpace(aiInstrumentationKey))
+                    cfg.ConnectionString = $"InstrumentationKey={aiInstrumentationKey}"; // legacy support
+
+                if (cfg.TelemetryChannel != null && isDevelopment)
+                {
+                    // Fast flush & no sampling in dev
+                    cfg.TelemetryChannel.DeveloperMode = true;
+                }
+                return cfg;
+            });
+
+            // TelemetryClient
+            builder.Services.AddSingleton(sp => new TelemetryClient(sp.GetRequiredService<TelemetryConfiguration>()));
+
+            // Initializer + startup hosted service
+            builder.Services.AddSingleton<ITelemetryInitializer, WileyWidget.Services.Telemetry.EnvironmentTelemetryInitializer>();
+            builder.Services.AddHostedService<WileyWidget.Services.Telemetry.TelemetryStartupService>();
+
+            Log.Information("Application Insights telemetry configured (Environment: {Environment}, DeveloperMode: {DeveloperMode})", 
+                builder.Environment.EnvironmentName, isDevelopment);
+        }
     }
 
     /// <summary>
@@ -108,11 +173,24 @@ public static class WpfHostingExtensions
         // Register Azure services
         services.AddSingleton<IAzureKeyVaultService, AzureKeyVaultService>();
 
+        // Register application metrics service
+        services.AddSingleton<ApplicationMetricsService>();
+
+        // Register localization service
+        services.AddSingleton<LocalizationService>();
+
+    // Register HttpClient factory for efficient, pooled HTTP usage across the app
+    services.AddHttpClient();
+
         // Register health check services
         services.AddSingleton<WileyWidget.Services.HealthCheckService>();
         services.AddHealthChecks()
             .AddResourceUtilizationHealthCheck()
             .AddApplicationLifecycleHealthCheck();
+
+        // Note: Performance optimization services will be added after namespace compilation is resolved
+        // services.AddSingleton<StartupCacheService>();
+        // services.AddHostedService<ParallelStartupService>();
     }
 
     /// <summary>
@@ -121,8 +199,10 @@ public static class WpfHostingExtensions
     private static void ConfigureWpfServices(IServiceCollection services)
     {
         // Register main window and view models
-        services.AddTransient<MainWindow>();
-        services.AddTransient<ViewModels.MainViewModel>();
+    services.AddTransient<MainWindow>();
+    services.AddTransient<ViewModels.MainViewModel>();
+    services.AddTransient<DashboardView>();
+    services.AddTransient<DashboardViewModel>();
 
         // Register other view models as needed
         // services.AddTransient<OtherViewModel>();
@@ -136,10 +216,20 @@ public static class WpfHostingExtensions
     /// </summary>
     private static void ConfigureHostedServices(IServiceCollection services)
     {
+        NewMethod(services);
+
+        // Perform background initialization tasks (database migrations, Azure init)
+        services.AddHostedService<BackgroundInitializationService>();
+    }
+
+    private static void NewMethod(IServiceCollection services)
+    {
         // Background services will be added in later phases
         // services.AddHostedService<LicenseManagementService>();
-        // services.AddHostedService<HealthMonitoringService>();
         // services.AddHostedService<AzureIntegrationService>();
+
+        // Run health checks during startup and periodically if desired
+        services.AddHostedService<HealthCheckHostedService>();
     }
 }
 

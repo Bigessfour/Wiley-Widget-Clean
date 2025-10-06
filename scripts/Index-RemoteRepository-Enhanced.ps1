@@ -122,13 +122,14 @@ class FetchableRepoIndexer {
 
                 # Cache the result
                 $this.Cache[$url] = @{
-                    Data = $result
+                    Data      = $result
                     Timestamp = Get-Date
                 }
 
                 return $result
 
-            } catch {
+            }
+            catch {
                 $this.Errors.Add("Attempt $attempt failed for $url`: $($_.Exception.Message)")
 
                 if ($attempt -lt $maxRetries) {
@@ -153,7 +154,8 @@ class FetchableRepoIndexer {
                     $url = "repos/$owner/$repo/$endpoint".Trim('/')
                     $result = gh api $url 2>$null | ConvertFrom-Json
                     return @{ Endpoint = $endpoint; Data = $result; Success = $true }
-                } catch {
+                }
+                catch {
                     return @{ Endpoint = $endpoint; Error = $_.Exception.Message; Success = $false }
                 }
             } -ArgumentList $endpoint, $this.Owner, $this.Repo
@@ -167,7 +169,8 @@ class FetchableRepoIndexer {
                     $result = Receive-Job -Job $job
                     if ($result.Success) {
                         $parallelResults.Add($result)
-                    } else {
+                    }
+                    else {
                         $this.Errors.Add("$($result.Endpoint): $($result.Error)")
                     }
                     Remove-Job -Job $job
@@ -181,7 +184,8 @@ class FetchableRepoIndexer {
             $result = Receive-Job -Job $_ -Wait
             if ($result.Success) {
                 $parallelResults.Add($result)
-            } else {
+            }
+            else {
                 $this.Errors.Add("$($result.Endpoint): $($result.Error)")
             }
             Remove-Job -Job $_
@@ -194,28 +198,28 @@ class FetchableRepoIndexer {
         Write-Progress -Activity "Indexing Repository" -Status "Initializing..." -PercentComplete 0
 
         $index = @{
-            metadata = @{
-                repository = "$($this.Owner)/$($this.Repo)"
-                generated_at = (Get-Date).ToString("yyyy-MM-ddTHH:mm:ssZ")
-                tool_version = "2.0.0"
+            metadata        = @{
+                repository        = "$($this.Owner)/$($this.Repo)"
+                generated_at      = (Get-Date).ToString("yyyy-MM-ddTHH:mm:ssZ")
+                tool_version      = "2.0.0"
                 fetchable_version = $true
-                cache_used = !$this.ForceRefresh
-                parallel_jobs = $this.ParallelJobs
-                max_depth = $maxDepth
+                cache_used        = !$this.ForceRefresh
+                parallel_jobs     = $this.ParallelJobs
+                max_depth         = $maxDepth
             }
-            repository = @{}
-            branches = @()
-            structure = @{
-                root_items = @()
+            repository      = @{}
+            branches        = @()
+            structure       = @{
+                root_items  = @()
                 directories = @{}
-                files = @{}
-                tree = @{}
+                files       = @{}
+                tree        = @{}
             }
-            statistics = @{}
+            statistics      = @{}
             recent_activity = @{}
-            languages = @{}
-            contributors = @()
-            errors = @()
+            languages       = @{}
+            contributors    = @()
+            errors          = @()
         }
 
         try {
@@ -258,7 +262,8 @@ class FetchableRepoIndexer {
 
             Write-Progress -Activity "Indexing Repository" -Status "Complete!" -PercentComplete 100
 
-        } catch {
+        }
+        catch {
             $this.Errors.Add("Critical error during indexing: $($_.Exception.Message)")
             $index.errors = $this.Errors.ToArray()
         }
@@ -268,35 +273,35 @@ class FetchableRepoIndexer {
 
     [hashtable] ProcessRepositoryData($data) {
         return @{
-            name = $data.name
-            full_name = $data.full_name
-            description = $data.description
-            language = $data.language
-            size_kb = $data.size
-            created_at = $data.created_at
-            updated_at = $data.updated_at
-            pushed_at = $data.pushed_at
-            default_branch = $data.default_branch
-            is_private = $data.private
-            has_issues = $data.has_issues
-            has_projects = $data.has_projects
-            has_wiki = $data.has_wiki
-            has_pages = $data.has_pages
-            forks_count = $data.forks_count
-            network_count = $data.network_count
+            name              = $data.name
+            full_name         = $data.full_name
+            description       = $data.description
+            language          = $data.language
+            size_kb           = $data.size
+            created_at        = $data.created_at
+            updated_at        = $data.updated_at
+            pushed_at         = $data.pushed_at
+            default_branch    = $data.default_branch
+            is_private        = $data.private
+            has_issues        = $data.has_issues
+            has_projects      = $data.has_projects
+            has_wiki          = $data.has_wiki
+            has_pages         = $data.has_pages
+            forks_count       = $data.forks_count
+            network_count     = $data.network_count
             subscribers_count = $data.subscribers_count
-            stargazers_count = $data.stargazers_count
-            watchers_count = $data.watchers_count
-            license = $data.license
-            topics = $data.topics
+            stargazers_count  = $data.stargazers_count
+            watchers_count    = $data.watchers_count
+            license           = $data.license
+            topics            = $data.topics
         }
     }
 
     [array] ProcessBranchesData($data) {
         return $data | ForEach-Object {
             @{
-                name = $_.name
-                protected = $_.protected
+                name       = $_.name
+                protected  = $_.protected
                 commit_sha = $_.commit.sha
                 commit_url = $_.commit.url
             }
@@ -306,11 +311,11 @@ class FetchableRepoIndexer {
     [array] ProcessContributorsData($data) {
         return $data | ForEach-Object {
             @{
-                login = $_.login
-                id = $_.id
+                login         = $_.login
+                id            = $_.id
                 contributions = $_.contributions
-                type = $_.type
-                url = $_.url
+                type          = $_.type
+                url           = $_.url
             }
         }
     }
@@ -318,11 +323,11 @@ class FetchableRepoIndexer {
     [array] ProcessCommitsData($data) {
         return $data | ForEach-Object {
             @{
-                sha = $_.sha
+                sha     = $_.sha
                 message = $_.commit.message
-                author = $_.commit.author.name
-                date = $_.commit.author.date
-                url = $_.html_url
+                author  = $_.commit.author.name
+                date    = $_.commit.author.date
+                url     = $_.html_url
             }
         }
     }
@@ -334,7 +339,7 @@ class FetchableRepoIndexer {
 
         $structure = @{
             directories = @{}
-            files = @{}
+            files       = @{}
         }
 
         try {
@@ -345,25 +350,27 @@ class FetchableRepoIndexer {
                 if ($item.type -eq "dir" -and $currentDepth -lt $maxDepth) {
                     $structure.directories[$item.name] = @{
                         path = $item.path
-                        url = $item.url
-                        sha = $item.sha
+                        url  = $item.url
+                        sha  = $item.sha
                     }
 
                     # Recursively fetch subdirectory contents
                     $subStructure = $this.FetchRepositoryStructure($item.path, $maxDepth, $currentDepth + 1)
                     $structure.directories[$item.name].contents = $subStructure
-                } elseif ($item.type -eq "file") {
+                }
+                elseif ($item.type -eq "file") {
                     $structure.files[$item.name] = @{
-                        name = $item.name
-                        path = $item.path
-                        size = $item.size
-                        url = $item.url
-                        sha = $item.sha
+                        name         = $item.name
+                        path         = $item.path
+                        size         = $item.size
+                        url          = $item.url
+                        sha          = $item.sha
                         download_url = $item.download_url
                     }
                 }
             }
-        } catch {
+        }
+        catch {
             $this.Errors.Add("Failed to fetch structure for path '$path': $($_.Exception.Message)")
         }
 
@@ -372,12 +379,12 @@ class FetchableRepoIndexer {
 
     [hashtable] CalculateStatistics($structure) {
         $stats = @{
-            total_files = 0
+            total_files       = 0
             total_directories = 0
-            total_size_bytes = 0
+            total_size_bytes  = 0
             max_depth_reached = 0
-            file_types = @{}
-            large_files = @()
+            file_types        = @{}
+            large_files       = @()
         }
 
         $this.CalculateStatsRecursive($structure, $stats, 0)
@@ -402,10 +409,11 @@ class FetchableRepoIndexer {
             }
 
             # Track large files
-            if ($file.size -gt 1048576) { # 1MB
+            if ($file.size -gt 1048576) {
+                # 1MB
                 $stats.large_files += @{
-                    name = $file.name
-                    path = $file.path
+                    name    = $file.name
+                    path    = $file.path
                     size_mb = [math]::Round($file.size / 1048576, 2)
                 }
             }
@@ -431,13 +439,14 @@ class FetchableRepoIndexer {
                 if ($fileData.encoding -eq "base64") {
                     $decodedContent = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($fileData.content))
                     $contents[$file.name] = @{
-                        content = $decodedContent
+                        content  = $decodedContent
                         encoding = $fileData.encoding
-                        size = $fileData.size
-                        sha = $fileData.sha
+                        size     = $fileData.size
+                        sha      = $fileData.sha
                     }
                 }
-            } catch {
+            }
+            catch {
                 $this.Errors.Add("Failed to fetch content for $($file.name): $($_.Exception.Message)")
             }
         }
@@ -484,7 +493,8 @@ try {
     Write-Host "`n✅ Enhanced fetchable repository indexing completed!" -ForegroundColor Green
     Write-Host "📁 Index saved to: $OutputPath" -ForegroundColor White
 
-} catch {
+}
+catch {
     Write-Error "❌ Critical error during indexing: $($_.Exception.Message)"
     exit 1
 }
