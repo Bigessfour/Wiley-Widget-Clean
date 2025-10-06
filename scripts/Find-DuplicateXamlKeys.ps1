@@ -1,11 +1,11 @@
-# Find-DuplicateXamlKeys.ps1
+﻿# Find-DuplicateXamlKeys.ps1
 # Microsoft WPF Best Practice: Detect duplicate resource keys to prevent XamlParseException at runtime
 
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $false)]
     [string]$RootPath = (Get-Location),
-    
+
     [Parameter(Mandatory = $false)]
     [switch]$ExportToFile
 )
@@ -24,17 +24,17 @@ $resourceKeys = @{}
 
 foreach ($file in $xamlFiles) {
     $content = Get-Content $file.FullName -Raw
-    
+
     # Extract all x:Key="..." declarations
     $keyMatches = [regex]::Matches($content, 'x:Key\s*=\s*"([^"]+)"')
-    
+
     foreach ($match in $keyMatches) {
         $key = $match.Groups[1].Value
-        
+
         if (-not $resourceKeys.ContainsKey($key)) {
             $resourceKeys[$key] = @()
         }
-        
+
         $resourceKeys[$key] += [PSCustomObject]@{
             File = $file.FullName.Replace($RootPath, '.')
             LineNumber = ($content.Substring(0, $match.Index) -split "`n").Count
@@ -57,12 +57,12 @@ $report = @()
 foreach ($duplicate in $duplicates | Sort-Object Name) {
     $key = $duplicate.Key
     $locations = $duplicate.Value
-    
+
     Write-Warning "`n🔴 Duplicate Key: '$key' (defined in $($locations.Count) locations)"
-    
+
     foreach ($location in $locations) {
         Write-Warning "   - $($location.File):$($location.LineNumber)"
-        
+
         $report += [PSCustomObject]@{
             ResourceKey = $key
             File = $location.File

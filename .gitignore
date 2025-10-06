@@ -95,6 +95,7 @@ debug_harness.py
 
 # Virtual environment
 .venv/
+venv/
 
 # Python cache files
 __pycache__/
@@ -102,3 +103,20 @@ __pycache__/
 *$py.class
 *.pyc
 *.pyo
+
+# Node.js dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Large binary files (>50MB GitHub limit)
+*.pdf
+*.pdb
+*.dll
+*.exe
+!scripts/*.exe
+get-pip.py
+
+# Windows system files
+%APPDATA%/
