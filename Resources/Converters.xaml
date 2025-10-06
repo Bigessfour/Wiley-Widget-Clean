@@ -1,0 +1,20 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="clr-namespace:WileyWidget"
+    xmlns:views="clr-namespace:WileyWidget.Views">
+
+    <!-- ✅ VALUE CONVERTERS - Shared Across Application -->
+    <!-- Per Microsoft: "Define converters as application resources for reusability" -->
+
+    <!-- Standard WPF Converters -->
+    <BooleanToVisibilityConverter x:Key="BoolToVis" />
+
+    <!-- Custom Application Converters (Root WileyWidget namespace) -->
+    <local:BalanceColorConverter x:Key="BalanceColorConverter" />
+
+    <!-- View-Specific Converters (WileyWidget.Views namespace) -->
+    <views:ComparisonConverter x:Key="ComparisonConverter" />
+    <views:StatusToColorConverter x:Key="StatusToColorConverter" />
+
+</ResourceDictionary>

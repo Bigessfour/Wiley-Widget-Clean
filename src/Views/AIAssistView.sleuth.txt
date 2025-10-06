@@ -1,0 +1,2 @@
+📋 STATIC report: 1 finding(s).
+ℹ️ Window: Binding expression '{Binding}' does not expose a Path. Consider adding Path=... for clarity.

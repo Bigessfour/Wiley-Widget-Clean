@@ -1,0 +1,25 @@
+<Project>
+  <!--
+    WileyWidget Build Configuration
+    See docs/development-guide.md for comprehensive development standards
+    See CONTRIBUTING.md for contribution guidelines
+    See .vscode/project-plan.md for True North vision and roadmap
+  -->
+  <PropertyGroup>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <Nullable>disable</Nullable>
+
+    <!-- Build Caching and Performance Optimizations -->
+    <UseSharedCompilation>true</UseSharedCompilation>
+    <ProduceReferenceAssemblyInOutDir>true</ProduceReferenceAssemblyInOutDir>
+    <AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
+
+    <!-- Enable incremental build features -->
+    <DisableFastUpToDateCheck>false</DisableFastUpToDateCheck>
+    <DisableImplicitFrameworkReferences>false</DisableImplicitFrameworkReferences>
+
+    <!-- Optimize for development workflow -->
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <RestoreUseStaticGraphEvaluation>true</RestoreUseStaticGraphEvaluation>
+  </PropertyGroup>
+</Project>

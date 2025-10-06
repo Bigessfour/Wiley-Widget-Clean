@@ -1,0 +1,430 @@
+[
+  {
+    "assembly": "Syncfusion.Compression.Base",
+    "on_nuget": false
+  },
+  {
+    "assembly": "Syncfusion.Compression.NET",
+    "on_nuget": false
+  },
+  {
+    "assembly": "Syncfusion.Compression.Portable",
+    "on_nuget": false
+  },
+  {
+    "assembly": "Syncfusion.Data.WPF",
+    "on_nuget": false
+  },
+  {
+    "assembly": "Syncfusion.DocIO.Base",
+    "on_nuget": false
+  },
+  {
+    "assembly": "Syncfusion.DocIO.NET",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.DocIO.Portable",
+    "on_nuget": false
+  },
+  {
+    "assembly": "Syncfusion.DocIORenderer.NET",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.DocIORenderer.Portable",
+    "on_nuget": false
+  },
+  {
+    "assembly": "Syncfusion.DocToPdfconverter.Base",
+    "on_nuget": false
+  },
+  {
+    "assembly": "Syncfusion.ExcelChartToImageConverter.Wpf",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.ExcelToPDFConverter.Base",
+    "on_nuget": false
+  },
+  {
+    "assembly": "Syncfusion.Grid.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.GridCommon.WPF",
+    "on_nuget": false
+  },
+  {
+    "assembly": "Syncfusion.Licensing",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.Markdown",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.MetafileRenderer.NET",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.MetafileRenderer.Portable",
+    "on_nuget": false
+  },
+  {
+    "assembly": "Syncfusion.OfficeChart.Base",
+    "on_nuget": false
+  },
+  {
+    "assembly": "Syncfusion.OfficeChart.NET",
+    "on_nuget": false
+  },
+  {
+    "assembly": "Syncfusion.OfficeChart.Portable",
+    "on_nuget": false
+  },
+  {
+    "assembly": "Syncfusion.OfficeChartToImageConverter.Wpf",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.Pdf.Base",
+    "on_nuget": false
+  },
+  {
+    "assembly": "Syncfusion.Pdf.Imaging.NET",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.Pdf.Imaging.Portable",
+    "on_nuget": false
+  },
+  {
+    "assembly": "Syncfusion.Pdf.NET",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.Pdf.Portable",
+    "on_nuget": false
+  },
+  {
+    "assembly": "Syncfusion.PdfToImageConverter.Base",
+    "on_nuget": false
+  },
+  {
+    "assembly": "Syncfusion.PdfToImageConverter.Portable",
+    "on_nuget": false
+  },
+  {
+    "assembly": "Syncfusion.Presentation.Base",
+    "on_nuget": false
+  },
+  {
+    "assembly": "Syncfusion.Presentation.NET",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.Presentation.Portable",
+    "on_nuget": false
+  },
+  {
+    "assembly": "Syncfusion.SfAccordion.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.SfBarcode.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.SfBulletGraph.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.SfBusyIndicator.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.SfCellGrid.WPF",
+    "on_nuget": false
+  },
+  {
+    "assembly": "Syncfusion.SfChart.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.SfChat.Wpf",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.SfChromelessWindow.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.SfColorPalette.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.SfDiagram.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.SfDiagramRibbon.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.SfGauge.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.SfGrid.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.SfGridCommon.WPF",
+    "on_nuget": false
+  },
+  {
+    "assembly": "Syncfusion.SfGridConverter.WPF",
+    "on_nuget": false
+  },
+  {
+    "assembly": "Syncfusion.SfHeatMap.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.SfHubTile.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.SfImageEditor.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.SfInput.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.SfKanban.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.SfMaps.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.SfNavigationDrawer.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.SfProgressBar.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.SfRadialMenu.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.SfRichTextBoxAdv.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.SfRichTextRibbon.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.SfSchedule.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.SfScheduler.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.SfShared.WPF",
+    "on_nuget": false
+  },
+  {
+    "assembly": "Syncfusion.SfSkinManager.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.SfSmithChart.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.SfSpellChecker.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.SfSpreadsheet.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.SfSpreadsheetHelper.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.SfSunburstChart.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.SfTextInputLayout.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.SfTreeMap.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.SfTreeNavigator.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.SfTreeView.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.Shared.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.Themes.Blend.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.Themes.FluentDark.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.Themes.FluentLight.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.Themes.Lime.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.Themes.Material3Dark.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.Themes.Material3Light.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.Themes.MaterialDark.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.Themes.MaterialDarkBlue.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.Themes.MaterialLight.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.Themes.MaterialLightBlue.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.Themes.Metro.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.Themes.Office2010Black.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.Themes.Office2010Blue.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.Themes.Office2010Silver.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.Themes.Office2013DarkGray.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.Themes.Office2013LightGray.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.Themes.Office2013White.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.Themes.Office2016Colorful.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.Themes.Office2016DarkGray.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.Themes.Office2016White.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.Themes.Office2019Black.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.Themes.Office2019Colorful.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.Themes.Office2019DarkGray.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.Themes.Office2019HighContrast.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.Themes.Office2019HighContrastWhite.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.Themes.Office2019White.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.Themes.Office365.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.Themes.Saffron.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.Themes.SystemTheme.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.Themes.VisualStudio2013.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.Themes.VisualStudio2015.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.Themes.Windows11Dark.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.Themes.Windows11Light.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.Tools.WPF",
+    "on_nuget": true
+  },
+  {
+    "assembly": "Syncfusion.XlsIO.Base",
+    "on_nuget": false
+  }
+]

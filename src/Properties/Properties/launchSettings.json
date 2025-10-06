@@ -1,0 +1,48 @@
+{
+  "profiles": {
+    "WileyWidget (Development)": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": false,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "DOTNET_ENVIRONMENT": "Development",
+        "WILEY_DEBUG_STARTUP": "false"
+      },
+      "applicationUrl": ""
+    },
+    "WileyWidget (Production)": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": false,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Production",
+        "DOTNET_ENVIRONMENT": "Production",
+        "WILEY_DEBUG_STARTUP": "false"
+      },
+      "applicationUrl": ""
+    },
+    "WileyWidget (Debug Startup)": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": false,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "DOTNET_ENVIRONMENT": "Development",
+        "WILEY_DEBUG_STARTUP": "true"
+      },
+      "applicationUrl": ""
+    },
+    "WileyWidget (Azure)": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": false,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Production",
+        "DOTNET_ENVIRONMENT": "Production",
+        "WILEY_DEBUG_STARTUP": "false"
+      },
+      "applicationUrl": ""
+    }
+  }
+}

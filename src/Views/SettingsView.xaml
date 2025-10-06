@@ -1,0 +1,256 @@
+<Window x:Class="WileyWidget.SettingsView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:WileyWidget"
+        xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
+        xmlns:notification="http://schemas.syncfusion.com/wpf"
+        mc:Ignorable="d"
+        Title="Application Settings" Height="600" Width="800"
+        WindowStartupLocation="CenterScreen">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+    </Window.Resources>
+
+    <DockPanel>
+        <!-- Ribbon Toolbar -->
+        <syncfusion:Ribbon DockPanel.Dock="Top" x:Name="SettingsRibbon">
+            <syncfusion:RibbonTab Caption="Settings">
+                <syncfusion:RibbonBar Header="Actions">
+                    <syncfusion:RibbonButton Label="Save" SizeForm="Large" Command="{Binding SaveSettingsCommand}" />
+                    <syncfusion:RibbonButton Label="Reset" Command="{Binding ResetSettingsCommand}" />
+                    <syncfusion:RibbonButton Label="Test Connection" Command="{Binding TestConnectionCommand}" />
+                </syncfusion:RibbonBar>
+            </syncfusion:RibbonTab>
+        </syncfusion:Ribbon>
+
+        <!-- Main Content Area -->
+        <TabControl Margin="8">
+            <!-- General Settings -->
+            <TabItem Header="General">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="8">
+                        <GroupBox Header="Application Settings" Margin="0,0,0,8">
+                            <StackPanel>
+                                <Label Content="Theme:" />
+                                <ComboBox ItemsSource="{Binding AvailableThemes}"
+                                         SelectedItem="{Binding SelectedTheme, Mode=TwoWay}"
+                                         Margin="0,0,0,8" />
+
+                                <Label Content="Window Width:" />
+                                <syncfusion:IntegerTextBox Value="{Binding WindowWidth, Mode=TwoWay}"
+                                                         Margin="0,0,0,8" />
+
+                                <Label Content="Window Height:" />
+                                <syncfusion:IntegerTextBox Value="{Binding WindowHeight, Mode=TwoWay}"
+                                                         Margin="0,0,0,8" />
+
+                                <CheckBox Content="Maximize window on startup"
+                                         IsChecked="{Binding MaximizeOnStartup, Mode=TwoWay}"
+                                         Margin="0,0,0,8" />
+
+                                <CheckBox Content="Show splash screen"
+                                         IsChecked="{Binding ShowSplashScreen, Mode=TwoWay}"
+                                         Margin="0,0,0,8" />
+                            </StackPanel>
+                        </GroupBox>
+
+                        <GroupBox Header="Data Settings" Margin="0,0,0,8">
+                            <StackPanel>
+                                <Label Content="Database Connection:" />
+                                <TextBox Text="{Binding DatabaseConnectionString, Mode=TwoWay}"
+                                       IsReadOnly="True"
+                                       Background="LightGray"
+                                       Margin="0,0,0,8" />
+
+                                <Label Content="Database Status:" />
+                                <TextBlock Text="{Binding DatabaseStatus}"
+                                         Foreground="{Binding DatabaseStatusColor}"
+                                         Margin="0,0,0,8" />
+                            </StackPanel>
+                        </GroupBox>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- QuickBooks Integration -->
+            <TabItem Header="QuickBooks Integration">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="8">
+                        <GroupBox Header="OAuth2 Configuration" Margin="0,0,0,8">
+                            <StackPanel>
+                                <Label Content="Client ID:" />
+                                <TextBox Text="{Binding QuickBooksClientId, Mode=TwoWay}"
+                                       Margin="0,0,0,8" />
+
+                                <Label Content="Client Secret:" />
+                                <TextBox Text="{Binding QuickBooksClientSecret, Mode=TwoWay}"
+                                       Margin="0,0,0,8" />
+
+                                <Label Content="Redirect URI:" />
+                                <TextBox Text="{Binding QuickBooksRedirectUri, Mode=TwoWay}"
+                                       Margin="0,0,0,8" />
+
+                                <Label Content="Environment:" />
+                                <ComboBox ItemsSource="{Binding QuickBooksEnvironments}"
+                                         SelectedItem="{Binding SelectedQuickBooksEnvironment, Mode=TwoWay}"
+                                         Margin="0,0,0,8" />
+                            </StackPanel>
+                        </GroupBox>
+
+                        <GroupBox Header="Connection Status" Margin="0,0,0,8">
+                            <StackPanel>
+                                <TextBlock Text="{Binding QuickBooksConnectionStatus}"
+                                         Foreground="{Binding QuickBooksStatusColor}"
+                                         Margin="0,0,0,8" />
+
+                                <Button Content="Test QuickBooks Connection"
+                                       Command="{Binding TestQuickBooksConnectionCommand}"
+                                       HorizontalAlignment="Left" />
+                            </StackPanel>
+                        </GroupBox>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- Syncfusion License -->
+            <TabItem Header="Syncfusion License">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="8">
+                        <GroupBox Header="License Information" Margin="0,0,0,8">
+                            <StackPanel>
+                                <Label Content="License Key:" />
+                                <TextBox Text="{Binding SyncfusionLicenseKey, Mode=TwoWay}"
+                                       Margin="0,0,0,8"
+                                       TextWrapping="Wrap"
+                                       Height="60"
+                                       AcceptsReturn="True" />
+
+                                <Label Content="License Status:" />
+                                <TextBlock Text="{Binding SyncfusionLicenseStatus}"
+                                         Foreground="{Binding SyncfusionLicenseStatusColor}"
+                                         Margin="0,0,0,8" />
+
+                                <Button Content="Validate License"
+                                       Command="{Binding ValidateLicenseCommand}"
+                                       HorizontalAlignment="Left"
+                                       Margin="0,0,0,8" />
+
+                                <TextBlock Text="Note: License key is stored securely in environment variables."
+                                         FontStyle="Italic"
+                                         Foreground="Gray" />
+                            </StackPanel>
+                        </GroupBox>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- Azure Settings -->
+            <TabItem Header="Azure Configuration">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="8">
+                        <GroupBox Header="Azure Key Vault" Margin="0,0,0,8">
+                            <StackPanel>
+                                <Label Content="Key Vault URL:" />
+                                <TextBox Text="{Binding AzureKeyVaultUrl, Mode=TwoWay}"
+                                       Margin="0,0,0,8" />
+
+                                <Label Content="Connection Status:" />
+                                <TextBlock Text="{Binding AzureConnectionStatus}"
+                                         Foreground="{Binding AzureStatusColor}"
+                                         Margin="0,0,0,8" />
+
+                                <Button Content="Test Azure Connection"
+                                       Command="{Binding TestAzureConnectionCommand}"
+                                       HorizontalAlignment="Left" />
+                            </StackPanel>
+                        </GroupBox>
+
+                        <GroupBox Header="Azure SQL Database" Margin="0,0,0,8">
+                            <StackPanel>
+                                <Label Content="Server:" />
+                                <TextBox Text="{Binding AzureSqlServer, Mode=TwoWay}"
+                                       Margin="0,0,0,8" />
+
+                                <Label Content="Database:" />
+                                <TextBox Text="{Binding AzureSqlDatabase, Mode=TwoWay}"
+                                       Margin="0,0,0,8" />
+
+                                <Label Content="Authentication:" />
+                                <ComboBox ItemsSource="{Binding AzureAuthMethods}"
+                                         SelectedItem="{Binding SelectedAzureAuthMethod, Mode=TwoWay}"
+                                         Margin="0,0,0,8" />
+                            </StackPanel>
+                        </GroupBox>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- Advanced Settings -->
+            <TabItem Header="Advanced">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="8">
+                        <GroupBox Header="Performance Settings" Margin="0,0,0,8">
+                            <StackPanel>
+                                <CheckBox Content="Enable dynamic column generation"
+                                         IsChecked="{Binding EnableDynamicColumns, Mode=TwoWay}"
+                                         Margin="0,0,0,8" />
+
+                                <CheckBox Content="Enable data caching"
+                                         IsChecked="{Binding EnableDataCaching, Mode=TwoWay}"
+                                         Margin="0,0,0,8" />
+
+                                <Label Content="Cache expiration (minutes):" />
+                                <syncfusion:IntegerTextBox Value="{Binding CacheExpirationMinutes, Mode=TwoWay}"
+                                                         Margin="0,0,0,8" />
+                            </StackPanel>
+                        </GroupBox>
+
+                        <GroupBox Header="Logging Settings" Margin="0,0,0,8">
+                            <StackPanel>
+                                <Label Content="Log Level:" />
+                                <ComboBox ItemsSource="{Binding LogLevels}"
+                                         SelectedItem="{Binding SelectedLogLevel, Mode=TwoWay}"
+                                         Margin="0,0,0,8" />
+
+                                <CheckBox Content="Enable file logging"
+                                         IsChecked="{Binding EnableFileLogging, Mode=TwoWay}"
+                                         Margin="0,0,0,8" />
+
+                                <Label Content="Log file path:" />
+                                <TextBox Text="{Binding LogFilePath, Mode=TwoWay}"
+                                       Margin="0,0,0,8" />
+                            </StackPanel>
+                        </GroupBox>
+
+                        <GroupBox Header="System Information" Margin="0,0,0,8">
+                            <StackPanel>
+                                <TextBlock Text="{Binding SystemInfo}" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </GroupBox>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+        </TabControl>
+
+        <!-- Status Bar -->
+        <StatusBar DockPanel.Dock="Bottom" Background="Transparent">
+            <StatusBarItem>
+                <TextBlock>
+                    <Run Text="Settings Status: "/><Run Text="{Binding SettingsStatus}" />
+                </TextBlock>
+            </StatusBarItem>
+            <StatusBarItem>
+                <TextBlock>
+                    <Run Text="Last Saved: "/><Run Text="{Binding LastSaved}" />
+                </TextBlock>
+            </StatusBarItem>
+            <StatusBarItem>
+                <notification:SfBusyIndicator IsBusy="{Binding IsLoading}" 
+                                           Header="{Binding StatusMessage, FallbackValue='Loading...'}"
+                                           AnimationType="Windmill" />
+            </StatusBarItem>
+        </StatusBar>
+    </DockPanel>
+</Window>

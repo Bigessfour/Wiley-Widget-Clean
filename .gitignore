@@ -62,9 +62,28 @@ Desktop.ini
 *.backup*
 *_backup*
 *.msi
+cleanup_backup_*/
+scripts_backup_*/
+
+# Excel working copies (temporary files)
+*WORKING COPY*.xls
+*WORKING COPY*.xlsx
+
+# Build logs
+build.log
+
+# Development/debug scripts
+check_imports.py
+debug_harness.py
 
 # Installers and large binaries
 *.msi
 *.exe
 *.dmg
 *.pkg
+
+# OneDrive temp files
+.tmp.driveupload/
+
+# Virtual environment
+.venv/

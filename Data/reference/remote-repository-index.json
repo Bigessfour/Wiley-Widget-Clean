@@ -1,0 +1,2879 @@
+{
+  "structure": {
+    "files": {
+      "RELEASE_NOTES.md": {
+        "sha": "91ddbad628960756c3484b897d123cf2a4ee3b7c",
+        "name": "RELEASE_NOTES.md",
+        "size": 616,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/RELEASE_NOTES.md",
+        "path": "RELEASE_NOTES.md",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/RELEASE_NOTES.md?ref=main"
+      },
+      "AIAssistView.xaml": {
+        "sha": "108b87718241fbe7367ab334af1c1d17e4fe9929",
+        "name": "AIAssistView.xaml",
+        "size": 16266,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/AIAssistView.xaml",
+        "path": "AIAssistView.xaml",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/AIAssistView.xaml?ref=main"
+      },
+      "AboutWindow.xaml": {
+        "sha": "fc41a3ab6c4b92ab8c3b316c807ac60d90c0cb3b",
+        "name": "AboutWindow.xaml",
+        "size": 9502,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/AboutWindow.xaml",
+        "path": "AboutWindow.xaml",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/AboutWindow.xaml?ref=main"
+      },
+      "BudgetProgressConverter.cs": {
+        "sha": "1726e0f66cbb69ca91e3580ad2fd66d1d146451b",
+        "name": "BudgetProgressConverter.cs",
+        "size": 1340,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/BudgetProgressConverter.cs",
+        "path": "BudgetProgressConverter.cs",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/BudgetProgressConverter.cs?ref=main"
+      },
+      "Fetchability-Resources-README.md": {
+        "sha": "8ed2880d9953cfd9fc1b19ce563621f2d8c15003",
+        "name": "Fetchability-Resources-README.md",
+        "size": 4457,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/Fetchability-Resources-README.md",
+        "path": "Fetchability-Resources-README.md",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Fetchability-Resources-README.md?ref=main"
+      },
+      ".env.production.sample": {
+        "sha": "1e2cb78c79af8cf8d0367a33b9932a9b28502751",
+        "name": ".env.production.sample",
+        "size": 618,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/.env.production.sample",
+        "path": ".env.production.sample",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/.env.production.sample?ref=main"
+      },
+      "CONTRIBUTING.md": {
+        "sha": "9adccd7118444a7ee13e815afedf0364478d7b07",
+        "name": "CONTRIBUTING.md",
+        "size": 6725,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/CONTRIBUTING.md",
+        "path": "CONTRIBUTING.md",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/CONTRIBUTING.md?ref=main"
+      },
+      "DatabaseConnectionTest.cs": {
+        "sha": "a48d4f9bd394f3aa415d8afc2eddc2606ae2b9e1",
+        "name": "DatabaseConnectionTest.cs",
+        "size": 2598,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/DatabaseConnectionTest.cs",
+        "path": "DatabaseConnectionTest.cs",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/DatabaseConnectionTest.cs?ref=main"
+      },
+      "AZURE_SETUP_COMPLETE.md": {
+        "sha": "c2aa56d5f3b6ad32208d0a36217c30d33d764fb0",
+        "name": "AZURE_SETUP_COMPLETE.md",
+        "size": 3625,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/AZURE_SETUP_COMPLETE.md",
+        "path": "AZURE_SETUP_COMPLETE.md",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/AZURE_SETUP_COMPLETE.md?ref=main"
+      },
+      "Directory.Build.props": {
+        "sha": "ce7a913f722e32e3eb4c2fc9ee056544b85c52fb",
+        "name": "Directory.Build.props",
+        "size": 389,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/Directory.Build.props",
+        "path": "Directory.Build.props",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Directory.Build.props?ref=main"
+      },
+      "pytest.ini": {
+        "sha": "f2349fbd79c5c60df3bfead8807be56564ca8ce3",
+        "name": "pytest.ini",
+        "size": 199,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/pytest.ini",
+        "path": "pytest.ini",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/pytest.ini?ref=main"
+      },
+      "App.xaml.cs": {
+        "sha": "d6266c4c4f02a5fc11ec12710c0a8df15e9f1362",
+        "name": "App.xaml.cs",
+        "size": 56913,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/App.xaml.cs",
+        "path": "App.xaml.cs",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/App.xaml.cs?ref=main"
+      },
+      "global.json": {
+        "sha": "6de2c7eadfe9c81d012e75a489c2e1ef400660f8",
+        "name": "global.json",
+        "size": 49,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/global.json",
+        "path": "global.json",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/global.json?ref=main"
+      },
+      "fetchability-resources.json": {
+        "sha": "f22351e3da9933da081891a8894a5772e7d06967",
+        "name": "fetchability-resources.json",
+        "size": 836827,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/fetchability-resources.json",
+        "path": "fetchability-resources.json",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/fetchability-resources.json?ref=main"
+      },
+      "Fetchability.md": {
+        "sha": "8d457c2127ca4b6f61e5038cd8b6d79550a3ced8",
+        "name": "Fetchability.md",
+        "size": 5050,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/Fetchability.md",
+        "path": "Fetchability.md",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Fetchability.md?ref=main"
+      },
+      "appsettings.json": {
+        "sha": "8588e0d045aa4128ea10d3acdff0846e1c7f5820",
+        "name": "appsettings.json",
+        "size": 1291,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/appsettings.json",
+        "path": "appsettings.json",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/appsettings.json?ref=main"
+      },
+      "WileyWidget.sln": {
+        "sha": "7c93fecb2290d273d35c10c544dbd1de7e52b35c",
+        "name": "WileyWidget.sln",
+        "size": 2826,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/WileyWidget.sln",
+        "path": "WileyWidget.sln",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/WileyWidget.sln?ref=main"
+      },
+      "BudgetView.xaml.cs": {
+        "sha": "a487589f7cb14be5619715d48b63a6872cba937b",
+        "name": "BudgetView.xaml.cs",
+        "size": 3473,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/BudgetView.xaml.cs",
+        "path": "BudgetView.xaml.cs",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/BudgetView.xaml.cs?ref=main"
+      },
+      "EnterpriseView.xaml.cs": {
+        "sha": "01235789c769942f2f739c82da7a5ff888d86101",
+        "name": "EnterpriseView.xaml.cs",
+        "size": 2805,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/EnterpriseView.xaml.cs",
+        "path": "EnterpriseView.xaml.cs",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/EnterpriseView.xaml.cs?ref=main"
+      },
+      "UtilityCustomerView.xaml": {
+        "sha": "7281336d8c7e6f1039632e4bde94b128b1cdc1e5",
+        "name": "UtilityCustomerView.xaml",
+        "size": 15132,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/UtilityCustomerView.xaml",
+        "path": "UtilityCustomerView.xaml",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/UtilityCustomerView.xaml?ref=main"
+      },
+      "Directory.Build.targets": {
+        "sha": "43d2edce4b92063c6131dbb3ea8ac97db8629f7b",
+        "name": "Directory.Build.targets",
+        "size": 243,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/Directory.Build.targets",
+        "path": "Directory.Build.targets",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Directory.Build.targets?ref=main"
+      },
+      "OUR_PARTNERSHIP_JOURNEY.md": {
+        "sha": "7918d9939eda68c5ee3e37a784f9973edbf39edf",
+        "name": "OUR_PARTNERSHIP_JOURNEY.md",
+        "size": 9079,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/OUR_PARTNERSHIP_JOURNEY.md",
+        "path": "OUR_PARTNERSHIP_JOURNEY.md",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/OUR_PARTNERSHIP_JOURNEY.md?ref=main"
+      },
+      "MessageConverters.cs": {
+        "sha": "3fb8263f81e25117d9a79ef6dea7ca7b8d80fdb7",
+        "name": "MessageConverters.cs",
+        "size": 1801,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/MessageConverters.cs",
+        "path": "MessageConverters.cs",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/MessageConverters.cs?ref=main"
+      },
+      "CurrencyFormatConverter.cs": {
+        "sha": "03a64e874f731e2bce6c563418fadb7d097ea2e8",
+        "name": "CurrencyFormatConverter.cs",
+        "size": 543,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/CurrencyFormatConverter.cs",
+        "path": "CurrencyFormatConverter.cs",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/CurrencyFormatConverter.cs?ref=main"
+      },
+      "SplashScreenWindow.xaml.cs": {
+        "sha": "434c15bd7b3d74a9066bc295e894e37e11929e1d",
+        "name": "SplashScreenWindow.xaml.cs",
+        "size": 13045,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/SplashScreenWindow.xaml.cs",
+        "path": "SplashScreenWindow.xaml.cs",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/SplashScreenWindow.xaml.cs?ref=main"
+      },
+      "MainWindow.xaml.cs": {
+        "sha": "f05b9d9837fc1b262662dc7572c84432626f3575",
+        "name": "MainWindow.xaml.cs",
+        "size": 28447,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/MainWindow.xaml.cs",
+        "path": "MainWindow.xaml.cs",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/MainWindow.xaml.cs?ref=main"
+      },
+      "DashboardView.xaml.cs": {
+        "sha": "daa1b34406bb9e4d498f216c58c45ccef3d313ea",
+        "name": "DashboardView.xaml.cs",
+        "size": 3930,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/DashboardView.xaml.cs",
+        "path": "DashboardView.xaml.cs",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/DashboardView.xaml.cs?ref=main"
+      },
+      "DashboardView.xaml": {
+        "sha": "2e75d6233d354628be475222fed139666cea70cb",
+        "name": "DashboardView.xaml",
+        "size": 12216,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/DashboardView.xaml",
+        "path": "DashboardView.xaml",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/DashboardView.xaml?ref=main"
+      },
+      "AIAssistView.xaml.cs": {
+        "sha": "f2b99b13245e0f34611e2a57c0de71b775662841",
+        "name": "AIAssistView.xaml.cs",
+        "size": 3393,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/AIAssistView.xaml.cs",
+        "path": "AIAssistView.xaml.cs",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/AIAssistView.xaml.cs?ref=main"
+      },
+      "AboutWindow.xaml.cs": {
+        "sha": "f58f4034689ae3a581d739d00d1212824ba7901e",
+        "name": "AboutWindow.xaml.cs",
+        "size": 2332,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/AboutWindow.xaml.cs",
+        "path": "AboutWindow.xaml.cs",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/AboutWindow.xaml.cs?ref=main"
+      },
+      "SECURITY.md": {
+        "sha": "fb54c3c765b43509c25124a32eff7e118d617004",
+        "name": "SECURITY.md",
+        "size": 1277,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/SECURITY.md",
+        "path": "SECURITY.md",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/SECURITY.md?ref=main"
+      },
+      "App.xaml": {
+        "sha": "14cf3f510be0ede757b08163c042c26c1f6f0a2f",
+        "name": "App.xaml",
+        "size": 693,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/App.xaml",
+        "path": "App.xaml",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/App.xaml?ref=main"
+      },
+      "EnterpriseView.xaml": {
+        "sha": "1568b332744fbc065a1f230cc23938a5504a3c2c",
+        "name": "EnterpriseView.xaml",
+        "size": 14844,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/EnterpriseView.xaml",
+        "path": "EnterpriseView.xaml",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/EnterpriseView.xaml?ref=main"
+      },
+      "AzureAdConfig.cs": {
+        "sha": "cc23c7b650f8a5ec68ddf17b8b04a293da268151",
+        "name": "AzureAdConfig.cs",
+        "size": 810,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/AzureAdConfig.cs",
+        "path": "AzureAdConfig.cs",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/AzureAdConfig.cs?ref=main"
+      },
+      "AZURE_SAFE_SETUP_COMPLETE.md": {
+        "sha": "bdf0a160ecbb006044355d3c38be31d6342bfba3",
+        "name": "AZURE_SAFE_SETUP_COMPLETE.md",
+        "size": 5201,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/AZURE_SAFE_SETUP_COMPLETE.md",
+        "path": "AZURE_SAFE_SETUP_COMPLETE.md",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/AZURE_SAFE_SETUP_COMPLETE.md?ref=main"
+      },
+      ".gitignore": {
+        "sha": "07b9251926650345154662e4db89c96642f118e9",
+        "name": ".gitignore",
+        "size": 814,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/.gitignore",
+        "path": ".gitignore",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/.gitignore?ref=main"
+      },
+      "UtilityCustomerView.xaml.cs": {
+        "sha": "9d839d57a8ef70585f1bfc9d154a55f7ccb50956",
+        "name": "UtilityCustomerView.xaml.cs",
+        "size": 2016,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/UtilityCustomerView.xaml.cs",
+        "path": "UtilityCustomerView.xaml.cs",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/UtilityCustomerView.xaml.cs?ref=main"
+      },
+      "remote-repository-index.json": {
+        "sha": "9befc6619c048edb91b7ebb116eac7487d814c39",
+        "name": "remote-repository-index.json",
+        "size": 32104,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/remote-repository-index.json",
+        "path": "remote-repository-index.json",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/remote-repository-index.json?ref=main"
+      },
+      "get-pip.py": {
+        "sha": "12b93edd599b98090e2fc3e8afc8d00578e14614",
+        "name": "get-pip.py",
+        "size": 2148833,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/get-pip.py",
+        "path": "get-pip.py",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/get-pip.py?ref=main"
+      },
+      ".copilot-instructions.md": {
+        "sha": "dc384b7bb81c67a390d0f8eec64e735aa1579fe1",
+        "name": ".copilot-instructions.md",
+        "size": 4993,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/.copilot-instructions.md",
+        "path": ".copilot-instructions.md",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/.copilot-instructions.md?ref=main"
+      },
+      ".env.example": {
+        "sha": "08459a14902ccb252ff8362a6b8a7351b5bdc559",
+        "name": ".env.example",
+        "size": 888,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/.env.example",
+        "path": ".env.example",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/.env.example?ref=main"
+      },
+      "WileyWidget.csproj": {
+        "sha": "b3c6519e36fb32481320fa4573c7cd0c5543a69b",
+        "name": "WileyWidget.csproj",
+        "size": 4772,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/WileyWidget.csproj",
+        "path": "WileyWidget.csproj",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/WileyWidget.csproj?ref=main"
+      },
+      "TokenCacheHelper.cs": {
+        "sha": "11c60d1554f45c3f8aa2b7bdfbd3c44005ef1a2c",
+        "name": "TokenCacheHelper.cs",
+        "size": 2475,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/TokenCacheHelper.cs",
+        "path": "TokenCacheHelper.cs",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/TokenCacheHelper.cs?ref=main"
+      },
+      "SplashScreenWindow.xaml": {
+        "sha": "e36fd4c00bb7a4caee02598ce7e6944502d32a3e",
+        "name": "SplashScreenWindow.xaml",
+        "size": 9869,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/SplashScreenWindow.xaml",
+        "path": "SplashScreenWindow.xaml",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/SplashScreenWindow.xaml?ref=main"
+      },
+      "TESTING_GAPS_ASSESSMENT.md": {
+        "sha": "1e64963f66726c2b5790da1a5552cf2a490db353",
+        "name": "TESTING_GAPS_ASSESSMENT.md",
+        "size": 14403,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/TESTING_GAPS_ASSESSMENT.md",
+        "path": "TESTING_GAPS_ASSESSMENT.md",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/TESTING_GAPS_ASSESSMENT.md?ref=main"
+      },
+      "views-completion-assessment.md": {
+        "sha": "b2835ff374b11fef869b3e0329204d14d50f3d7b",
+        "name": "views-completion-assessment.md",
+        "size": 11017,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/views-completion-assessment.md",
+        "path": "views-completion-assessment.md",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/views-completion-assessment.md?ref=main"
+      },
+      "MainWindow.xaml": {
+        "sha": "66a12668a61bdce9c0c8e729880fb63e8cce2e9c",
+        "name": "MainWindow.xaml",
+        "size": 11024,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/MainWindow.xaml",
+        "path": "MainWindow.xaml",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/MainWindow.xaml?ref=main"
+      },
+      "README.md": {
+        "sha": "13d45b923154fdb8dadcd95fef310b92bfdfc889",
+        "name": "README.md",
+        "size": 30777,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/README.md",
+        "path": "README.md",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/README.md?ref=main"
+      },
+      "BudgetView.xaml": {
+        "sha": "c327548f949d487aa09292b5b517f75627fa4a88",
+        "name": "BudgetView.xaml",
+        "size": 20933,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/BudgetView.xaml",
+        "path": "BudgetView.xaml",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/BudgetView.xaml?ref=main"
+      },
+      "coverage.xml": {
+        "sha": "dca574e88dfc9fde53795bee0ab775f7370b8f5f",
+        "name": "coverage.xml",
+        "size": 45989,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/coverage.xml",
+        "path": "coverage.xml",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/coverage.xml?ref=main"
+      },
+      "SettingsView.xaml.cs": {
+        "sha": "5a71c90a90dc4e3e0527118b3dbb16c4927022c2",
+        "name": "SettingsView.xaml.cs",
+        "size": 3700,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/SettingsView.xaml.cs",
+        "path": "SettingsView.xaml.cs",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/SettingsView.xaml.cs?ref=main"
+      },
+      "CHANGELOG.md": {
+        "sha": "4ee3b1faf47dd16172161168d178ebf5294cb05b",
+        "name": "CHANGELOG.md",
+        "size": 310,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/CHANGELOG.md",
+        "path": "CHANGELOG.md",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/CHANGELOG.md?ref=main"
+      },
+      "Directory.Packages.props": {
+        "sha": "416e638f48c22f43cfefcd7080a44eab28f90aae",
+        "name": "Directory.Packages.props",
+        "size": 4579,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/Directory.Packages.props",
+        "path": "Directory.Packages.props",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Directory.Packages.props?ref=main"
+      },
+      ".coverage": {
+        "sha": "5b43d2b6f28ee30367cdbc318beaf23ed0c64379",
+        "name": ".coverage",
+        "size": 53248,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/.coverage",
+        "path": ".coverage",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/.coverage?ref=main"
+      },
+      "cicd-results.json": {
+        "sha": "cea9d5fb8da38e4a459954933b9eca8ada9219b1",
+        "name": "cicd-results.json",
+        "size": 6628,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/cicd-results.json",
+        "path": "cicd-results.json",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/cicd-results.json?ref=main"
+      },
+      "license.sample.key": {
+        "sha": "336ce66bc6b83642c5ea4245152b049ebc15ffb9",
+        "name": "license.sample.key",
+        "size": 138,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/license.sample.key",
+        "path": "license.sample.key",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/license.sample.key?ref=main"
+      },
+      "LicenseKey.Private.sample.cs": {
+        "sha": "ff2fcd32cf971a538600b680968e042e5f1bb33a",
+        "name": "LicenseKey.Private.sample.cs",
+        "size": 887,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/LicenseKey.Private.sample.cs",
+        "path": "LicenseKey.Private.sample.cs",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/LicenseKey.Private.sample.cs?ref=main"
+      },
+      "SettingsView.xaml": {
+        "sha": "a874ba403a83aa027347c4a4cec3e8a604f30145",
+        "name": "SettingsView.xaml",
+        "size": 12983,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/SettingsView.xaml",
+        "path": "SettingsView.xaml",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/SettingsView.xaml?ref=main"
+      },
+      "pyrightconfig.json": {
+        "sha": "89816ce48ec9db3ad98803f3b2dfc1fadaff5f5e",
+        "name": "pyrightconfig.json",
+        "size": 204,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/pyrightconfig.json",
+        "path": "pyrightconfig.json",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/pyrightconfig.json?ref=main"
+      },
+      "AZURE_SAFETY_INSTITUTIONALIZED.md": {
+        "sha": "8b15681b2ea2b2fe721a21edd98cf7eb661ec9b0",
+        "name": "AZURE_SAFETY_INSTITUTIONALIZED.md",
+        "size": 7756,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/AZURE_SAFETY_INSTITUTIONALIZED.md",
+        "path": "AZURE_SAFETY_INSTITUTIONALIZED.md",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/AZURE_SAFETY_INSTITUTIONALIZED.md?ref=main"
+      },
+      "appsettings.Production.json": {
+        "sha": "edbaa8260040686775398d727f34c1428a2fac34",
+        "name": "appsettings.Production.json",
+        "size": 1330,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/appsettings.Production.json",
+        "path": "appsettings.Production.json",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/appsettings.Production.json?ref=main"
+      },
+      "requirements-test.txt": {
+        "sha": "57b20fd094fa6964458b9d5b685bde40c2116ea5",
+        "name": "requirements-test.txt",
+        "size": 241,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/requirements-test.txt",
+        "path": "requirements-test.txt",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/requirements-test.txt?ref=main"
+      },
+      ".editorconfig": {
+        "sha": "1664fed9093d4a6015c96ff7f40ea3ad5e09ad1b",
+        "name": ".editorconfig",
+        "size": 14208,
+        "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/.editorconfig",
+        "path": ".editorconfig",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/.editorconfig?ref=main"
+      }
+    },
+    "directories": {
+      "signing": {
+        "path": "signing",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/signing?ref=main",
+        "sha": "9c2201d254dff5873173838001f17eb1e6ed006c",
+        "contents": {
+          "files": {
+            "README.txt": {
+              "sha": "1fc808b147d089666cb0ba7905c27b0a6d15095d",
+              "name": "README.txt",
+              "size": 200,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/signing/README.txt",
+              "path": "signing/README.txt",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/signing/README.txt?ref=main"
+            }
+          },
+          "directories": {}
+        }
+      },
+      "%APPDATA%": {
+        "path": "%APPDATA%",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/%25APPDATA%25?ref=main",
+        "sha": "daabfcce6bfae156cbf295d44053be210eaa264e",
+        "contents": { "files": {}, "directories": {} }
+      },
+      ".venv": {
+        "path": ".venv",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/.venv?ref=main",
+        "sha": "bb64914eef731d8d34280e5e3e7a651108414e4a",
+        "contents": {
+          "files": {},
+          "directories": {
+            "Scripts": {
+              "path": ".venv/Scripts",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/.venv/Scripts?ref=main",
+              "sha": "48d5d15ef949878c5541a1a1e30207f537257b6e",
+              "contents": {
+                "files": {
+                  "Activate.ps1": {
+                    "sha": "26d2dd90d3076dd3a8310594d49ea3c96f633a73",
+                    "name": "Activate.ps1",
+                    "size": 25699,
+                    "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/.venv/Scripts/Activate.ps1",
+                    "path": ".venv/Scripts/Activate.ps1",
+                    "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/.venv/Scripts/Activate.ps1?ref=main"
+                  }
+                },
+                "directories": {}
+              }
+            },
+            "Lib": {
+              "path": ".venv/Lib",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/.venv/Lib?ref=main",
+              "sha": "988aeeb974d23a35c86cfa560737e697d5b4d993",
+              "contents": {
+                "files": {},
+                "directories": {
+                  "site-packages": {
+                    "path": ".venv/Lib/site-packages",
+                    "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/.venv/Lib/site-packages?ref=main",
+                    "sha": "aa8e3d9d28ec024ab9d3ab6e9e79b3cb2731b0df",
+                    "contents": {
+                      "files": "System.Collections.Hashtable",
+                      "directories": "System.Collections.Hashtable"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "Themes": {
+        "path": "Themes",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Themes?ref=main",
+        "sha": "cc070b55cab9beab8064fb74b7b803ad9ac9021a",
+        "contents": {
+          "files": {
+            "WileyTheme.xaml": {
+              "sha": "c21f570621e307aa895ac8cc66b4671845468146",
+              "name": "WileyTheme.xaml",
+              "size": 11834,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/Themes/WileyTheme.xaml",
+              "path": "Themes/WileyTheme.xaml",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Themes/WileyTheme.xaml?ref=main"
+            }
+          },
+          "directories": {}
+        }
+      },
+      "Resources": {
+        "path": "Resources",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Resources?ref=main",
+        "sha": "bacdf372483da3c8efa4360e6c77cfd36761a031",
+        "contents": {
+          "files": {
+            "SplashScreen_README.txt": {
+              "sha": "8382ab5afaaeb0d4d0627ee8b473a07a49dd4eb8",
+              "name": "SplashScreen_README.txt",
+              "size": 721,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/Resources/SplashScreen_README.txt",
+              "path": "Resources/SplashScreen_README.txt",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Resources/SplashScreen_README.txt?ref=main"
+            },
+            "SplashScreen.txt": {
+              "sha": "d4a3c7be11f58969abfca5d0592f3e5b1b9b81ef",
+              "name": "SplashScreen.txt",
+              "size": 26,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/Resources/SplashScreen.txt",
+              "path": "Resources/SplashScreen.txt",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Resources/SplashScreen.txt?ref=main"
+            },
+            "SplashScreen.png": {
+              "sha": "72a54e00dbdc82d856ee6e677943a5a51c39a5c1",
+              "name": "SplashScreen.png",
+              "size": 47,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/Resources/SplashScreen.png",
+              "path": "Resources/SplashScreen.png",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Resources/SplashScreen.png?ref=main"
+            }
+          },
+          "directories": {}
+        }
+      },
+      "Configuration": {
+        "path": "Configuration",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Configuration?ref=main",
+        "sha": "9bd4dcf0588cdffd28011c1485da4c253f36cdd7",
+        "contents": {
+          "files": {
+            "DatabaseConfiguration.cs": {
+              "sha": "ea9717508d9b6d594332352114a959d2c990513b",
+              "name": "DatabaseConfiguration.cs",
+              "size": 25296,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/Configuration/DatabaseConfiguration.cs",
+              "path": "Configuration/DatabaseConfiguration.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Configuration/DatabaseConfiguration.cs?ref=main"
+            },
+            "WpfHostingExtensions.cs": {
+              "sha": "52ecd1ff9e28be05bd07d962a213022043eac09e",
+              "name": "WpfHostingExtensions.cs",
+              "size": 6446,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/Configuration/WpfHostingExtensions.cs",
+              "path": "Configuration/WpfHostingExtensions.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Configuration/WpfHostingExtensions.cs?ref=main"
+            }
+          },
+          "directories": {}
+        }
+      },
+      "WileyWidget.UiTests": {
+        "path": "WileyWidget.UiTests",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/WileyWidget.UiTests?ref=main",
+        "sha": "651f4eaacb88eeb02d35b67cdc9f7d4e3156aa89",
+        "contents": {
+          "files": {
+            "WileyWidget.UiTests.csproj": {
+              "sha": "471147da3617cbc4d82b9caa16bfeeb4eb967981",
+              "name": "WileyWidget.UiTests.csproj",
+              "size": 1040,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/WileyWidget.UiTests/WileyWidget.UiTests.csproj",
+              "path": "WileyWidget.UiTests/WileyWidget.UiTests.csproj",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/WileyWidget.UiTests/WileyWidget.UiTests.csproj?ref=main"
+            },
+            "MainWindowTests.cs": {
+              "sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+              "name": "MainWindowTests.cs",
+              "size": 0,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/WileyWidget.UiTests/MainWindowTests.cs",
+              "path": "WileyWidget.UiTests/MainWindowTests.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/WileyWidget.UiTests/MainWindowTests.cs?ref=main"
+            },
+            "MainWindowUITests.cs": {
+              "sha": "0607c894f71b510bd5273c85acc016cb7dcdd94a",
+              "name": "MainWindowUITests.cs",
+              "size": 7659,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/WileyWidget.UiTests/MainWindowUITests.cs",
+              "path": "WileyWidget.UiTests/MainWindowUITests.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/WileyWidget.UiTests/MainWindowUITests.cs?ref=main"
+            }
+          },
+          "directories": {}
+        }
+      },
+      "Services": {
+        "path": "Services",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Services?ref=main",
+        "sha": "76a81e08c5fafb20ed66e03a441daeca8bb82ed5",
+        "contents": {
+          "files": {
+            "SyncfusionLicenseService.cs": {
+              "sha": "d1b6f77b48d81da0463864e0dafeb7c44c84316d",
+              "name": "SyncfusionLicenseService.cs",
+              "size": 1945,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/Services/SyncfusionLicenseService.cs",
+              "path": "Services/SyncfusionLicenseService.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Services/SyncfusionLicenseService.cs?ref=main"
+            },
+            "HealthCheckService.cs": {
+              "sha": "46512aec448a994135a3f810a9ff519df860e4f0",
+              "name": "HealthCheckService.cs",
+              "size": 5760,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/Services/HealthCheckService.cs",
+              "path": "Services/HealthCheckService.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Services/HealthCheckService.cs?ref=main"
+            },
+            "WhatIfScenarioEngine.cs": {
+              "sha": "b1a5e91d1317361a9543efb15839bbe957301843",
+              "name": "WhatIfScenarioEngine.cs",
+              "size": 17473,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/Services/WhatIfScenarioEngine.cs",
+              "path": "Services/WhatIfScenarioEngine.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Services/WhatIfScenarioEngine.cs?ref=main"
+            },
+            "ServiceChargeCalculatorService.cs": {
+              "sha": "c58b195c0c27eab434fee34465bfa59de6302974",
+              "name": "ServiceChargeCalculatorService.cs",
+              "size": 11983,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/Services/ServiceChargeCalculatorService.cs",
+              "path": "Services/ServiceChargeCalculatorService.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Services/ServiceChargeCalculatorService.cs?ref=main"
+            },
+            "IAzureKeyVaultService.cs": {
+              "sha": "a13a94129aba4b998c23e6ed54d7ce2920c72586",
+              "name": "IAzureKeyVaultService.cs",
+              "size": 366,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/Services/IAzureKeyVaultService.cs",
+              "path": "Services/IAzureKeyVaultService.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Services/IAzureKeyVaultService.cs?ref=main"
+            },
+            "IAIService.cs": {
+              "sha": "0746beeda7dab47cc021869128448e90cdf4303a",
+              "name": "IAIService.cs",
+              "size": 850,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/Services/IAIService.cs",
+              "path": "Services/IAIService.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Services/IAIService.cs?ref=main"
+            },
+            "SettingsService.cs": {
+              "sha": "18833e87ee3da1aa64bdf4be726253baf87a6789",
+              "name": "SettingsService.cs",
+              "size": 3695,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/Services/SettingsService.cs",
+              "path": "Services/SettingsService.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Services/SettingsService.cs?ref=main"
+            },
+            "AzureKeyVaultService.cs": {
+              "sha": "4506351b9991d1da66ba2598151c36d0254bba57",
+              "name": "AzureKeyVaultService.cs",
+              "size": 4749,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/Services/AzureKeyVaultService.cs",
+              "path": "Services/AzureKeyVaultService.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Services/AzureKeyVaultService.cs?ref=main"
+            },
+            "ISyncfusionLicenseService.cs": {
+              "sha": "1d8a2e20aa8246eae892b098cdcae268029c99db",
+              "name": "ISyncfusionLicenseService.cs",
+              "size": 273,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/Services/ISyncfusionLicenseService.cs",
+              "path": "Services/ISyncfusionLicenseService.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Services/ISyncfusionLicenseService.cs?ref=main"
+            },
+            "QuickBooksService.cs": {
+              "sha": "d4932b54ca86ed52378c994f5327b2510992b1b7",
+              "name": "QuickBooksService.cs",
+              "size": 7440,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/Services/QuickBooksService.cs",
+              "path": "Services/QuickBooksService.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Services/QuickBooksService.cs?ref=main"
+            },
+            "IChargeCalculatorService.cs": {
+              "sha": "e17e5db9f447dbe456b445391a97b4f57c823bef",
+              "name": "IChargeCalculatorService.cs",
+              "size": 362,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/Services/IChargeCalculatorService.cs",
+              "path": "Services/IChargeCalculatorService.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Services/IChargeCalculatorService.cs?ref=main"
+            },
+            "IQuickBooksService.cs": {
+              "sha": "989391ac177cf1e4a936a78e18db7cc5b14af579",
+              "name": "IQuickBooksService.cs",
+              "size": 627,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/Services/IQuickBooksService.cs",
+              "path": "Services/IQuickBooksService.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Services/IQuickBooksService.cs?ref=main"
+            },
+            "XAIService.cs": {
+              "sha": "09364ac5f2cd0bbb55fda21c3fbb6180801b2755",
+              "name": "XAIService.cs",
+              "size": 7090,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/Services/XAIService.cs",
+              "path": "Services/XAIService.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Services/XAIService.cs?ref=main"
+            },
+            "IWhatIfScenarioEngine.cs": {
+              "sha": "fca67071822e93f4949185a7aac7b401bbcdadb2",
+              "name": "IWhatIfScenarioEngine.cs",
+              "size": 250,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/Services/IWhatIfScenarioEngine.cs",
+              "path": "Services/IWhatIfScenarioEngine.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Services/IWhatIfScenarioEngine.cs?ref=main"
+            },
+            "AuthenticationService.cs": {
+              "sha": "4f354d7cec335fffe30d2e1f70e3fa03cb137d7b",
+              "name": "AuthenticationService.cs",
+              "size": 8234,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/Services/AuthenticationService.cs",
+              "path": "Services/AuthenticationService.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Services/AuthenticationService.cs?ref=main"
+            }
+          },
+          "directories": {
+            "Hosting": {
+              "path": "Services/Hosting",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Services/Hosting?ref=main",
+              "sha": "bbb8bfcf88aceb53e11a59bf5771e274e806a696",
+              "contents": {
+                "files": {
+                  "HostedWpfApplication.cs": {
+                    "sha": "4f635248318e99ea9386b9d51e664bdc7d2027b5",
+                    "name": "HostedWpfApplication.cs",
+                    "size": 5743,
+                    "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/Services/Hosting/HostedWpfApplication.cs",
+                    "path": "Services/Hosting/HostedWpfApplication.cs",
+                    "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Services/Hosting/HostedWpfApplication.cs?ref=main"
+                  }
+                },
+                "directories": {}
+              }
+            }
+          }
+        }
+      },
+      ".trunk": {
+        "path": ".trunk",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/.trunk?ref=main",
+        "sha": "4704e10b41e06e70f2d037e1d0603cf0b2ee12b0",
+        "contents": {
+          "files": {
+            "trunk.yaml": {
+              "sha": "5fbf3f7e50957b8d91e1500453e35fca70cdc047",
+              "name": "trunk.yaml",
+              "size": 3234,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/.trunk/trunk.yaml",
+              "path": ".trunk/trunk.yaml",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/.trunk/trunk.yaml?ref=main"
+            },
+            ".gitignore": {
+              "sha": "15966d087ebc05fc3e0a2effab401a41f43c00bf",
+              "name": ".gitignore",
+              "size": 80,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/.trunk/.gitignore",
+              "path": ".trunk/.gitignore",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/.trunk/.gitignore?ref=main"
+            }
+          },
+          "directories": {
+            "plugins": {
+              "path": ".trunk/plugins",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/.trunk/plugins?ref=main",
+              "sha": "8b43a1abfdf272d7f84049cbd4637f68dedaafe1",
+              "contents": { "files": {}, "directories": {} }
+            },
+            "configs": {
+              "path": ".trunk/configs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/.trunk/configs?ref=main",
+              "sha": "3636ffdec2e3635c154c676da58564440768370b",
+              "contents": {
+                "files": {
+                  ".markdownlint.yaml": {
+                    "sha": "70c1ee8fdb4517331bc119f911f70f230f52a60a",
+                    "name": ".markdownlint.yaml",
+                    "size": 554,
+                    "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/.trunk/configs/.markdownlint.yaml",
+                    "path": ".trunk/configs/.markdownlint.yaml",
+                    "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/.trunk/configs/.markdownlint.yaml?ref=main"
+                  },
+                  ".yamllint.yaml": {
+                    "sha": "4d143b4faf7277fcb4be4256dd3d542b04a42b39",
+                    "name": ".yamllint.yaml",
+                    "size": 390,
+                    "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/.trunk/configs/.yamllint.yaml",
+                    "path": ".trunk/configs/.yamllint.yaml",
+                    "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/.trunk/configs/.yamllint.yaml?ref=main"
+                  }
+                },
+                "directories": {}
+              }
+            }
+          }
+        }
+      },
+      "DatabaseSetup": {
+        "path": "DatabaseSetup",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/DatabaseSetup?ref=main",
+        "sha": "0dfb8e0c3ae69f47536d3dd3b00a70038bf920a1",
+        "contents": {
+          "files": {
+            "Program.cs": {
+              "sha": "3b7f7eb920f15f24d797f31461c8752fbe915be9",
+              "name": "Program.cs",
+              "size": 4706,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/DatabaseSetup/Program.cs",
+              "path": "DatabaseSetup/Program.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/DatabaseSetup/Program.cs?ref=main"
+            },
+            "DatabaseSetup.csproj": {
+              "sha": "7415edc5daa943ed53219b0a30e6cfcdb6720b8e",
+              "name": "DatabaseSetup.csproj",
+              "size": 378,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/DatabaseSetup/DatabaseSetup.csproj",
+              "path": "DatabaseSetup/DatabaseSetup.csproj",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/DatabaseSetup/DatabaseSetup.csproj?ref=main"
+            }
+          },
+          "directories": {}
+        }
+      },
+      "WileyWidget.TestModels": {
+        "path": "WileyWidget.TestModels",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/WileyWidget.TestModels?ref=main",
+        "sha": "3d7ec84632d0ead3a808ed6fbbe4b40473b26f60",
+        "contents": {
+          "files": {
+            "Class1.cs": {
+              "sha": "c5d7639619b14196bd210256622fdc3422626c02",
+              "name": "Class1.cs",
+              "size": 63,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/WileyWidget.TestModels/Class1.cs",
+              "path": "WileyWidget.TestModels/Class1.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/WileyWidget.TestModels/Class1.cs?ref=main"
+            },
+            "WileyWidget.TestModels.csproj": {
+              "sha": "93dadb927c7d5515ffade2f0aa1802917eee83eb",
+              "name": "WileyWidget.TestModels.csproj",
+              "size": 1156,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/WileyWidget.TestModels/WileyWidget.TestModels.csproj",
+              "path": "WileyWidget.TestModels/WileyWidget.TestModels.csproj",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/WileyWidget.TestModels/WileyWidget.TestModels.csproj?ref=main"
+            },
+            "Program.cs": {
+              "sha": "bcae934f8b209211660136d058f4690ea678b71a",
+              "name": "Program.cs",
+              "size": 7738,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/WileyWidget.TestModels/Program.cs",
+              "path": "WileyWidget.TestModels/Program.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/WileyWidget.TestModels/Program.cs?ref=main"
+            },
+            "DiValidationTest.cs": {
+              "sha": "5b88ef83a0770ae6e1c703b448b4f8b60d6dfb79",
+              "name": "DiValidationTest.cs",
+              "size": 1953,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/WileyWidget.TestModels/DiValidationTest.cs",
+              "path": "WileyWidget.TestModels/DiValidationTest.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/WileyWidget.TestModels/DiValidationTest.cs?ref=main"
+            }
+          },
+          "directories": {}
+        }
+      },
+      "scripts": {
+        "path": "scripts",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts?ref=main",
+        "sha": "2762075ced407348076da4528746ef2737a083c6",
+        "contents": {
+          "files": {
+            "setup-mcp-from-keyvault.ps1": {
+              "sha": "48518d00d99c55146e7067bd5591dbd2f5ae68d1",
+              "name": "setup-mcp-from-keyvault.ps1",
+              "size": 2401,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/setup-mcp-from-keyvault.ps1",
+              "path": "scripts/setup-mcp-from-keyvault.ps1",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/setup-mcp-from-keyvault.ps1?ref=main"
+            },
+            "azure-setup.ps1": {
+              "sha": "9924bf896407c59f46e9cea2e1fc778f3f18c914",
+              "name": "azure-setup.ps1",
+              "size": 4391,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/azure-setup.ps1",
+              "path": "scripts/azure-setup.ps1",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/azure-setup.ps1?ref=main"
+            },
+            "setup-mcp-complete.ps1": {
+              "sha": "bd4e464964bdf5a9e9eb16f7734311f85121dd6b",
+              "name": "setup-mcp-complete.ps1",
+              "size": 5239,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/setup-mcp-complete.ps1",
+              "path": "scripts/setup-mcp-complete.ps1",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/setup-mcp-complete.ps1?ref=main"
+            },
+            "pre-push": {
+              "sha": "62b4bab1c7cbe86f9869f612cac25e3ebee4acc2",
+              "name": "pre-push",
+              "size": 446,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/pre-push",
+              "path": "scripts/pre-push",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/pre-push?ref=main"
+            },
+            "PowerShell-Standards.ps1": {
+              "sha": "61b944e68c3f518bfdba33414cb5c266b3e10a41",
+              "name": "PowerShell-Standards.ps1",
+              "size": 1660,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/PowerShell-Standards.ps1",
+              "path": "scripts/PowerShell-Standards.ps1",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/PowerShell-Standards.ps1?ref=main"
+            },
+            "analyze-profile.ps1": {
+              "sha": "2916ee69ef01c98482c1389411e1017d77d426e0",
+              "name": "analyze-profile.ps1",
+              "size": 5557,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/analyze-profile.ps1",
+              "path": "scripts/analyze-profile.ps1",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/analyze-profile.ps1?ref=main"
+            },
+            "optimized-profile.ps1": {
+              "sha": "1b2f24e0620326e392e161899d9f46fe66f4f556",
+              "name": "optimized-profile.ps1",
+              "size": 4618,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/optimized-profile.ps1",
+              "path": "scripts/optimized-profile.ps1",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/optimized-profile.ps1?ref=main"
+            },
+            "setup-liberal-firewall.ps1": {
+              "sha": "e4720c6178c1c1215e346ed67ea0efba5129998b",
+              "name": "setup-liberal-firewall.ps1",
+              "size": 8451,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/setup-liberal-firewall.ps1",
+              "path": "scripts/setup-liberal-firewall.ps1",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/setup-liberal-firewall.ps1?ref=main"
+            },
+            "show-syncfusion-license.ps1": {
+              "sha": "fca85a97193c60475ef75cc989ba003d1be9fe8d",
+              "name": "show-syncfusion-license.ps1",
+              "size": 3390,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/show-syncfusion-license.ps1",
+              "path": "scripts/show-syncfusion-license.ps1",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/show-syncfusion-license.ps1?ref=main"
+            },
+            "analyze-startup-timing.py": {
+              "sha": "4d82e52603c1960ff78b0680ca0ea23c98ab934d",
+              "name": "analyze-startup-timing.py",
+              "size": 6903,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/analyze-startup-timing.py",
+              "path": "scripts/analyze-startup-timing.py",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/analyze-startup-timing.py?ref=main"
+            },
+            "compare-performance.ps1": {
+              "sha": "d6e5207c415c9e352872175bf32836032ad167f5",
+              "name": "compare-performance.ps1",
+              "size": 3538,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/compare-performance.ps1",
+              "path": "scripts/compare-performance.ps1",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/compare-performance.ps1?ref=main"
+            },
+            "Index-RemoteRepository-Enhanced.ps1": {
+              "sha": "31f9d32b8d845a59adce17b76ea787b9a4adc7a3",
+              "name": "Index-RemoteRepository-Enhanced.ps1",
+              "size": 18095,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/Index-RemoteRepository-Enhanced.ps1",
+              "path": "scripts/Index-RemoteRepository-Enhanced.ps1",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/Index-RemoteRepository-Enhanced.ps1?ref=main"
+            },
+            "watch-py.py": {
+              "sha": "37d61d2870e30424f074174650c8874b55f03692",
+              "name": "watch-py.py",
+              "size": 6175,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/watch-py.py",
+              "path": "scripts/watch-py.py",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/watch-py.py?ref=main"
+            },
+            "quick-cicd-check.ps1": {
+              "sha": "6a0ab0c3a697c0d65e4eb53d0df4445ad69d37c7",
+              "name": "quick-cicd-check.ps1",
+              "size": 3217,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/quick-cicd-check.ps1",
+              "path": "scripts/quick-cicd-check.ps1",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/quick-cicd-check.ps1?ref=main"
+            },
+            "setup-azure-ad.ps1": {
+              "sha": "a137fbfbd98b2e27998d6d487c5094248062cce8",
+              "name": "setup-azure-ad.ps1",
+              "size": 5027,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/setup-azure-ad.ps1",
+              "path": "scripts/setup-azure-ad.ps1",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/setup-azure-ad.ps1?ref=main"
+            },
+            "Index-RemoteRepository.ps1": {
+              "sha": "37aafa97f5cd8ca52a0ab5519eeb77c4b66fa549",
+              "name": "Index-RemoteRepository.ps1",
+              "size": 8340,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/Index-RemoteRepository.ps1",
+              "path": "scripts/Index-RemoteRepository.ps1",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/Index-RemoteRepository.ps1?ref=main"
+            },
+            "manage-secrets.ps1": {
+              "sha": "dc6e82afff06c9a5a7ab41d01a424d48f528cb86",
+              "name": "manage-secrets.ps1",
+              "size": 4207,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/manage-secrets.ps1",
+              "path": "scripts/manage-secrets.ps1",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/manage-secrets.ps1?ref=main"
+            },
+            "azure-setup-backup.ps1": {
+              "sha": "c96b6e7d2aa4789ddfc6d6d130caaa8e80eec822",
+              "name": "azure-setup-backup.ps1",
+              "size": 4511,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/azure-setup-backup.ps1",
+              "path": "scripts/azure-setup-backup.ps1",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/azure-setup-backup.ps1?ref=main"
+            },
+            "setup-python.py": {
+              "sha": "6d1f90c26ade46e0f943b988fa4aa495c2960d08",
+              "name": "setup-python.py",
+              "size": 5323,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/setup-python.py",
+              "path": "scripts/setup-python.py",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/setup-python.py?ref=main"
+            },
+            "fast-profile.ps1": {
+              "sha": "8f8714a0d820c7dd52296f5d325af5121693e5b3",
+              "name": "fast-profile.ps1",
+              "size": 5800,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/fast-profile.ps1",
+              "path": "scripts/fast-profile.ps1",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/fast-profile.ps1?ref=main"
+            },
+            "setup-mcp-environment.ps1": {
+              "sha": "d97835378601786d920469aa0033a5c437472da3",
+              "name": "setup-mcp-environment.ps1",
+              "size": 3214,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/setup-mcp-environment.ps1",
+              "path": "scripts/setup-mcp-environment.ps1",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/setup-mcp-environment.ps1?ref=main"
+            },
+            "Generate-FetchabilityManifest-Wrapper.ps1": {
+              "sha": "9ef88a0caf767d4f876eaf1a9a0d14068051a549",
+              "name": "Generate-FetchabilityManifest-Wrapper.ps1",
+              "size": 1833,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/Generate-FetchabilityManifest-Wrapper.ps1",
+              "path": "scripts/Generate-FetchabilityManifest-Wrapper.ps1",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/Generate-FetchabilityManifest-Wrapper.ps1?ref=main"
+            },
+            "trunk-environment-setup.ps1": {
+              "sha": "a66abd7efbbfe67db2e0af3eacab6473b704b502",
+              "name": "trunk-environment-setup.ps1",
+              "size": 6626,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/trunk-environment-setup.ps1",
+              "path": "scripts/trunk-environment-setup.ps1",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/trunk-environment-setup.ps1?ref=main"
+            },
+            "load-env.py": {
+              "sha": "56dae6dbce823b8e4814474950419ba20c398847",
+              "name": "load-env.py",
+              "size": 10978,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/load-env.py",
+              "path": "scripts/load-env.py",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/load-env.py?ref=main"
+            },
+            "Generate-FetchabilityManifest.ps1": {
+              "sha": "57e3e0705015f2bf88dcb05948f05c76ea804638",
+              "name": "Generate-FetchabilityManifest.ps1",
+              "size": 7378,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/Generate-FetchabilityManifest.ps1",
+              "path": "scripts/Generate-FetchabilityManifest.ps1",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/Generate-FetchabilityManifest.ps1?ref=main"
+            },
+            "setup-azure-db.ps1": {
+              "sha": "983d4acb876df39c1eedffec7dc6fb6d1328a5a1",
+              "name": "setup-azure-db.ps1",
+              "size": 8581,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/setup-azure-db.ps1",
+              "path": "scripts/setup-azure-db.ps1",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/setup-azure-db.ps1?ref=main"
+            },
+            "build.ps1": {
+              "sha": "cf10b4a6b52dd4b7733d9337df237c708a38083e",
+              "name": "build.ps1",
+              "size": 9988,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/build.ps1",
+              "path": "scripts/build.ps1",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/build.ps1?ref=main"
+            },
+            "cleanup-dotnet.py": {
+              "sha": "bc4ddd63e99dfd7f64d76f3a7c3550e7219867c6",
+              "name": "cleanup-dotnet.py",
+              "size": 3217,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/cleanup-dotnet.py",
+              "path": "scripts/cleanup-dotnet.py",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/cleanup-dotnet.py?ref=main"
+            },
+            "dev-start-debug.py": {
+              "sha": "4b60b074e6a13c58e9ad45d26f35e09ba2ca1ac8",
+              "name": "dev-start-debug.py",
+              "size": 8046,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/dev-start-debug.py",
+              "path": "scripts/dev-start-debug.py",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/dev-start-debug.py?ref=main"
+            },
+            "azure-safe-operations.ps1": {
+              "sha": "4714d47e26f5d7cd3faad4ff1e2cc5f296b20268",
+              "name": "azure-safe-operations.ps1",
+              "size": 7846,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/azure-safe-operations.ps1",
+              "path": "scripts/azure-safe-operations.ps1",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/azure-safe-operations.ps1?ref=main"
+            },
+            "install-azure-cli-extensions.ps1": {
+              "sha": "8c732d1decb87b5d1def5e0ee6143da421998816",
+              "name": "install-azure-cli-extensions.ps1",
+              "size": 3585,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/install-azure-cli-extensions.ps1",
+              "path": "scripts/install-azure-cli-extensions.ps1",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/install-azure-cli-extensions.ps1?ref=main"
+            },
+            "azure-setup.py": {
+              "sha": "748dc81ba202fbc825ec42928e7f776591bbe149",
+              "name": "azure-setup.py",
+              "size": 6049,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/azure-setup.py",
+              "path": "scripts/azure-setup.py",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/azure-setup.py?ref=main"
+            },
+            "check-mcp-status.ps1": {
+              "sha": "6d2cee4fa1535a3d10b3051e2a84eae41c1e1f85",
+              "name": "check-mcp-status.ps1",
+              "size": 2749,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/check-mcp-status.ps1",
+              "path": "scripts/check-mcp-status.ps1",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/check-mcp-status.ps1?ref=main"
+            },
+            "setup-database.ps1": {
+              "sha": "35521ff7e0efb1baa22b8ad42152c7b59d7af355",
+              "name": "setup-database.ps1",
+              "size": 5494,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/setup-database.ps1",
+              "path": "scripts/setup-database.ps1",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/setup-database.ps1?ref=main"
+            },
+            "check-setup-status.ps1": {
+              "sha": "db96f4999b227f9e096adbcc3d83e1a7bc16a8c6",
+              "name": "check-setup-status.ps1",
+              "size": 5794,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/check-setup-status.ps1",
+              "path": "scripts/check-setup-status.ps1",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/check-setup-status.ps1?ref=main"
+            },
+            "install-extensions.ps1": {
+              "sha": "6a4ab2843cec36d41048d4663c5feb23da073c18",
+              "name": "install-extensions.ps1",
+              "size": 2901,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/install-extensions.ps1",
+              "path": "scripts/install-extensions.ps1",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/install-extensions.ps1?ref=main"
+            },
+            "quick-cleanup.ps1": {
+              "sha": "37c3422ea41c33693c761124b62bda349a010ee5",
+              "name": "quick-cleanup.ps1",
+              "size": 1793,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/quick-cleanup.ps1",
+              "path": "scripts/quick-cleanup.ps1",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/quick-cleanup.ps1?ref=main"
+            },
+            "wiley-widget-helper.ps1": {
+              "sha": "cfcbd6fd478c7e52a62ef156071e1bd1fe5abc34",
+              "name": "wiley-widget-helper.ps1",
+              "size": 6486,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/wiley-widget-helper.ps1",
+              "path": "scripts/wiley-widget-helper.ps1",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/wiley-widget-helper.ps1?ref=main"
+            },
+            "ci-generate-manifest.ps1": {
+              "sha": "afbba3601093072892b33e7f23aaa61ae440cae0",
+              "name": "ci-generate-manifest.ps1",
+              "size": 2655,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/ci-generate-manifest.ps1",
+              "path": "scripts/ci-generate-manifest.ps1",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/ci-generate-manifest.ps1?ref=main"
+            },
+            "cleanup-profiles.ps1": {
+              "sha": "ee794d9bd433a09c18a6f42cb70c13124e9579fc",
+              "name": "cleanup-profiles.ps1",
+              "size": 5444,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/cleanup-profiles.ps1",
+              "path": "scripts/cleanup-profiles.ps1",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/cleanup-profiles.ps1?ref=main"
+            },
+            "verify-cicd-tools.ps1": {
+              "sha": "6e761ee5bb8e0614e77835afa78f9f54ece379ad",
+              "name": "verify-cicd-tools.ps1",
+              "size": 9978,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/verify-cicd-tools.ps1",
+              "path": "scripts/verify-cicd-tools.ps1",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/verify-cicd-tools.ps1?ref=main"
+            },
+            "optimize-profile.ps1": {
+              "sha": "1217f68aaaec7681b8daa574030dc85b2576dac4",
+              "name": "optimize-profile.ps1",
+              "size": 3149,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/optimize-profile.ps1",
+              "path": "scripts/optimize-profile.ps1",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/optimize-profile.ps1?ref=main"
+            },
+            "set-machine-env-from-dotenv.ps1": {
+              "sha": "bf70da8897a72677363d4d141fdcef9ce5ccbe12",
+              "name": "set-machine-env-from-dotenv.ps1",
+              "size": 2266,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/set-machine-env-from-dotenv.ps1",
+              "path": "scripts/set-machine-env-from-dotenv.ps1",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/set-machine-env-from-dotenv.ps1?ref=main"
+            },
+            "README.md": {
+              "sha": "9f9596ec14aeec3258bf3daba11ea8c09b9e0d7b",
+              "name": "README.md",
+              "size": 8038,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/README.md",
+              "path": "scripts/README.md",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/README.md?ref=main"
+            },
+            "enhanced-repository-index.json": {
+              "sha": "d8d6c886824165d1a9fe5f7ecc43fed6836893b8",
+              "name": "enhanced-repository-index.json",
+              "size": 53925,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/enhanced-repository-index.json",
+              "path": "scripts/enhanced-repository-index.json",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/enhanced-repository-index.json?ref=main"
+            },
+            "dev-start.py": {
+              "sha": "8986e5dc134d57b2f65f5243fb9acadd5f91edff",
+              "name": "dev-start.py",
+              "size": 7304,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/dev-start.py",
+              "path": "scripts/dev-start.py",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/dev-start.py?ref=main"
+            },
+            "lock-azure-performance.ps1": {
+              "sha": "f57e75858f74bca11a05e29c873c7450b6b15998",
+              "name": "lock-azure-performance.ps1",
+              "size": 3125,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/lock-azure-performance.ps1",
+              "path": "scripts/lock-azure-performance.ps1",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/lock-azure-performance.ps1?ref=main"
+            },
+            "copilot-azure-integration.ps1": {
+              "sha": "a26962485491f2673a66ec0d0641ad289d2cf83b",
+              "name": "copilot-azure-integration.ps1",
+              "size": 9676,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/copilot-azure-integration.ps1",
+              "path": "scripts/copilot-azure-integration.ps1",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/copilot-azure-integration.ps1?ref=main"
+            },
+            "phase1-build-test.ps1": {
+              "sha": "72747a976d77a95e427a48c979cf3d4c2f8d9ddc",
+              "name": "phase1-build-test.ps1",
+              "size": 2824,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/phase1-build-test.ps1",
+              "path": "scripts/phase1-build-test.ps1",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/phase1-build-test.ps1?ref=main"
+            },
+            "phase1-validate.ps1": {
+              "sha": "2f279232b86f62e7ee96abf388361bcb9e54b1d4",
+              "name": "phase1-validate.ps1",
+              "size": 5637,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/phase1-validate.ps1",
+              "path": "scripts/phase1-validate.ps1",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/phase1-validate.ps1?ref=main"
+            },
+            "remote-repository-index.json": {
+              "sha": "9faadd7e81eed3d68f6b2395cc772ae491486ae4",
+              "name": "remote-repository-index.json",
+              "size": 53925,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/remote-repository-index.json",
+              "path": "scripts/remote-repository-index.json",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/remote-repository-index.json?ref=main"
+            },
+            "test-azure-keyvault-integration.py": {
+              "sha": "3744d37f3351924f914dbaf4ab2a81253891603c",
+              "name": "test-azure-keyvault-integration.py",
+              "size": 6766,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/test-azure-keyvault-integration.py",
+              "path": "scripts/test-azure-keyvault-integration.py",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/test-azure-keyvault-integration.py?ref=main"
+            },
+            "update-firewall-ip.ps1": {
+              "sha": "a339bafd8366a0e8a8ac9048516dc72f1b7f6e91",
+              "name": "update-firewall-ip.ps1",
+              "size": 6589,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/update-firewall-ip.ps1",
+              "path": "scripts/update-firewall-ip.ps1",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/update-firewall-ip.ps1?ref=main"
+            }
+          },
+          "directories": {
+            "__pycache__": {
+              "path": "scripts/__pycache__",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/__pycache__?ref=main",
+              "sha": "023c05552b5e833178e60435b67aa149214321b2",
+              "contents": {
+                "files": {
+                  "watch-py.cpython-311.pyc": {
+                    "sha": "d53a3791f445a8cce27aeb98cd7bdf90d9daf8b4",
+                    "name": "watch-py.cpython-311.pyc",
+                    "size": 9267,
+                    "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/__pycache__/watch-py.cpython-311.pyc",
+                    "path": "scripts/__pycache__/watch-py.cpython-311.pyc",
+                    "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/__pycache__/watch-py.cpython-311.pyc?ref=main"
+                  },
+                  "azure-setup.cpython-311.pyc": {
+                    "sha": "42016a9037f58a829c15776533171675a20a16a7",
+                    "name": "azure-setup.cpython-311.pyc",
+                    "size": 9455,
+                    "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/__pycache__/azure-setup.cpython-311.pyc",
+                    "path": "scripts/__pycache__/azure-setup.cpython-311.pyc",
+                    "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/__pycache__/azure-setup.cpython-311.pyc?ref=main"
+                  },
+                  "cleanup-dotnet.cpython-311.pyc": {
+                    "sha": "dcc2d3af1343202e1a6a0dc1c29e31d27411086c",
+                    "name": "cleanup-dotnet.cpython-311.pyc",
+                    "size": 5452,
+                    "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/__pycache__/cleanup-dotnet.cpython-311.pyc",
+                    "path": "scripts/__pycache__/cleanup-dotnet.cpython-311.pyc",
+                    "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/__pycache__/cleanup-dotnet.cpython-311.pyc?ref=main"
+                  }
+                },
+                "directories": {}
+              }
+            },
+            "deprecated-backup": {
+              "path": "scripts/deprecated-backup",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/deprecated-backup?ref=main",
+              "sha": "0f256c0a371fd8954d2862033da03c7d2e7f406a",
+              "contents": {
+                "files": {
+                  "sample-wpf-form.designer.ps1": {
+                    "sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+                    "name": "sample-wpf-form.designer.ps1",
+                    "size": 0,
+                    "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/deprecated-backup/sample-wpf-form.designer.ps1",
+                    "path": "scripts/deprecated-backup/sample-wpf-form.designer.ps1",
+                    "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/deprecated-backup/sample-wpf-form.designer.ps1?ref=main"
+                  },
+                  "cleanup-dotnet.ps1": {
+                    "sha": "5ebd36e9b45d4093423da81bcd78edfbc575546d",
+                    "name": "cleanup-dotnet.ps1",
+                    "size": 2592,
+                    "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/deprecated-backup/cleanup-dotnet.ps1",
+                    "path": "scripts/deprecated-backup/cleanup-dotnet.ps1",
+                    "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/deprecated-backup/cleanup-dotnet.ps1?ref=main"
+                  },
+                  "setup-license.ps1": {
+                    "sha": "c14e8183356653d1a5ce88b746a86fbfe5951e41",
+                    "name": "setup-license.ps1",
+                    "size": 9348,
+                    "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/deprecated-backup/setup-license.ps1",
+                    "path": "scripts/deprecated-backup/setup-license.ps1",
+                    "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/deprecated-backup/setup-license.ps1?ref=main"
+                  },
+                  "load-env.ps1": {
+                    "sha": "d5eec674294008ca111f8a429a04536d15d73468",
+                    "name": "load-env.ps1",
+                    "size": 8560,
+                    "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/deprecated-backup/load-env.ps1",
+                    "path": "scripts/deprecated-backup/load-env.ps1",
+                    "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/deprecated-backup/load-env.ps1?ref=main"
+                  },
+                  "sample-wpf-form.ps1": {
+                    "sha": "c2aed9fa39937060099ee91b5870b02debdd5600",
+                    "name": "sample-wpf-form.ps1",
+                    "size": 1122,
+                    "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/deprecated-backup/sample-wpf-form.ps1",
+                    "path": "scripts/deprecated-backup/sample-wpf-form.ps1",
+                    "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/deprecated-backup/sample-wpf-form.ps1?ref=main"
+                  },
+                  "setup-azure.ps1": {
+                    "sha": "6a52518315acad8bbdac2392dca7ef14779c10a6",
+                    "name": "setup-azure.ps1",
+                    "size": 9483,
+                    "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/deprecated-backup/setup-azure.ps1",
+                    "path": "scripts/deprecated-backup/setup-azure.ps1",
+                    "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/deprecated-backup/setup-azure.ps1?ref=main"
+                  },
+                  "test-database-connection.ps1": {
+                    "sha": "c06c980e3933ad50205ca4a72a278cd2599948ea",
+                    "name": "test-database-connection.ps1",
+                    "size": 9898,
+                    "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/deprecated-backup/test-database-connection.ps1",
+                    "path": "scripts/deprecated-backup/test-database-connection.ps1",
+                    "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/deprecated-backup/test-database-connection.ps1?ref=main"
+                  },
+                  "dev-start.ps1": {
+                    "sha": "83036f22bcc69ab608bf9d64c6c4fa62d07e3597",
+                    "name": "dev-start.ps1",
+                    "size": 2634,
+                    "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/scripts/deprecated-backup/dev-start.ps1",
+                    "path": "scripts/deprecated-backup/dev-start.ps1",
+                    "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/scripts/deprecated-backup/dev-start.ps1?ref=main"
+                  }
+                },
+                "directories": {}
+              }
+            }
+          }
+        }
+      },
+      "docs": {
+        "path": "docs",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/docs?ref=main",
+        "sha": "1074d361139b6c980fc38e13dd72acda2db39551",
+        "contents": {
+          "files": {
+            "wiley-widget-north-star.md": {
+              "sha": "442bc2a84d3ec6a3d8bd31e7947ad7239ffb8d62",
+              "name": "wiley-widget-north-star.md",
+              "size": 8909,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/docs/wiley-widget-north-star.md",
+              "path": "docs/wiley-widget-north-star.md",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/docs/wiley-widget-north-star.md?ref=main"
+            },
+            "ci-cd-updates.md": {
+              "sha": "7c9e36f5d9db8001c304f056e356688d73cc3661",
+              "name": "ci-cd-updates.md",
+              "size": 5772,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/docs/ci-cd-updates.md",
+              "path": "docs/ci-cd-updates.md",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/docs/ci-cd-updates.md?ref=main"
+            },
+            "trunk-cicd-integration-guide.md": {
+              "sha": "ba35f99c05c9e5cc363c55a886ffee464e094f0b",
+              "name": "trunk-cicd-integration-guide.md",
+              "size": 10848,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/docs/trunk-cicd-integration-guide.md",
+              "path": "docs/trunk-cicd-integration-guide.md",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/docs/trunk-cicd-integration-guide.md?ref=main"
+            },
+            "startup-optimization-azure-integration.md": {
+              "sha": "1876655cfb9d9ed7146dc56b38d8ba27ce6b13b8",
+              "name": "startup-optimization-azure-integration.md",
+              "size": 8092,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/docs/startup-optimization-azure-integration.md",
+              "path": "docs/startup-optimization-azure-integration.md",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/docs/startup-optimization-azure-integration.md?ref=main"
+            },
+            "PROJECT_COMPLETION_PLAN.md": {
+              "sha": "29056172e2ac24ec368c373bc06afbf98668db47",
+              "name": "PROJECT_COMPLETION_PLAN.md",
+              "size": 8308,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/docs/PROJECT_COMPLETION_PLAN.md",
+              "path": "docs/PROJECT_COMPLETION_PLAN.md",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/docs/PROJECT_COMPLETION_PLAN.md?ref=main"
+            },
+            "azure-novice-guide.md": {
+              "sha": "5b525c2106f724595126805a472f72aca6ea2316",
+              "name": "azure-novice-guide.md",
+              "size": 5002,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/docs/azure-novice-guide.md",
+              "path": "docs/azure-novice-guide.md",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/docs/azure-novice-guide.md?ref=main"
+            },
+            "firewall-policy-setup.md": {
+              "sha": "4c9ca63442b27eb790ed1c75c1c23787e9a68be7",
+              "name": "firewall-policy-setup.md",
+              "size": 9081,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/docs/firewall-policy-setup.md",
+              "path": "docs/firewall-policy-setup.md",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/docs/firewall-policy-setup.md?ref=main"
+            },
+            "syncfusion-license-setup.md": {
+              "sha": "66e1433e9fb6d3eb9e3ecc53340d2a66862de3fc",
+              "name": "syncfusion-license-setup.md",
+              "size": 8350,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/docs/syncfusion-license-setup.md",
+              "path": "docs/syncfusion-license-setup.md",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/docs/syncfusion-license-setup.md?ref=main"
+            },
+            "database-setup.md": {
+              "sha": "ef44a8586ebdb70e6d50a92a947832b7c6962e09",
+              "name": "database-setup.md",
+              "size": 22415,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/docs/database-setup.md",
+              "path": "docs/database-setup.md",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/docs/database-setup.md?ref=main"
+            },
+            "cicd-management-guide.md": {
+              "sha": "1dae9d9f6cb1fef8dcbc69900602b823053cd60a",
+              "name": "cicd-management-guide.md",
+              "size": 11621,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/docs/cicd-management-guide.md",
+              "path": "docs/cicd-management-guide.md",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/docs/cicd-management-guide.md?ref=main"
+            },
+            "wiley-widget-north-star-v1.1.md": {
+              "sha": "d311e601a5df7b3631e702abdaee03c2ae37aa6c",
+              "name": "wiley-widget-north-star-v1.1.md",
+              "size": 11808,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/docs/wiley-widget-north-star-v1.1.md",
+              "path": "docs/wiley-widget-north-star-v1.1.md",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/docs/wiley-widget-north-star-v1.1.md?ref=main"
+            },
+            "azure-quick-reference.md": {
+              "sha": "c8dc36c4c8b6d9204fb40c76f137c2da71f0165d",
+              "name": "azure-quick-reference.md",
+              "size": 4355,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/docs/azure-quick-reference.md",
+              "path": "docs/azure-quick-reference.md",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/docs/azure-quick-reference.md?ref=main"
+            },
+            "README.md": {
+              "sha": "e79566cd36c484b2df1ed33437ffef735df91f77",
+              "name": "README.md",
+              "size": 12197,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/docs/README.md",
+              "path": "docs/README.md",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/docs/README.md?ref=main"
+            },
+            "enterprise-azure-sql-roadmap.md": {
+              "sha": "a4bb0f7325abc351f2e0c9ae42bbe5b94d70eec1",
+              "name": "enterprise-azure-sql-roadmap.md",
+              "size": 6975,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/docs/enterprise-azure-sql-roadmap.md",
+              "path": "docs/enterprise-azure-sql-roadmap.md",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/docs/enterprise-azure-sql-roadmap.md?ref=main"
+            },
+            "cicd-quick-reference.md": {
+              "sha": "fc5763172acb3eff53e197f5cc7cb670409684a7",
+              "name": "cicd-quick-reference.md",
+              "size": 3679,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/docs/cicd-quick-reference.md",
+              "path": "docs/cicd-quick-reference.md",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/docs/cicd-quick-reference.md?ref=main"
+            },
+            "sop-azure-operations.md": {
+              "sha": "3e06d0d92635c8ca8a19d7854df46bd82f2718cc",
+              "name": "sop-azure-operations.md",
+              "size": 9093,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/docs/sop-azure-operations.md",
+              "path": "docs/sop-azure-operations.md",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/docs/sop-azure-operations.md?ref=main"
+            },
+            "TESTING.md": {
+              "sha": "ffaa2ca48cdccb09ed2ac3c043deaeb392438b31",
+              "name": "TESTING.md",
+              "size": 8098,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/docs/TESTING.md",
+              "path": "docs/TESTING.md",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/docs/TESTING.md?ref=main"
+            },
+            "cicd-documentation-summary.md": {
+              "sha": "c93c9319c4e17a766520aa3b40c3acdb505a35ce",
+              "name": "cicd-documentation-summary.md",
+              "size": 7499,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/docs/cicd-documentation-summary.md",
+              "path": "docs/cicd-documentation-summary.md",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/docs/cicd-documentation-summary.md?ref=main"
+            },
+            "azure-setup.md": {
+              "sha": "23a9be53675a2f1a7abaa9d0d2e0aa5ea0799ef2",
+              "name": "azure-setup.md",
+              "size": 13980,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/docs/azure-setup.md",
+              "path": "docs/azure-setup.md",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/docs/azure-setup.md?ref=main"
+            },
+            "cicd-workflow-diagrams.md": {
+              "sha": "346e72a768f37473e6a5118d5dd4495b7aace140",
+              "name": "cicd-workflow-diagrams.md",
+              "size": 4828,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/docs/cicd-workflow-diagrams.md",
+              "path": "docs/cicd-workflow-diagrams.md",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/docs/cicd-workflow-diagrams.md?ref=main"
+            },
+            "connection-methods-reference.md": {
+              "sha": "f2226bf80b886024260a81926966e4944273f00e",
+              "name": "connection-methods-reference.md",
+              "size": 13625,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/docs/connection-methods-reference.md",
+              "path": "docs/connection-methods-reference.md",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/docs/connection-methods-reference.md?ref=main"
+            },
+            "cicd-tools-status.md": {
+              "sha": "66b3eeecddf26a1fd75e617da95831c31383e600",
+              "name": "cicd-tools-status.md",
+              "size": 5074,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/docs/cicd-tools-status.md",
+              "path": "docs/cicd-tools-status.md",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/docs/cicd-tools-status.md?ref=main"
+            },
+            "development-guide.md": {
+              "sha": "91d8055eeae4e95f5a5be6e8526e84bd8c7f651b",
+              "name": "development-guide.md",
+              "size": 20956,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/docs/development-guide.md",
+              "path": "docs/development-guide.md",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/docs/development-guide.md?ref=main"
+            },
+            "azure-sql-integration.md": {
+              "sha": "aca8d8850d01350e16efe83f717527362373bed0",
+              "name": "azure-sql-integration.md",
+              "size": 29171,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/docs/azure-sql-integration.md",
+              "path": "docs/azure-sql-integration.md",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/docs/azure-sql-integration.md?ref=main"
+            },
+            "copilot-azure-examples.md": {
+              "sha": "20445cb73ff89fc291d5914b678b3e1de6c2e0c4",
+              "name": "copilot-azure-examples.md",
+              "size": 4433,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/docs/copilot-azure-examples.md",
+              "path": "docs/copilot-azure-examples.md",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/docs/copilot-azure-examples.md?ref=main"
+            },
+            "enterprise-startup-transformation-plan.md": {
+              "sha": "171778cfb3fa6e6d610f00a2c75e6d0c95a700c9",
+              "name": "enterprise-startup-transformation-plan.md",
+              "size": 18311,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/docs/enterprise-startup-transformation-plan.md",
+              "path": "docs/enterprise-startup-transformation-plan.md",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/docs/enterprise-startup-transformation-plan.md?ref=main"
+            }
+          },
+          "directories": {}
+        }
+      },
+      "ViewModels": {
+        "path": "ViewModels",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/ViewModels?ref=main",
+        "sha": "ef7e94ca30b64679ff89f4fe2afa1da48e6ff4c4",
+        "contents": {
+          "files": {
+            "ConversationMode.cs": {
+              "sha": "2d2b925077873166269399c7cf9cb954c4f84d05",
+              "name": "ConversationMode.cs",
+              "size": 744,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/ViewModels/ConversationMode.cs",
+              "path": "ViewModels/ConversationMode.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/ViewModels/ConversationMode.cs?ref=main"
+            },
+            "EnterpriseViewModel.cs": {
+              "sha": "dc938b4f0fe0ac7b79ca4b36a3d0aabab5ac5c4a",
+              "name": "EnterpriseViewModel.cs",
+              "size": 8976,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/ViewModels/EnterpriseViewModel.cs",
+              "path": "ViewModels/EnterpriseViewModel.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/ViewModels/EnterpriseViewModel.cs?ref=main"
+            },
+            "SettingsViewModel.cs": {
+              "sha": "8ef0655368b28d142ca0133a10aef6309b753103",
+              "name": "SettingsViewModel.cs",
+              "size": 20641,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/ViewModels/SettingsViewModel.cs",
+              "path": "ViewModels/SettingsViewModel.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/ViewModels/SettingsViewModel.cs?ref=main"
+            },
+            "BudgetViewModel.cs": {
+              "sha": "1ca5161eaa832d2b57fad8154b242ff4dbecdb55",
+              "name": "BudgetViewModel.cs",
+              "size": 12092,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/ViewModels/BudgetViewModel.cs",
+              "path": "ViewModels/BudgetViewModel.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/ViewModels/BudgetViewModel.cs?ref=main"
+            },
+            "DashboardViewModel.cs": {
+              "sha": "2db6016c5a30718d0d83b08b6fea3aceab28c126",
+              "name": "DashboardViewModel.cs",
+              "size": 13891,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/ViewModels/DashboardViewModel.cs",
+              "path": "ViewModels/DashboardViewModel.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/ViewModels/DashboardViewModel.cs?ref=main"
+            },
+            "MainViewModel.cs": {
+              "sha": "93b3b4b209e548b8fbc5509aeb4f1f20a04b2c8f",
+              "name": "MainViewModel.cs",
+              "size": 18447,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/ViewModels/MainViewModel.cs",
+              "path": "ViewModels/MainViewModel.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/ViewModels/MainViewModel.cs?ref=main"
+            },
+            "MunicipalAccountViewModel.cs": {
+              "sha": "84449f6e0ca958507fc5134118154b2765959903",
+              "name": "MunicipalAccountViewModel.cs",
+              "size": 7723,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/ViewModels/MunicipalAccountViewModel.cs",
+              "path": "ViewModels/MunicipalAccountViewModel.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/ViewModels/MunicipalAccountViewModel.cs?ref=main"
+            },
+            "AIAssistViewModel.cs": {
+              "sha": "e2be415d953bc8472a21bbc50b9549b6afdafba0",
+              "name": "AIAssistViewModel.cs",
+              "size": 17680,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/ViewModels/AIAssistViewModel.cs",
+              "path": "ViewModels/AIAssistViewModel.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/ViewModels/AIAssistViewModel.cs?ref=main"
+            },
+            "UtilityCustomerViewModel.cs": {
+              "sha": "c82e0fee29597a5ca883b1823daabb92bd4c11d9",
+              "name": "UtilityCustomerViewModel.cs",
+              "size": 11681,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/ViewModels/UtilityCustomerViewModel.cs",
+              "path": "ViewModels/UtilityCustomerViewModel.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/ViewModels/UtilityCustomerViewModel.cs?ref=main"
+            }
+          },
+          "directories": {}
+        }
+      },
+      "tests": {
+        "path": "tests",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/tests?ref=main",
+        "sha": "f8237d424e25220b8510656fb06030c574fb60f4",
+        "contents": {
+          "files": {
+            "test_cleanup_dotnet.py": {
+              "sha": "97a10238d0d11fb70dac6e1d7fce88ac130eb145",
+              "name": "test_cleanup_dotnet.py",
+              "size": 3894,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/tests/test_cleanup_dotnet.py",
+              "path": "tests/test_cleanup_dotnet.py",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/tests/test_cleanup_dotnet.py?ref=main"
+            },
+            "conftest.py": {
+              "sha": "6e46384beff1f284897be28b951dfd55813b2cb4",
+              "name": "conftest.py",
+              "size": 1365,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/tests/conftest.py",
+              "path": "tests/conftest.py",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/tests/conftest.py?ref=main"
+            },
+            "test_azure_setup.py": {
+              "sha": "6fdf27d43e441ba997ae47a264e24222570c51dc",
+              "name": "test_azure_setup.py",
+              "size": 11668,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/tests/test_azure_setup.py",
+              "path": "tests/test_azure_setup.py",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/tests/test_azure_setup.py?ref=main"
+            },
+            "test_health_checks.py": {
+              "sha": "cf72262b39d9d6aecee2d911cec33263f22f6473",
+              "name": "test_health_checks.py",
+              "size": 15179,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/tests/test_health_checks.py",
+              "path": "tests/test_health_checks.py",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/tests/test_health_checks.py?ref=main"
+            },
+            "test_startup_integration.py": {
+              "sha": "8149070bfdbdb208ff0dd3d281f885824e8c6a86",
+              "name": "test_startup_integration.py",
+              "size": 4379,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/tests/test_startup_integration.py",
+              "path": "tests/test_startup_integration.py",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/tests/test_startup_integration.py?ref=main"
+            },
+            "test_utilities.py": {
+              "sha": "ffed60b30c7f67ce376f2600a50ce04ad591d568",
+              "name": "test_utilities.py",
+              "size": 9787,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/tests/test_utilities.py",
+              "path": "tests/test_utilities.py",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/tests/test_utilities.py?ref=main"
+            },
+            "test_ai_conversation.py": {
+              "sha": "e537da333a36f56e98ce6f646d8971d6740de5bf",
+              "name": "test_ai_conversation.py",
+              "size": 33486,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/tests/test_ai_conversation.py",
+              "path": "tests/test_ai_conversation.py",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/tests/test_ai_conversation.py?ref=main"
+            },
+            "test_splash_screen_calibration.py": {
+              "sha": "36aa9b194c681fa2d91470d8483e1a742bcf8b5d",
+              "name": "test_splash_screen_calibration.py",
+              "size": 10481,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/tests/test_splash_screen_calibration.py",
+              "path": "tests/test_splash_screen_calibration.py",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/tests/test_splash_screen_calibration.py?ref=main"
+            }
+          },
+          "directories": {
+            "__pycache__": {
+              "path": "tests/__pycache__",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/tests/__pycache__?ref=main",
+              "sha": "1513500781ed6c4445323bdd7c49afccab562173",
+              "contents": {
+                "files": {
+                  "test_health_checks.cpython-311-pytest-8.4.1.pyc": {
+                    "sha": "1d88204c52bb74fb403fe4f4c43d1b327bf043b6",
+                    "name": "test_health_checks.cpython-311-pytest-8.4.1.pyc",
+                    "size": 51355,
+                    "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/tests/__pycache__/test_health_checks.cpython-311-pytest-8.4.1.pyc",
+                    "path": "tests/__pycache__/test_health_checks.cpython-311-pytest-8.4.1.pyc",
+                    "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/tests/__pycache__/test_health_checks.cpython-311-pytest-8.4.1.pyc?ref=main"
+                  },
+                  "test_ai_conversation.cpython-311-pytest-8.4.1.pyc": {
+                    "sha": "92cf6ee9b91900964c68b24a35515d3703fecf1c",
+                    "name": "test_ai_conversation.cpython-311-pytest-8.4.1.pyc",
+                    "size": 148707,
+                    "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/tests/__pycache__/test_ai_conversation.cpython-311-pytest-8.4.1.pyc",
+                    "path": "tests/__pycache__/test_ai_conversation.cpython-311-pytest-8.4.1.pyc",
+                    "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/tests/__pycache__/test_ai_conversation.cpython-311-pytest-8.4.1.pyc?ref=main"
+                  },
+                  "conftest.cpython-311-pytest-8.4.1.pyc": {
+                    "sha": "106386c747c85aae126a331a879d95585ffcaeaa",
+                    "name": "conftest.cpython-311-pytest-8.4.1.pyc",
+                    "size": 2349,
+                    "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/tests/__pycache__/conftest.cpython-311-pytest-8.4.1.pyc",
+                    "path": "tests/__pycache__/conftest.cpython-311-pytest-8.4.1.pyc",
+                    "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/tests/__pycache__/conftest.cpython-311-pytest-8.4.1.pyc?ref=main"
+                  },
+                  "test_splash_screen_calibration.cpython-311-pytest-8.4.1.pyc": {
+                    "sha": "267adf22970bda9b98ee079fe1538b2a62186693",
+                    "name": "test_splash_screen_calibration.cpython-311-pytest-8.4.1.pyc",
+                    "size": 26207,
+                    "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/tests/__pycache__/test_splash_screen_calibration.cpython-311-pytest-8.4.1.pyc",
+                    "path": "tests/__pycache__/test_splash_screen_calibration.cpython-311-pytest-8.4.1.pyc",
+                    "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/tests/__pycache__/test_splash_screen_calibration.cpython-311-pytest-8.4.1.pyc?ref=main"
+                  },
+                  "test_utilities.cpython-311-pytest-8.4.1.pyc": {
+                    "sha": "8479dc62d738795e6e579a68687882db2e946c53",
+                    "name": "test_utilities.cpython-311-pytest-8.4.1.pyc",
+                    "size": 31125,
+                    "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/tests/__pycache__/test_utilities.cpython-311-pytest-8.4.1.pyc",
+                    "path": "tests/__pycache__/test_utilities.cpython-311-pytest-8.4.1.pyc",
+                    "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/tests/__pycache__/test_utilities.cpython-311-pytest-8.4.1.pyc?ref=main"
+                  },
+                  "test_startup_integration.cpython-311-pytest-8.4.1.pyc": {
+                    "sha": "79b5f6af5c0ba675aa1d7efdd981b4270f59a1b6",
+                    "name": "test_startup_integration.cpython-311-pytest-8.4.1.pyc",
+                    "size": 14118,
+                    "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/tests/__pycache__/test_startup_integration.cpython-311-pytest-8.4.1.pyc",
+                    "path": "tests/__pycache__/test_startup_integration.cpython-311-pytest-8.4.1.pyc",
+                    "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/tests/__pycache__/test_startup_integration.cpython-311-pytest-8.4.1.pyc?ref=main"
+                  },
+                  "test_cleanup_dotnet.cpython-311-pytest-8.4.1.pyc": {
+                    "sha": "341672ca37252f6036b5daaef760cd280fba25e3",
+                    "name": "test_cleanup_dotnet.cpython-311-pytest-8.4.1.pyc",
+                    "size": 11799,
+                    "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/tests/__pycache__/test_cleanup_dotnet.cpython-311-pytest-8.4.1.pyc",
+                    "path": "tests/__pycache__/test_cleanup_dotnet.cpython-311-pytest-8.4.1.pyc",
+                    "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/tests/__pycache__/test_cleanup_dotnet.cpython-311-pytest-8.4.1.pyc?ref=main"
+                  },
+                  "test_azure_setup.cpython-311-pytest-8.4.1.pyc": {
+                    "sha": "85fb1c2d56d7e18438783b35e0fff13ee94b3c6a",
+                    "name": "test_azure_setup.cpython-311-pytest-8.4.1.pyc",
+                    "size": 40788,
+                    "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/tests/__pycache__/test_azure_setup.cpython-311-pytest-8.4.1.pyc",
+                    "path": "tests/__pycache__/test_azure_setup.cpython-311-pytest-8.4.1.pyc",
+                    "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/tests/__pycache__/test_azure_setup.cpython-311-pytest-8.4.1.pyc?ref=main"
+                  }
+                },
+                "directories": {}
+              }
+            }
+          }
+        }
+      },
+      "DatabaseTest": {
+        "path": "DatabaseTest",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/DatabaseTest?ref=main",
+        "sha": "1060a3747a88518f79f238a10cd6832a100aeb9e",
+        "contents": {
+          "files": {
+            "Program.cs": {
+              "sha": "b34c0c6599a57503d1d9a3f2ed5500c4d3cde6f4",
+              "name": "Program.cs",
+              "size": 7475,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/DatabaseTest/Program.cs",
+              "path": "DatabaseTest/Program.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/DatabaseTest/Program.cs?ref=main"
+            },
+            "DatabaseTest.csproj": {
+              "sha": "c7dfee44afb88402cf286b520c91dea4ca3074de",
+              "name": "DatabaseTest.csproj",
+              "size": 512,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/DatabaseTest/DatabaseTest.csproj",
+              "path": "DatabaseTest/DatabaseTest.csproj",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/DatabaseTest/DatabaseTest.csproj?ref=main"
+            }
+          },
+          "directories": {}
+        }
+      },
+      "WileyWidget.Tests": {
+        "path": "WileyWidget.Tests",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/WileyWidget.Tests?ref=main",
+        "sha": "b5d446b43b0510ba52eec7ad7f72176ba077b383",
+        "contents": {
+          "files": {
+            "PythonScriptsTests.py": {
+              "sha": "fa426b1cac79ca455d3fa32c8cf9e7a9a7c1c647",
+              "name": "PythonScriptsTests.py",
+              "size": 10313,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/WileyWidget.Tests/PythonScriptsTests.py",
+              "path": "WileyWidget.Tests/PythonScriptsTests.py",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/WileyWidget.Tests/PythonScriptsTests.py?ref=main"
+            },
+            "EnterpriseTests.cs": {
+              "sha": "cd2af4d617e58bfcbdbf8a024626c93776718e05",
+              "name": "EnterpriseTests.cs",
+              "size": 6851,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/WileyWidget.Tests/EnterpriseTests.cs",
+              "path": "WileyWidget.Tests/EnterpriseTests.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/WileyWidget.Tests/EnterpriseTests.cs?ref=main"
+            },
+            "MunicipalAccountTests.cs": {
+              "sha": "efbddb7bc243293e252e01dd48e74715ff6455ec",
+              "name": "MunicipalAccountTests.cs",
+              "size": 9486,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/WileyWidget.Tests/MunicipalAccountTests.cs",
+              "path": "WileyWidget.Tests/MunicipalAccountTests.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/WileyWidget.Tests/MunicipalAccountTests.cs?ref=main"
+            },
+            "UtilityCustomerTests.cs": {
+              "sha": "06f1f15afc6cdef72e4c1cb5c5c42add4fd5e60a",
+              "name": "UtilityCustomerTests.cs",
+              "size": 20450,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/WileyWidget.Tests/UtilityCustomerTests.cs",
+              "path": "WileyWidget.Tests/UtilityCustomerTests.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/WileyWidget.Tests/UtilityCustomerTests.cs?ref=main"
+            },
+            "ServiceChargeCalculatorServiceTests.cs": {
+              "sha": "a4b3db72a949372f3eb4fe62550bd1889fafabb7",
+              "name": "ServiceChargeCalculatorServiceTests.cs",
+              "size": 16673,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/WileyWidget.Tests/ServiceChargeCalculatorServiceTests.cs",
+              "path": "WileyWidget.Tests/ServiceChargeCalculatorServiceTests.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/WileyWidget.Tests/ServiceChargeCalculatorServiceTests.cs?ref=main"
+            },
+            "ComprehensiveDatabaseIntegrationTests.cs": {
+              "sha": "01a339f45f447801e5fcd5c1c90e16fdcf49935c",
+              "name": "ComprehensiveDatabaseIntegrationTests.cs",
+              "size": 13091,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/WileyWidget.Tests/ComprehensiveDatabaseIntegrationTests.cs",
+              "path": "WileyWidget.Tests/ComprehensiveDatabaseIntegrationTests.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/WileyWidget.Tests/ComprehensiveDatabaseIntegrationTests.cs?ref=main"
+            },
+            "TestDbContextFactory.cs": {
+              "sha": "de9a769686c92b35b0ca9e5d6f73cb39a45cce99",
+              "name": "TestDbContextFactory.cs",
+              "size": 527,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/WileyWidget.Tests/TestDbContextFactory.cs",
+              "path": "WileyWidget.Tests/TestDbContextFactory.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/WileyWidget.Tests/TestDbContextFactory.cs?ref=main"
+            },
+            "EnterpriseRepositoryTests.cs": {
+              "sha": "7ce91f2f8582b11fd683c1336bbdb3948731bd13",
+              "name": "EnterpriseRepositoryTests.cs",
+              "size": 11817,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/WileyWidget.Tests/EnterpriseRepositoryTests.cs",
+              "path": "WileyWidget.Tests/EnterpriseRepositoryTests.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/WileyWidget.Tests/EnterpriseRepositoryTests.cs?ref=main"
+            },
+            "WhatIfScenarioEngineTests.cs": {
+              "sha": "0f25f8b28ac377cff0316adbbc8d09b6f4b8ea7e",
+              "name": "WhatIfScenarioEngineTests.cs",
+              "size": 19814,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/WileyWidget.Tests/WhatIfScenarioEngineTests.cs",
+              "path": "WileyWidget.Tests/WhatIfScenarioEngineTests.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/WileyWidget.Tests/WhatIfScenarioEngineTests.cs?ref=main"
+            },
+            "UtilityCustomerViewModelTests.cs": {
+              "sha": "e331f6047848c45bac3b08a4d3ad3253340c8a6e",
+              "name": "UtilityCustomerViewModelTests.cs",
+              "size": 10098,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/WileyWidget.Tests/UtilityCustomerViewModelTests.cs",
+              "path": "WileyWidget.Tests/UtilityCustomerViewModelTests.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/WileyWidget.Tests/UtilityCustomerViewModelTests.cs?ref=main"
+            },
+            "SettingsViewModelTests.cs": {
+              "sha": "c9bcc0d3439c5371f3c0bf0d8e66c75211ca6f91",
+              "name": "SettingsViewModelTests.cs",
+              "size": 5268,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/WileyWidget.Tests/SettingsViewModelTests.cs",
+              "path": "WileyWidget.Tests/SettingsViewModelTests.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/WileyWidget.Tests/SettingsViewModelTests.cs?ref=main"
+            },
+            "DatabaseIntegrationTests.cs": {
+              "sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+              "name": "DatabaseIntegrationTests.cs",
+              "size": 0,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/WileyWidget.Tests/DatabaseIntegrationTests.cs",
+              "path": "WileyWidget.Tests/DatabaseIntegrationTests.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/WileyWidget.Tests/DatabaseIntegrationTests.cs?ref=main"
+            },
+            "WidgetTests.cs": {
+              "sha": "80de2af181d5334b64331e7b6c4fa1b85e01be58",
+              "name": "WidgetTests.cs",
+              "size": 6697,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/WileyWidget.Tests/WidgetTests.cs",
+              "path": "WileyWidget.Tests/WidgetTests.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/WileyWidget.Tests/WidgetTests.cs?ref=main"
+            },
+            "MunicipalAccountIntegrationTests.cs": {
+              "sha": "a3c2075d5c541f8a06512751a281c6f335f47422",
+              "name": "MunicipalAccountIntegrationTests.cs",
+              "size": 5094,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/WileyWidget.Tests/MunicipalAccountIntegrationTests.cs",
+              "path": "WileyWidget.Tests/MunicipalAccountIntegrationTests.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/WileyWidget.Tests/MunicipalAccountIntegrationTests.cs?ref=main"
+            },
+            "EnterpriseViewModelTests.cs": {
+              "sha": "ac0d98ca4fc354b564c8544a09a080651ae8ca2c",
+              "name": "EnterpriseViewModelTests.cs",
+              "size": 9422,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/WileyWidget.Tests/EnterpriseViewModelTests.cs",
+              "path": "WileyWidget.Tests/EnterpriseViewModelTests.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/WileyWidget.Tests/EnterpriseViewModelTests.cs?ref=main"
+            },
+            "AIAssistViewModelTests.cs": {
+              "sha": "b9ba8623f28a9d8d1fb95d0448adb4194d9eff57",
+              "name": "AIAssistViewModelTests.cs",
+              "size": 18639,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/WileyWidget.Tests/AIAssistViewModelTests.cs",
+              "path": "WileyWidget.Tests/AIAssistViewModelTests.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/WileyWidget.Tests/AIAssistViewModelTests.cs?ref=main"
+            },
+            "XAIServiceTests.cs": {
+              "sha": "7c87915ff35937ea5d0194f8c0037aab21052e93",
+              "name": "XAIServiceTests.cs",
+              "size": 2545,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/WileyWidget.Tests/XAIServiceTests.cs",
+              "path": "WileyWidget.Tests/XAIServiceTests.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/WileyWidget.Tests/XAIServiceTests.cs?ref=main"
+            },
+            "MunicipalAccountRepositoryUnitTests.cs": {
+              "sha": "f759348119b3ee904d4b4aaf540e31026ae3cd81",
+              "name": "MunicipalAccountRepositoryUnitTests.cs",
+              "size": 16066,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/WileyWidget.Tests/MunicipalAccountRepositoryUnitTests.cs",
+              "path": "WileyWidget.Tests/MunicipalAccountRepositoryUnitTests.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/WileyWidget.Tests/MunicipalAccountRepositoryUnitTests.cs?ref=main"
+            },
+            "SettingsServiceTests.cs": {
+              "sha": "590e82ac81eb14f159c2036864274aabda450521",
+              "name": "SettingsServiceTests.cs",
+              "size": 7451,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/WileyWidget.Tests/SettingsServiceTests.cs",
+              "path": "WileyWidget.Tests/SettingsServiceTests.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/WileyWidget.Tests/SettingsServiceTests.cs?ref=main"
+            },
+            "OverallBudgetTests.cs": {
+              "sha": "8eed2acf8e723f6f62b4b74c5739141aa7dc9cb0",
+              "name": "OverallBudgetTests.cs",
+              "size": 11714,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/WileyWidget.Tests/OverallBudgetTests.cs",
+              "path": "WileyWidget.Tests/OverallBudgetTests.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/WileyWidget.Tests/OverallBudgetTests.cs?ref=main"
+            },
+            "MainViewModelTests.cs": {
+              "sha": "aa2b8cbe6dda362480fe9ceb8742c118e64344d6",
+              "name": "MainViewModelTests.cs",
+              "size": 13508,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/WileyWidget.Tests/MainViewModelTests.cs",
+              "path": "WileyWidget.Tests/MainViewModelTests.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/WileyWidget.Tests/MainViewModelTests.cs?ref=main"
+            },
+            "WileyWidget.Tests.csproj": {
+              "sha": "763529c7f07927507445d74ccba93cfb9219d6ea",
+              "name": "WileyWidget.Tests.csproj",
+              "size": 1648,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/WileyWidget.Tests/WileyWidget.Tests.csproj",
+              "path": "WileyWidget.Tests/WileyWidget.Tests.csproj",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/WileyWidget.Tests/WileyWidget.Tests.csproj?ref=main"
+            },
+            "UtilityCustomerRepositoryTests.cs": {
+              "sha": "82f1ee83ed655af8c75097b3e5de62ecd8b99b07",
+              "name": "UtilityCustomerRepositoryTests.cs",
+              "size": 25963,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/WileyWidget.Tests/UtilityCustomerRepositoryTests.cs",
+              "path": "WileyWidget.Tests/UtilityCustomerRepositoryTests.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/WileyWidget.Tests/UtilityCustomerRepositoryTests.cs?ref=main"
+            },
+            "BudgetViewModelTests.cs": {
+              "sha": "3714021c19773cf27b71125e8381c5d7db2cb1a2",
+              "name": "BudgetViewModelTests.cs",
+              "size": 10813,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/WileyWidget.Tests/BudgetViewModelTests.cs",
+              "path": "WileyWidget.Tests/BudgetViewModelTests.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/WileyWidget.Tests/BudgetViewModelTests.cs?ref=main"
+            },
+            "AIConversationTests.cs": {
+              "sha": "b70cbb454de9b3d215e9b841373c0c68329c7401",
+              "name": "AIConversationTests.cs",
+              "size": 4492,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/WileyWidget.Tests/AIConversationTests.cs",
+              "path": "WileyWidget.Tests/AIConversationTests.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/WileyWidget.Tests/AIConversationTests.cs?ref=main"
+            }
+          },
+          "directories": {
+            "Converters": {
+              "path": "WileyWidget.Tests/Converters",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/WileyWidget.Tests/Converters?ref=main",
+              "sha": "e65e4d4a9a02e7172de8eb28b34cc475d3eccffa",
+              "contents": {
+                "files": {
+                  "CurrencyFormatConverterTests.cs": {
+                    "sha": "8dc2a455218eca8f9a3feb41e58dcaa9dfe1de87",
+                    "name": "CurrencyFormatConverterTests.cs",
+                    "size": 6004,
+                    "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/WileyWidget.Tests/Converters/CurrencyFormatConverterTests.cs",
+                    "path": "WileyWidget.Tests/Converters/CurrencyFormatConverterTests.cs",
+                    "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/WileyWidget.Tests/Converters/CurrencyFormatConverterTests.cs?ref=main"
+                  },
+                  "BudgetProgressConverterTests.cs": {
+                    "sha": "d5de4b61d907544305512697de2a68c310789287",
+                    "name": "BudgetProgressConverterTests.cs",
+                    "size": 5696,
+                    "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/WileyWidget.Tests/Converters/BudgetProgressConverterTests.cs",
+                    "path": "WileyWidget.Tests/Converters/BudgetProgressConverterTests.cs",
+                    "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/WileyWidget.Tests/Converters/BudgetProgressConverterTests.cs?ref=main"
+                  },
+                  "MessageConvertersTests.cs": {
+                    "sha": "ce03d45350bf02bf50c7648ba6503ba5f6137686",
+                    "name": "MessageConvertersTests.cs",
+                    "size": 10166,
+                    "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/WileyWidget.Tests/Converters/MessageConvertersTests.cs",
+                    "path": "WileyWidget.Tests/Converters/MessageConvertersTests.cs",
+                    "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/WileyWidget.Tests/Converters/MessageConvertersTests.cs?ref=main"
+                  }
+                },
+                "directories": {}
+              }
+            },
+            "Models": {
+              "path": "WileyWidget.Tests/Models",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/WileyWidget.Tests/Models?ref=main",
+              "sha": "c0c16db3b3c5a942fe52fb09691315d621447db0",
+              "contents": {
+                "files": {
+                  "BudgetInteractionTests.cs": {
+                    "sha": "4a0f3736fd9dd02b485778da5edb2d172a2a1abf",
+                    "name": "BudgetInteractionTests.cs",
+                    "size": 13492,
+                    "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/WileyWidget.Tests/Models/BudgetInteractionTests.cs",
+                    "path": "WileyWidget.Tests/Models/BudgetInteractionTests.cs",
+                    "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/WileyWidget.Tests/Models/BudgetInteractionTests.cs?ref=main"
+                  },
+                  "UtilityCustomerTests.cs": {
+                    "sha": "dae3148c02695c087d1c77fd7adadcf277a3bf29",
+                    "name": "UtilityCustomerTests.cs",
+                    "size": 23257,
+                    "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/WileyWidget.Tests/Models/UtilityCustomerTests.cs",
+                    "path": "WileyWidget.Tests/Models/UtilityCustomerTests.cs",
+                    "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/WileyWidget.Tests/Models/UtilityCustomerTests.cs?ref=main"
+                  },
+                  "OverallBudgetTests.cs": {
+                    "sha": "4ddd8d78ffd5940a68af3f8984413376e1b25d6a",
+                    "name": "OverallBudgetTests.cs",
+                    "size": 11886,
+                    "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/WileyWidget.Tests/Models/OverallBudgetTests.cs",
+                    "path": "WileyWidget.Tests/Models/OverallBudgetTests.cs",
+                    "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/WileyWidget.Tests/Models/OverallBudgetTests.cs?ref=main"
+                  },
+                  "EnterpriseTests.cs": {
+                    "sha": "5dace376f4656965f98c0f93c554b49d3c6e1f13",
+                    "name": "EnterpriseTests.cs",
+                    "size": 14294,
+                    "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/WileyWidget.Tests/Models/EnterpriseTests.cs",
+                    "path": "WileyWidget.Tests/Models/EnterpriseTests.cs",
+                    "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/WileyWidget.Tests/Models/EnterpriseTests.cs?ref=main"
+                  },
+                  "MunicipalAccountTests.cs": {
+                    "sha": "b3204c20031c90cf424b9bbfa112b1f8a4eb0b34",
+                    "name": "MunicipalAccountTests.cs",
+                    "size": 16596,
+                    "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/WileyWidget.Tests/Models/MunicipalAccountTests.cs",
+                    "path": "WileyWidget.Tests/Models/MunicipalAccountTests.cs",
+                    "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/WileyWidget.Tests/Models/MunicipalAccountTests.cs?ref=main"
+                  },
+                  "AppSettingsTests.cs": {
+                    "sha": "ebbaf17fa9df8978d732db3304d271e4dbecaf3e",
+                    "name": "AppSettingsTests.cs",
+                    "size": 8930,
+                    "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/WileyWidget.Tests/Models/AppSettingsTests.cs",
+                    "path": "WileyWidget.Tests/Models/AppSettingsTests.cs",
+                    "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/WileyWidget.Tests/Models/AppSettingsTests.cs?ref=main"
+                  }
+                },
+                "directories": {}
+              }
+            },
+            "Hosting": {
+              "path": "WileyWidget.Tests/Hosting",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/WileyWidget.Tests/Hosting?ref=main",
+              "sha": "08cfc3229498c14101cc03c7a90cfd8f5e6e0a93",
+              "contents": {
+                "files": {
+                  "Phase1HostInfrastructureTests.cs": {
+                    "sha": "919743dd744889a3a8402881c54bcaab8adf6369",
+                    "name": "Phase1HostInfrastructureTests.cs",
+                    "size": 3500,
+                    "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/WileyWidget.Tests/Hosting/Phase1HostInfrastructureTests.cs",
+                    "path": "WileyWidget.Tests/Hosting/Phase1HostInfrastructureTests.cs",
+                    "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/WileyWidget.Tests/Hosting/Phase1HostInfrastructureTests.cs?ref=main"
+                  }
+                },
+                "directories": {}
+              }
+            },
+            "__pycache__": {
+              "path": "WileyWidget.Tests/__pycache__",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/WileyWidget.Tests/__pycache__?ref=main",
+              "sha": "307a3e32e27fb560df4a22f61dfcb2a1bd0185d6",
+              "contents": {
+                "files": {
+                  "PythonScriptsTests.cpython-311-pytest-8.4.1.pyc": {
+                    "sha": "7f7e7f22c0234c56936437736c501559f8e55ee7",
+                    "name": "PythonScriptsTests.cpython-311-pytest-8.4.1.pyc",
+                    "size": 15883,
+                    "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/WileyWidget.Tests/__pycache__/PythonScriptsTests.cpython-311-pytest-8.4.1.pyc",
+                    "path": "WileyWidget.Tests/__pycache__/PythonScriptsTests.cpython-311-pytest-8.4.1.pyc",
+                    "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/WileyWidget.Tests/__pycache__/PythonScriptsTests.cpython-311-pytest-8.4.1.pyc?ref=main"
+                  }
+                },
+                "directories": {}
+              }
+            }
+          }
+        }
+      },
+      "Data": {
+        "path": "Data",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Data?ref=main",
+        "sha": "6cc9303b227bbad51931a656f4ee3f358ab3e182",
+        "contents": {
+          "files": {
+            "UtilityCustomerRepository.cs": {
+              "sha": "4c93566b66c5104605e61c370436cdcadc70ec18",
+              "name": "UtilityCustomerRepository.cs",
+              "size": 7934,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/Data/UtilityCustomerRepository.cs",
+              "path": "Data/UtilityCustomerRepository.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Data/UtilityCustomerRepository.cs?ref=main"
+            },
+            "EnterpriseRepository.cs": {
+              "sha": "a98357edcda974f963b8d0e3f95e91ca3af3e920",
+              "name": "EnterpriseRepository.cs",
+              "size": 4485,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/Data/EnterpriseRepository.cs",
+              "path": "Data/EnterpriseRepository.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Data/EnterpriseRepository.cs?ref=main"
+            },
+            "IEnterpriseRepository.cs": {
+              "sha": "55f73a1e432b752265f8af0d294b73064ba56a28",
+              "name": "IEnterpriseRepository.cs",
+              "size": 1327,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/Data/IEnterpriseRepository.cs",
+              "path": "Data/IEnterpriseRepository.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Data/IEnterpriseRepository.cs?ref=main"
+            },
+            "AppDbContext.cs": {
+              "sha": "cdb9e61455e214b2f7e41bf3f2baca6edf2ba1a9",
+              "name": "AppDbContext.cs",
+              "size": 17763,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/Data/AppDbContext.cs",
+              "path": "Data/AppDbContext.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Data/AppDbContext.cs?ref=main"
+            },
+            "AppDbContextFactory.cs": {
+              "sha": "ce4cb2f4ee8b8b1fa9b2766e0ab70b7e67f241a3",
+              "name": "AppDbContextFactory.cs",
+              "size": 2023,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/Data/AppDbContextFactory.cs",
+              "path": "Data/AppDbContextFactory.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Data/AppDbContextFactory.cs?ref=main"
+            },
+            "IUtilityCustomerRepository.cs": {
+              "sha": "b3286fcfb03918a0d9e4506308a65e303202e9c6",
+              "name": "IUtilityCustomerRepository.cs",
+              "size": 2260,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/Data/IUtilityCustomerRepository.cs",
+              "path": "Data/IUtilityCustomerRepository.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Data/IUtilityCustomerRepository.cs?ref=main"
+            },
+            "MunicipalAccountRepository.cs": {
+              "sha": "041a8ede13c1295d50c737d8c385e86602a42957",
+              "name": "MunicipalAccountRepository.cs",
+              "size": 7421,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/Data/MunicipalAccountRepository.cs",
+              "path": "Data/MunicipalAccountRepository.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Data/MunicipalAccountRepository.cs?ref=main"
+            },
+            "DatabaseSeeder.cs": {
+              "sha": "18b061956f8a220ec92ebe298ea50a9c09aefd26",
+              "name": "DatabaseSeeder.cs",
+              "size": 14314,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/Data/DatabaseSeeder.cs",
+              "path": "Data/DatabaseSeeder.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Data/DatabaseSeeder.cs?ref=main"
+            },
+            "IMunicipalAccountRepository.cs": {
+              "sha": "00b6808f00d89b6bc5ed4318749fad1c43da112a",
+              "name": "IMunicipalAccountRepository.cs",
+              "size": 984,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/Data/IMunicipalAccountRepository.cs",
+              "path": "Data/IMunicipalAccountRepository.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Data/IMunicipalAccountRepository.cs?ref=main"
+            }
+          },
+          "directories": {}
+        }
+      },
+      ".vscode": {
+        "path": ".vscode",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/.vscode?ref=main",
+        "sha": "a32a94ad48dc3a96961055e0b15da156e5dce744",
+        "contents": {
+          "files": {
+            "extensions.json": {
+              "sha": "4596c63251c17fb78b783a0e8c5db6e9fa89f5e4",
+              "name": "extensions.json",
+              "size": 534,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/.vscode/extensions.json",
+              "path": ".vscode/extensions.json",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/.vscode/extensions.json?ref=main"
+            },
+            "settings.json": {
+              "sha": "1b350be09372fbb9d65c428e9af3c9cab5cd3097",
+              "name": "settings.json",
+              "size": 12976,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/.vscode/settings.json",
+              "path": ".vscode/settings.json",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/.vscode/settings.json?ref=main"
+            },
+            "launch.json": {
+              "sha": "02f4e1e149a5ccc9440cccd3b2379cd5bbfbd1d4",
+              "name": "launch.json",
+              "size": 5684,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/.vscode/launch.json",
+              "path": ".vscode/launch.json",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/.vscode/launch.json?ref=main"
+            },
+            "tasks.json": {
+              "sha": "609b65bd14823faba37b0a01dad7c40e57b96968",
+              "name": "tasks.json",
+              "size": 7274,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/.vscode/tasks.json",
+              "path": ".vscode/tasks.json",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/.vscode/tasks.json?ref=main"
+            }
+          },
+          "directories": {}
+        }
+      },
+      ".github": {
+        "path": ".github",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/.github?ref=main",
+        "sha": "faabd1d71ef37890b0da9955e57ddfc56dd7faab",
+        "contents": {
+          "files": {
+            "PULL_REQUEST_TEMPLATE.md": {
+              "sha": "8efdd4deebbaa870a576f5917516eed0512c15dc",
+              "name": "PULL_REQUEST_TEMPLATE.md",
+              "size": 1051,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/.github/PULL_REQUEST_TEMPLATE.md",
+              "path": ".github/PULL_REQUEST_TEMPLATE.md",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/.github/PULL_REQUEST_TEMPLATE.md?ref=main"
+            }
+          },
+          "directories": {
+            "workflows": {
+              "path": ".github/workflows",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/.github/workflows?ref=main",
+              "sha": "b79db0b8b056ef5078f5fdd89db5c84828753d9e",
+              "contents": {
+                "files": {
+                  "release-new.yml": {
+                    "sha": "93d42ac3ab5e88cb3adec20f537caa54fb1d3e19",
+                    "name": "release-new.yml",
+                    "size": 3663,
+                    "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/.github/workflows/release-new.yml",
+                    "path": ".github/workflows/release-new.yml",
+                    "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/.github/workflows/release-new.yml?ref=main"
+                  },
+                  "ci-new.yml": {
+                    "sha": "27ca44cfa853f1df3aa7c7b3a86193fc5e0a0796",
+                    "name": "ci-new.yml",
+                    "size": 5458,
+                    "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/.github/workflows/ci-new.yml",
+                    "path": ".github/workflows/ci-new.yml",
+                    "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/.github/workflows/ci-new.yml?ref=main"
+                  }
+                },
+                "directories": {}
+              }
+            },
+            "ISSUE_TEMPLATE": {
+              "path": ".github/ISSUE_TEMPLATE",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/.github/ISSUE_TEMPLATE?ref=main",
+              "sha": "332773610ac5294a70187f30dac475799958ab03",
+              "contents": {
+                "files": {
+                  "feature-request.md": {
+                    "sha": "d8f1f32dc5da6c94fb10bfb2e3750e78d0f6ab77",
+                    "name": "feature-request.md",
+                    "size": 600,
+                    "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/.github/ISSUE_TEMPLATE/feature-request.md",
+                    "path": ".github/ISSUE_TEMPLATE/feature-request.md",
+                    "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/.github/ISSUE_TEMPLATE/feature-request.md?ref=main"
+                  },
+                  "bug-report.md": {
+                    "sha": "e906a4c4c205058b0964f7d1e47c9676b29a6986",
+                    "name": "bug-report.md",
+                    "size": 744,
+                    "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/.github/ISSUE_TEMPLATE/bug-report.md",
+                    "path": ".github/ISSUE_TEMPLATE/bug-report.md",
+                    "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/.github/ISSUE_TEMPLATE/bug-report.md?ref=main"
+                  }
+                },
+                "directories": {}
+              }
+            }
+          }
+        }
+      },
+      "Models": {
+        "path": "Models",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Models?ref=main",
+        "sha": "bd0eaaf29d722c65dd8c24578b9a800cf150f3c2",
+        "contents": {
+          "files": {
+            "Enterprise.cs": {
+              "sha": "67a9036aebda00e12e2b9a17a30b3c18891497b3",
+              "name": "Enterprise.cs",
+              "size": 6960,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/Models/Enterprise.cs",
+              "path": "Models/Enterprise.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Models/Enterprise.cs?ref=main"
+            },
+            "OverallBudget.cs": {
+              "sha": "2720f505679e3971420ff764caca80ee0035e028",
+              "name": "OverallBudget.cs",
+              "size": 5880,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/Models/OverallBudget.cs",
+              "path": "Models/OverallBudget.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Models/OverallBudget.cs?ref=main"
+            },
+            "UtilityCustomer.cs": {
+              "sha": "5afd0331d5c0f5292111ce1ec16e332af28d72ce",
+              "name": "UtilityCustomer.cs",
+              "size": 18771,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/Models/UtilityCustomer.cs",
+              "path": "Models/UtilityCustomer.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Models/UtilityCustomer.cs?ref=main"
+            },
+            "MunicipalAccount.cs": {
+              "sha": "67a970f9499dd8e11e0d030101fbc06efac88eb0",
+              "name": "MunicipalAccount.cs",
+              "size": 6664,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/Models/MunicipalAccount.cs",
+              "path": "Models/MunicipalAccount.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Models/MunicipalAccount.cs?ref=main"
+            },
+            "BudgetInteraction.cs": {
+              "sha": "e4d64f88f0934294a20845bc0171ada0d92a1c1c",
+              "name": "BudgetInteraction.cs",
+              "size": 3087,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/Models/BudgetInteraction.cs",
+              "path": "Models/BudgetInteraction.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Models/BudgetInteraction.cs?ref=main"
+            },
+            "HealthCheckModels.cs": {
+              "sha": "3249bc67a62153c9d36d10abd017eb594a32ff80",
+              "name": "HealthCheckModels.cs",
+              "size": 11930,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/Models/HealthCheckModels.cs",
+              "path": "Models/HealthCheckModels.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Models/HealthCheckModels.cs?ref=main"
+            },
+            "Widget.cs": {
+              "sha": "c2532c35ff376fa0dc74731a3b319433ee22c135",
+              "name": "Widget.cs",
+              "size": 5246,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/Models/Widget.cs",
+              "path": "Models/Widget.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Models/Widget.cs?ref=main"
+            },
+            "AppSettings.cs": {
+              "sha": "2ab92822c96608a5b11fcfd24a71d7684785c080",
+              "name": "AppSettings.cs",
+              "size": 1306,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/Models/AppSettings.cs",
+              "path": "Models/AppSettings.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Models/AppSettings.cs?ref=main"
+            }
+          },
+          "directories": {}
+        }
+      },
+      "Migrations": {
+        "path": "Migrations",
+        "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Migrations?ref=main",
+        "sha": "7b9c6c84d18d16253d6e2b1c09b11553328d1a32",
+        "contents": {
+          "files": {
+            "AppDbContextModelSnapshot.cs": {
+              "sha": "8f002ccc086880b6e1bfcce2e8c8362021473ea9",
+              "name": "AppDbContextModelSnapshot.cs",
+              "size": 19109,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/Migrations/AppDbContextModelSnapshot.cs",
+              "path": "Migrations/AppDbContextModelSnapshot.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Migrations/AppDbContextModelSnapshot.cs?ref=main"
+            },
+            "20250828175508_InitialCreate.Designer.cs": {
+              "sha": "b5634d8881e436c9ac512396596dc1574cad62b6",
+              "name": "20250828175508_InitialCreate.Designer.cs",
+              "size": 3160,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/Migrations/20250828175508_InitialCreate.Designer.cs",
+              "path": "Migrations/20250828175508_InitialCreate.Designer.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Migrations/20250828175508_InitialCreate.Designer.cs?ref=main"
+            },
+            "20250921135818_AddRowVersionToEntities.Designer.cs": {
+              "sha": "a951d56ca21aa63c71ff4df4d439054da46b13a0",
+              "name": "20250921135818_AddRowVersionToEntities.Designer.cs",
+              "size": 19230,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/Migrations/20250921135818_AddRowVersionToEntities.Designer.cs",
+              "path": "Migrations/20250921135818_AddRowVersionToEntities.Designer.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Migrations/20250921135818_AddRowVersionToEntities.Designer.cs?ref=main"
+            },
+            "20250828175508_InitialCreate.cs": {
+              "sha": "cb762e2fdd42bb6d205918248ca18e0d58716614",
+              "name": "20250828175508_InitialCreate.cs",
+              "size": 2738,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/Migrations/20250828175508_InitialCreate.cs",
+              "path": "Migrations/20250828175508_InitialCreate.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Migrations/20250828175508_InitialCreate.cs?ref=main"
+            },
+            "20250919183553_AddMunicipalAccounts.cs": {
+              "sha": "a7a22293ebfadc55a92a77349be6ba6d46fee26e",
+              "name": "20250919183553_AddMunicipalAccounts.cs",
+              "size": 11091,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/Migrations/20250919183553_AddMunicipalAccounts.cs",
+              "path": "Migrations/20250919183553_AddMunicipalAccounts.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Migrations/20250919183553_AddMunicipalAccounts.cs?ref=main"
+            },
+            "20250919184040_AddUtilityCustomer.cs": {
+              "sha": "26271287a1b338e427105261c42977247909b827",
+              "name": "20250919184040_AddUtilityCustomer.cs",
+              "size": 5018,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/Migrations/20250919184040_AddUtilityCustomer.cs",
+              "path": "Migrations/20250919184040_AddUtilityCustomer.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Migrations/20250919184040_AddUtilityCustomer.cs?ref=main"
+            },
+            "20250919184040_AddUtilityCustomer.Designer.cs": {
+              "sha": "9b7f29e1b9ddcb3ce7b3841834422c03fea34f0c",
+              "name": "20250919184040_AddUtilityCustomer.Designer.cs",
+              "size": 15145,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/Migrations/20250919184040_AddUtilityCustomer.Designer.cs",
+              "path": "Migrations/20250919184040_AddUtilityCustomer.Designer.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Migrations/20250919184040_AddUtilityCustomer.Designer.cs?ref=main"
+            },
+            "20250919183553_AddMunicipalAccounts.Designer.cs": {
+              "sha": "1ca14efc5d68b9a2dfefa65399fa69736f72de83",
+              "name": "20250919183553_AddMunicipalAccounts.Designer.cs",
+              "size": 9394,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/Migrations/20250919183553_AddMunicipalAccounts.Designer.cs",
+              "path": "Migrations/20250919183553_AddMunicipalAccounts.Designer.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Migrations/20250919183553_AddMunicipalAccounts.Designer.cs?ref=main"
+            },
+            "20250921135818_AddRowVersionToEntities.cs": {
+              "sha": "ba47270b9609a3f2dcae6c4dded7b790339cae43",
+              "name": "20250921135818_AddRowVersionToEntities.cs",
+              "size": 9333,
+              "download_url": "https://raw.githubusercontent.com/Bigessfour/Wiley-Widget/main/Migrations/20250921135818_AddRowVersionToEntities.cs",
+              "path": "Migrations/20250921135818_AddRowVersionToEntities.cs",
+              "url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/contents/Migrations/20250921135818_AddRowVersionToEntities.cs?ref=main"
+            }
+          },
+          "directories": {}
+        }
+      }
+    }
+  },
+  "languages": {
+    "Python": 36492148,
+    "C#": 906503,
+    "PowerShell": 283389,
+    "Cython": 209182,
+    "C++": 103301,
+    "C": 2938,
+    "Batchfile": 2833,
+    "Shell": 1469,
+    "CSS": 1359
+  },
+  "branches": [
+    {
+      "commit_url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/commits/8894690b4cc9a7df2319c3aea79c5582fe24a538",
+      "name": "feature/powershell-best-practices",
+      "commit_sha": "8894690b4cc9a7df2319c3aea79c5582fe24a538",
+      "protected": false
+    },
+    {
+      "commit_url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/commits/431dcc5bbb541662df8c779d1ed27035bda062cd",
+      "name": "fix/aad-sql-user-mapping",
+      "commit_sha": "431dcc5bbb541662df8c779d1ed27035bda062cd",
+      "protected": false
+    },
+    {
+      "commit_url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/commits/4e70c677ea403af5388cd117535e92d74f9341e6",
+      "name": "fix-cicd-workflows",
+      "commit_sha": "4e70c677ea403af5388cd117535e92d74f9341e6",
+      "protected": false
+    },
+    {
+      "commit_url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/commits/d837039d55e1844f49f50f3456b7d6d832c0c75b",
+      "name": "main",
+      "commit_sha": "d837039d55e1844f49f50f3456b7d6d832c0c75b",
+      "protected": false
+    },
+    {
+      "commit_url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/commits/deb543559117b49ba7bf88c197b8375bc7999dc1",
+      "name": "python-manifest",
+      "commit_sha": "deb543559117b49ba7bf88c197b8375bc7999dc1",
+      "protected": false
+    },
+    {
+      "commit_url": "https://api.github.com/repos/Bigessfour/Wiley-Widget/commits/742736d273fdc20db852c91f26e53059e1b093d7",
+      "name": "temp",
+      "commit_sha": "742736d273fdc20db852c91f26e53059e1b093d7",
+      "protected": false
+    }
+  ],
+  "statistics": {
+    "large_files": [
+      { "path": "get-pip.py", "name": "get-pip.py", "size_mb": 2.05 }
+    ],
+    "total_size_kb": 5467.21,
+    "total_size_bytes": 5598423,
+    "file_types": {
+      ".cs": 110,
+      ".py": 19,
+      ".txt": 4,
+      ".csproj": 6,
+      ".ps1": 49,
+      ".key": 1,
+      ".png": 1,
+      ".editorconfig": 1,
+      ".gitignore": 2,
+      ".example": 1,
+      ".coverage": 1,
+      ".props": 2,
+      ".yaml": 3,
+      ".yml": 2,
+      ".md": 44,
+      ".xaml": 11,
+      ".targets": 1,
+      ".ini": 1,
+      ".xml": 1,
+      ".sln": 1,
+      ".json": 13,
+      ".pyc": 12,
+      ".sample": 1
+    },
+    "total_directories": 37,
+    "total_files": 288,
+    "max_depth_reached": 3
+  },
+  "repository": {
+    "size_kb": 95926,
+    "description": "AI Enhanced Utility Rate Study Program",
+    "has_pages": false,
+    "has_issues": true,
+    "subscribers_count": 0,
+    "created_at": "2025-07-10T21:47:50Z",
+    "language": "Python",
+    "topics": [],
+    "has_projects": true,
+    "network_count": 0,
+    "watchers_count": 0,
+    "has_wiki": true,
+    "updated_at": "2025-09-21T21:17:37Z",
+    "license": null,
+    "pushed_at": "2025-09-26T18:04:49Z",
+    "forks_count": 0,
+    "name": "Wiley-Widget",
+    "is_private": false,
+    "full_name": "Bigessfour/Wiley-Widget",
+    "stargazers_count": 0,
+    "default_branch": "main"
+  },
+  "recent_activity": {
+    "commits": [
+      {
+        "author": "bigessfour",
+        "sha": "d837039d55e1844f49f50f3456b7d6d832c0c75b",
+        "message": "refactor(wpf): harden MainWindow init and auth UI timing; add window-lifetime scope, move auth UI updates to Loaded, use safe FindName lookups for Grid/Buttons; confirm dev-first DB fallback; wire Generic Host already in place; build-only validation",
+        "date": "2025-09-21T21:04:32Z",
+        "url": "https://github.com/Bigessfour/Wiley-Widget/commit/d837039d55e1844f49f50f3456b7d6d832c0c75b"
+      },
+      {
+        "author": "bigessfour",
+        "sha": "2f3202b990565635597a5096df474556b43c106a",
+        "message": "feat: Major enhancements to Wiley Widget application\n\n≡ƒÄ» Core Functionality Updates:\n- Fixed EnterpriseViewModelTests IsLoading state issues\n- Corrected UtilityCustomer ordering in repository tests\n- Fixed search count expectations in UtilityCustomer tests\n- Enhanced test coverage and reliability\n\n≡ƒÅù∩╕Å New Features & Models:\n- Added MunicipalAccount and UtilityCustomer entities with full CRUD\n- Implemented new database migrations for municipal accounts\n- Created comprehensive repository pattern for new entities\n- Added AI conversation and assistance features\n- Integrated WhatIf scenario engine for advanced calculations\n\n≡ƒôè Repository Analysis Tools:\n- Created enhanced fetchable repository indexing script with parallel processing\n- Added intelligent caching and rate limiting for GitHub API calls\n- Implemented retry logic with exponential backoff\n- Generated comprehensive repository metadata and statistics\n- Added progress indicators and detailed error handling\n\n≡ƒº¬ Testing Infrastructure:\n- Added extensive test coverage for new models and services\n- Created integration tests for municipal account operations\n- Added UI tests for conversation and AI features\n- Enhanced test project configurations and dependencies\n\n≡ƒöº Technical Improvements:\n- Updated project configurations and package references\n- Enhanced VS Code settings and launch configurations\n- Improved build and deployment configurations\n- Added comprehensive error handling and logging\n\n≡ƒôê Performance & Quality:\n- Implemented parallel processing for better performance\n- Added caching mechanisms to reduce API calls\n- Enhanced error handling and retry mechanisms\n- Improved code organization and maintainability\n\nFiles changed: 80+ including new models, services, tests, and tools\nAll tests passing with enhanced coverage and reliability",
+        "date": "2025-09-20T01:07:07Z",
+        "url": "https://github.com/Bigessfour/Wiley-Widget/commit/2f3202b990565635597a5096df474556b43c106a"
+      },
+      {
+        "author": "bigessfour",
+        "sha": "f5f976f71ba2eef59dc3415f927122cf1def77da",
+        "message": "build: Update project files after successful build",
+        "date": "2025-09-19T17:30:21Z",
+        "url": "https://github.com/Bigessfour/Wiley-Widget/commit/f5f976f71ba2eef59dc3415f927122cf1def77da"
+      },
+      {
+        "author": "bigessfour",
+        "sha": "132a3bf248820ed3a72baf996c2d7de1434eb35c",
+        "message": "Merge branch 'main' of https://github.com/Bigessfour/Wiley-Widget\n# Please enter a commit message to explain why this merge is necessary,\n# especially if it merges an updated upstream into a topic branch.\n#\n# Lines starting with '#' will be ignored, and an empty message aborts\n# the commit.",
+        "date": "2025-09-08T02:10:01Z",
+        "url": "https://github.com/Bigessfour/Wiley-Widget/commit/132a3bf248820ed3a72baf996c2d7de1434eb35c"
+      },
+      {
+        "author": "bigessfour",
+        "sha": "a35235b787687dfceecd434362b4bcdbcb44e068",
+        "message": "Fix test project RuntimeIdentifier issues\n\n- Removed win7-x64 RuntimeIdentifier from test projects\n- Allows tests to run on any Windows runtime in CI environment\n- Should resolve test execution failures in GitHub Actions\n- Maintains compatibility with .NET 8.0 target framework",
+        "date": "2025-08-29T15:00:34Z",
+        "url": "https://github.com/Bigessfour/Wiley-Widget/commit/a35235b787687dfceecd434362b4bcdbcb44e068"
+      },
+      {
+        "author": "bigessfour",
+        "sha": "f5ca8754ce1648e13f33b9cef71f49be09288185",
+        "message": "Fix test project RuntimeIdentifier issues\n\n- Removed win7-x64 RuntimeIdentifier from test projects\n- Allows tests to run on any Windows runtime in CI environment\n- Should resolve test execution failures in GitHub Actions\n- Maintains compatibility with .NET 8.0 target framework",
+        "date": "2025-08-29T15:00:34Z",
+        "url": "https://github.com/Bigessfour/Wiley-Widget/commit/f5ca8754ce1648e13f33b9cef71f49be09288185"
+      },
+      {
+        "author": "bigessfour",
+        "sha": "7b000667e3f1964bc7c4a60afcb4eae2fa9f7dad",
+        "message": "Fix CI/CD workflow .NET version mismatch\n\n- Corrected .NET version from 9.0.x to 8.0.x in ci-new.yml and release-new.yml\n- Aligned with global.json specification (8.0.413) and project target framework (net8.0-windows)\n- Updated release notes template to reflect correct .NET version\n- This should resolve the CI build failures",
+        "date": "2025-08-29T14:54:39Z",
+        "url": "https://github.com/Bigessfour/Wiley-Widget/commit/7b000667e3f1964bc7c4a60afcb4eae2fa9f7dad"
+      },
+      {
+        "author": "bigessfour",
+        "sha": "f26f36c99a4b152c8f3154e24054814d50305635",
+        "message": "Fix CI/CD workflow .NET version mismatch\n\n- Corrected .NET version from 9.0.x to 8.0.x in ci-new.yml and release-new.yml\n- Aligned with global.json specification (8.0.413) and project target framework (net8.0-windows)\n- Updated release notes template to reflect correct .NET version\n- This should resolve the CI build failures",
+        "date": "2025-08-29T14:54:39Z",
+        "url": "https://github.com/Bigessfour/Wiley-Widget/commit/f26f36c99a4b152c8f3154e24054814d50305635"
+      },
+      {
+        "author": "bigessfour",
+        "sha": "2976e1dafcc6d33c735e3c3123a0a38c8850a46f",
+        "message": "feat: Integrate automated manifest generation into Git workflow\n\n- Add PowerShell wrapper script for consistent manifest generation\n- Update pre-commit hook to use wrapper script\n- Update CI/CD script to use wrapper script\n- Test pre-commit hook functionality\n- Ensure manifest stays current with repository changes",
+        "date": "2025-08-29T09:42:39Z",
+        "url": "https://github.com/Bigessfour/Wiley-Widget/commit/2976e1dafcc6d33c735e3c3123a0a38c8850a46f"
+      },
+      {
+        "author": "bigessfour",
+        "sha": "e5b549ef8ba82d1a944b1b8c1717771163a0219d",
+        "message": "feat: Integrate automated manifest generation into Git workflow\n\n- Add PowerShell wrapper script for consistent manifest generation\n- Update pre-commit hook to use wrapper script\n- Update CI/CD script to use wrapper script\n- Test pre-commit hook functionality\n- Ensure manifest stays current with repository changes",
+        "date": "2025-08-29T09:42:39Z",
+        "url": "https://github.com/Bigessfour/Wiley-Widget/commit/e5b549ef8ba82d1a944b1b8c1717771163a0219d"
+      }
+    ]
+  },
+  "metadata": {
+    "parallel_jobs": 3,
+    "generated_at": "2025-09-26T12:07:01Z",
+    "cache_used": true,
+    "fetchable_version": true,
+    "repository": "Bigessfour/Wiley-Widget",
+    "max_depth": 3,
+    "tool_version": "2.0.0"
+  },
+  "contributors": [
+    {
+      "login": "Bigessfour",
+      "url": "https://api.github.com/users/Bigessfour",
+      "contributions": 66,
+      "type": "User",
+      "id": 148392786
+    }
+  ],
+  "errors": []
+}

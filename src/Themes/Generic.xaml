@@ -1,0 +1,32 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="clr-namespace:WileyWidget"
+    xmlns:views="clr-namespace:WileyWidget.Views"
+    xmlns:controls="clr-namespace:WileyWidget.Controls"
+    xmlns:syncfusion="http://schemas.syncfusion.com/wpf">
+
+    <!-- ✅ REFACTORED RESOURCE DICTIONARY -->
+    <!-- Now merges structured resources and defines only unique items -->
+    <!-- References centralized resources from Resources/ folder -->
+
+    <ResourceDictionary.MergedDictionaries>
+        <!-- Import all structured resources -->
+        <ResourceDictionary Source="/WileyWidget;component/Resources/Colors.xaml" />
+        <ResourceDictionary Source="/WileyWidget;component/Resources/Brushes.xaml" />
+        <ResourceDictionary Source="/WileyWidget;component/Resources/Converters.xaml" />
+        <ResourceDictionary Source="/WileyWidget;component/Resources/CommonStyles.xaml" />
+        <ResourceDictionary Source="/WileyWidget;component/Resources/ButtonStyles.xaml" />
+        <ResourceDictionary Source="/WileyWidget;component/Resources/DataGridStyles.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+
+    <!-- ============================================== -->
+    <!-- LEGACY/UNIQUE RESOURCES - Only items not in structured files -->
+    <!-- ============================================== -->
+
+    <!-- Additional Text Brushes (if needed beyond CommonStyles) -->
+    <SolidColorBrush x:Key="CaptionTextBrush" Color="{StaticResource MutedTextColor}" />
+
+    <!-- Any additional unique resources can go here -->
+
+</ResourceDictionary>

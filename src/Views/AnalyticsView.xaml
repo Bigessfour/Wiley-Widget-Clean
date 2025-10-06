@@ -1,0 +1,138 @@
+<Window x:Class="WileyWidget.AnalyticsView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
+        mc:Ignorable="d"
+        Title="Analytics Dashboard"
+        Height="900"
+        Width="1400"
+        WindowStartupLocation="CenterScreen"
+        FontFamily="Segoe UI">
+    <syncfusion:SfSkinManager.Theme>
+        <syncfusion:Theme ThemeName="FluentLight" />
+    </syncfusion:SfSkinManager.Theme>
+
+    <Grid Background="#FF0F1826">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Margin="16" Padding="16" Background="#66161F2D" CornerRadius="10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="12" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="12" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="12" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Orientation="Vertical">
+                    <TextBlock Text="Start" Foreground="#FFCEE6FF" FontWeight="SemiBold" />
+                    <syncfusion:SfDatePicker Value="{Binding StartDate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                           Width="160"
+                                           AutomationProperties.Name="Start date picker"
+                                           AutomationProperties.HelpText="Select the start date for analytics data range" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="2" Orientation="Vertical">
+                    <TextBlock Text="End" Foreground="#FFCEE6FF" FontWeight="SemiBold" />
+                    <syncfusion:SfDatePicker Value="{Binding EndDate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                           Width="160"
+                                           AutomationProperties.Name="End date picker"
+                                           AutomationProperties.HelpText="Select the end date for analytics data range" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="4" Orientation="Vertical">
+                    <TextBlock Text="Enterprise" Foreground="#FFCEE6FF" FontWeight="SemiBold" />
+                    <syncfusion:ComboBoxAdv ItemsSource="{Binding Enterprises}"
+                                            DisplayMemberPath="Name"
+                                            SelectedValuePath="Id"
+                                            SelectedValue="{Binding EnterpriseId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                            Width="220"
+                                            AutomationProperties.Name="Enterprise selector"
+                                            AutomationProperties.HelpText="Select an enterprise to filter analytics data" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="6" Orientation="Vertical">
+                    <TextBlock Text="Quick Filters" Foreground="#FFCEE6FF" FontWeight="SemiBold" />
+                    <syncfusion:ComboBoxAdv ItemsSource="{Binding FilterOptions}"
+                                           SelectedItem="{Binding Filter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                           Width="200"
+                                           Height="30"
+                                           AutomationProperties.Name="Quick filters selector"
+                                           AutomationProperties.HelpText="Select a filter to apply to analytics data" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="8" Orientation="Horizontal" VerticalAlignment="Bottom">
+                    <Button Content="Refresh"
+                            Command="{Binding RefreshAnalyticsCommand}"
+                            Width="120"
+                            Height="36"
+                            AutomationProperties.Name="Refresh analytics data"
+                            AutomationProperties.HelpText="Refresh the analytics data with current filter settings" />
+                    <Button Content="Drill Down"
+                            Command="{Binding DrillDownCommand}"
+                            CommandParameter="{Binding Filter}"
+                            Width="120"
+                            Height="36"
+                            AutomationProperties.Name="Drill down into data"
+                            AutomationProperties.HelpText="Drill down into detailed data for the selected filter" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <syncfusion:TileViewControl Grid.Row="1"
+                                    Margin="16"
+                                    ColumnCount="3"
+                                    RowCount="1"
+                                    AnimationDuration="0:0:0.400">
+            <syncfusion:TileViewItem Header="Trend Explorer">
+                <Grid Background="#FF111E2E">
+                    <syncfusion:SfChart x:Name="AnalyticsChart"
+                                        Margin="16"
+                                        Legend="{Binding RelativeSource={RelativeSource Self}, Path=Legend}"
+                                        SelectionChanged="OnChartSelectionChanged"
+                                        AutomationProperties.Name="Analytics trend chart showing data visualization"
+                                        AutomationProperties.HelpText="Interactive chart displaying analytics data trends over time. Use arrow keys to navigate data points.">
+                        <syncfusion:SfChart.PrimaryAxis>
+                            <syncfusion:CategoryAxis Header="Series" 
+                                                   AutomationProperties.Name="Chart categories axis" />
+                        </syncfusion:SfChart.PrimaryAxis>
+                        <syncfusion:SfChart.SecondaryAxis>
+                            <syncfusion:NumericalAxis Header="Value"
+                                                    AutomationProperties.Name="Chart values axis" />
+                        </syncfusion:SfChart.SecondaryAxis>
+                    </syncfusion:SfChart>
+                </Grid>
+            </syncfusion:TileViewItem>
+
+            <syncfusion:TileViewItem Header="InsightOdometer">
+                <Grid Background="#FF111E2E">
+                    <TextBlock Text="Gauge not available"
+                               Margin="16"
+                               Foreground="White"
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Center" />
+                </Grid>
+            </syncfusion:TileViewItem>
+
+            <syncfusion:TileViewItem Header="Pivot Breakdown">
+                <Grid Background="#FF111E2E">
+                    <TextBlock Text="Pivot Grid not available"
+                               Margin="16"
+                               Foreground="White"
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Center" />
+                </Grid>
+            </syncfusion:TileViewItem>
+        </syncfusion:TileViewControl>
+    </Grid>
+</Window>

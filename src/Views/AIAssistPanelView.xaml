@@ -1,0 +1,159 @@
+<UserControl x:Class="WileyWidget.Views.AIAssistPanelView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:WileyWidget"
+             xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
+             xmlns:chat="clr-namespace:Syncfusion.UI.Xaml.Chat;assembly=Syncfusion.SfChat.WPF"
+             mc:Ignorable="d"
+             d:DesignHeight="600" d:DesignWidth="800"
+             DataContext="{Binding AIAssistViewModel, RelativeSource={RelativeSource AncestorType=Window}}">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+
+        <!-- Message styling converters -->
+        <local:UserMessageBackgroundConverter x:Key="UserMessageBackgroundConverter" />
+        <local:MessageAlignmentConverter x:Key="MessageAlignmentConverter" />
+        <local:MessageForegroundConverter x:Key="MessageForegroundConverter" />
+    </UserControl.Resources>
+
+    <!-- Main AI Assist Content -->
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Hidden probe control ensures UI automation tests find at least one WPF Control instance -->
+        <Button x:Name="UiProbeControl" Visibility="Collapsed" />
+
+        <!-- AI Chat Area -->
+        <chat:SfAIAssistView Grid.Row="0"
+                            CurrentUser="{Binding CurrentUser}"
+                            Messages="{Binding Messages}"
+                            Margin="10" />
+
+        <!-- Financial Input Forms -->
+        <Border Grid.Row="1" Background="#F8F9FA" BorderBrush="#E9ECEF" BorderThickness="1"
+                Padding="15" Margin="10,0,10,10"
+                Visibility="{Binding ShowFinancialInputs, Converter={StaticResource BoolToVis}}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!-- Service Charge Calculator Inputs -->
+                <GroupBox Grid.Row="0" Header="Service Charge Calculator"
+                         Visibility="{Binding IsServiceChargeMode, Converter={StaticResource BoolToVis}}"
+                         Margin="0,0,0,10">
+                    <Grid Margin="10">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Annual Expenses: Total yearly operational costs used to calculate service charge rates -->
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Annual Expenses:"
+                                 VerticalAlignment="Center" Margin="0,0,10,5" />
+                        <syncfusion:DoubleTextBox Grid.Row="0" Grid.Column="1"
+                                                Value="{Binding AnnualExpenses, Mode=TwoWay}"
+                                                Margin="0,0,10,5" />
+
+                        <!-- Target Reserve %: Desired percentage of annual expenses to maintain as reserve fund -->
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Target Reserve %:"
+                                 VerticalAlignment="Center" Margin="0,0,10,5" />
+                        <syncfusion:DoubleTextBox Grid.Row="1" Grid.Column="1"
+                                                Value="{Binding TargetReservePercentage, Mode=TwoWay}"
+                                                Margin="0,0,10,5" />
+
+                        <!-- Calculate Button -->
+                        <syncfusion:ButtonAdv Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2"
+                                            Label="Calculate Service Charge"
+                                            Command="{Binding CalculateServiceChargeCommand}"
+                                            HorizontalAlignment="Right" Margin="0,10,0,0" />
+                    </Grid>
+                </GroupBox>
+
+                <!-- What-If Scenario Inputs -->
+                <GroupBox Grid.Row="1" Header="What-If Scenario Analysis"
+                         Visibility="{Binding IsWhatIfMode, Converter={StaticResource BoolToVis}}"
+                         Margin="0,0,0,10">
+                    <Grid Margin="10">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Scenario Description -->
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Scenario:"
+                                 VerticalAlignment="Center" Margin="0,0,10,5" />
+                        <TextBox Grid.Row="0" Grid.Column="1"
+                               Text="{Binding WhatIfScenario, Mode=TwoWay}"
+                               Margin="0,0,0,5" />
+
+                        <!-- Variable to Change -->
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Variable:"
+                                 VerticalAlignment="Center" Margin="0,0,10,5" />
+                        <ComboBox Grid.Row="1" Grid.Column="1"
+                                SelectedItem="{Binding WhatIfVariable, Mode=TwoWay}"
+                                Margin="0,0,0,5">
+                            <ComboBoxItem Content="Annual Expenses" />
+                            <ComboBoxItem Content="Target Reserve %" />
+                            <ComboBoxItem Content="Service Charge Rate" />
+                        </ComboBox>
+
+                        <!-- New Value -->
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="New Value:"
+                                 VerticalAlignment="Center" Margin="0,0,10,5" />
+                        <syncfusion:DoubleTextBox Grid.Row="2" Grid.Column="1"
+                                                Value="{Binding WhatIfNewValue, Mode=TwoWay}"
+                                                Margin="0,0,0,5" />
+                    </Grid>
+                </GroupBox>
+
+                <!-- Proactive Insights Configuration -->
+                <GroupBox Grid.Row="2" Header="Proactive Insights Settings"
+                         Visibility="{Binding IsProactiveMode, Converter={StaticResource BoolToVis}}"
+                         Margin="0,0,0,10">
+                    <Grid Margin="10">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Alert Threshold -->
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Alert Threshold:"
+                                 VerticalAlignment="Center" Margin="0,0,10,5" />
+                        <syncfusion:DoubleTextBox Grid.Row="0" Grid.Column="1"
+                                                Value="{Binding ProactiveAlertThreshold, Mode=TwoWay}"
+                                                Margin="0,0,0,5" />
+
+                        <!-- Enable Proactive Monitoring -->
+                        <CheckBox Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
+                                Content="Enable proactive monitoring and alerts"
+                                IsChecked="{Binding EnableProactiveMonitoring, Mode=TwoWay}"
+                                Margin="0,5,0,0" />
+                    </Grid>
+                </GroupBox>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>
