@@ -25,21 +25,26 @@ runtimes:
 lint:
   enabled:
     # .NET code formatting and style
+    - pyright@1.1.406
     - dotnet-format@9.0.0
     # Comprehensive Python linting (replaces black, isort, bandit)
-    - ruff@0.13.0
+    - ruff@0.13.3
     # PowerShell script analysis
     - psscriptanalyzer@1.24.0
     # General code formatting (JSON, YAML, Markdown, etc.)
     - prettier@3.6.2
     # YAML configuration linting
     - yamllint
-    # Security scanning for secrets
+    # Security scanning for secrets and vulnerabilities
     - gitleaks@8.28.0
+    - trufflehog@3.90.8
+    # GitHub Actions workflow validation
+    - actionlint@1.7.8
+    # Infrastructure security (limited scope to avoid memory issues)
+    - checkov@3.2.474
   disabled:
     # Memory-intensive security scanners - disabled to prevent OOM
-    - bandit
-    - trufflehog
+    - bandit  # Security now handled by ruff's S rules
     - semgrep
     - osv-scanner
     # Python tools replaced by ruff
@@ -54,10 +59,6 @@ lint:
     - markdownlint
     # Too picky about git whitespace in docs
     - git-diff-check
-    # Too picky about GitHub Actions syntax variations
-    - actionlint
-    # Security scanner with too many false positives on config files
-    - checkov
   ignore:
     # Skip documentation formatting entirely
     - linters: [ALL]
@@ -93,6 +94,15 @@ lint:
         - .venv/
         - '%APPDATA%/npm/**'
         - node_modules/
+    # Limit checkov to only essential infrastructure files to prevent memory issues
+    - linters: [checkov]
+      paths:
+        - '**/*.py'  # Skip Python files for checkov (handled by ruff)
+        - '**/*.cs'  # Skip C# files
+        - '**/*.ps1' # Skip PowerShell files
+        - docs/
+        - logs/
+        - TestResults/
 actions:
   enabled:
     - trunk-announce

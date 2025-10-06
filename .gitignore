@@ -38,14 +38,35 @@ CoverageReport/
 # Settings (leave example templates instead)
 *.user.settings
 
-# Sensitive local license key (place example in docs only)
+# Secrets and sensitive configuration (NEVER commit)
 license.key
+*.license.key
 WileyWidget/LicenseKey.Private.cs
+LicenseKey.Private.cs
 
 # Environment variables (NEVER commit)
 .env
 .env.local
 .env.*.local
+.env.production
+.env.staging
+
+# Configuration files with secrets
+appsettings.secrets.json
+appsettings.*.secrets.json
+config.secrets.json
+secrets.json
+
+# Azure and cloud credentials
+azure-credentials.json
+aws-credentials.json
+gcp-credentials.json
+
+# API keys and tokens
+*.key
+*.token
+api-keys.txt
+credentials.txt
 
 # Rider / VS Code
 .idea/
