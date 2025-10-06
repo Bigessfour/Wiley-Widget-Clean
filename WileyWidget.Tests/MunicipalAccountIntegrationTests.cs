@@ -20,16 +20,14 @@ public class MunicipalAccountIntegrationTests : IDisposable
 
     public MunicipalAccountIntegrationTests()
     {
-        // Create in-memory database for testing
-        var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-            .Options;
-
-        _contextFactory = new TestDbContextFactory(options);
+        // Use SQLite in-memory database for testing (Microsoft recommended approach)
+        // Provides better SQL compatibility than EF Core In-Memory provider
+        var databaseName = $"MunicipalAccountTest_{Guid.NewGuid()}";
+        _contextFactory = TestDbContextFactory.CreateSqliteInMemory(databaseName);
         _context = _contextFactory.CreateDbContext();
         _repository = new MunicipalAccountRepository(_contextFactory);
 
-        // Seed the database
+        // Ensure database is created
         _context.Database.EnsureCreated();
     }
 
@@ -160,6 +158,7 @@ public class MunicipalAccountIntegrationTests : IDisposable
         {
             _context.Database.EnsureDeleted();
             _context.Dispose();
+            _contextFactory.Dispose();
         }
     }
 

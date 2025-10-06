@@ -12,7 +12,8 @@ foreach ($var in $envVars) {
     $value = [Environment]::GetEnvironmentVariable($var, 'User')
     if ($value) {
         Write-Host "✅ $var`: Set (length: $($value.Length))" -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host "❌ $var`: NOT SET" -ForegroundColor Red
     }
 }
@@ -44,10 +45,12 @@ try {
     $test = & pwsh -Command "Write-Output 'Shell integration test'"
     if ($test -eq 'Shell integration test') {
         Write-Host "✅ Shell Integration: Working" -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host "⚠️  Shell Integration: Limited" -ForegroundColor Yellow
     }
-} catch {
+}
+catch {
     Write-Host "❌ Shell Integration: Failed - $($_.Exception.Message)" -ForegroundColor Red
 }
 

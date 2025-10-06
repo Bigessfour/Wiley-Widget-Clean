@@ -1,4 +1,4 @@
-# Wiley Widget PowerShell Profile - OPTIMIZED VERSION
+﻿# Wiley Widget PowerShell Profile - OPTIMIZED VERSION
 # ========================================================
 # Performance improvements:
 # - Lazy loading for Azure/MCP modules
@@ -37,7 +37,7 @@ function Initialize-MCPEnvironment {
 
         # Background loading of Key Vault secrets
         $keyVaultJob = Start-Job -ScriptBlock {
-            param($vaultName)
+            param($using:vaultName)
             try {
                 # Load secrets asynchronously
                 $secrets = @{}
@@ -49,12 +49,14 @@ function Initialize-MCPEnvironment {
                         if ($secret) {
                             $secrets[$secretName] = ($secret | ConvertFrom-Json).value
                         }
-                    } catch {
+                    }
+                    catch {
                         # Silently continue if secret not found
                     }
                 }
                 return $secrets
-            } catch {
+            }
+            catch {
                 return @{}
             }
         } -ArgumentList "wiley-widget-secrets"
@@ -105,9 +107,9 @@ function Get-KeyVaultSecret {
 
 # Override commands to trigger lazy loading
 $lazyLoadCommands = @(
-    @{Command = 'az'; Loader = ${function:Initialize-AzureEnvironment}},
-    @{Command = 'azd'; Loader = ${function:Initialize-AzureEnvironment}},
-    @{Command = 'kubectl'; Loader = ${function:Initialize-MCPEnvironment}}
+    @{Command = 'az'; Loader = ${function:Initialize-AzureEnvironment} },
+    @{Command = 'azd'; Loader = ${function:Initialize-AzureEnvironment} },
+    @{Command = 'kubectl'; Loader = ${function:Initialize-MCPEnvironment} }
 )
 
 foreach ($item in $lazyLoadCommands) {
@@ -152,9 +154,9 @@ Start-Job -ScriptBlock {
 
     # Cache environment info
     $global:CachedEnv = @{
-        IsAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+        IsAdmin           = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
         PowerShellVersion = $PSVersionTable.PSVersion
-        OSVersion = (Get-CimInstance Win32_OperatingSystem).Caption
+        OSVersion         = (Get-CimInstance Win32_OperatingSystem).Caption
     }
 } | Out-Null
 
@@ -164,9 +166,11 @@ $loadTimeMs = [math]::Round($profileLoadTime.TotalMilliseconds, 2)
 
 if ($loadTimeMs -gt 3000) {
     Write-Host "🐌 Profile loaded in: ${loadTimeMs}ms (consider optimization)" -ForegroundColor Red
-} elseif ($loadTimeMs -gt 1000) {
+}
+elseif ($loadTimeMs -gt 1000) {
     Write-Host "⚠️  Profile loaded in: ${loadTimeMs}ms" -ForegroundColor Yellow
-} else {
+}
+else {
     Write-Host "✅ Profile loaded in: ${loadTimeMs}ms" -ForegroundColor Green
 }
 

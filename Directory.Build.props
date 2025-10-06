@@ -8,5 +8,18 @@
   <PropertyGroup>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <Nullable>disable</Nullable>
+
+    <!-- Build Caching and Performance Optimizations -->
+    <UseSharedCompilation>true</UseSharedCompilation>
+    <ProduceReferenceAssemblyInOutDir>true</ProduceReferenceAssemblyInOutDir>
+    <AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
+
+    <!-- Enable incremental build features -->
+    <DisableFastUpToDateCheck>false</DisableFastUpToDateCheck>
+    <DisableImplicitFrameworkReferences>false</DisableImplicitFrameworkReferences>
+
+    <!-- Optimize for development workflow -->
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <RestoreUseStaticGraphEvaluation>true</RestoreUseStaticGraphEvaluation>
   </PropertyGroup>
 </Project>

@@ -184,15 +184,6 @@ public class UtilityCustomerTests
         var validationResults = new List<ValidationResult>();
         var isValid = Validator.TryValidateObject(customer, validationContext, validationResults, true);
 
-        // Debug: Print validation errors
-        if (!isValid)
-        {
-            foreach (var error in validationResults)
-            {
-                Console.WriteLine($"Validation error: {error.ErrorMessage} on {string.Join(", ", error.MemberNames)}");
-            }
-        }
-
         // Assert
         if (shouldBeValid)
         {

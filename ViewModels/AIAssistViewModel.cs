@@ -517,15 +517,6 @@ public partial class AIAssistViewModel : ObservableObject
 }
 
 /// <summary>
-/// Chat message model
-/// </summary>
-public class ChatMessage
-{
-    public string Content { get; set; } = string.Empty;
-    public bool IsUser { get; set; }
-    public DateTime Timestamp { get; set; }
-}
-
 /// <summary>
 /// Local anticipatory insights for temporary use
 /// </summary>

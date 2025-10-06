@@ -51,4 +51,11 @@ public interface IEnterpriseRepository
     /// Gets enterprises with their budget interactions
     /// </summary>
     Task<IEnumerable<Enterprise>> GetWithInteractionsAsync();
+
+    /// <summary>
+    /// Creates a new Enterprise instance by mapping values from headers to properties
+    /// </summary>
+    /// <param name="headerValueMap">Dictionary mapping header names to values</param>
+    /// <returns>A new Enterprise instance with mapped properties</returns>
+    Enterprise CreateFromHeaderMapping(IDictionary<string, string> headerValueMap);
 }

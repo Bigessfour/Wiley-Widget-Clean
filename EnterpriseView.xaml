@@ -10,6 +10,7 @@
         WindowStartupLocation="CenterScreen">
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
+        <local:BalanceColorConverter x:Key="BalanceColorConverter" />
     </Window.Resources>
 
     <DockPanel>

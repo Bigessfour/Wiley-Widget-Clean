@@ -15,7 +15,6 @@ namespace WileyWidget.ViewModels
     public partial class DashboardViewModel : ObservableObject
     {
         private readonly ILogger<DashboardViewModel> _logger;
-        private readonly AppDbContext _dbContext;
         private readonly IEnterpriseRepository _enterpriseRepository;
 
         // KPI Properties
@@ -89,11 +88,9 @@ namespace WileyWidget.ViewModels
 
         public DashboardViewModel(
             ILogger<DashboardViewModel> logger,
-            AppDbContext dbContext,
             IEnterpriseRepository enterpriseRepository)
         {
             _logger = logger;
-            _dbContext = dbContext;
             _enterpriseRepository = enterpriseRepository;
         }
 

@@ -21,7 +21,8 @@ try {
     az account set --subscription 89c2076a-8c6f-41fe-b03c-850d46a57abf
     az config set defaults.location=eastus2
     Write-Host "✅ Azure CLI optimized" -ForegroundColor Green
-} catch {
+}
+catch {
     Write-Warning "Azure CLI optimization failed: $_"
 }
 
@@ -32,7 +33,8 @@ if (-not $SkipAuth) {
         $tenantId = "cb097857-10d5-410b-8e09-6073de3ab035"
         Connect-AzAccount -TenantId $tenantId -ErrorAction Stop
         Write-Host "✅ Azure PowerShell authenticated" -ForegroundColor Green
-    } catch {
+    }
+    catch {
         Write-Warning "Azure PowerShell authentication failed: $_"
         Write-Host "Manual authentication required. Run: Connect-AzAccount -TenantId $tenantId" -ForegroundColor Yellow
     }
@@ -57,12 +59,13 @@ try {
     $cacheFile = "$PSScriptRoot\azure-cache.json"
     @{
         ResourceGroups = $rgCache
-        Subscriptions = $subCache
-        Timestamp = Get-Date
+        Subscriptions  = $subCache
+        Timestamp      = Get-Date
     } | ConvertTo-Json | Out-File $cacheFile -Force
     Write-Host "💾 Cache saved to $cacheFile" -ForegroundColor Green
 
-} catch {
+}
+catch {
     Write-Warning "Caching setup failed: $_"
 }
 

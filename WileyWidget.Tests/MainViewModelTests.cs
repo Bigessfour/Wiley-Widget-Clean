@@ -15,11 +15,12 @@ namespace WileyWidget.Tests;
 /// Comprehensive tests for MainViewModel functionality
 /// Tests enterprise management, QuickBooks integration, navigation, and error handling
 /// </summary>
-public class MainViewModelTests : IDisposable
+public class MainViewModelTests : TestApplication
 {
     private readonly Mock<IEnterpriseRepository> _mockEnterpriseRepository;
     private readonly Mock<IMunicipalAccountRepository> _mockMunicipalAccountRepository;
     private readonly Mock<IQuickBooksService> _mockQuickBooksService;
+    private readonly Mock<IAIService> _mockAIService;
     private readonly MainViewModel _viewModel;
 
     public MainViewModelTests()
@@ -27,6 +28,7 @@ public class MainViewModelTests : IDisposable
         _mockEnterpriseRepository = new Mock<IEnterpriseRepository>();
         _mockMunicipalAccountRepository = new Mock<IMunicipalAccountRepository>();
         _mockQuickBooksService = new Mock<IQuickBooksService>();
+        _mockAIService = new Mock<IAIService>();
 
         // Setup default mock behaviors
         _mockEnterpriseRepository.Setup(repo => repo.GetAllAsync())
@@ -39,7 +41,9 @@ public class MainViewModelTests : IDisposable
         _viewModel = new MainViewModel(
             _mockEnterpriseRepository.Object,
             _mockMunicipalAccountRepository.Object,
-            _mockQuickBooksService.Object);
+            _mockQuickBooksService.Object,
+            _mockAIService.Object,
+            autoInitialize: false);
     }
 
     /// <summary>
@@ -70,7 +74,7 @@ public class MainViewModelTests : IDisposable
     {
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() =>
-            new MainViewModel(null!, _mockMunicipalAccountRepository.Object, _mockQuickBooksService.Object));
+            new MainViewModel(null!, _mockMunicipalAccountRepository.Object, _mockQuickBooksService.Object, _mockAIService.Object, autoInitialize: false));
     }
 
     [Fact]
@@ -78,14 +82,13 @@ public class MainViewModelTests : IDisposable
     {
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() =>
-            new MainViewModel(_mockEnterpriseRepository.Object, null!, _mockQuickBooksService.Object));
+            new MainViewModel(_mockEnterpriseRepository.Object, null!, _mockQuickBooksService.Object, _mockAIService.Object, autoInitialize: false));
     }
-
     [Fact]
     public void Constructor_WithNullQuickBooksService_DoesNotThrow()
     {
         // Act & Assert - Should not throw
-        using var viewModel = new MainViewModel(_mockEnterpriseRepository.Object, _mockMunicipalAccountRepository.Object, null);
+        using var viewModel = new MainViewModel(_mockEnterpriseRepository.Object, _mockMunicipalAccountRepository.Object, null, _mockAIService.Object, autoInitialize: false);
         Assert.NotNull(viewModel);
     }
 
@@ -185,7 +188,9 @@ public class MainViewModelTests : IDisposable
         using var viewModel = new MainViewModel(
             _mockEnterpriseRepository.Object,
             _mockMunicipalAccountRepository.Object,
-            null!); // No QuickBooks service
+            null!, // No QuickBooks service
+            _mockAIService.Object,
+            autoInitialize: false);
 
         // Act
         await InvokePrivateAsync(viewModel, "LoadQuickBooksCustomersAsync");
@@ -199,7 +204,7 @@ public class MainViewModelTests : IDisposable
     public async System.Threading.Tasks.Task LoadQuickBooksCustomersAsync_WhenBusy_DoesNothing()
     {
         // Arrange
-        _viewModel.QuickBooksBusy = true;
+    _viewModel.QuickBooksBusy = true;
 
         // Act
         await InvokePrivateAsync(_viewModel, "LoadQuickBooksCustomersAsync");
@@ -361,24 +366,19 @@ public class MainViewModelTests : IDisposable
         InvokePrivate(_viewModel, "OpenDashboard");
     }
 
-    [Fact]
+    [StaFact]
     public void OpenAIAssist_ExecutesWithoutError()
     {
         // Act & Assert - Should not throw any exceptions
         InvokePrivate(_viewModel, "OpenAIAssist");
     }
 
-    public void Dispose()
-    {
-        Dispose(true);
-        GC.SuppressFinalize(this);
-    }
-
-    protected virtual void Dispose(bool disposing)
+    protected override void Dispose(bool disposing)
     {
         if (disposing)
         {
             _viewModel?.Dispose();
         }
+        base.Dispose(disposing);
     }
 }

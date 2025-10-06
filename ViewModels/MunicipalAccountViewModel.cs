@@ -1,6 +1,7 @@
 #nullable enable
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Serilog;
@@ -22,11 +23,19 @@ public partial class MunicipalAccountViewModel : ObservableObject
         IMunicipalAccountRepository accountRepository,
         IQuickBooksService? quickBooksService)
     {
+        var constructorTimer = Stopwatch.StartNew();
+        App.LogDebugEvent("VIEWMODEL_INIT", "MunicipalAccountViewModel constructor started");
+
         _accountRepository = accountRepository ?? throw new ArgumentNullException(nameof(accountRepository));
         _quickBooksService = quickBooksService;
 
+        App.LogDebugEvent("VIEWMODEL_INIT", "Initializing MunicipalAccounts and BudgetAnalysis collections");
         MunicipalAccounts = new ObservableCollection<MunicipalAccount>();
         BudgetAnalysis = new ObservableCollection<MunicipalAccount>();
+
+        constructorTimer.Stop();
+        App.LogDebugEvent("VIEWMODEL_INIT", $"MunicipalAccountViewModel constructor completed in {constructorTimer.ElapsedMilliseconds}ms");
+        App.LogStartupTiming("MunicipalAccountViewModel Constructor", constructorTimer.Elapsed);
     }
 
     /// <summary>
@@ -87,14 +96,21 @@ public partial class MunicipalAccountViewModel : ObservableObject
     [RelayCommand]
     private async Task LoadAccountsAsync()
     {
+        var loadTimer = Stopwatch.StartNew();
+        App.LogDebugEvent("DATA_LOADING", "Starting municipal accounts load");
+
         try
         {
+            App.LogDebugEvent("DATA_LOADING", "Setting busy state and status message");
             IsBusy = true;
             HasError = false;
             ErrorMessage = string.Empty;
             StatusMessage = "Loading accounts...";
 
+            App.LogDebugEvent("DATA_LOADING", "Querying account repository");
             var accounts = await _accountRepository.GetActiveAsync();
+
+            App.LogDebugEvent("DATA_LOADING", $"Retrieved {accounts.Count} accounts, clearing and repopulating collection");
             MunicipalAccounts.Clear();
             foreach (var account in accounts)
             {
@@ -102,10 +118,12 @@ public partial class MunicipalAccountViewModel : ObservableObject
             }
 
             StatusMessage = $"Loaded {accounts.Count} accounts successfully";
+            App.LogDebugEvent("DATA_LOADING", $"Successfully loaded {accounts.Count} municipal accounts");
             Log.Information("Loaded {Count} municipal accounts", accounts.Count);
         }
         catch (Exception ex)
         {
+            App.LogDebugEvent("DATA_LOADING_ERROR", $"Failed to load municipal accounts: {ex.Message}");
             ErrorMessage = $"Failed to load accounts: {ex.Message}";
             HasError = true;
             StatusMessage = "Load failed";
@@ -113,7 +131,12 @@ public partial class MunicipalAccountViewModel : ObservableObject
         }
         finally
         {
+            App.LogDebugEvent("DATA_LOADING", "Setting IsBusy = false");
             IsBusy = false;
+
+            loadTimer.Stop();
+            App.LogDebugEvent("DATA_LOADING", $"Municipal accounts load completed in {loadTimer.ElapsedMilliseconds}ms");
+            App.LogStartupTiming("Municipal Accounts Load", loadTimer.Elapsed);
         }
     }
 

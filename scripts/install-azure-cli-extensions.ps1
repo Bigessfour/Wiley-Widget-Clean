@@ -63,7 +63,8 @@ foreach ($ext in $extensions) {
             if (!$Quiet) {
                 Write-Host "✅ $ext installed successfully" -ForegroundColor Green
             }
-        } else {
+        }
+        else {
             $failed++
             if (!$Quiet) {
                 Write-Host "❌ Failed to install $ext" -ForegroundColor Red

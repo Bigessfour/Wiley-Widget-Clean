@@ -13,27 +13,27 @@ Write-Host "=" * 40 -ForegroundColor Cyan
 
 $profiles = @(
     @{
-        Path = $PROFILE.AllUsersAllHosts
-        Name = "AllUsersAllHosts"
-        Description = "Global profile (affects all users)"
+        Path         = $PROFILE.AllUsersAllHosts
+        Name         = "AllUsersAllHosts"
+        Description  = "Global profile (affects all users)"
         SafeToDelete = $false
     },
     @{
-        Path = $PROFILE.AllUsersCurrentHost
-        Name = "AllUsersCurrentHost"
-        Description = "Global current host profile"
+        Path         = $PROFILE.AllUsersCurrentHost
+        Name         = "AllUsersCurrentHost"
+        Description  = "Global current host profile"
         SafeToDelete = $true
     },
     @{
-        Path = $PROFILE.CurrentUserAllHosts
-        Name = "CurrentUserAllHosts"
-        Description = "User-wide profile (all hosts)"
+        Path         = $PROFILE.CurrentUserAllHosts
+        Name         = "CurrentUserAllHosts"
+        Description  = "User-wide profile (all hosts)"
         SafeToDelete = $true
     },
     @{
-        Path = $PROFILE.CurrentUserCurrentHost
-        Name = "CurrentUserCurrentHost"
-        Description = "Current user, current host (most specific)"
+        Path         = $PROFILE.CurrentUserCurrentHost
+        Name         = "CurrentUserCurrentHost"
+        Description  = "Current user, current host (most specific)"
         SafeToDelete = $false
     }
 )
@@ -74,13 +74,16 @@ if ($Analyze) {
             if ($hasImportant) {
                 $profile.SafeToDelete = $false
                 Write-Host "   ❌ RECOMMENDATION: Keep (contains important content)" -ForegroundColor Red
-            } elseif ($profile.SafeToDelete) {
+            }
+            elseif ($profile.SafeToDelete) {
                 Write-Host "   ✅ RECOMMENDATION: Safe to delete" -ForegroundColor Green
-            } else {
+            }
+            else {
                 Write-Host "   ⚠️  RECOMMENDATION: Keep (system profile)" -ForegroundColor Yellow
             }
 
-        } else {
+        }
+        else {
             Write-Host "`n📄 $($profile.Name):" -ForegroundColor Red
             Write-Host "   Status: Not found (already clean)" -ForegroundColor Gray
         }
@@ -95,7 +98,8 @@ if ($Backup) {
             $backupPath = "$($profile.Path).backup.$(Get-Date -Format 'yyyyMMdd-HHmmss')"
             if ($WhatIf) {
                 Write-Host "   Would backup: $($profile.Path) → $backupPath" -ForegroundColor Gray
-            } else {
+            }
+            else {
                 Copy-Item $profile.Path $backupPath
                 Write-Host "   ✅ Backed up: $($profile.Name)" -ForegroundColor Green
             }
@@ -110,11 +114,13 @@ if ($Cleanup) {
 
     if ($toDelete.Count -eq 0) {
         Write-Host "   ℹ️  No profiles safe to delete automatically" -ForegroundColor Blue
-    } else {
+    }
+    else {
         foreach ($profile in $toDelete) {
             if ($WhatIf) {
                 Write-Host "   Would delete: $($profile.Name) - $($profile.Path)" -ForegroundColor Gray
-            } else {
+            }
+            else {
                 Remove-Item $profile.Path -Force
                 Write-Host "   ✅ Deleted: $($profile.Name)" -ForegroundColor Green
             }

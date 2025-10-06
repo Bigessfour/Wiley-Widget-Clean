@@ -1,4 +1,4 @@
-﻿# Wiley Widget Helper Functions
+# Wiley Widget Helper Functions
 # PowerShell utilities to support the C# WPF application
 
 function Show-WileyWidgetStatus {
@@ -10,27 +10,27 @@ function Show-WileyWidgetStatus {
     #>
     param()
 
-    Write-Host "🔍 Checking Wiley Widget Status..." -ForegroundColor Cyan
+    Write-Information "🔍 Checking Wiley Widget Status..." -InformationAction Continue
 
     # Check if app is running
     $process = Get-Process -Name "WileyWidget" -ErrorAction SilentlyContinue
     if ($process) {
-        Write-Host "✅ Wiley Widget is running" -ForegroundColor Green
-        Write-Host "   Process ID: $($process.Id)" -ForegroundColor Gray
-        Write-Host "   Memory Usage: $([math]::Round($process.WorkingSet64 / 1MB, 2)) MB" -ForegroundColor Gray
-        Write-Host "   Start Time: $($process.StartTime)" -ForegroundColor Gray
+        Write-Information "✅ Wiley Widget is running" -InformationAction Continue
+        Write-Information "   Process ID: $($process.Id)" -InformationAction Continue
+        Write-Information "   Memory Usage: $([math]::Round($process.WorkingSet64 / 1MB, 2)) MB" -InformationAction Continue
+        Write-Information "   Start Time: $($process.StartTime)" -InformationAction Continue
     }
     else {
-        Write-Host "❌ Wiley Widget is not running" -ForegroundColor Red
+        Write-Information "❌ Wiley Widget is not running" -InformationAction Continue
     }
 
     # Check app data directory
     $appDataPath = "$env:APPDATA\WileyWidget"
     if (Test-Path $appDataPath) {
-        Write-Host "📁 App Data Directory: $appDataPath" -ForegroundColor Blue
+        Write-Information "📁 App Data Directory: $appDataPath" -InformationAction Continue
         $logFiles = Get-ChildItem "$appDataPath\logs" -Filter "*.log" -ErrorAction SilentlyContinue
         if ($logFiles) {
-            Write-Host "   📄 Latest Log: $($logFiles | Sort-Object LastWriteTime -Descending | Select-Object -First 1 -ExpandProperty Name)" -ForegroundColor Gray
+            Write-Information "   📄 Latest Log: $($logFiles | Sort-Object LastWriteTime -Descending | Select-Object -First 1 -ExpandProperty Name)" -InformationAction Continue
         }
     }
 }
@@ -47,17 +47,17 @@ function Start-WileyWidget {
         [switch]$CleanStart
     )
 
-    Write-Host "🚀 Starting Wiley Widget..." -ForegroundColor Cyan
+    Write-Information "🚀 Starting Wiley Widget..." -InformationAction Continue
 
     if ($CleanStart) {
-        Write-Host "🧹 Performing clean start..." -ForegroundColor Yellow
+        Write-Information "🧹 Performing clean start..." -InformationAction Continue
         # Kill any existing processes
         Get-Process -Name "WileyWidget" -ErrorAction SilentlyContinue | Stop-Process -Force
         # Clear logs if requested
         $logPath = "$env:APPDATA\WileyWidget\logs"
         if (Test-Path $logPath) {
             Remove-Item "$logPath\*.log" -Force
-            Write-Host "   Cleared old log files" -ForegroundColor Gray
+            Write-Information "   Cleared old log files" -InformationAction Continue
         }
     }
 
@@ -65,24 +65,24 @@ function Start-WileyWidget {
     $appPath = Join-Path $PSScriptRoot ".." "bin" "Debug" "net9.0-windows"
     if (Test-Path $appPath) {
         Set-Location $appPath
-        Write-Host "   Working Directory: $appPath" -ForegroundColor Gray
+        Write-Information "   Working Directory: $appPath" -InformationAction Continue
     }
 
     # Launch the application
     $exePath = Join-Path $appPath "WileyWidget.exe"
     if (Test-Path $exePath) {
         if ($Debug) {
-            Write-Host "   Launching in debug mode..." -ForegroundColor Yellow
+            Write-Information "   Launching in debug mode..." -InformationAction Continue
             & $exePath
         }
         else {
-            Write-Host "   Launching Wiley Widget..." -ForegroundColor Green
+            Write-Information "   Launching Wiley Widget..." -InformationAction Continue
             Start-Process $exePath
         }
     }
     else {
-        Write-Host "❌ WileyWidget.exe not found at: $exePath" -ForegroundColor Red
-        Write-Host "   Try building the project first with: dotnet build" -ForegroundColor Yellow
+        Write-Information "❌ WileyWidget.exe not found at: $exePath" -InformationAction Continue
+        Write-Information "   Try building the project first with: dotnet build" -InformationAction Continue
     }
 }
 
@@ -95,36 +95,36 @@ function Test-WileyWidgetDatabase {
     #>
     param()
 
-    Write-Host "🗄️ Testing Wiley Widget Database Connection..." -ForegroundColor Cyan
+    Write-Information "🗄️ Testing Wiley Widget Database Connection..." -InformationAction Continue
 
     # Load environment variables
     $envPath = Join-Path $PSScriptRoot ".." ".env"
     if (Test-Path $envPath) {
-        Write-Host "   Loading environment from .env file..." -ForegroundColor Gray
+        Write-Information "   Loading environment from .env file..." -InformationAction Continue
         # Note: In real usage, you'd load the .env file properly
     }
 
     # Check for SQL LocalDB
     $localDbInstances = & sqllocaldb info 2>$null
     if ($LASTEXITCODE -eq 0) {
-        Write-Host "✅ SQL LocalDB is available" -ForegroundColor Green
-        Write-Host "   Instances: $($localDbInstances -join ', ')" -ForegroundColor Gray
+        Write-Information "✅ SQL LocalDB is available" -InformationAction Continue
+        Write-Information "   Instances: $($localDbInstances -join ', ')" -InformationAction Continue
     }
     else {
-        Write-Host "❌ SQL LocalDB not found or not running" -ForegroundColor Red
-        Write-Host "   Try: sqllocaldb start" -ForegroundColor Yellow
+        Write-Information "❌ SQL LocalDB not found or not running" -InformationAction Continue
+        Write-Information "   Try: sqllocaldb start" -InformationAction Continue
     }
 
     # Check for database files
     $dbPath = Join-Path $PSScriptRoot ".." "WileyWidget.db"
     if (Test-Path $dbPath) {
-        Write-Host "✅ Database file found: $dbPath" -ForegroundColor Green
+        Write-Information "✅ Database file found: $dbPath" -InformationAction Continue
         $dbInfo = Get-Item $dbPath
-        Write-Host "   Size: $([math]::Round($dbInfo.Length / 1MB, 2)) MB" -ForegroundColor Gray
-        Write-Host "   Modified: $($dbInfo.LastWriteTime)" -ForegroundColor Gray
+        Write-Information "   Size: $([math]::Round($dbInfo.Length / 1MB, 2)) MB" -InformationAction Continue
+        Write-Information "   Modified: $($dbInfo.LastWriteTime)" -InformationAction Continue
     }
     else {
-        Write-Host "⚠️ Database file not found at: $dbPath" -ForegroundColor Yellow
+        Write-Information "⚠️ Database file not found at: $dbPath" -InformationAction Continue
     }
 }
 
@@ -146,8 +146,8 @@ function Show-WileyWidgetLog {
         Select-Object -First 1
 
     if ($latestLog) {
-        Write-Host "📄 Showing last $Lines lines from: $($latestLog.Name)" -ForegroundColor Cyan
-        Write-Host ("=" * 50) -ForegroundColor Gray
+        Write-Information "📄 Showing last $Lines lines from: $($latestLog.Name)" -InformationAction Continue
+        Write-Information ("=" * 50) -InformationAction Continue
 
         if ($Follow) {
             Get-Content $latestLog.FullName -Tail $Lines -Wait
@@ -157,7 +157,7 @@ function Show-WileyWidgetLog {
         }
     }
     else {
-        Write-Host "❌ No log files found in: $logPath" -ForegroundColor Red
+        Write-Information "❌ No log files found in: $logPath" -InformationAction Continue
     }
 }
 
@@ -170,16 +170,16 @@ function Update-WileyWidgetEnvironment {
     #>
     param()
 
-    Write-Host "🔄 Updating Wiley Widget Environment..." -ForegroundColor Cyan
+    Write-Information "🔄 Updating Wiley Widget Environment..." -InformationAction Continue
 
     $envPath = Join-Path $PSScriptRoot ".." ".env"
     if (Test-Path $envPath) {
-        Write-Host "   Loading .env file..." -ForegroundColor Gray
+        Write-Information "   Loading .env file..." -InformationAction Continue
         # In a real implementation, you'd parse and set environment variables
-        Write-Host "✅ Environment variables loaded" -ForegroundColor Green
+        Write-Information "✅ Environment variables loaded" -InformationAction Continue
     }
     else {
-        Write-Host "❌ .env file not found at: $envPath" -ForegroundColor Red
+        Write-Information "❌ .env file not found at: $envPath" -InformationAction Continue
     }
 }
 

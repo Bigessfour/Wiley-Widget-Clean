@@ -1,3 +1,7 @@
+# Build cache
+.buildcache/
+*.buildcache/
+
 # .NET / WPF standard ignores
 bin/
 obj/
@@ -62,6 +66,9 @@ Desktop.ini
 *.backup*
 *_backup*
 *.msi
+
+# WPF temporary project files
+*_wpftmp.csproj
 
 # Installers and large binaries
 *.msi

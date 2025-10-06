@@ -13,7 +13,8 @@ foreach ($var in $envVars) {
     $value = [Environment]::GetEnvironmentVariable($var, 'User')
     if ($value) {
         Write-Host "✅ $var`: Configured" -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host "❌ $var`: Missing" -ForegroundColor Red
         $allSet = $false
     }
@@ -29,10 +30,12 @@ if (Test-Path $mcpConfigPath) {
         $config = Get-Content $mcpConfigPath | ConvertFrom-Json
         Write-Host "✅ Config is valid JSON" -ForegroundColor Green
         Write-Host "📊 Configured servers: $($config.servers.PSObject.Properties.Name -join ', ')" -ForegroundColor White
-    } catch {
+    }
+    catch {
         Write-Host "❌ Config file contains invalid JSON: $($_.Exception.Message)" -ForegroundColor Red
     }
-} else {
+}
+else {
     Write-Host "❌ MCP config file not found: $mcpConfigPath" -ForegroundColor Red
 }
 
@@ -41,7 +44,8 @@ Write-Host "`n🔧 Azure MCP Binary:" -ForegroundColor Yellow
 try {
     $azmcp = Get-Command azmcp-win32-x64 -ErrorAction Stop
     Write-Host "✅ Azure MCP binary found: $($azmcp.Source)" -ForegroundColor Green
-} catch {
+}
+catch {
     Write-Host "❌ Azure MCP binary not found in PATH" -ForegroundColor Red
     Write-Host "   This may cause Azure MCP server to fail" -ForegroundColor Yellow
 }
@@ -51,7 +55,8 @@ Write-Host "`n📊 Summary:" -ForegroundColor Cyan
 if ($allSet) {
     Write-Host "✅ All environment variables are configured" -ForegroundColor Green
     Write-Host "🚀 MCP servers should start successfully after VS Code restart" -ForegroundColor Green
-} else {
+}
+else {
     Write-Host "⚠️  Some environment variables are missing" -ForegroundColor Yellow
     Write-Host "💡 Run setup-mcp-environment.ps1 to configure missing variables" -ForegroundColor White
 }
