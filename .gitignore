@@ -23,6 +23,7 @@ logs/
 
 # Publish artifacts
 publish/
+publish-temp/
 
 # Coverage
 coverage/
