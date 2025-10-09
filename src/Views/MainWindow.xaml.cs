@@ -41,6 +41,7 @@ public partial class MainWindow : RibbonWindow
     private IServiceScope? _viewScope; // keep scoped services alive for the window lifetime
     // Cache Enterprise property metadata to avoid repeated reflection when building dynamic columns
     private static readonly ConcurrentDictionary<Type, (PropertyInfo Prop, WileyWidget.Attributes.GridDisplayAttribute? Attr)[]> _columnPropertyCache = new();
+    private readonly DateTime _startTime = DateTime.Now;
 
     private Syncfusion.UI.Xaml.Grid.SfDataGrid? GetDataGrid()
     {
@@ -427,23 +428,6 @@ public partial class MainWindow : RibbonWindow
         }
     }
 
-    private void ShowTestWindow()
-    {
-        try
-        {
-            var testWindow = new TestWindow();
-            testWindow.Owner = this;
-            testWindow.ShowDialog();
-            Log.Information("Test window shown successfully - WPF rendering is working");
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Failed to show test window - WPF rendering may be broken");
-            MessageBox.Show($"Test window failed: {ex.Message}", "Rendering Test Failed",
-                          MessageBoxButton.OK, MessageBoxImage.Error);
-        }
-    }
-
     // Keep a parameterless constructor for XAML/designer and legacy call sites
     public MainWindow()
     {
@@ -451,6 +435,7 @@ public partial class MainWindow : RibbonWindow
         App.LogDebugEvent("VIEW_INIT", "MainWindow constructor started");
 
         Log.Information("🏠 MainWindow constructor called - initializing main application window");
+        Console.WriteLine("[MAINWINDOW] Constructor called");
 
         // CRITICAL: Set dummy DataContext BEFORE InitializeComponent to prevent binding failures
         // This prevents NullReferenceException during XAML loading when bindings try to access ViewModel properties
@@ -531,7 +516,7 @@ public partial class MainWindow : RibbonWindow
         RestoreWindowState();
         Loaded += OnWindowLoaded;
         ContentRendered += OnWindowContentRendered;
-        Closing += (_, _) => PersistWindowState();
+        Closing += OnWindowClosing;
         KeyDown += OnKeyDown;
         UpdateThemeToggleVisuals();
 
@@ -650,17 +635,8 @@ public partial class MainWindow : RibbonWindow
                 Log.Information("🔐 Attempting silent authentication on startup - ID: {WindowLoadId}", windowLoadId);
                 try
                 {
-                    var silentResult = await _authService.TrySilentSignInAsync();
-                    if (silentResult != null)
-                    {
-                        Log.Information("🔐 Silent authentication succeeded for user: {UserName} - ID: {WindowLoadId}",
-                            silentResult.Account.Username, windowLoadId);
-                        await UpdateAuthenticationUIAsyncInternal();
-                    }
-                    else
-                    {
-                        Log.Information("🔐 Silent authentication not available - user will need to sign in manually - ID: {WindowLoadId}", windowLoadId);
-                    }
+                    // Silent sign-in removed - use explicit SignInAsync if needed
+                    Log.Information("🔐 Silent authentication not available - user will need to sign in manually - ID: {WindowLoadId}", windowLoadId);
                 }
                 catch (Exception ex)
                 {
@@ -690,7 +666,7 @@ public partial class MainWindow : RibbonWindow
                 Log.Information("🎨 Theme validation - Applied: {Applied}, Expected: {Expected} - ID: {WindowLoadId}", 
                     appliedTheme, expectedTheme, windowLoadId);
                 
-                if (appliedTheme != expectedTheme)
+                if (appliedTheme.ToString() != expectedTheme)
                 {
                     Log.Warning("🎨 Theme mismatch detected! Applied theme '{Applied}' does not match expected '{Expected}' - static resources may fail - ID: {WindowLoadId}", 
                         appliedTheme, expectedTheme, windowLoadId);
@@ -768,16 +744,6 @@ public partial class MainWindow : RibbonWindow
 
             // Add visual debug overlay for troubleshooting
             AddVisualDebugOverlay();
-
-            // Add keyboard shortcut to show test window (Ctrl+Shift+T)
-            KeyDown += (s, e) =>
-            {
-                if (e.Key == Key.T && Keyboard.Modifiers == (ModifierKeys.Control | ModifierKeys.Shift))
-                {
-                    ShowTestWindow();
-                    e.Handled = true;
-                }
-            };
 
             loadTimer.Stop();
             Log.Information("=== MAIN WINDOW INITIALIZATION COMPLETED SUCCESSFULLY ===");
@@ -1651,14 +1617,14 @@ public partial class MainWindow : RibbonWindow
         RibbonButton? btnDark = FindName("BtnFluentDark") as RibbonButton;
         if (btnDark != null)
         {
-            btnDark.IsEnabled = current != Syncfusion.SfSkinManager.VisualStyles.FluentDark;
-            btnDark.Label = current == Syncfusion.SfSkinManager.VisualStyles.FluentDark ? "✔ Fluent Dark" : "Fluent Dark";
+            btnDark.IsEnabled = current != "FluentDark";
+            btnDark.Label = current == "FluentDark" ? "✔ Fluent Dark" : "Fluent Dark";
         }
         RibbonButton? btnLight = FindName("BtnFluentLight") as RibbonButton;
         if (btnLight != null)
         {
-            btnLight.IsEnabled = current != Syncfusion.SfSkinManager.VisualStyles.FluentLight;
-            btnLight.Label = current == Syncfusion.SfSkinManager.VisualStyles.FluentLight ? "✔ Fluent Light" : "Fluent Light";
+            btnLight.IsEnabled = current != "FluentLight";
+            btnLight.Label = current == "FluentLight" ? "✔ Fluent Light" : "Fluent Light";
         }
     }
     /// <summary>Display modal About dialog with version information.</summary>
@@ -2584,7 +2550,7 @@ public partial class MainWindow : RibbonWindow
         if (e.Key == Key.Enter && !Keyboard.IsKeyDown(Key.LeftShift) && !Keyboard.IsKeyDown(Key.RightShift))
         {
             // Send message on Enter (but not Shift+Enter for multiline)
-            if (DataContext is ViewModels.MainViewModel vm && vm.CanSendAIMessage)
+            if (DataContext is ViewModels.MainViewModel vm && vm.CanSendAIMessage())
             {
                 vm.SendAIMessageCommand.Execute(null);
                 e.Handled = true;
@@ -2617,5 +2583,18 @@ public partial class MainWindow : RibbonWindow
         {
             Log.Error(ex, "Failed to show critical error dialog: {Title}", title);
         }
+    }
+
+    private void OnWindowClosing(object sender, System.ComponentModel.CancelEventArgs e)
+    {
+        // Prevent the window from closing for the first 30 seconds to allow debugging
+        if ((DateTime.Now - _startTime).TotalSeconds < 30)
+        {
+            Console.WriteLine("[MAINWINDOW] Preventing close for debugging");
+            e.Cancel = true;
+            return;
+        }
+        
+        PersistWindowState();
     }
 }

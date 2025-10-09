@@ -57,23 +57,23 @@ public class MunicipalAccountRepositoryUnitTests : IDisposable
         // Arrange
         var account1 = new MunicipalAccount
         {
-            AccountNumber = "201-2000",
+            AccountNumber = new AccountNumber("201-2000"),
             Name = "Salaries Expense",
             Type = AccountType.Expense,
             Fund = FundType.General
         };
         var account2 = new MunicipalAccount
         {
-            AccountNumber = "101-1000",
+            AccountNumber = new AccountNumber("101-1000"),
             Name = "Cash Account",
             Type = AccountType.Asset,
             Fund = FundType.General
         };
         var account3 = new MunicipalAccount
         {
-            AccountNumber = "301-3000",
+            AccountNumber = new AccountNumber("301-3000"),
             Name = "Retained Earnings",
-            Type = AccountType.Equity,
+            Type = AccountType.RetainedEarnings,
             Fund = FundType.General
         };
 
@@ -84,11 +84,11 @@ public class MunicipalAccountRepositoryUnitTests : IDisposable
         var result = await _repository.GetAllAsync();
 
         // Assert
-        Assert.Equal(3, result.Count);
+        Assert.Equal(3, result.Count());
         var accounts = result.ToList();
-        Assert.Equal("101-1000", accounts[0].AccountNumber);
-        Assert.Equal("201-2000", accounts[1].AccountNumber);
-        Assert.Equal("301-3000", accounts[2].AccountNumber);
+        Assert.Equal("101-1000", accounts[0].AccountNumber.ToString());
+        Assert.Equal("201-2000", accounts[1].AccountNumber.ToString());
+        Assert.Equal("301-3000", accounts[2].AccountNumber.ToString());
     }
 
     [Fact]
@@ -97,7 +97,7 @@ public class MunicipalAccountRepositoryUnitTests : IDisposable
         // Arrange
         var activeAccount1 = new MunicipalAccount
         {
-            AccountNumber = "101-1000",
+            AccountNumber = new AccountNumber("101-1000"),
             Name = "Cash Account",
             Type = AccountType.Asset,
             Fund = FundType.General,
@@ -105,7 +105,7 @@ public class MunicipalAccountRepositoryUnitTests : IDisposable
         };
         var activeAccount2 = new MunicipalAccount
         {
-            AccountNumber = "102-1000",
+            AccountNumber = new AccountNumber("102-1000"),
             Name = "Investments",
             Type = AccountType.Asset,
             Fund = FundType.General,
@@ -113,7 +113,7 @@ public class MunicipalAccountRepositoryUnitTests : IDisposable
         };
         var inactiveAccount = new MunicipalAccount
         {
-            AccountNumber = "999-9999",
+            AccountNumber = new AccountNumber("999-9999"),
             Name = "Closed Account",
             Type = AccountType.Asset,
             Fund = FundType.General,
@@ -127,10 +127,10 @@ public class MunicipalAccountRepositoryUnitTests : IDisposable
         var result = await _repository.GetActiveAsync();
 
         // Assert
-        Assert.Equal(2, result.Count);
+        Assert.Equal(2, result.Count());
         Assert.All(result, a => Assert.True(a.IsActive));
-        Assert.Contains(result, a => a.AccountNumber == "101-1000");
-        Assert.Contains(result, a => a.AccountNumber == "102-1000");
+        Assert.Contains(result, a => a.AccountNumber.ToString() == "101-1000");
+        Assert.Contains(result, a => a.AccountNumber.ToString() == "102-1000");
     }
 
     [Fact]
@@ -139,7 +139,7 @@ public class MunicipalAccountRepositoryUnitTests : IDisposable
         // Arrange
         var generalFundAccount1 = new MunicipalAccount
         {
-            AccountNumber = "101-1000",
+            AccountNumber = new AccountNumber("101-1000"),
             Name = "General Fund Cash",
             Type = AccountType.Asset,
             Fund = FundType.General,
@@ -147,7 +147,7 @@ public class MunicipalAccountRepositoryUnitTests : IDisposable
         };
         var generalFundAccount2 = new MunicipalAccount
         {
-            AccountNumber = "201-2000",
+            AccountNumber = new AccountNumber("201-2000"),
             Name = "General Fund Salaries",
             Type = AccountType.Expense,
             Fund = FundType.General,
@@ -155,7 +155,7 @@ public class MunicipalAccountRepositoryUnitTests : IDisposable
         };
         var waterFundAccount = new MunicipalAccount
         {
-            AccountNumber = "102-1000",
+            AccountNumber = new AccountNumber("102-1000"),
             Name = "Water Fund Cash",
             Type = AccountType.Asset,
             Fund = FundType.Water,
@@ -169,7 +169,7 @@ public class MunicipalAccountRepositoryUnitTests : IDisposable
         var result = await _repository.GetByFundAsync(FundType.General);
 
         // Assert
-        Assert.Equal(2, result.Count);
+        Assert.Equal(2, result.Count());
         Assert.All(result, a => Assert.Equal(FundType.General, a.Fund));
         Assert.All(result, a => Assert.True(a.IsActive));
     }
@@ -180,7 +180,7 @@ public class MunicipalAccountRepositoryUnitTests : IDisposable
         // Arrange
         var activeAccount = new MunicipalAccount
         {
-            AccountNumber = "101-1000",
+            AccountNumber = new AccountNumber("101-1000"),
             Name = "Active General Fund",
             Type = AccountType.Asset,
             Fund = FundType.General,
@@ -188,7 +188,7 @@ public class MunicipalAccountRepositoryUnitTests : IDisposable
         };
         var inactiveAccount = new MunicipalAccount
         {
-            AccountNumber = "102-1000",
+            AccountNumber = new AccountNumber("102-1000"),
             Name = "Inactive General Fund",
             Type = AccountType.Asset,
             Fund = FundType.General,
@@ -203,7 +203,7 @@ public class MunicipalAccountRepositoryUnitTests : IDisposable
 
         // Assert
         Assert.Single(result);
-        Assert.Equal("101-1000", result.First().AccountNumber);
+        Assert.Equal("101-1000", result.First().AccountNumber.ToString());
     }
 
     [Fact]
@@ -212,7 +212,7 @@ public class MunicipalAccountRepositoryUnitTests : IDisposable
         // Arrange
         var assetAccount1 = new MunicipalAccount
         {
-            AccountNumber = "101-1000",
+            AccountNumber = new AccountNumber("101-1000"),
             Name = "Cash",
             Type = AccountType.Asset,
             Fund = FundType.General,
@@ -220,7 +220,7 @@ public class MunicipalAccountRepositoryUnitTests : IDisposable
         };
         var assetAccount2 = new MunicipalAccount
         {
-            AccountNumber = "102-1000",
+            AccountNumber = new AccountNumber("102-1000"),
             Name = "Investments",
             Type = AccountType.Asset,
             Fund = FundType.General,
@@ -228,7 +228,7 @@ public class MunicipalAccountRepositoryUnitTests : IDisposable
         };
         var expenseAccount = new MunicipalAccount
         {
-            AccountNumber = "201-2000",
+            AccountNumber = new AccountNumber("201-2000"),
             Name = "Salaries",
             Type = AccountType.Expense,
             Fund = FundType.General,
@@ -242,7 +242,7 @@ public class MunicipalAccountRepositoryUnitTests : IDisposable
         var result = await _repository.GetByTypeAsync(AccountType.Asset);
 
         // Assert
-        Assert.Equal(2, result.Count);
+        Assert.Equal(2, result.Count());
         Assert.All(result, a => Assert.Equal(AccountType.Asset, a.Type));
         Assert.All(result, a => Assert.True(a.IsActive));
     }
@@ -253,7 +253,7 @@ public class MunicipalAccountRepositoryUnitTests : IDisposable
         // Arrange
         var account = new MunicipalAccount
         {
-            AccountNumber = "101-1000",
+            AccountNumber = new AccountNumber("101-1000"),
             Name = "Cash Account",
             Type = AccountType.Asset,
             Fund = FundType.General,
@@ -268,7 +268,7 @@ public class MunicipalAccountRepositoryUnitTests : IDisposable
         // Assert
         Assert.NotNull(result);
         Assert.Equal(account.Id, result.Id);
-        Assert.Equal("101-1000", result.AccountNumber);
+        Assert.Equal("101-1000", result.AccountNumber.ToString());
         Assert.Equal("Cash Account", result.Name);
     }
 
@@ -288,7 +288,7 @@ public class MunicipalAccountRepositoryUnitTests : IDisposable
         // Arrange
         var account = new MunicipalAccount
         {
-            AccountNumber = "101-1000",
+            AccountNumber = new AccountNumber("101-1000"),
             Name = "Cash Account",
             Type = AccountType.Asset,
             Fund = FundType.General,
@@ -302,7 +302,7 @@ public class MunicipalAccountRepositoryUnitTests : IDisposable
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal("101-1000", result.AccountNumber);
+        Assert.Equal("101-1000", result.AccountNumber.ToString());
         Assert.Equal("Cash Account", result.Name);
     }
 
@@ -322,7 +322,7 @@ public class MunicipalAccountRepositoryUnitTests : IDisposable
         // Arrange
         var account = new MunicipalAccount
         {
-            AccountNumber = "101-1000",
+            AccountNumber = new AccountNumber("101-1000"),
             Name = "Cash Account",
             Type = AccountType.Asset,
             Fund = FundType.General,
@@ -336,7 +336,7 @@ public class MunicipalAccountRepositoryUnitTests : IDisposable
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal("101-1000", result.AccountNumber);
+        Assert.Equal("101-1000", result.AccountNumber.ToString());
         Assert.Equal("Cash Account", result.Name);
         Assert.Equal(AccountType.Asset, result.Type);
         Assert.Equal(FundType.General, result.Fund);
@@ -344,7 +344,7 @@ public class MunicipalAccountRepositoryUnitTests : IDisposable
         // Verify it was added to database
         var savedAccount = await _context.MunicipalAccounts.FindAsync(result.Id);
         Assert.NotNull(savedAccount);
-        Assert.Equal("101-1000", savedAccount.AccountNumber);
+        Assert.Equal("101-1000", savedAccount.AccountNumber.ToString());
     }
 
     [Fact]
@@ -353,7 +353,7 @@ public class MunicipalAccountRepositoryUnitTests : IDisposable
         // Arrange
         var account = new MunicipalAccount
         {
-            AccountNumber = "101-1000",
+            AccountNumber = new AccountNumber("101-1000"),
             Name = "Cash Account",
             Type = AccountType.Asset,
             Fund = FundType.General,
@@ -387,7 +387,7 @@ public class MunicipalAccountRepositoryUnitTests : IDisposable
         // Arrange
         var account = new MunicipalAccount
         {
-            AccountNumber = "101-1000",
+            AccountNumber = new AccountNumber("101-1000"),
             Name = "Cash Account",
             Type = AccountType.Asset,
             Fund = FundType.General,
@@ -417,7 +417,7 @@ public class MunicipalAccountRepositoryUnitTests : IDisposable
         // Arrange
         var accountWithBudget1 = new MunicipalAccount
         {
-            AccountNumber = "101-1000",
+            AccountNumber = new AccountNumber("101-1000"),
             Name = "Cash Account",
             Type = AccountType.Asset,
             Fund = FundType.General,
@@ -427,7 +427,7 @@ public class MunicipalAccountRepositoryUnitTests : IDisposable
         };
         var accountWithBudget2 = new MunicipalAccount
         {
-            AccountNumber = "201-2000",
+            AccountNumber = new AccountNumber("201-2000"),
             Name = "Salaries",
             Type = AccountType.Expense,
             Fund = FundType.General,
@@ -437,7 +437,7 @@ public class MunicipalAccountRepositoryUnitTests : IDisposable
         };
         var inactiveAccount = new MunicipalAccount
         {
-            AccountNumber = "999-9999",
+            AccountNumber = new AccountNumber("999-9999"),
             Name = "Closed Account",
             Type = AccountType.Asset,
             Fund = FundType.General,
@@ -447,7 +447,7 @@ public class MunicipalAccountRepositoryUnitTests : IDisposable
         };
         var accountWithoutBudget = new MunicipalAccount
         {
-            AccountNumber = "102-1000",
+            AccountNumber = new AccountNumber("102-1000"),
             Name = "No Budget Account",
             Type = AccountType.Asset,
             Fund = FundType.General,
@@ -466,8 +466,8 @@ public class MunicipalAccountRepositoryUnitTests : IDisposable
         Assert.Equal(2, result.Count);
         Assert.All(result, a => Assert.True(a.IsActive));
         Assert.All(result, a => Assert.True(a.BudgetAmount != 0));
-        Assert.Contains(result, a => a.AccountNumber == "101-1000");
-        Assert.Contains(result, a => a.AccountNumber == "201-2000");
+        Assert.Contains(result, a => a.AccountNumber.ToString() == "101-1000");
+        Assert.Contains(result, a => a.AccountNumber.ToString() == "201-2000");
     }
 
     [Fact]
@@ -476,7 +476,7 @@ public class MunicipalAccountRepositoryUnitTests : IDisposable
         // Arrange
         var account1 = new MunicipalAccount
         {
-            AccountNumber = "201-2000",
+            AccountNumber = new AccountNumber("201-2000"),
             Name = "Salaries",
             Type = AccountType.Expense,
             Fund = FundType.General,
@@ -485,7 +485,7 @@ public class MunicipalAccountRepositoryUnitTests : IDisposable
         };
         var account2 = new MunicipalAccount
         {
-            AccountNumber = "101-1000",
+            AccountNumber = new AccountNumber("101-1000"),
             Name = "Cash",
             Type = AccountType.Asset,
             Fund = FundType.General,
@@ -502,8 +502,70 @@ public class MunicipalAccountRepositoryUnitTests : IDisposable
         // Assert
         Assert.Equal(2, result.Count);
         var accounts = result.ToList();
-        Assert.Equal("101-1000", accounts[0].AccountNumber);
-        Assert.Equal("201-2000", accounts[1].AccountNumber);
+        Assert.Equal("101-1000", accounts[0].AccountNumber.ToString());
+        Assert.Equal("201-2000", accounts[1].AccountNumber.ToString());
+    }
+
+    [Fact]
+    public async Task UpdateAsync_ConcurrencyConflict_ThrowsConcurrencyConflictException()
+    {
+        // Arrange
+        var account = new MunicipalAccount
+        {
+            AccountNumber = new AccountNumber("101-1000"),
+            Name = "Test Account",
+            Type = AccountType.Asset,
+            Fund = FundType.General,
+            IsActive = true
+        };
+        _context.MunicipalAccounts.Add(account);
+        await _context.SaveChangesAsync();
+
+        // Simulate concurrent modification by changing the entity in the database
+        var dbEntity = await _context.MunicipalAccounts.FirstAsync();
+        dbEntity.Name = "Modified by another user";
+        await _context.SaveChangesAsync();
+
+        // Modify the original entity (detached from context)
+        account.Name = "Modified by current user";
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<ConcurrencyConflictException>(
+            () => _repository.UpdateAsync(account));
+        
+        Assert.Contains("concurrency conflict", exception.Message.ToLowerInvariant());
+        Assert.NotNull(exception.DatabaseValues);
+        Assert.NotNull(exception.ClientValues);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_ConcurrencyConflict_ThrowsConcurrencyConflictException()
+    {
+        // Arrange
+        var account = new MunicipalAccount
+        {
+            AccountNumber = new AccountNumber("101-1000"),
+            Name = "Test Account",
+            Type = AccountType.Asset,
+            Fund = FundType.General,
+            IsActive = true
+        };
+        _context.MunicipalAccounts.Add(account);
+        await _context.SaveChangesAsync();
+
+        var accountId = account.Id;
+
+        // Simulate concurrent deletion by removing the entity from the database
+        var dbEntity = await _context.MunicipalAccounts.FirstAsync();
+        _context.MunicipalAccounts.Remove(dbEntity);
+        await _context.SaveChangesAsync();
+
+        // Try to delete the original entity (now stale)
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<ConcurrencyConflictException>(
+            () => _repository.DeleteAsync(accountId));
+        
+        Assert.Contains("concurrency conflict", exception.Message.ToLowerInvariant());
     }
 
     protected virtual void Dispose(bool disposing)

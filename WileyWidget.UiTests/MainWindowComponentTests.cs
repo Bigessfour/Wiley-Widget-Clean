@@ -96,7 +96,7 @@ namespace WileyWidget.UiTests.ComponentTests
                 Assert.True(viewModel.Enterprises.Count >= 0);
 
                 // Test command availability
-                Assert.NotNull(viewModel.AddEnterpriseCommand);
+                Assert.NotNull(viewModel.AddTestEnterpriseCommand);
                 Assert.NotNull(viewModel.RefreshCommand);
                 Assert.NotNull(viewModel.OpenSettingsCommand);
 
@@ -112,8 +112,8 @@ namespace WileyWidget.UiTests.ComponentTests
                 var window = new MainWindow();
                 var viewModel = window.DataContext as MainViewModel;
 
-                // Test AddEnterpriseCommand can execute
-                Assert.True(viewModel.AddEnterpriseCommand.CanExecute(null));
+                // Test AddTestEnterpriseCommand can execute
+                Assert.True(viewModel.AddTestEnterpriseCommand.CanExecute(null));
 
                 // Test RefreshCommand can execute
                 Assert.True(viewModel.RefreshCommand.CanExecute(null));
@@ -165,7 +165,7 @@ namespace WileyWidget.UiTests.ComponentTests
                 var expectedShortcuts = new[]
                 {
                     (Key.C, ModifierKeys.Control), // SelectNextCommand
-                    (Key.N, ModifierKeys.Control), // AddEnterpriseCommand
+                    (Key.N, ModifierKeys.Control), // AddTestEnterpriseCommand
                     (Key.F5, ModifierKeys.None),   // RefreshCommand
                     (Key.S, ModifierKeys.Control), // OpenSettingsCommand
                     (Key.F1, ModifierKeys.None),   // OpenHelpCommand

@@ -253,23 +253,43 @@ public class EnterpriseViewModel : IDisposable
 ### Global Exception Handling
 ```csharp
 // App.xaml.cs
-protected override void OnStartup(StartupEventArgs e)
+protected override async void OnStartup(StartupEventArgs e)
 {
-    // Setup global exception handling
-    AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
-    Application.Current.DispatcherUnhandledException += OnDispatcherUnhandledException;
-    TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
+    InitializeDebugInstrumentation();
+    ConfigureGlobalExceptionHandling();
+    StartupProgress.Report(5, "Initializing application...", true);
 
+    var hostBuilder = Host.CreateApplicationBuilder();
+    hostBuilder.ConfigureWpfApplication();
+    _host = hostBuilder.Build();
+
+    await _host.StartAsync();
     base.OnStartup(e);
 }
 
-private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
+private void ConfigureGlobalExceptionHandling()
 {
-    e.Handled = true;
-    Log.Fatal(e.Exception, "Unhandled UI exception");
+    AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
+    {
+        var exception = (Exception)args.ExceptionObject;
+        Log.Fatal(exception, "💀 CRITICAL: AppDomain Unhandled Exception");
+        Services.ErrorReportingService.Instance.ReportError(exception, "AppDomain_Unhandled", showToUser: false, level: LogEventLevel.Fatal);
+        ShowCriticalErrorDialog(exception);
+    };
 
-    // Show user-friendly error dialog
-    ShowErrorDialog("An unexpected error occurred. The application will restart.", e.Exception);
+    DispatcherUnhandledException += (sender, args) =>
+    {
+        Log.Error(args.Exception, "🚨 Dispatcher Unhandled Exception");
+        Services.ErrorReportingService.Instance.ReportError(args.Exception, "Dispatcher_Unhandled", showToUser: true);
+        args.Handled = true;
+    };
+
+    TaskScheduler.UnobservedTaskException += (sender, args) =>
+    {
+        Log.Warning(args.Exception, "⚠️ Unobserved Task Exception");
+        Services.ErrorReportingService.Instance.ReportError(args.Exception, "Task_Unobserved", showToUser: false);
+        args.SetObserved();
+    };
 }
 ```
 

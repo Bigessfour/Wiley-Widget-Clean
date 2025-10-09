@@ -176,9 +176,8 @@ public partial class UtilityCustomerView : Window
                 _viewScope = provider.CreateScope();
                 var scopedProvider = _viewScope.ServiceProvider;
                 var customerRepository = scopedProvider.GetRequiredService<IUtilityCustomerRepository>();
-                var dispatcherHelper = scopedProvider.GetRequiredService<WileyWidget.Services.Threading.IDispatcherHelper>();
                 var logger = scopedProvider.GetRequiredService<Microsoft.Extensions.Logging.ILogger<UtilityCustomerViewModel>>();
-                return new UtilityCustomerViewModel(customerRepository, dispatcherHelper, logger);
+                return new UtilityCustomerViewModel(customerRepository);
             }
             catch (Exception ex)
             {
@@ -188,9 +187,7 @@ public partial class UtilityCustomerView : Window
             }
         }
 
-        var dispatcherLogger = App.ServiceProvider?.GetService<Microsoft.Extensions.Logging.ILogger<WileyWidget.Services.Threading.DispatcherHelper>>() ?? NullLogger<WileyWidget.Services.Threading.DispatcherHelper>.Instance;
-        var fallbackDispatcherHelper = new WileyWidget.Services.Threading.DispatcherHelper(dispatcherLogger);
         var fallbackLogger = App.ServiceProvider?.GetService<Microsoft.Extensions.Logging.ILogger<UtilityCustomerViewModel>>() ?? NullLogger<UtilityCustomerViewModel>.Instance;
-        return new UtilityCustomerViewModel(new FallbackUtilityCustomerRepository(), fallbackDispatcherHelper, fallbackLogger);
+        return new UtilityCustomerViewModel(new FallbackUtilityCustomerRepository());
     }
 }

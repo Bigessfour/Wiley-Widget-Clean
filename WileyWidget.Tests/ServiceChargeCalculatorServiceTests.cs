@@ -84,7 +84,7 @@ public class ServiceChargeCalculatorServiceTests
             new MunicipalAccount
             {
                 Id = 1,
-                AccountNumber = "2000",
+                AccountNumber = new AccountNumber("2000"),
                 Name = "Water Expenses",
                 Type = AccountType.Expense,
                 Fund = FundType.Water,
@@ -93,7 +93,7 @@ public class ServiceChargeCalculatorServiceTests
             new MunicipalAccount
             {
                 Id = 2,
-                AccountNumber = "2001",
+                AccountNumber = new AccountNumber("2001"),
                 Name = "Maintenance",
                 Type = AccountType.Expense,
                 Fund = FundType.Water,
@@ -153,13 +153,13 @@ public class ServiceChargeCalculatorServiceTests
 
         var expenseAccounts = new List<MunicipalAccount>();
         _mockEnterpriseRepo.Setup(r => r.GetByIdAsync(enterpriseId)).ReturnsAsync(enterprise);
-        _mockAccountRepo.Setup(r => r.GetByFundAsync(FundType.Water)).ReturnsAsync(expenseAccounts);
+    _mockAccountRepo.Setup(r => r.GetByFundAsync(FundType.Water)).ReturnsAsync(expenseAccounts);
 
         // Act
         await _service.CalculateRecommendedChargeAsync(enterpriseId);
 
         // Assert
-        _mockAccountRepo.Verify(r => r.GetByFundAsync(FundType.Water), Times.Once);
+    _mockAccountRepo.Verify(r => r.GetByFundAsync(FundType.Water), Times.Once);
     }
 
     [Fact]
@@ -179,13 +179,13 @@ public class ServiceChargeCalculatorServiceTests
 
         var expenseAccounts = new List<MunicipalAccount>();
         _mockEnterpriseRepo.Setup(r => r.GetByIdAsync(enterpriseId)).ReturnsAsync(enterprise);
-        _mockAccountRepo.Setup(r => r.GetByFundAsync(FundType.Sewer)).ReturnsAsync(expenseAccounts);
+    _mockAccountRepo.Setup(r => r.GetByFundAsync(FundType.Sewer)).ReturnsAsync(expenseAccounts);
 
         // Act
         await _service.CalculateRecommendedChargeAsync(enterpriseId);
 
         // Assert
-        _mockAccountRepo.Verify(r => r.GetByFundAsync(FundType.Sewer), Times.Once);
+    _mockAccountRepo.Verify(r => r.GetByFundAsync(FundType.Sewer), Times.Once);
     }
 
     [Fact]
@@ -205,13 +205,13 @@ public class ServiceChargeCalculatorServiceTests
 
         var expenseAccounts = new List<MunicipalAccount>();
         _mockEnterpriseRepo.Setup(r => r.GetByIdAsync(enterpriseId)).ReturnsAsync(enterprise);
-        _mockAccountRepo.Setup(r => r.GetByFundAsync(FundType.Enterprise)).ReturnsAsync(expenseAccounts);
+    _mockAccountRepo.Setup(r => r.GetByFundAsync(FundType.Enterprise)).ReturnsAsync(expenseAccounts);
 
         // Act
         await _service.CalculateRecommendedChargeAsync(enterpriseId);
 
         // Assert
-        _mockAccountRepo.Verify(r => r.GetByFundAsync(FundType.Enterprise), Times.Once);
+    _mockAccountRepo.Verify(r => r.GetByFundAsync(FundType.Enterprise), Times.Once);
     }
 
     [Fact]
@@ -234,7 +234,7 @@ public class ServiceChargeCalculatorServiceTests
             new MunicipalAccount
             {
                 Id = 1,
-                AccountNumber = "2000",
+                AccountNumber = new AccountNumber("2000"),
                 Name = "Water Expenses",
                 Type = AccountType.Expense,
                 Fund = FundType.Water,
@@ -243,7 +243,7 @@ public class ServiceChargeCalculatorServiceTests
             new MunicipalAccount
             {
                 Id = 2,
-                AccountNumber = "2001",
+                AccountNumber = new AccountNumber("2001"),
                 Name = "Maintenance",
                 Type = AccountType.Expense,
                 Fund = FundType.Water,
@@ -252,7 +252,7 @@ public class ServiceChargeCalculatorServiceTests
             new MunicipalAccount
             {
                 Id = 3,
-                AccountNumber = "1000",
+                AccountNumber = new AccountNumber("1000"),
                 Name = "Revenue",
                 Type = AccountType.Revenue, // Should be ignored
                 Fund = FundType.Water,
@@ -261,7 +261,7 @@ public class ServiceChargeCalculatorServiceTests
         };
 
         _mockEnterpriseRepo.Setup(r => r.GetByIdAsync(enterpriseId)).ReturnsAsync(enterprise);
-        _mockAccountRepo.Setup(r => r.GetByFundAsync(FundType.Water)).ReturnsAsync(expenseAccounts);
+    _mockAccountRepo.Setup(r => r.GetByFundAsync(FundType.Water)).ReturnsAsync(expenseAccounts);
 
         // Act
         var result = await _service.CalculateRecommendedChargeAsync(enterpriseId);
@@ -288,7 +288,7 @@ public class ServiceChargeCalculatorServiceTests
 
         var expenseAccounts = new List<MunicipalAccount>();
         _mockEnterpriseRepo.Setup(r => r.GetByIdAsync(enterpriseId)).ReturnsAsync(enterprise);
-        _mockAccountRepo.Setup(r => r.GetByFundAsync(FundType.Water)).ReturnsAsync(expenseAccounts);
+    _mockAccountRepo.Setup(r => r.GetByFundAsync(FundType.Water)).ReturnsAsync(expenseAccounts);
 
         // Act
         var result = await _service.CalculateRecommendedChargeAsync(enterpriseId);
@@ -331,7 +331,7 @@ public class ServiceChargeCalculatorServiceTests
         };
 
         _mockEnterpriseRepo.Setup(r => r.GetByIdAsync(enterpriseId)).ReturnsAsync(enterprise);
-        _mockAccountRepo.Setup(r => r.GetByFundAsync(FundType.Water)).ReturnsAsync(expenseAccounts);
+    _mockAccountRepo.Setup(r => r.GetByFundAsync(FundType.Water)).ReturnsAsync(expenseAccounts);
 
         // Act
         var result = await _service.GenerateChargeScenarioAsync(enterpriseId, 0.50m, 2000.00m);
@@ -384,7 +384,7 @@ public class ServiceChargeCalculatorServiceTests
 
         var expenseAccounts = new List<MunicipalAccount>();
         _mockEnterpriseRepo.Setup(r => r.GetByIdAsync(enterpriseId)).ReturnsAsync(enterprise);
-        _mockAccountRepo.Setup(r => r.GetByFundAsync(FundType.Water)).ReturnsAsync(expenseAccounts);
+    _mockAccountRepo.Setup(r => r.GetByFundAsync(FundType.Water)).ReturnsAsync(expenseAccounts);
 
         // Act
         var result = await _service.GenerateChargeScenarioAsync(enterpriseId, 0.00m, 0.00m);
@@ -416,7 +416,7 @@ public class ServiceChargeCalculatorServiceTests
 
         var expenseAccounts = new List<MunicipalAccount>();
         _mockEnterpriseRepo.Setup(r => r.GetByIdAsync(enterpriseId)).ReturnsAsync(enterprise);
-        _mockAccountRepo.Setup(r => r.GetByFundAsync(FundType.Water)).ReturnsAsync(expenseAccounts);
+    _mockAccountRepo.Setup(r => r.GetByFundAsync(FundType.Water)).ReturnsAsync(expenseAccounts);
 
         // Act
         var result = await _service.GenerateChargeScenarioAsync(enterpriseId, -1.00m, 70000.00m);

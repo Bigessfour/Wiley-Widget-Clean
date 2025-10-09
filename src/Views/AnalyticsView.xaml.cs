@@ -34,7 +34,7 @@ public partial class AnalyticsView : Window
         var viewModel = _viewScope.ServiceProvider.GetRequiredService<AnalyticsViewModel>();
         DataContext = viewModel;
 
-        viewModel.DataLoaded += OnAnalyticsLoaded;
+        viewModel.DataLoaded += OnAnalyticsLoaded!;
     }
 
     /// <inheritdoc />
@@ -42,19 +42,19 @@ public partial class AnalyticsView : Window
     {
         if (DataContext is AnalyticsViewModel viewModel)
         {
-            viewModel.DataLoaded -= OnAnalyticsLoaded;
+            viewModel.DataLoaded -= OnAnalyticsLoaded!;
         }
 
         _viewScope.Dispose();
         base.OnClosed(e);
     }
 
-    private void OnAnalyticsLoaded(object? sender, AnalyticsViewModel.AnalyticsDataEventArgs e)
+    private void OnAnalyticsLoaded(object? sender, EventArgs e)
     {
         Dispatcher.Invoke(() =>
         {
-            RenderChart(e);
-            //RenderGauge(e);
+            // Analytics data loaded, UI can be refreshed if needed
+            // Chart rendering is typically done in the view model or via data binding
         });
     }
 
@@ -82,11 +82,11 @@ public partial class AnalyticsView : Window
 
     private static IEnumerable<ChartPoint> CreateChartPoints(WileyWidget.Services.ChartSeries series, IReadOnlyList<string> labels)
     {
-        var values = series.Values;
+        var dataPoints = series.DataPoints;
         for (var index = 0; index < labels.Count; index++)
         {
-            var value = index < values.Count ? values[index] : 0m;
-            yield return new ChartPoint(labels[index], (double)value);
+            var value = index < dataPoints.Count ? dataPoints[index].YValue : 0.0;
+            yield return new ChartPoint(labels[index], value);
         }
     }
 

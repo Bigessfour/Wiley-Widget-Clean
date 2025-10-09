@@ -2,6 +2,33 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "clean-build-log",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-NoProfile",
+        "-Command",
+        "Remove-Item -Path '${workspaceFolder}/build-errors.log' -Force -ErrorAction SilentlyContinue; Remove-Item -Path '${workspaceFolder}/build-errors-categorized.log' -Force -ErrorAction SilentlyContinue"
+      ],
+      "presentation": {
+        "reveal": "never"
+      }
+    },
+    {
+      "label": "categorize-errors",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}/scripts/categorize-build-errors.ps1"
+      ],
+      "presentation": {
+        "reveal": "silent"
+      }
+    },
+    {
       "label": "build",
       "command": "dotnet",
       "type": "process",
@@ -9,13 +36,15 @@
         "build",
         "${workspaceFolder}/WileyWidget.csproj",
         "/property:GenerateFullPaths=true",
-        "/consoleloggerparameters:NoSummary"
+        "/consoleloggerparameters:NoSummary",
+        "/flp:LogFile=build-errors.log;errorsonly"
       ],
       "problemMatcher": "$msCompile",
       "group": {
         "kind": "build",
         "isDefault": true
-      }
+      },
+      "dependsOn": ["clean-build-log", "categorize-errors"]
     },
     {
       "label": "build-incremental",
@@ -107,6 +136,18 @@
         "${workspaceFolder}/publish"
       ],
       "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "run",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "run",
+        "--project",
+        "${workspaceFolder}/WileyWidget.csproj"
+      ],
+      "problemMatcher": "$msCompile",
+      "group": "build"
     },
     {
       "label": "watch",

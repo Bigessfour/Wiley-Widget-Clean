@@ -76,9 +76,12 @@
     "winget",
     "Xfinity"
   ],
-  // PowerShell 7.5.3 Configuration
-  "powershell.powerShellDefaultVersion": "PowerShell (x64)",
+  // PowerShell Extension v2025.4.0 configuration (per https://learn.microsoft.com/en-us/powershell/scripting/dev-cross-plat/vscode/using-vscode)
+  "powershell.powerShellDefaultVersion": "Workspace PowerShell v2025.4.0",
   "powershell.powerShellExePath": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+  "powershell.powerShellAdditionalExePaths": {
+    "Workspace PowerShell v2025.4.0": "C:/Program Files/PowerShell/7/pwsh.exe"
+  },
   "powershell.enableProfileLoading": true,
   "powershell.enableReferencesCodeLens": false,
   "powershell.enableScriptAnalysis": false, // Disabled for performance
@@ -176,6 +179,7 @@
   // SQL Server Extension Settings (ms-mssql.mssql)
   "mssql.connections": [
     {
+      "id": "azure-sql-database",
       "server": "${env:AZURE_SQL_SERVER},1433",
       "database": "${env:AZURE_SQL_DATABASE}",
       "authenticationType": "SqlLogin",

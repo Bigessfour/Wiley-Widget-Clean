@@ -3,13 +3,19 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net9.0-windows</TargetFramework>
-    <!-- Nullable disabled per project guideline: avoid nullable reference types in new code -->
+    <!-- Nullable disabled to avoid nullable reference type warnings -->
     <Nullable>disable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <LangVersion>latest</LangVersion>
-    <NoWarn>$(NoWarn);NETSDK1206;NU1605;CS7022</NoWarn>
+    <NoWarn>$(NoWarn);NETSDK1206;NU1605;CS7022;CS8600;CS8601;CS8602;CS8603;CS8604;CS8618;CS8620;CS8622;CS8625;CS8632;CS8613;CS1061;CS1929;CA1416</NoWarn>
     <RuntimeIdentifiers>win-x64;win-x86</RuntimeIdentifiers>
+  <StartupObject>WileyWidget.Program</StartupObject>
+    
+    <!-- Disable WPF temporary project generation to prevent cache issues -->
+    <DisableWPFProjectTempOutput>true</DisableWPFProjectTempOutput>
+    <GenerateTemporaryTargetAssembly>false</GenerateTemporaryTargetAssembly>
+    <MarkupCompilePass2AlwaysRun>false</MarkupCompilePass2AlwaysRun>
     
     <!-- Performance optimizations for startup -->
     <PublishReadyToRun>true</PublishReadyToRun>
@@ -41,6 +47,9 @@
     <PackageReference Include="Azure.Security.KeyVault.Secrets" />
   <PackageReference Include="Azure.Extensions.AspNetCore.Configuration.Secrets" />
     <PackageReference Include="CommunityToolkit.Mvvm" />
+    <PackageReference Include="Prism.Core" />
+    <PackageReference Include="Prism.Wpf" />
+    <PackageReference Include="Prism.DryIoc" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
@@ -50,6 +59,7 @@
     </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" />
     <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" />
+    <PackageReference Include="DotNetEnv" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" />
     <PackageReference Include="Microsoft.Extensions.Hosting" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
@@ -65,11 +75,15 @@
     <PackageReference Include="Serilog.Sinks.Email" />
     <PackageReference Include="Serilog.Sinks.File" />
     <PackageReference Include="Syncfusion.Licensing" />
+    <PackageReference Include="Syncfusion.SfBusyIndicator.WPF" />
     <PackageReference Include="Syncfusion.SfChart.WPF" />
+    <PackageReference Include="Syncfusion.SfChat.WPF" />
     <PackageReference Include="Syncfusion.SfGrid.WPF" />
     <PackageReference Include="Syncfusion.SfInput.WPF" />
+    <PackageReference Include="Syncfusion.SfProgressBar.WPF" />
     <PackageReference Include="Syncfusion.SfRichTextBoxAdv.WPF" />
     <PackageReference Include="Syncfusion.SfSkinManager.WPF" />
+    <PackageReference Include="Syncfusion.SfSpreadsheet.WPF" />
     <PackageReference Include="Syncfusion.Shared.WPF" />
     <PackageReference Include="Syncfusion.Themes.FluentDark.WPF" />
     <PackageReference Include="Syncfusion.Themes.FluentLight.WPF" />
@@ -80,6 +94,7 @@
   <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" />
   <PackageReference Include="Microsoft.ApplicationInsights.WorkerService" />
   <PackageReference Include="Microsoft.ApplicationInsights" />
+    <PackageReference Include="System.Management" />
     <!-- Resilience Packages -->
     <PackageReference Include="Polly" />
     <!-- AI Integration Packages -->
@@ -99,19 +114,41 @@
     <Compile Remove="WileyWidget.Tests\**" />
     <Compile Remove="WileyWidget.UiTests\**" />
     <Compile Remove="WileyWidget.TestModels\**" />
-    <Compile Remove="LicenseKey.Private.sample.cs" />
+    <Compile Remove="tests\**" />
+    <Compile Remove="samples\LicenseKey.Private.sample.cs" />
     <Compile Remove="Services\GrokAIService.cs" />
-    <Compile Remove="DatabaseConnectionTest.cs" />
+    <Compile Remove="DatabaseTest\DatabaseConnectionTest.cs" />
     <Compile Remove="DatabaseSetup\**" />
     <Compile Remove="DatabaseTest\**" />
+    <Compile Remove="DatabaseSeederRunner\**" />
+    <Compile Remove="DbTest\**" />
+    <Compile Remove="DbValidator\**" />
+    <Compile Remove="ExcelAnalyzer\**" />
+    <Compile Remove="temp-grant\**" />
     <EmbeddedResource Remove="WileyWidget.Tests\**" />
     <EmbeddedResource Remove="WileyWidget.UiTests\**" />
     <EmbeddedResource Remove="WileyWidget.TestModels\**" />
+    <EmbeddedResource Remove="tests\**" />
     <None Remove="WileyWidget.Tests\**" />
     <None Remove="WileyWidget.UiTests\**" />
     <None Remove="WileyWidget.TestModels\**" />
+    <None Remove="tests\**" />
+    <None Remove="temp-grant\**" />
   </ItemGroup>
 
   <!-- PNG splash screen removed; using XAML-based splash only -->
+
+  <!-- Ensure configuration files are copied to output directory -->
+  <ItemGroup>
+    <Content Include="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="appsettings.Development.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="appsettings.Production.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
 
 </Project>

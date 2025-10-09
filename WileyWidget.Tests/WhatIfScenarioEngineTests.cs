@@ -88,7 +88,7 @@ public class WhatIfScenarioEngineTests
             {
                 Id = 1,
                 Fund = FundType.Water,
-                AccountNumber = "1000",
+                AccountNumber = new AccountNumber("1000"),
                 Name = "Water Revenue",
                 Balance = 125000.00m,
                 Type = AccountType.Revenue
@@ -97,7 +97,7 @@ public class WhatIfScenarioEngineTests
             {
                 Id = 2,
                 Fund = FundType.Water,
-                AccountNumber = "2000",
+                AccountNumber = new AccountNumber("2000"),
                 Name = "Water Expenses",
                 Balance = -15000.00m,
                 Type = AccountType.Expense

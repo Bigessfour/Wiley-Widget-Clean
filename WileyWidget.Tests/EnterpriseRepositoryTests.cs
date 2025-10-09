@@ -476,6 +476,54 @@ public class EnterpriseRepositoryTests : IDisposable
         Assert.Equal(15.00m, result.CurrentRate);
     }
 
+    [Fact]
+    public async Task UpdateAsync_ConcurrencyConflict_ThrowsConcurrencyConflictException()
+    {
+        // Arrange
+        var enterprise = new Enterprise { Name = "Test Corp", Description = "Test Description" };
+        _context.Enterprises.Add(enterprise);
+        await _context.SaveChangesAsync();
+
+        // Simulate concurrent modification by changing the entity in the database
+        var dbEntity = await _context.Enterprises.FirstAsync();
+        dbEntity.Description = "Modified by another user";
+        await _context.SaveChangesAsync();
+
+        // Modify the original entity (detached from context)
+        enterprise.Description = "Modified by current user";
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<ConcurrencyConflictException>(
+            () => _repository.UpdateAsync(enterprise));
+        
+        Assert.Contains("concurrency conflict", exception.Message.ToLowerInvariant());
+        Assert.NotNull(exception.DatabaseValues);
+        Assert.NotNull(exception.ClientValues);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_ConcurrencyConflict_ThrowsConcurrencyConflictException()
+    {
+        // Arrange
+        var enterprise = new Enterprise { Name = "Test Corp", Description = "Test Description" };
+        _context.Enterprises.Add(enterprise);
+        await _context.SaveChangesAsync();
+
+        var enterpriseId = enterprise.Id;
+
+        // Simulate concurrent deletion by removing the entity from the database
+        var dbEntity = await _context.Enterprises.FirstAsync();
+        _context.Enterprises.Remove(dbEntity);
+        await _context.SaveChangesAsync();
+
+        // Try to delete the original entity (now stale)
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<ConcurrencyConflictException>(
+            () => _repository.DeleteAsync(enterpriseId));
+        
+        Assert.Contains("concurrency conflict", exception.Message.ToLowerInvariant());
+    }
+
     protected virtual void Dispose(bool disposing)
     {
         if (disposing)

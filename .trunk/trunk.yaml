@@ -9,6 +9,9 @@ cli:
     # passing --jobs to git-hooks callbacks (which caused errors during commits).
     - commands: [check, fmt]
       args: --jobs=1
+    # Default to formatting only changed files for performance
+    - commands: [fmt]
+      args: --sample=10
 # Trunk provides extensibility via plugins. (https://docs.trunk.io/plugins)
 plugins:
   sources:
@@ -94,6 +97,16 @@ lint:
         - .venv/
         - '%APPDATA%/npm/**'
         - node_modules/
+        - __pycache__/
+        - .pytest_cache/
+        - htmlcov/
+        - .coverage
+        - '*.pyc'
+        - '*.pyo'
+        - '*.pyd'
+        - assets/
+        - data/
+        - tools/
     # Limit checkov to only essential infrastructure files to prevent memory issues
     - linters: [checkov]
       paths:

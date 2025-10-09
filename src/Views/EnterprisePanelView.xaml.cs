@@ -31,9 +31,7 @@ public partial class EnterprisePanelView : UserControl
         {
             _viewScope = provider.CreateScope();
             var enterpriseRepository = _viewScope.ServiceProvider.GetRequiredService<IEnterpriseRepository>();
-            var dispatcherHelper = _viewScope.ServiceProvider.GetRequiredService<WileyWidget.Services.Threading.IDispatcherHelper>();
-            var logger = _viewScope.ServiceProvider.GetRequiredService<Microsoft.Extensions.Logging.ILogger<WileyWidget.ViewModels.EnterpriseViewModel>>();
-            DataContext = new EnterpriseViewModel(enterpriseRepository, dispatcherHelper, logger);
+            DataContext = new EnterpriseViewModel(enterpriseRepository);
 
             // Dispose the scope when the control is unloaded
             this.Unloaded += (_, _) => { try { _viewScope.Dispose(); } catch { } };

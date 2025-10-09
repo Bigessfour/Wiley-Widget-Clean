@@ -70,7 +70,7 @@ class XamlConverterAnalyzer:
         self.used_converters: List[ConverterUsage] = []
         self.analysis_issues: List[AnalysisIssue] = []
 
-    def analyze_project(self) -> Dict[str, any]:
+    def analyze_project(self) -> Dict[str, Any]:
         """Perform complete analysis of converter usage in the project"""
         print("🔍 Starting XAML Converter Usage Analysis...")
 

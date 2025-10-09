@@ -14,6 +14,9 @@ using WileyWidget.Models;
 using WileyWidget.Services;
 using WileyWidget.Services.Threading;
 using WileyWidget.ViewModels;
+using WileyWidget.ViewModels.Base;
+
+#nullable enable
 
 namespace WileyWidget.Views;
 
@@ -122,7 +125,7 @@ public partial class BudgetAnalysisViewModel : AsyncViewModelBase
     /// <summary>
     /// Gets whether analysis can be generated.
     /// </summary>
-    public bool CanGenerateAnalysis => SelectedBudgetPeriod != null && !IsLoading;
+    public bool CanGenerateAnalysis => SelectedBudgetPeriod != null && !IsBusy;
 
     /// <summary>
     /// Initializes a new instance of the BudgetAnalysisViewModel class.
@@ -327,7 +330,7 @@ public partial class BudgetAnalysisViewModel : AsyncViewModelBase
             TotalBudget = budgetAnalysis.TotalBudget,
             TotalBalance = budgetAnalysis.TotalBalance,
             Variance = budgetAnalysis.Variance,
-            KeyRatios = budgetAnalysis.KeyRatios.ToDictionary(kvp => kvp.Key, kvp => kvp.Value)
+            KeyRatios = ((IDictionary<string, decimal>)budgetAnalysis.KeyRatios).ToDictionary(kvp => kvp.Key, kvp => kvp.Value)
         };
     }
 
@@ -674,7 +677,7 @@ public partial class BudgetAnalysisViewModel : AsyncViewModelBase
     {
         base.OnPropertyChanged(e);
 
-        if (e.PropertyName == nameof(SelectedBudgetPeriod) || e.PropertyName == nameof(IsLoading))
+        if (e.PropertyName == nameof(SelectedBudgetPeriod) || e.PropertyName == nameof(IsBusy))
         {
             GenerateAnalysisCommand.NotifyCanExecuteChanged();
         }

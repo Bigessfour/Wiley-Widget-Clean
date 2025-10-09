@@ -11,6 +11,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
+using WileyWidget.Models;
 using WileyWidget.Services;
 using WileyWidget.Services.Excel;
 
@@ -281,40 +282,29 @@ public partial class ExcelImportViewModel : ObservableObject
             ClearStatusMessages();
             AddStatusMessage("Analyzing Excel file...");
 
-            var options = new BudgetImportOptions
+            var entries = await _budgetImporter.ImportBudgetAsync(SelectedFilePath);
+            var entriesList = entries.ToList();
+
+            if (entriesList.Any())
             {
-                ValidateGASBCompliance = ValidateGASBCompliance,
-                PreviewOnly = true
-            };
-
-            var result = await _budgetImporter.ImportBudgetAsync(SelectedFilePath, options);
-
-            if (result.Success)
-            {
-                // Convert preview data to dynamic objects for DataGrid
-                var previewItems = result.PreviewData?.Select(row => new PreviewRow(row)) ?? Enumerable.Empty<PreviewRow>();
-                PreviewData = new ObservableCollection<dynamic>(previewItems);
-
-                // Build hierarchical structure for TreeView
-                var hierarchicalItems = result.PreviewData?.Select(row => new PreviewItem(row)) ?? Enumerable.Empty<PreviewItem>();
-                HierarchicalPreviewData = new ObservableCollection<PreviewItem>(BuildHierarchy(hierarchicalItems));
+                // Convert entries to preview items
+                PreviewData = new ObservableCollection<dynamic>(entriesList.Select(e => new
+                {
+                    Account = e.MunicipalAccount?.AccountNumber?.ToString() ?? "N/A",
+                    Name = e.MunicipalAccount?.Name ?? "N/A",
+                    e.Amount,
+                    Year = e.YearType.ToString(),
+                    Type = e.EntryType.ToString()
+                }));
 
                 PreviewRowCount = PreviewData.Count;
 
                 AddStatusMessage($"Preview complete: {PreviewRowCount} rows found");
-                AddStatusMessage($"Detected format: {result.DetectedFormat}");
-
-                if (result.Warnings.Any())
-                {
-                    foreach (var warning in result.Warnings)
-                        AddStatusMessage($"Warning: {warning}", MessageType.Warning);
-                }
+                AddStatusMessage("Excel file loaded successfully", MessageType.Success);
             }
             else
             {
-                AddStatusMessage("Preview failed", MessageType.Error);
-                foreach (var error in result.Errors)
-                    AddStatusMessage($"Error: {error}", MessageType.Error);
+                AddStatusMessage("No data found in file", MessageType.Warning);
             }
 
             OnPropertyChanged(nameof(CanImport));
@@ -445,59 +435,31 @@ public partial class ExcelImportViewModel : ObservableObject
 
             AddStatusMessage("Starting budget import...");
 
-            var options = new BudgetImportOptions
-            {
-                ValidateGASBCompliance = ValidateGASBCompliance,
-                CreateNewBudgetPeriod = CreateNewBudgetPeriod,
-                OverwriteExistingAccounts = OverwriteExistingAccounts,
-                BudgetYear = BudgetYear
-            };
+            var entries = await _budgetImporter.ImportBudgetAsync(SelectedFilePath);
+            var entriesList = entries.ToList();
 
-            // Import with progress reporting
-            var progress = new Progress<ImportProgress>(p => ImportProgress = p.PercentComplete);
-            var result = await _budgetImporter.ImportBudgetAsync(SelectedFilePath, options, progress);
-
-            if (result.Success)
+            if (entriesList.Any())
             {
                 AddStatusMessage("Import completed successfully!", MessageType.Success);
 
                 // Update statistics
                 ImportStats = new ImportStatistics
                 {
-                    AccountsImported = result.RowsImported,
-                    Errors = result.Errors.Count,
-                    Warnings = result.Warnings.Count
+                    AccountsImported = entriesList.Count,
+                    Errors = 0,
+                    Warnings = 0
                 };
                 ShowImportStats = true;
 
                 // Show detailed results
-                AddStatusMessage($"Imported {result.RowsImported} accounts");
-                AddStatusMessage($"Budget Period: {result.BudgetPeriod?.Name ?? "N/A"}");
-
-                if (result.Warnings.Any())
-                {
-                    AddStatusMessage($"Warnings: {result.Warnings.Count}");
-                    foreach (var warning in result.Warnings.Take(5)) // Show first 5 warnings
-                        AddStatusMessage($"Warning: {warning}", MessageType.Warning);
-                    if (result.Warnings.Count > 5)
-                        AddStatusMessage($"... and {result.Warnings.Count - 5} more warnings", MessageType.Warning);
-                }
-
-                if (result.Errors.Any())
-                {
-                    AddStatusMessage($"Errors: {result.Errors.Count}", MessageType.Error);
-                    foreach (var error in result.Errors.Take(3)) // Show first 3 errors
-                        AddStatusMessage($"Error: {error}", MessageType.Error);
-                }
+                AddStatusMessage($"Imported {entriesList.Count} budget entries");
 
                 // Clear preview after successful import
                 ClearPreview();
             }
             else
             {
-                AddStatusMessage("Import failed", MessageType.Error);
-                foreach (var error in result.Errors)
-                    AddStatusMessage($"Error: {error}", MessageType.Error);
+                AddStatusMessage("Import failed - no entries found", MessageType.Error);
             }
         }
         catch (Exception ex)

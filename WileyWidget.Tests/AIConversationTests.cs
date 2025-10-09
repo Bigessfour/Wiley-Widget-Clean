@@ -1,7 +1,10 @@
 using Xunit;
 using WileyWidget.ViewModels;
 using WileyWidget.Services;
+using WileyWidget.Services.Threading;
+using WileyWidget.Data;
 using Moq;
+using Microsoft.Extensions.Logging;
 
 namespace WileyWidget.Tests;
 
@@ -13,6 +16,10 @@ public class AIConversationTests
     private readonly Mock<IAIService> _mockAIService;
     private readonly Mock<IChargeCalculatorService> _mockChargeCalculator;
     private readonly Mock<IWhatIfScenarioEngine> _mockScenarioEngine;
+    private readonly Mock<IGrokSupercomputer> _mockGrokSupercomputer;
+    private readonly Mock<IEnterpriseRepository> _mockEnterpriseRepository;
+    private readonly Mock<IDispatcherHelper> _mockDispatcherHelper;
+    private readonly Mock<ILogger<AIAssistViewModel>> _mockLogger;
     private readonly AIAssistViewModel _viewModel;
 
     public AIConversationTests()
@@ -20,11 +27,19 @@ public class AIConversationTests
         _mockAIService = new Mock<IAIService>();
         _mockChargeCalculator = new Mock<IChargeCalculatorService>();
         _mockScenarioEngine = new Mock<IWhatIfScenarioEngine>();
+        _mockGrokSupercomputer = new Mock<IGrokSupercomputer>();
+        _mockEnterpriseRepository = new Mock<IEnterpriseRepository>();
+        _mockDispatcherHelper = new Mock<IDispatcherHelper>();
+        _mockLogger = new Mock<ILogger<AIAssistViewModel>>();
 
         _viewModel = new AIAssistViewModel(
             _mockAIService.Object,
             _mockChargeCalculator.Object,
-            _mockScenarioEngine.Object);
+            _mockScenarioEngine.Object,
+            _mockGrokSupercomputer.Object,
+            _mockEnterpriseRepository.Object,
+            _mockDispatcherHelper.Object,
+            _mockLogger.Object);
     }
 
     [Fact]

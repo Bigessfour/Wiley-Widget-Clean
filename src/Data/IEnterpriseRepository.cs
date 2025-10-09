@@ -1,4 +1,5 @@
 using WileyWidget.Models;
+using WileyWidget.Models.DTOs;
 
 namespace WileyWidget.Data;
 
@@ -58,4 +59,29 @@ public interface IEnterpriseRepository
     /// <param name="headerValueMap">Dictionary mapping header names to values</param>
     /// <returns>A new Enterprise instance with mapped properties</returns>
     Enterprise CreateFromHeaderMapping(IDictionary<string, string> headerValueMap);
+
+    /// <summary>
+    /// Gets enterprise summaries (lightweight DTOs for dashboards)
+    /// </summary>
+    Task<IEnumerable<EnterpriseSummary>> GetSummariesAsync();
+
+    /// <summary>
+    /// Gets summaries for active (non-deleted) enterprises only
+    /// </summary>
+    Task<IEnumerable<EnterpriseSummary>> GetActiveSummariesAsync();
+
+    /// <summary>
+    /// Soft deletes an enterprise (sets IsDeleted = true)
+    /// </summary>
+    Task<bool> SoftDeleteAsync(int id);
+
+    /// <summary>
+    /// Restores a soft-deleted enterprise
+    /// </summary>
+    Task<bool> RestoreAsync(int id);
+
+    /// <summary>
+    /// Gets all enterprises including soft-deleted ones
+    /// </summary>
+    Task<IEnumerable<Enterprise>> GetAllIncludingDeletedAsync();
 }

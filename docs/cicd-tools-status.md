@@ -15,7 +15,7 @@ The WileyWidget project has a comprehensive CI/CD toolchain successfully configu
 | **Trunk**      | 1.25.0   | ✅ Available | Code quality and linting |
 | **Node.js**    | v20.17.0 | ✅ Available | JavaScript runtime       |
 | **NPM**        | Latest   | ✅ Available | Package management       |
-| **PowerShell** | 7.5.2    | ✅ Available | Scripting and automation |
+| **PowerShell** | 7.5.2 / Ext. 2025.4.0 | ✅ Available | Runtime + VS Code extension pinned |
 | **.NET SDK**   | 9.0.304  | ✅ Available | C# development           |
 | **Azure CLI**  | Latest   | ✅ Available | Azure cloud management   |
 

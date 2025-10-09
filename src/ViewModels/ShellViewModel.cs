@@ -11,6 +11,9 @@ using Microsoft.Extensions.DependencyInjection;
 using WileyWidget.Services;
 using WileyWidget.Services.Threading;
 using WileyWidget.ViewModels.Shell;
+using WileyWidget.ViewModels.Base;
+
+#nullable enable
 
 namespace WileyWidget.ViewModels;
 
@@ -99,6 +102,12 @@ public partial class ShellViewModel : AsyncViewModelBase
     private string currentBreadcrumb = string.Empty;
 
     [ObservableProperty]
+    private string statusMessage = string.Empty;
+
+    [ObservableProperty]
+    private bool isLoading;
+
+    [ObservableProperty]
     private string theme = "FluentDark";
 
     [ObservableProperty]
@@ -112,21 +121,6 @@ public partial class ShellViewModel : AsyncViewModelBase
 
     [ObservableProperty]
     private bool canNavigateForward;
-
-    partial void OnCurrentSnapshotChanged(NavigationSnapshot? value)
-    {
-        OnPropertyChanged(nameof(ActiveViewModel));
-    }
-
-    partial void OnSelectedNavigationItemChanged(NavigationItem? value)
-    {
-        if (_suppressSelectionChange || value is null)
-        {
-            return;
-        }
-
-        NavigateToItem(value, NavigationTrigger.Selection, recordHistory: true);
-    }
 
     private void LoadInitialContent()
     {
@@ -226,6 +220,16 @@ public partial class ShellViewModel : AsyncViewModelBase
 
         Logger.LogDebug("Shell navigation -> {Route} ({Trigger})", snapshot.Route, trigger);
         TrackNavigationTelemetry(snapshot, trigger);
+    }
+
+    partial void OnSelectedNavigationItemChanged(NavigationItem? value)
+    {
+        if (_suppressSelectionChange || value is null)
+        {
+            return;
+        }
+
+        NavigateToItem(value, NavigationTrigger.Selection, recordHistory: true);
     }
 
     [RelayCommand]

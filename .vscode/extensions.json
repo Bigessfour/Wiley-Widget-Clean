@@ -4,6 +4,8 @@
     "ms-mssql.data-workspace-vscode",
     "ms-mssql.sql-bindings-vscode",
     "ms-mssql.sql-database-projects-vscode",
+    // PowerShell extension v2025.4.0 required for latest language features
+    "ms-vscode.PowerShell",
     "ms-azuretools.vscode-azure-github-copilot",
     "ms-azuretools.vscode-azure-mcp-server",
     "ms-azuretools.vscode-azureappservice",

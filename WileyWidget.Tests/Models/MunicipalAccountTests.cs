@@ -15,11 +15,14 @@ public class MunicipalAccountTests
     public void MunicipalAccount_DefaultConstructor_SetsDefaultValues()
     {
         // Arrange & Act
-        var account = new MunicipalAccount();
+        var account = new MunicipalAccount
+        {
+            AccountNumber = new AccountNumber("100")
+        };
 
         // Assert
         Assert.Equal(0, account.Id);
-        Assert.Equal(string.Empty, account.AccountNumber);
+        Assert.Equal("100", account.AccountNumber.ToString());
         Assert.Equal(string.Empty, account.Name);
         Assert.Equal(AccountType.Asset, account.Type); // Default enum value
         Assert.Equal(FundType.General, account.Fund); // Default enum value
@@ -35,7 +38,10 @@ public class MunicipalAccountTests
     public void MunicipalAccount_PropertyChanged_EventsAreRaised()
     {
         // Arrange
-        var account = new MunicipalAccount();
+        var account = new MunicipalAccount
+        {
+            AccountNumber = new AccountNumber("9999-999") // Default, will be overridden
+        };
         var propertyChangedEvents = new List<string>();
 
         account.PropertyChanged += (sender, args) =>
@@ -44,7 +50,7 @@ public class MunicipalAccountTests
         };
 
         // Act
-        account.AccountNumber = "1010-100";
+        account.AccountNumber = new AccountNumber("1010-100");
         account.Name = "Cash Account";
         account.Type = AccountType.Revenue;
         account.Fund = FundType.Water;
@@ -66,7 +72,10 @@ public class MunicipalAccountTests
     public void MunicipalAccount_PropertyChanged_CalculatedPropertiesAreUpdated()
     {
         // Arrange
-        var account = new MunicipalAccount();
+        var account = new MunicipalAccount
+        {
+            AccountNumber = new AccountNumber("9999-999") // Default, will be overridden
+        };
         var propertyChangedEvents = new List<string>();
 
         account.PropertyChanged += (sender, args) =>
@@ -75,7 +84,7 @@ public class MunicipalAccountTests
         };
 
         // Act
-        account.AccountNumber = "1010-100";
+        account.AccountNumber = new AccountNumber("1010-100");
         account.Name = "Cash Account";
         account.Balance = 50000.00m;
         account.BudgetAmount = 60000.00m;
@@ -91,10 +100,13 @@ public class MunicipalAccountTests
     public void MunicipalAccount_DisplayName_CombinesAccountNumberAndName()
     {
         // Arrange
-        var account = new MunicipalAccount();
+        var account = new MunicipalAccount
+        {
+            AccountNumber = new AccountNumber("9999-999") // Default, will be overridden
+        };
 
         // Act
-        account.AccountNumber = "1010-100";
+        account.AccountNumber = new AccountNumber("1010-100");
         account.Name = "Cash Account";
 
         // Assert
@@ -105,10 +117,13 @@ public class MunicipalAccountTests
     public void MunicipalAccount_DisplayName_HandlesEmptyValues()
     {
         // Arrange
-        var account = new MunicipalAccount();
+        var account = new MunicipalAccount
+        {
+            AccountNumber = new AccountNumber("9999-999") // Default, will be overridden
+        };
 
         // Act - Empty values
-        account.AccountNumber = "";
+        account.AccountNumber = new AccountNumber("");
         account.Name = "";
 
         // Assert
@@ -119,7 +134,10 @@ public class MunicipalAccountTests
     public void MunicipalAccount_FormattedBalance_FormatsCorrectly()
     {
         // Arrange
-        var account = new MunicipalAccount();
+        var account = new MunicipalAccount
+        {
+            AccountNumber = new AccountNumber("9999-999") // Default, will be overridden
+        };
 
         // Act
         account.Balance = 12345.67m;
@@ -132,7 +150,10 @@ public class MunicipalAccountTests
     public void MunicipalAccount_FormattedBalance_HandlesZero()
     {
         // Arrange
-        var account = new MunicipalAccount();
+        var account = new MunicipalAccount
+        {
+            AccountNumber = new AccountNumber("9999-999") // Default, will be overridden
+        };
 
         // Act
         account.Balance = 0m;
@@ -145,7 +166,10 @@ public class MunicipalAccountTests
     public void MunicipalAccount_FormattedBalance_HandlesNegative()
     {
         // Arrange
-        var account = new MunicipalAccount();
+        var account = new MunicipalAccount
+        {
+            AccountNumber = new AccountNumber("9999-999") // Default, will be overridden
+        };
 
         // Act
         account.Balance = -5000.25m;
@@ -158,7 +182,10 @@ public class MunicipalAccountTests
     public void MunicipalAccount_Variance_CalculatesCorrectly()
     {
         // Arrange
-        var account = new MunicipalAccount();
+        var account = new MunicipalAccount
+        {
+            AccountNumber = new AccountNumber("9999-999") // Default, will be overridden
+        };
 
         // Act
         account.BudgetAmount = 60000.00m;
@@ -172,7 +199,10 @@ public class MunicipalAccountTests
     public void MunicipalAccount_VariancePercent_CalculatesCorrectly()
     {
         // Arrange
-        var account = new MunicipalAccount();
+        var account = new MunicipalAccount
+        {
+            AccountNumber = new AccountNumber("9999-999") // Default, will be overridden
+        };
 
         // Act
         account.BudgetAmount = 60000.00m;
@@ -186,7 +216,10 @@ public class MunicipalAccountTests
     public void MunicipalAccount_VariancePercent_ZeroBudget_ReturnsZero()
     {
         // Arrange
-        var account = new MunicipalAccount();
+        var account = new MunicipalAccount
+        {
+            AccountNumber = new AccountNumber("9999-999") // Default, will be overridden
+        };
 
         // Act
         account.BudgetAmount = 0m;
@@ -198,14 +231,17 @@ public class MunicipalAccountTests
 
     [Theory]
     [InlineData(AccountType.Asset, "Asset")]
-    [InlineData(AccountType.Liability, "Liability")]
-    [InlineData(AccountType.Equity, "Equity")]
+    [InlineData(AccountType.Payables, "Liability")]
+    [InlineData(AccountType.RetainedEarnings, "Equity")]
     [InlineData(AccountType.Revenue, "Revenue")]
     [InlineData(AccountType.Expense, "Expense")]
     public void MunicipalAccount_TypeDescription_ReturnsCorrectDescription(AccountType type, string expectedDescription)
     {
         // Arrange
-        var account = new MunicipalAccount();
+        var account = new MunicipalAccount
+        {
+            AccountNumber = new AccountNumber("100")
+        };
 
         // Act
         account.Type = type;
@@ -223,7 +259,10 @@ public class MunicipalAccountTests
     public void MunicipalAccount_FundDescription_ReturnsCorrectDescription(FundType fund, string expectedDescription)
     {
         // Arrange
-        var account = new MunicipalAccount();
+        var account = new MunicipalAccount
+        {
+            AccountNumber = new AccountNumber("100")
+        };
 
         // Act
         account.Fund = fund;
@@ -236,13 +275,13 @@ public class MunicipalAccountTests
     public void MunicipalAccount_PropertyChanged_NoEventWhenValueUnchanged()
     {
         // Arrange
-        var account = new MunicipalAccount { AccountNumber = "1010-100" };
+        var account = new MunicipalAccount { AccountNumber = new AccountNumber("1010-100") };
         var eventRaised = false;
 
         account.PropertyChanged += (sender, args) => eventRaised = true;
 
         // Act
-        account.AccountNumber = "1010-100"; // Same value
+        account.AccountNumber = new AccountNumber("1010-100"); // Same value
 
         // Assert
         Assert.False(eventRaised);
@@ -254,7 +293,7 @@ public class MunicipalAccountTests
         // Arrange
         var account = new MunicipalAccount
         {
-            AccountNumber = "1010-100",
+            AccountNumber = new AccountNumber("1010-100"),
             Name = "Cash Account",
             Type = AccountType.Asset,
             Fund = FundType.General,
@@ -279,6 +318,7 @@ public class MunicipalAccountTests
         // Arrange
         var account = new MunicipalAccount
         {
+            AccountNumber = new AccountNumber("1010-100"),
             Name = "Cash Account",
             Type = AccountType.Asset,
             Fund = FundType.General
@@ -300,7 +340,7 @@ public class MunicipalAccountTests
         // Arrange
         var account = new MunicipalAccount
         {
-            AccountNumber = "1010-100",
+            AccountNumber = new AccountNumber("1010-100"),
             Type = AccountType.Asset,
             Fund = FundType.General
         };
@@ -321,7 +361,7 @@ public class MunicipalAccountTests
         // Arrange
         var account = new MunicipalAccount
         {
-            AccountNumber = new string('1', 21), // 21 characters, exceeds max of 20
+            AccountNumber = new AccountNumber(new string('1', 21)), // 21 characters, exceeds max of 20
             Name = "Cash Account",
             Type = AccountType.Asset,
             Fund = FundType.General
@@ -343,7 +383,7 @@ public class MunicipalAccountTests
         // Arrange
         var account = new MunicipalAccount
         {
-            AccountNumber = "1010-100",
+            AccountNumber = new AccountNumber("1010-100"),
             Name = new string('A', 101), // 101 characters, exceeds max of 100
             Type = AccountType.Asset,
             Fund = FundType.General
@@ -365,7 +405,7 @@ public class MunicipalAccountTests
         // Arrange
         var account = new MunicipalAccount
         {
-            AccountNumber = "1010-100",
+            AccountNumber = new AccountNumber("1010-100"),
             Name = "Cash Account",
             Type = AccountType.Asset,
             Fund = FundType.General,
@@ -388,7 +428,7 @@ public class MunicipalAccountTests
         // Arrange
         var account = new MunicipalAccount
         {
-            AccountNumber = "1010-100",
+            AccountNumber = new AccountNumber("1010-100"),
             Name = "Cash Account",
             Type = AccountType.Asset,
             Fund = FundType.General,
@@ -411,7 +451,7 @@ public class MunicipalAccountTests
         // Arrange
         var account = new MunicipalAccount
         {
-            AccountNumber = new string('1', 20), // Exactly 20 characters
+            AccountNumber = new AccountNumber(new string('1', 20)), // Exactly 20 characters
             Name = "Cash Account",
             Type = AccountType.Asset,
             Fund = FundType.General
@@ -433,7 +473,7 @@ public class MunicipalAccountTests
         // Arrange
         var account = new MunicipalAccount
         {
-            AccountNumber = "1010-100",
+            AccountNumber = new AccountNumber("1010-100"),
             Name = new string('A', 100), // Exactly 100 characters
             Type = AccountType.Asset,
             Fund = FundType.General
@@ -458,7 +498,7 @@ public class MunicipalAccountTests
         // Arrange
         var account = new MunicipalAccount
         {
-            AccountNumber = accountNumber,
+            AccountNumber = new AccountNumber(accountNumber),
             Name = name,
             Type = type,
             Fund = fund,
@@ -480,7 +520,10 @@ public class MunicipalAccountTests
     public void MunicipalAccount_LastSyncDate_CanBeSet()
     {
         // Arrange
-        var account = new MunicipalAccount();
+        var account = new MunicipalAccount
+        {
+            AccountNumber = new AccountNumber("9999-999") // Default, will be overridden
+        };
         var syncDate = new DateTime(2025, 9, 19, 10, 30, 0, DateTimeKind.Utc);
 
         // Act
@@ -494,7 +537,10 @@ public class MunicipalAccountTests
     public void MunicipalAccount_IsActive_DefaultsToTrue()
     {
         // Arrange & Act
-        var account = new MunicipalAccount();
+        var account = new MunicipalAccount
+        {
+            AccountNumber = new AccountNumber("9999-999") // Default, will be overridden
+        };
 
         // Assert
         Assert.True(account.IsActive);
@@ -504,7 +550,10 @@ public class MunicipalAccountTests
     public void MunicipalAccount_IsActive_CanBeSetToFalse()
     {
         // Arrange
-        var account = new MunicipalAccount();
+        var account = new MunicipalAccount
+        {
+            AccountNumber = new AccountNumber("9999-999") // Default, will be overridden
+        };
 
         // Act
         account.IsActive = false;
@@ -520,7 +569,10 @@ public class MunicipalAccountTests
     public void MunicipalAccount_Variance_Calculations_VariousScenarios(decimal budget, decimal balance, decimal expectedVariance, decimal expectedPercent)
     {
         // Arrange
-        var account = new MunicipalAccount();
+        var account = new MunicipalAccount
+        {
+            AccountNumber = new AccountNumber("9999-999") // Default, will be overridden
+        };
 
         // Act
         account.BudgetAmount = budget;

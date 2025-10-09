@@ -20,6 +20,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from unittest.mock import patch, MagicMock
 import psutil
 import sys
+from typing import Optional
 from pathlib import Path
 
 # Add project root to path
@@ -113,7 +114,7 @@ class TestMemoryExhaustion:
         # Create circular references that should be collected
         class CircularRef:
             def __init__(self):
-                self.ref = None
+                self.ref: Optional['CircularRef'] = None
 
         objects = []
         for i in range(1000):

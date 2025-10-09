@@ -1,4 +1,4 @@
-﻿# Find-DuplicateXamlKeys.ps1
+# Find-DuplicateXamlKeys.ps1
 # Microsoft WPF Best Practice: Detect duplicate resource keys to prevent XamlParseException at runtime
 
 [CmdletBinding()]
@@ -36,7 +36,7 @@ foreach ($file in $xamlFiles) {
         }
 
         $resourceKeys[$key] += [PSCustomObject]@{
-            File = $file.FullName.Replace($RootPath, '.')
+            File       = $file.FullName.Replace($RootPath, '.')
             LineNumber = ($content.Substring(0, $match.Index) -split "`n").Count
         }
     }
@@ -65,8 +65,8 @@ foreach ($duplicate in $duplicates | Sort-Object Name) {
 
         $report += [PSCustomObject]@{
             ResourceKey = $key
-            File = $location.File
-            LineNumber = $location.LineNumber
+            File        = $location.File
+            LineNumber  = $location.LineNumber
         }
     }
 }

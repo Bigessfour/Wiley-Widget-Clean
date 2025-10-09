@@ -114,17 +114,17 @@ public sealed class AIAssistLifecycleTests : LifecycleTestBase
     {
         public List<(string Context, string Question)> InsightsRequests { get; } = new();
 
-        public Task<string> AnalyzeDataAsync(string data, string analysisType) => Task.FromResult("analysis");
+        public Task<string> AnalyzeDataAsync(string data, string analysisType, CancellationToken cancellationToken = default) => Task.FromResult("analysis");
 
-        public Task<string> GenerateMockDataSuggestionsAsync(string dataType, string requirements) => Task.FromResult("mock");
+        public Task<string> GenerateMockDataSuggestionsAsync(string dataType, string requirements, CancellationToken cancellationToken = default) => Task.FromResult("mock");
 
-        public Task<string> GetInsightsAsync(string context, string question)
+        public Task<string> GetInsightsAsync(string context, string question, CancellationToken cancellationToken = default)
         {
             InsightsRequests.Add((context, question));
             return Task.FromResult("insights");
         }
 
-        public Task<string> ReviewApplicationAreaAsync(string areaName, string currentState) => Task.FromResult("review");
+        public Task<string> ReviewApplicationAreaAsync(string areaName, string currentState, CancellationToken cancellationToken = default) => Task.FromResult("review");
     }
 
     private sealed class TestChargeCalculatorService : IChargeCalculatorService

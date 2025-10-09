@@ -18,6 +18,7 @@ import time
 from unittest.mock import patch, MagicMock
 import psutil
 import sys
+from typing import Optional
 from pathlib import Path
 
 # Add project root to path
@@ -56,7 +57,7 @@ class MemoryLeakDetector:
         """Create a circular reference for testing"""
         class CircularRef:
             def __init__(self):
-                self.ref = None
+                self.ref: Optional['CircularRef'] = None
 
         obj1 = CircularRef()
         obj2 = CircularRef()

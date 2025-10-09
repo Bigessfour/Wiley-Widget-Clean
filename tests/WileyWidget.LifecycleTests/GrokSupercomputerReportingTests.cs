@@ -22,7 +22,7 @@ public sealed class GrokSupercomputerReportingTests
     {
         _aiServiceMock = new Mock<IAIService>();
         _aiServiceMock
-            .Setup(service => service.GetInsightsAsync(It.IsAny<string>(), It.IsAny<string>()))
+            .Setup(service => service.GetInsightsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync("analysis");
 
         _enterpriseRepositoryMock = new Mock<IEnterpriseRepository>();

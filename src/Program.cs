@@ -73,7 +73,7 @@ public static class Program
                     rollingInterval: RollingInterval.Day,
                     retainedFileCountLimit: 7,
                     outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {MachineName} {ProcessId}:{ThreadId} {SourceContext} {Message:lj}{NewLine}{Exception}")
-                .CreateBootstrapLogger();
+                .CreateLogger();
 
             Log.Logger = bootstrapLogger;
 

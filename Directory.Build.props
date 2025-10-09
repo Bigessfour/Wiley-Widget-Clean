@@ -21,5 +21,8 @@
     <!-- Optimize for development workflow -->
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <RestoreUseStaticGraphEvaluation>true</RestoreUseStaticGraphEvaluation>
+
+    <!-- Ensure nested build outputs are never re-included in compilation -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);**\bin\**;**\obj\**</DefaultItemExcludes>
   </PropertyGroup>
 </Project>

@@ -10,7 +10,9 @@
     xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
     xmlns:syncfusionskin="clr-namespace:Syncfusion.SfSkinManager;assembly=Syncfusion.SfSkinManager.WPF"
     xmlns:notification="clr-namespace:Syncfusion.Windows.Controls.Notification;assembly=Syncfusion.SfBusyIndicator.WPF"
+    xmlns:prism="http://prismlibrary.com/"
     mc:Ignorable="d"
+    prism:ViewModelLocator.AutoWireViewModel="True"
     TextOptions.TextFormattingMode="Ideal"
     TextOptions.TextRenderingMode="ClearType"
     Title="Wiley Widget" Height="600" Width="1000" WindowState="Maximized">

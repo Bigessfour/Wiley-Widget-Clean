@@ -1,5 +1,10 @@
+#nullable enable
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using System;
 using System.Diagnostics;
 using System.Security.Cryptography;
@@ -8,6 +13,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using WileyWidget.Models;
 using WileyWidget.Services.Excel;
+using WileyWidget.Configuration;
 
 namespace WileyWidget.Data;
 
@@ -62,6 +68,11 @@ public class AppDbContext : DbContext
     /// </summary>
     public DbSet<Widget> Widgets { get; set; }
 
+    /// <summary>
+    /// DbSet for FiscalYearSettings entities (global fiscal year configuration)
+    /// </summary>
+    public DbSet<FiscalYearSettings> FiscalYearSettings { get; set; }
+
     private readonly ILogger<AppDbContext>? _logger;
     private readonly AccountTypeValidator? _accountTypeValidator;
 
@@ -72,10 +83,7 @@ public class AppDbContext : DbContext
         : base(options)
     {
         _logger = logger;
-        if (_logger != null)
-        {
-            _accountTypeValidator = new AccountTypeValidator(_logger);
-        }
+        _accountTypeValidator = new AccountTypeValidator();
     }
 
     /// <summary>
@@ -91,6 +99,9 @@ public class AppDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        // Configure RowVersion for all database providers
+        ConfigureRowVersion(modelBuilder, Database.IsSqlite());
 
         // Configure value converter for AccountNumber value object
         modelBuilder.Entity<MunicipalAccount>()
@@ -130,9 +141,8 @@ public class AppDbContext : DbContext
             entity.Property(e => e.Notes)
                 .HasMaxLength(500);
 
-            // Concurrency token
+            // Concurrency token - configured by ConfigureRowVersion for all providers
             entity.Property(e => e.RowVersion)
-                .IsRowVersion()
                 .IsConcurrencyToken();
 
             // Indexes for performance
@@ -535,99 +545,100 @@ public class AppDbContext : DbContext
                 .HasFilter("[SKU] IS NOT NULL");
         });
 
-        // Seed data
-        modelBuilder.Entity<Enterprise>().HasData(
-            new Enterprise
-            {
-                Id = 1,
-                Name = "Water Utility",
-                Type = "Utility",
-                CurrentRate = 25.00M,
-                MonthlyExpenses = 15000.00M,
-                CitizenCount = 2500,
-                TotalBudget = 180000.00M,
-                Notes = "Municipal water service",
-                RowVersion = new byte[] { 0, 0, 0, 0, 0, 0, 0, 1 }
-            },
-            new Enterprise
-            {
-                Id = 2,
-                Name = "Sewer Service",
-                Type = "Utility",
-                CurrentRate = 35.00M,
-                MonthlyExpenses = 22000.00M,
-                CitizenCount = 2500,
-                TotalBudget = 264000.00M,
-                Notes = "Wastewater treatment and sewer service",
-                RowVersion = new byte[] { 0, 0, 0, 0, 0, 0, 0, 2 }
-            },
-            new Enterprise
-            {
-                Id = 3,
-                Name = "Trash Collection",
-                Type = "Service",
-                CurrentRate = 15.00M,
-                MonthlyExpenses = 8000.00M,
-                CitizenCount = 2500,
-                TotalBudget = 96000.00M,
-                Notes = "Residential and commercial waste collection",
-                RowVersion = new byte[] { 0, 0, 0, 0, 0, 0, 0, 3 }
-            },
-            new Enterprise
-            {
-                Id = 4,
-                Name = "Municipal Apartments",
-                Type = "Housing",
-                CurrentRate = 450.00M,
-                MonthlyExpenses = 12000.00M,
-                CitizenCount = 150,
-                TotalBudget = 144000.00M,
-                Notes = "Low-income housing units",
-                RowVersion = new byte[] { 0, 0, 0, 0, 0, 0, 0, 4 }
-            }
-        );
+        // Seed data - moved to DatabaseSeeder for runtime seeding
+        // modelBuilder.Entity<Enterprise>().HasData(
+        //     new Enterprise
+        //     {
+        //         Id = 1,
+        //         Name = "Water Utility",
+        //         Type = "Utility",
+        //         CurrentRate = 25.00M,
+        //         MonthlyExpenses = 15000.00M,
+        //         CitizenCount = 2500,
+        //         TotalBudget = 180000.00M,
+        //         Notes = "Municipal water service",
+        //         RowVersion = new byte[] { 0, 0, 0, 0, 0, 0, 0, 1 }
+        //     },
+        //     new Enterprise
+        //     {
+        //         Id = 2,
+        //         Name = "Sewer Service",
+        //         Type = "Utility",
+        //         CurrentRate = 35.00M,
+        //         MonthlyExpenses = 22000.00M,
+        //         CitizenCount = 2500,
+        //         TotalBudget = 264000.00M,
+        //         Notes = "Wastewater treatment and sewer service",
+        //         RowVersion = new byte[] { 0, 0, 0, 0, 0, 0, 0, 2 }
+        //     },
+        //     new Enterprise
+        //     {
+        //         Id = 3,
+        //         Name = "Trash Collection",
+        //         Type = "Service",
+        //         CurrentRate = 15.00M,
+        //         MonthlyExpenses = 8000.00M,
+        //         CitizenCount = 2500,
+        //         TotalBudget = 96000.00M,
+        //         Notes = "Residential and commercial waste collection",
+        //         RowVersion = new byte[] { 0, 0, 0, 0, 0, 0, 0, 3 }
+        //     },
+        //     new Enterprise
+        //     {
+        //         Id = 4,
+        //         Name = "Municipal Apartments",
+        //         Type = "Housing",
+        //         CurrentRate = 450.00M,
+        //         MonthlyExpenses = 12000.00M,
+        //         CitizenCount = 150,
+        //         TotalBudget = 144000.00M,
+        //         Notes = "Low-income housing units",
+        //         RowVersion = new byte[] { 0, 0, 0, 0, 0, 0, 0, 4 }
+        //     }
+        // );
 
-        modelBuilder.Entity<Widget>().HasData(
-            new Widget
-            {
-                Id = 1,
-                Name = "Rate Calculator",
-                Description = "Calculate utility rates based on usage and budget",
-                Category = "Calculator",
-                SKU = "WW-RATE-CALC",
-                Price = 0.00M,
-                IsActive = true,
-                CreatedDate = new DateTime(2025, 9, 27, 0, 0, 0, DateTimeKind.Utc),
-                ModifiedDate = new DateTime(2025, 9, 27, 0, 0, 0, DateTimeKind.Utc),
-                RowVersion = new byte[] { 0, 0, 0, 0, 0, 0, 0, 5 }
-            },
-            new Widget
-            {
-                Id = 2,
-                Name = "Budget Analyzer",
-                Description = "Analyze municipal budget allocations and expenses",
-                Category = "Analyzer",
-                SKU = "WW-BUDGET-ANALYZER",
-                Price = 0.00M,
-                IsActive = true,
-                CreatedDate = new DateTime(2025, 9, 27, 0, 0, 0, DateTimeKind.Utc),
-                ModifiedDate = new DateTime(2025, 9, 27, 0, 0, 0, DateTimeKind.Utc),
-                RowVersion = new byte[] { 0, 0, 0, 0, 0, 0, 0, 6 }
-            },
-            new Widget
-            {
-                Id = 3,
-                Name = "Configuration Manager",
-                Description = "Manage application settings and configurations",
-                Category = "Management",
-                SKU = "WW-CONFIG-MGR",
-                Price = 0.00M,
-                IsActive = true,
-                CreatedDate = new DateTime(2025, 9, 27, 0, 0, 0, DateTimeKind.Utc),
-                ModifiedDate = new DateTime(2025, 9, 27, 0, 0, 0, DateTimeKind.Utc),
-                RowVersion = new byte[] { 0, 0, 0, 0, 0, 0, 0, 7 }
-            }
-        );
+        // Seed data - moved to DatabaseSeeder for runtime seeding
+        // modelBuilder.Entity<Widget>().HasData(
+        //     new Widget
+        //     {
+        //         Id = 1,
+        //         Name = "Rate Calculator",
+        //         Description = "Calculate utility rates based on usage and budget",
+        //         Category = "Calculator",
+        //         SKU = "WW-RATE-CALC",
+        //         Price = 0.00M,
+        //         IsActive = true,
+        //         CreatedDate = new DateTime(2025, 9, 27, 0, 0, 0, DateTimeKind.Utc),
+        //         ModifiedDate = new DateTime(2025, 9, 27, 0, 0, 0, DateTimeKind.Utc),
+        //         RowVersion = new byte[] { 0, 0, 0, 0, 0, 0, 0, 5 }
+        //     },
+        //     new Widget
+        //     {
+        //         Id = 2,
+        //         Name = "Budget Analyzer",
+        //         Description = "Analyze municipal budget allocations and expenses",
+        //         Category = "Analyzer",
+        //         SKU = "WW-BUDGET-ANALYZER",
+        //         Price = 0.00M,
+        //         IsActive = true,
+        //         CreatedDate = new DateTime(2025, 9, 27, 0, 0, 0, DateTimeKind.Utc),
+        //         ModifiedDate = new DateTime(2025, 9, 27, 0, 0, 0, DateTimeKind.Utc),
+        //         RowVersion = new byte[] { 0, 0, 0, 0, 0, 0, 0, 6 }
+        //     },
+        //     new Widget
+        //     {
+        //         Id = 3,
+        //         Name = "Configuration Manager",
+        //         Description = "Manage application settings and configurations",
+        //         Category = "Management",
+        //         SKU = "WW-CONFIG-MGR",
+        //         Price = 0.00M,
+        //         IsActive = true,
+        //         CreatedDate = new DateTime(2025, 9, 27, 0, 0, 0, DateTimeKind.Utc),
+        //         ModifiedDate = new DateTime(2025, 9, 27, 0, 0, 0, DateTimeKind.Utc),
+        //         RowVersion = new byte[] { 0, 0, 0, 0, 0, 0, 0, 7 }
+        //     }
+        // );
     }
 
     /// <summary>
@@ -644,57 +655,21 @@ public class AppDbContext : DbContext
         }
 
         // Add detailed EF Core query logging
-        optionsBuilder.LogTo(message => Console.WriteLine($"EF Core: {message}"),
-            new[] { Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.CommandExecuted },
-            LogLevel.Information);
+        optionsBuilder.LogTo(message => _logger?.LogInformation("EF Core: {Message}", message),
+            new[] { Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.CommandExecuted });
 
         // Configure query tracking and other behaviors
         optionsBuilder.ConfigureWarnings(warnings =>
         {
             // Suppress common warnings that are expected
             warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.MultipleCollectionIncludeWarning);
+            // Suppress pending model changes warning for seeding data
+            warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning);
         });
     }
 
     /// <summary>
     /// Validates GASB compliance for MunicipalAccount changes before saving.
-    /// </summary>
-    private async Task ValidateGASBComplianceAsync()
-    {
-        if (_accountTypeValidator == null)
-            return;
-
-        // Get all MunicipalAccount entries that are being added or modified
-        var municipalAccountEntries = ChangeTracker.Entries<MunicipalAccount>()
-            .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified)
-            .Select(e => e.Entity)
-            .ToList();
-
-        if (!municipalAccountEntries.Any())
-            return;
-
-        // Get all existing accounts for context (to validate fund balances)
-        var allAccounts = await MunicipalAccounts.ToListAsync();
-        var accountsToValidate = allAccounts.Concat(municipalAccountEntries).ToList();
-
-        // Validate account type compliance
-        var validationResult = _accountTypeValidator.ValidateAccountTypeCompliance(accountsToValidate);
-
-        if (!validationResult.IsValid)
-        {
-            var errorMessage = $"GASB compliance validation failed: {string.Join("; ", validationResult.Errors)}";
-            _logger?.LogError("GASB validation failed: {Errors}", string.Join("; ", validationResult.Errors));
-            throw new InvalidOperationException(errorMessage);
-        }
-
-        if (validationResult.Warnings.Any())
-        {
-            _logger?.LogWarning("GASB validation warnings: {Warnings}", string.Join("; ", validationResult.Warnings));
-        }
-    }
-
-    /// <summary>
-    /// Validates GASB compliance for MunicipalAccount changes before saving (sync version).
     /// </summary>
     private void ValidateGASBCompliance()
     {
@@ -710,12 +685,8 @@ public class AppDbContext : DbContext
         if (!municipalAccountEntries.Any())
             return;
 
-        // Get all existing accounts for context (to validate fund balances)
-        var allAccounts = MunicipalAccounts.ToList();
-        var accountsToValidate = allAccounts.Concat(municipalAccountEntries).ToList();
-
-        // Validate account type compliance
-        var validationResult = _accountTypeValidator.ValidateAccountTypeCompliance(accountsToValidate);
+        // Validate only the changed accounts - no need to load all accounts from database
+        var validationResult = _accountTypeValidator.ValidateAccountTypeCompliance(municipalAccountEntries);
 
         if (!validationResult.IsValid)
         {
@@ -735,7 +706,11 @@ public class AppDbContext : DbContext
     /// </summary>
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        await ValidateGASBComplianceAsync();
+        if (Database.IsSqlite())
+        {
+            ApplySqliteRowVersionBehavior();
+        }
+        ValidateGASBCompliance();
         return await base.SaveChangesAsync(cancellationToken);
     }
 
@@ -744,7 +719,88 @@ public class AppDbContext : DbContext
     /// </summary>
     public override int SaveChanges()
     {
+        if (Database.IsSqlite())
+        {
+            ApplySqliteRowVersionBehavior();
+        }
         ValidateGASBCompliance();
         return base.SaveChanges();
+    }
+
+    /// <summary>
+    /// Configures RowVersion properties for all database providers
+    /// </summary>
+    private static void ConfigureRowVersion(ModelBuilder modelBuilder, bool isSqlite)
+    {
+        ConfigureRowVersion<Enterprise>(modelBuilder.Entity<Enterprise>(), isSqlite);
+        ConfigureRowVersion<UtilityCustomer>(modelBuilder.Entity<UtilityCustomer>(), isSqlite);
+        ConfigureRowVersion<Widget>(modelBuilder.Entity<Widget>(), isSqlite);
+    }
+
+    /// <summary>
+    /// Configures RowVersion for a specific entity type
+    /// </summary>
+    private static void ConfigureRowVersion<T>(EntityTypeBuilder<T> entity, bool isSqlite) where T : class
+    {
+        const string propertyName = nameof(Enterprise.RowVersion);
+        var propertyBuilder = entity.Property<byte[]>(propertyName)
+            .IsConcurrencyToken();
+
+        if (isSqlite)
+        {
+            propertyBuilder
+                .HasDefaultValueSql("randomblob(8)")
+                .ValueGeneratedNever();
+
+            propertyBuilder.Metadata.SetBeforeSaveBehavior(PropertySaveBehavior.Save);
+            propertyBuilder.Metadata.SetAfterSaveBehavior(PropertySaveBehavior.Save);
+        }
+        else
+        {
+            propertyBuilder.IsRowVersion();
+        }
+    }
+
+    /// <summary>
+    /// Applies SQLite-specific RowVersion behavior before saving
+    /// </summary>
+    private void ApplySqliteRowVersionBehavior()
+    {
+        UpdateRowVersion<Enterprise>(ChangeTracker.Entries<Enterprise>());
+        UpdateRowVersion<UtilityCustomer>(ChangeTracker.Entries<UtilityCustomer>());
+        UpdateRowVersion<Widget>(ChangeTracker.Entries<Widget>());
+    }
+
+    /// <summary>
+    /// Updates RowVersion values for tracked entities
+    /// </summary>
+    private static void UpdateRowVersion<TEntity>(IEnumerable<EntityEntry<TEntity>> entries) where TEntity : class
+    {
+        foreach (var entry in entries)
+        {
+            var property = entry.Property(nameof(Enterprise.RowVersion));
+
+            if (entry.State == EntityState.Added)
+            {
+                if (property.CurrentValue is not byte[] bytes || bytes.Length == 0)
+                {
+                    property.CurrentValue = CreateRowVersion();
+                }
+            }
+            else if (entry.State == EntityState.Modified)
+            {
+                property.CurrentValue = CreateRowVersion();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Creates a new RowVersion value
+    /// </summary>
+    private static byte[] CreateRowVersion()
+    {
+        var buffer = new byte[8];
+        System.Security.Cryptography.RandomNumberGenerator.Fill(buffer);
+        return buffer;
     }
 }

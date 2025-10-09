@@ -35,6 +35,8 @@ using System.Windows.Media; // For brushes/colors
 using System.Windows.Automation; // For AutomationProperties
 using Microsoft.Data.SqlClient;
 using WileyWidget.Diagnostics;
+using Prism.Ioc;
+using Prism.DryIoc;
 
 namespace WileyWidget;
 
@@ -47,7 +49,7 @@ namespace WileyWidget;
 /// - Better error handling and fallbacks
 /// - Enhanced debug instrumentation for startup analysis
 /// </summary>
-public partial class App : Application, IDisposable
+public partial class App : PrismApplication, IDisposable
 {
     /// <summary>
     /// Static service provider for accessing DI services from anywhere in the app
@@ -58,6 +60,11 @@ public partial class App : Application, IDisposable
     /// Latest health check report for the application
     /// </summary>
     public static HealthCheckReport? LatestHealthReport { get; private set; }
+
+    /// <summary>
+    /// Startup progress reporter for coordinating splash screen and diagnostics
+    /// </summary>
+    public static IStartupProgressReporter StartupProgress { get; } = new StartupProgressService();
 
     // private IConfiguration _configuration; REMOVED - handled by DI container
     private SplashScreenWindow? _splashScreen;
@@ -108,7 +115,8 @@ public partial class App : Application, IDisposable
                     rollingInterval: RollingInterval.Day,
                     retainedFileCountLimit: 7,
                     outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {MachineName} {ProcessId}:{ThreadId} {SourceContext} {Message:lj}{NewLine}{Exception}")
-                .CreateBootstrapLogger();
+                .CreateLogger();
+
         }
         else
         {
@@ -274,10 +282,57 @@ public partial class App : Application, IDisposable
         // SAFE PATTERN: Only minimal, non-blocking setup in constructor
         // Per Microsoft: "avoid calling overridable methods or setting dependency property values from constructor"
         Console.WriteLine("[DIAG] App constructor called - safe initialization pattern");
-        
+
+        // CRITICAL: Register Syncfusion license BEFORE any Syncfusion components are initialized
+        // Per Syncfusion documentation: License must be registered in App constructor before any controls are used
+        RegisterSyncfusionLicenseInConstructor();
+
         // Configuration and license registration moved to OnStartup per Microsoft best practices
         Log.Information("=== Application Constructor Initialized (safe pattern) ===");
     }
+
+    #region Prism Application Methods
+
+    /// <summary>
+    /// Creates the main application window (shell) for Prism
+    /// </summary>
+    protected override Window CreateShell()
+    {
+        return Container.Resolve<MainWindow>();
+    }
+
+    /// <summary>
+    /// Registers types in the Prism DI container
+    /// </summary>
+    protected override void RegisterTypes(IContainerRegistry containerRegistry)
+    {
+        // Register the main window and its ViewModel
+        containerRegistry.Register<MainWindow>();
+        containerRegistry.Register<MainViewModel>();
+        
+        // Register existing services
+        containerRegistry.RegisterSingleton<INavigationService, NavigationService>();
+        containerRegistry.RegisterSingleton<IAzureKeyVaultService, AzureKeyVaultService>();
+        containerRegistry.RegisterSingleton<ISettingsService, SettingsService>();
+        containerRegistry.RegisterSingleton<IThemeManager, ThemeManager>();
+        containerRegistry.RegisterSingleton<ISyncfusionLicenseService, SyncfusionLicenseService>();
+        
+        // Register other ViewModels
+        containerRegistry.Register<DashboardViewModel>();
+        containerRegistry.Register<ReportsViewModel>();
+        containerRegistry.Register<SettingsViewModel>();
+    }
+
+    /// <summary>
+    /// Configures the module catalog for Prism (if using modules)
+    /// </summary>
+    protected override void ConfigureModuleCatalog(IModuleCatalog moduleCatalog)
+    {
+        // Module configuration can be added here if the application uses Prism modules
+        // For now, we're using a single-module approach
+    }
+
+    #endregion
 
     /// <summary>
     /// MICROSOFT-COMPLIANT ONSTARTUP: Proper initialization lifecycle
@@ -301,9 +356,8 @@ public partial class App : Application, IDisposable
 
             // MICROSOFT PATTERN: License registration in OnStartup, configuration handled by WpfHostingExtensions
             // Per Microsoft: "Defer initialization operations until after the main application window is rendered"
-            LogDebugEvent("STARTUP_PHASE", "Performing Syncfusion license registration");
-            RegisterSyncfusionLicense(startupId);
-            LogDebugEvent("STARTUP_PHASE", "Syncfusion licensing completed");
+            // Note: Syncfusion license already registered in constructor per Syncfusion requirements
+            LogDebugEvent("STARTUP_PHASE", "Syncfusion licensing already completed in constructor");
 
             // Configure Syncfusion themes globally - must be done before any windows are created
             LogDebugEvent("STARTUP_PHASE", "Configuring Syncfusion themes");
@@ -1012,6 +1066,33 @@ public partial class App : Application, IDisposable
 
     // ConfigureServices() method REMOVED - handled by WpfHostingExtensions.ConfigureCoreServices() and ConfigureWpfServices()
     // RegisterSyncfusionLicense() stub method REMOVED - functionality in InitializeConfigurationAndRegisterSyncfusionLicense()
+
+    /// <summary>
+    /// CRITICAL: Register Syncfusion license in App constructor BEFORE any Syncfusion components are initialized
+    /// Per Syncfusion documentation: License must be registered before any controls are used to prevent evaluation dialogs
+    /// </summary>
+    private void RegisterSyncfusionLicenseInConstructor()
+    {
+        try
+        {
+            var licenseKey = GetSyncfusionLicenseKey();
+            if (string.IsNullOrWhiteSpace(licenseKey) || licenseKey == "${SYNCFUSION_LICENSE_KEY}")
+            {
+                // Non-fatal: allow app to run in evaluation mode for development
+                Console.WriteLine("[DIAG] Syncfusion license key not found - running in evaluation mode");
+                return;
+            }
+
+            // Register license with Syncfusion BEFORE any components are initialized
+            SyncfusionLicenseProvider.RegisterLicense(licenseKey);
+            Console.WriteLine("[DIAG] Syncfusion license registered successfully in constructor");
+        }
+        catch (Exception ex)
+        {
+            // Non-fatal: allow app to continue in evaluation mode
+            Console.WriteLine($"[DIAG] Syncfusion license registration failed in constructor: {ex.Message}");
+        }
+    }
 
     /// <summary>
     /// CRITICAL STARTUP COMPONENT: Configure Syncfusion themes globally using SfSkinManager

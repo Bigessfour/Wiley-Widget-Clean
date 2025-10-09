@@ -67,7 +67,7 @@ public class ComprehensiveDatabaseIntegrationTests : IDisposable
         // Create test municipal accounts
         var account1 = new MunicipalAccount
         {
-            AccountNumber = "101-1000",
+            AccountNumber = new AccountNumber("101-1000"),
             Name = "General Fund - Utilities",
             Type = AccountType.Asset,
             Fund = FundType.General,
@@ -78,7 +78,7 @@ public class ComprehensiveDatabaseIntegrationTests : IDisposable
 
         var account2 = new MunicipalAccount
         {
-            AccountNumber = "201-2000",
+            AccountNumber = new AccountNumber("201-2000"),
             Name = "Utility Expenses",
             Type = AccountType.Expense,
             Fund = FundType.Enterprise,
@@ -205,7 +205,7 @@ public class ComprehensiveDatabaseIntegrationTests : IDisposable
         // Arrange - Add a new account
         var newAccount = new MunicipalAccount
         {
-            AccountNumber = "301-3000",
+            AccountNumber = new AccountNumber("301-3000"),
             Name = "Capital Improvement Fund",
             Type = AccountType.Asset,
             Fund = FundType.General,
@@ -217,7 +217,7 @@ public class ComprehensiveDatabaseIntegrationTests : IDisposable
         // Act - Add account
         var addedAccount = await _municipalAccountRepository.AddAsync(newAccount);
         Assert.NotNull(addedAccount);
-        Assert.Equal("301-3000", addedAccount.AccountNumber);
+        Assert.Equal("301-3000", addedAccount.AccountNumber.ToString());
 
         // Act - Get accounts by fund
         var generalFundAccounts = await _municipalAccountRepository.GetByFundAsync(FundType.General);

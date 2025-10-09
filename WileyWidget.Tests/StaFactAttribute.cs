@@ -194,9 +194,19 @@ namespace WileyWidget.Tests
                         // Load theme resources for testing
                         try
                         {
+                            // Load Wiley Widget custom theme
                             var themeUri = new Uri("pack://application:,,,/WileyWidget;component/Themes/WileyTheme.xaml");
                             var themeResource = new ResourceDictionary { Source = themeUri };
                             application.Resources.MergedDictionaries.Add(themeResource);
+                            
+                            // Load Syncfusion FluentDark theme (required for proper control rendering)
+                            var syncfusionThemeUri = new Uri("pack://application:,,,/Syncfusion.Themes.FluentDark.WPF;component/FluentDark/FluentDark.xaml");
+                            var syncfusionThemeResource = new ResourceDictionary { Source = syncfusionThemeUri };
+                            application.Resources.MergedDictionaries.Add(syncfusionThemeResource);
+                            
+                            // Note: Global theme setting removed - theme resources loaded into application resources
+                            
+                            System.Diagnostics.Debug.WriteLine("Theme resources loaded successfully for tests");
                         }
                         catch (Exception ex)
                         {

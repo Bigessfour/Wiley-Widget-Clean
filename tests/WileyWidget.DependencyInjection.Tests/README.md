@@ -5,7 +5,9 @@ Comprehensive test suite for validating dependency injection configuration, serv
 ## Test Categories
 
 ### 1. ServiceContainerValidationTests
+
 Validates the entire DI container configuration:
+
 - **Container Build Success**: Ensures host builds without errors
 - **Service Resolvability**: All registered services can be resolved
 - **Critical Services**: Key infrastructure services are present
@@ -17,7 +19,9 @@ Validates the entire DI container configuration:
 - **No Duplicate Singletons**: Critical services aren't double-registered
 
 ### 2. ConstructorResolutionTests
+
 Tests constructor selection and ambiguity resolution:
+
 - **ActivatorUtilitiesConstructor Attribute**: ShellViewModel uses the attribute
 - **No Ambiguous Constructors**: DI can resolve ShellViewModel unambiguously
 - **Multiple Constructor Handling**: ViewModels with multiple constructors are marked
@@ -25,7 +29,9 @@ Tests constructor selection and ambiguity resolution:
 - **Optional Parameters**: Constructors with optional dependencies work
 
 ### 3. ServiceLifetimeTests
+
 Validates service lifetime behaviors and disposal:
+
 - **Expected Lifetimes**: Services have correct Singleton/Transient/Scoped lifetimes
 - **Scoped Isolation**: Scoped services are same within scope, different across scopes
 - **Disposal on Scope End**: Scoped services dispose when scope disposes
@@ -72,6 +78,7 @@ These tests are designed to run in CI/CD pipelines to catch DI issues early:
 ## Fixing Common Issues
 
 ### Ambiguous Constructor Error
+
 ```csharp
 // ❌ Bad: Multiple constructors, no attribute
 public class MyViewModel
@@ -85,12 +92,13 @@ public class MyViewModel
 {
     [ActivatorUtilitiesConstructor]
     public MyViewModel(ServiceA a, ServiceB b) { }
-    
+
     public MyViewModel(ServiceA a) : this(a, null!) { }
 }
 ```
 
 ### Missing Service Registration
+
 ```csharp
 // ❌ Bad: Service not registered
 services.AddTransient<MyViewModel>();
@@ -102,6 +110,7 @@ services.AddTransient<MyViewModel>();
 ```
 
 ### Wrong Lifetime
+
 ```csharp
 // ❌ Bad: Stateful service as transient
 services.AddTransient<CacheService>(); // New cache each time!

@@ -33,16 +33,16 @@ namespace WileyWidget.UiTests.ComponentTests
     /// Tests DockingManager, SfDataGrid, SfChart, and advanced Ribbon features
     /// </summary>
     [SupportedOSPlatform("windows")]
-    public class SyncfusionControlsComponentTests : UiTestApplication
+    public class SyncfusionControlsComponentTests : EnhancedUiTestApplication
     {
         #region DockingManager Tests (MainWindow)
 
         [StaFact]
-        public void MainWindow_DockingManager_Layout_ShouldRenderCorrectly()
+        public async Task MainWindow_DockingManager_Layout_ShouldRenderCorrectly()
         {
-            RunOnUIThread(() =>
+            var window = await CreateViewWithFullLifecycleAsync<MainWindow>();
+            await RunOnUIThreadAsync(async () =>
             {
-                var window = new MainWindow();
                 window.Show();
                 window.UpdateLayout();
 
@@ -283,16 +283,24 @@ namespace WileyWidget.UiTests.ComponentTests
         #region SfDataGrid Tests (MainWindow - Enterprise Data)
 
         [StaFact]
-        public void MainWindow_SfDataGrid_EnterpriseData_ShouldDisplayCorrectly()
+        public async void MainWindow_SfDataGrid_EnterpriseData_ShouldDisplayCorrectly()
         {
-            RunOnUIThread(() =>
+            await RunOnUIThreadAsync(async () =>
             {
-                var window = new MainWindow();
+                // Use the enhanced lifecycle initialization (CRITICAL FIX)
+                var window = await CreateViewWithFullLifecycleAsync<MainWindow>();
                 window.Show();
                 window.UpdateLayout();
 
                 var grid = window.FindName("Grid") as SfDataGrid;
                 Assert.NotNull(grid);
+
+                // Verify DataContext is properly set (this was the main disconnect!)
+                Assert.NotNull(window.DataContext, "MainWindow DataContext should be initialized");
+                Assert.IsType<ViewModels.MainViewModel>(window.DataContext);
+
+                // Use enhanced verification that catches rendering disconnects
+                await VerifySfDataGridRenderingAsync(grid, "MainWindow Enterprise Data Grid");
 
                 // Verify grid properties
                 Assert.False(grid.AutoGenerateColumns);
@@ -308,7 +316,7 @@ namespace WileyWidget.UiTests.ComponentTests
                 Assert.NotNull(theme);
                 Assert.Contains("Fluent", theme.ToString()); // Should inherit Fluent theme from MainWindow
 
-                // Verify columns are defined
+                // Verify columns are defined and properly configured
                 Assert.NotNull(grid.Columns);
                 Assert.True(grid.Columns.Count > 0);
 

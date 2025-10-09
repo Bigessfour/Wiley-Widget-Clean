@@ -25,9 +25,7 @@ $keepInRoot = @(
     'WileyWidget.sln',
     'README.md',
     '.gitignore',
-    '.editorconfig',
-    'TOW WORKING COPY TOWN OF WILEY 2026 BUDGET.xls',
-    'WSD WORKING COPY WILEY SANITATION DISTRICT 2026 BUDGET.xls'
+    '.editorconfig'
 )
 
 # Files to MOVE to appropriate folders
@@ -53,8 +51,6 @@ $fileMoves = @{
     'MUNICIPAL_BUDGET_INTEGRATION_IMPLEMENTATION_PLAN.md' = 'docs/'
 
     # Data/reference files → data/reference/
-    'fetchability-resources.json'                         = 'data/reference/'
-    'remote-repository-index.json'                        = 'data/reference/'
     'syncfusion-nuget-check.json'                         = 'data/reference/'
 }
 

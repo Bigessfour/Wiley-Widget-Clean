@@ -15,7 +15,7 @@ public class MunicipalAccountTests
         // Arrange & Act
         var account = new MunicipalAccount
         {
-            AccountNumber = "1010-100",
+            AccountNumber = new AccountNumber("1010-100"),
             Name = "Cash - General Fund",
             Type = AccountType.Asset,
             Fund = FundType.General,
@@ -25,7 +25,7 @@ public class MunicipalAccountTests
         };
 
         // Assert
-        Assert.Equal("1010-100", account.AccountNumber);
+        Assert.Equal("1010-100", account.AccountNumber.Value);
         Assert.Equal("Cash - General Fund", account.Name);
         Assert.Equal(AccountType.Asset, account.Type);
         Assert.Equal(FundType.General, account.Fund);
@@ -51,13 +51,18 @@ public class MunicipalAccountTests
         // Arrange
         var account = new MunicipalAccount
         {
-            AccountNumber = accountNumber,
+            AccountNumber = new AccountNumber("9999-999"), // Default, will be overridden if accountNumber is not null
             Name = "Test Account",
             Type = AccountType.Asset,
             Fund = FundType.General,
             Balance = 1000.00m,
             BudgetAmount = 1000.00m
         };
+        
+        if (accountNumber != null)
+        {
+            account.AccountNumber = new AccountNumber(accountNumber);
+        }
 
         // Act
         var validationResults = new List<ValidationResult>();
@@ -83,7 +88,7 @@ public class MunicipalAccountTests
         // Arrange
         var account = new MunicipalAccount
         {
-            AccountNumber = "1010-100",
+            AccountNumber = new AccountNumber("1010-100"),
             Name = name,
             Type = AccountType.Asset,
             Fund = FundType.General,
@@ -105,8 +110,8 @@ public class MunicipalAccountTests
 
     [Theory]
     [InlineData(AccountType.Asset, "Asset")]
-    [InlineData(AccountType.Liability, "Liability")]
-    [InlineData(AccountType.Equity, "Equity")]
+    [InlineData(AccountType.Payables, "Liability")]
+    [InlineData(AccountType.RetainedEarnings, "Equity")]
     [InlineData(AccountType.Revenue, "Revenue")]
     [InlineData(AccountType.Expense, "Expense")]
     public void MunicipalAccount_TypeDescription_ReturnsCorrectValue(AccountType type, string expectedDescription)
@@ -114,7 +119,7 @@ public class MunicipalAccountTests
         // Arrange
         var account = new MunicipalAccount
         {
-            AccountNumber = "1010-100",
+            AccountNumber = new AccountNumber("1010-100"),
             Name = "Test Account",
             Type = type,
             Fund = FundType.General,
@@ -137,7 +142,7 @@ public class MunicipalAccountTests
         // Arrange
         var account = new MunicipalAccount
         {
-            AccountNumber = "1010-100",
+            AccountNumber = new AccountNumber("1010-100"),
             Name = "Test Account",
             Type = AccountType.Asset,
             Fund = fund,
@@ -159,7 +164,7 @@ public class MunicipalAccountTests
         // Arrange
         var account = new MunicipalAccount
         {
-            AccountNumber = "1010-100",
+            AccountNumber = new AccountNumber("1010-100"),
             Name = "Test Account",
             Type = AccountType.Asset,
             Fund = FundType.General,
@@ -178,7 +183,7 @@ public class MunicipalAccountTests
         // Arrange
         var account = new MunicipalAccount
         {
-            AccountNumber = "1010-100",
+            AccountNumber = new AccountNumber("1010-100"),
             Name = "Test Account",
             Type = AccountType.Asset,
             Fund = FundType.General,
@@ -190,9 +195,9 @@ public class MunicipalAccountTests
         account.PropertyChanged += (sender, e) => propertyChangedEvents.Add(e.PropertyName);
 
         // Act
-        account.AccountNumber = "2020-200";
+        account.AccountNumber = new AccountNumber("2020-200");
         account.Name = "Updated Account";
-        account.Type = AccountType.Liability;
+        account.Type = AccountType.Payables;
         account.Fund = FundType.Water;
         account.Balance = 2000.00m;
         account.BudgetAmount = 1500.00m;
@@ -220,7 +225,7 @@ public class MunicipalAccountTests
         // Arrange
         var account = new MunicipalAccount
         {
-            AccountNumber = "1010-100",
+            AccountNumber = new AccountNumber("1010-100"),
             Name = "Cash Account",
             Type = AccountType.Asset,
             Fund = FundType.General
@@ -230,7 +235,7 @@ public class MunicipalAccountTests
         Assert.Equal("1010-100 - Cash Account", account.DisplayName);
 
         // Test changes propagate to DisplayName
-        account.AccountNumber = "2020-200";
+        account.AccountNumber = new AccountNumber("2020-200");
         Assert.Equal("2020-200 - Cash Account", account.DisplayName);
 
         account.Name = "Petty Cash";
@@ -243,7 +248,7 @@ public class MunicipalAccountTests
         // Arrange
         var account = new MunicipalAccount
         {
-            AccountNumber = "1010-100",
+            AccountNumber = new AccountNumber("1010-100"),
             Name = "Test Account",
             Type = AccountType.Asset,
             Fund = FundType.General,

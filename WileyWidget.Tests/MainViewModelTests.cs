@@ -166,7 +166,7 @@ public class MainViewModelTests : TestApplication
         var initialCount = _viewModel.Enterprises.Count;
 
         // Act
-        _viewModel.AddEnterpriseCommand.Execute(null);
+        _viewModel.AddTestEnterpriseCommand.Execute(null);
 
         // Assert
         Assert.Equal(initialCount + 1, _viewModel.Enterprises.Count);

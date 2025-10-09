@@ -34,7 +34,7 @@ public class BudgetViewModelTests
     {
         // Assert
         Assert.NotNull(_viewModel.BudgetDetails);
-        Assert.IsType<ObservableCollection<BudgetDetailItem>>(_viewModel.BudgetDetails);
+        Assert.IsType<ObservableCollection<WileyWidget.ViewModels.BudgetDetailItem>>(_viewModel.BudgetDetails);
         Assert.Equal(0, _viewModel.TotalRevenue);
         Assert.Equal(0, _viewModel.TotalExpenses);
         Assert.Equal(0, _viewModel.NetBalance);

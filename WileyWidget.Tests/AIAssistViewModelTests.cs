@@ -3,12 +3,15 @@ using Xunit;
 using Moq;
 using WileyWidget.ViewModels;
 using WileyWidget.Services;
+using WileyWidget.Services.Threading;
+using WileyWidget.Data;
 using WileyWidget.Models;
 using System.Threading.Tasks;
 using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using Microsoft.Extensions.Logging;
 
 namespace WileyWidget.Tests;
 
@@ -21,16 +24,24 @@ public class AIAssistViewModelTests
     private readonly Mock<IAIService> _mockAIService;
     private readonly Mock<IChargeCalculatorService> _mockChargeCalculator;
     private readonly Mock<IWhatIfScenarioEngine> _mockScenarioEngine;
+    private readonly Mock<IGrokSupercomputer> _mockGrokSupercomputer;
+    private readonly Mock<IEnterpriseRepository> _mockEnterpriseRepository;
+    private readonly Mock<IDispatcherHelper> _mockDispatcherHelper;
+    private readonly Mock<ILogger<AIAssistViewModel>> _mockLogger;
     private readonly AIAssistViewModel _viewModel;
 
     public AIAssistViewModelTests()
     {
         _mockAIService = new Mock<IAIService>();
-    _mockChargeCalculator = new Mock<IChargeCalculatorService>();
-    _mockScenarioEngine = new Mock<IWhatIfScenarioEngine>();
+        _mockChargeCalculator = new Mock<IChargeCalculatorService>();
+        _mockScenarioEngine = new Mock<IWhatIfScenarioEngine>();
+        _mockGrokSupercomputer = new Mock<IGrokSupercomputer>();
+        _mockEnterpriseRepository = new Mock<IEnterpriseRepository>();
+        _mockDispatcherHelper = new Mock<IDispatcherHelper>();
+        _mockLogger = new Mock<ILogger<AIAssistViewModel>>();
 
         // Setup default mock behaviors
-        _mockAIService.Setup(ai => ai.GetInsightsAsync(It.IsAny<string>(), It.IsAny<string>()))
+        _mockAIService.Setup(ai => ai.GetInsightsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync("Mock AI response");
 
         // Use a callback to create the ServiceChargeRecommendation to avoid Moq issues
@@ -76,7 +87,11 @@ public class AIAssistViewModelTests
         _viewModel = new AIAssistViewModel(
             _mockAIService.Object,
             _mockChargeCalculator.Object,
-            _mockScenarioEngine.Object);
+            _mockScenarioEngine.Object,
+            _mockGrokSupercomputer.Object,
+            _mockEnterpriseRepository.Object,
+            _mockDispatcherHelper.Object,
+            _mockLogger.Object);
     }
 
     [Fact]
@@ -84,7 +99,7 @@ public class AIAssistViewModelTests
     {
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() =>
-            new AIAssistViewModel(null!, _mockChargeCalculator.Object, _mockScenarioEngine.Object));
+            new AIAssistViewModel(null!, _mockChargeCalculator.Object, _mockScenarioEngine.Object, _mockGrokSupercomputer.Object, _mockEnterpriseRepository.Object, _mockDispatcherHelper.Object, _mockLogger.Object));
     }
 
     [Fact]
@@ -92,7 +107,7 @@ public class AIAssistViewModelTests
     {
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() =>
-            new AIAssistViewModel(_mockAIService.Object, null!, _mockScenarioEngine.Object));
+            new AIAssistViewModel(_mockAIService.Object, null!, _mockScenarioEngine.Object, _mockGrokSupercomputer.Object, _mockEnterpriseRepository.Object, _mockDispatcherHelper.Object, _mockLogger.Object));
     }
 
     [Fact]
@@ -100,7 +115,7 @@ public class AIAssistViewModelTests
     {
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() =>
-            new AIAssistViewModel(_mockAIService.Object, _mockChargeCalculator.Object, null!));
+            new AIAssistViewModel(_mockAIService.Object, _mockChargeCalculator.Object, null!, _mockGrokSupercomputer.Object, _mockEnterpriseRepository.Object, _mockDispatcherHelper.Object, _mockLogger.Object));
     }
 
     [Fact]
@@ -142,7 +157,7 @@ public class AIAssistViewModelTests
         // Assert
         Assert.Empty(_viewModel.ChatMessages);
         Assert.Empty(_viewModel.CurrentMessage);
-        _mockAIService.Verify(ai => ai.GetInsightsAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        _mockAIService.Verify(ai => ai.GetInsightsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -157,7 +172,7 @@ public class AIAssistViewModelTests
         // Assert
         Assert.Empty(_viewModel.ChatMessages);
         Assert.Empty(_viewModel.CurrentMessage);
-        _mockAIService.Verify(ai => ai.GetInsightsAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        _mockAIService.Verify(ai => ai.GetInsightsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -172,9 +187,9 @@ public class AIAssistViewModelTests
 
         // Assert
         Assert.Equal(2, _viewModel.ChatMessages.Count);
-        Assert.Equal("Test message", _viewModel.ChatMessages[0].Content);
+        Assert.Equal("Test message", _viewModel.ChatMessages[0].Text);
         Assert.True(_viewModel.ChatMessages[0].IsUser);
-        Assert.Equal("Mock AI response", _viewModel.ChatMessages[1].Content);
+        Assert.Equal("Mock AI response", _viewModel.ChatMessages[1].Text);
         Assert.False(_viewModel.ChatMessages[1].IsUser);
         Assert.Empty(_viewModel.CurrentMessage);
         Assert.False(_viewModel.IsTyping);
@@ -185,7 +200,7 @@ public class AIAssistViewModelTests
     {
         // Arrange
         _viewModel.CurrentMessage = "Test message";
-        _mockAIService.Setup(ai => ai.GetInsightsAsync(It.IsAny<string>(), It.IsAny<string>()))
+        _mockAIService.Setup(ai => ai.GetInsightsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("AI service error"));
 
         // Act
@@ -193,9 +208,9 @@ public class AIAssistViewModelTests
 
         // Assert
         Assert.Equal(2, _viewModel.ChatMessages.Count);
-        Assert.Equal("Test message", _viewModel.ChatMessages[0].Content);
+        Assert.Equal("Test message", _viewModel.ChatMessages[0].Text);
         Assert.True(_viewModel.ChatMessages[0].IsUser);
-        Assert.Contains("encountered an error", _viewModel.ChatMessages[1].Content);
+        Assert.Contains("encountered an error", _viewModel.ChatMessages[1].Text);
         Assert.False(_viewModel.ChatMessages[1].IsUser);
         Assert.False(_viewModel.IsTyping);
     }
@@ -204,8 +219,8 @@ public class AIAssistViewModelTests
     public async Task ClearChat_ClearsAllMessages()
     {
         // Arrange
-        _viewModel.ChatMessages.Add(new ChatMessage { Content = "Test", IsUser = true, Timestamp = DateTime.Now });
-        _viewModel.ChatMessages.Add(new ChatMessage { Content = "Response", IsUser = false, Timestamp = DateTime.Now });
+        _viewModel.ChatMessages.Add(new ChatMessage { Text = "Test", IsUser = true, Timestamp = DateTime.Now });
+        _viewModel.ChatMessages.Add(new ChatMessage { Text = "Response", IsUser = false, Timestamp = DateTime.Now });
 
         // Act
         await InvokePrivateMethod(_viewModel, "ClearChat");
@@ -239,9 +254,9 @@ public class AIAssistViewModelTests
 
         // Assert
         Assert.Single(_viewModel.ChatMessages);
-        Assert.Contains("Service Charge Calculation Results", _viewModel.ChatMessages[0].Content);
-        Assert.Contains("$150.00", _viewModel.ChatMessages[0].Content);
-        Assert.Contains("$140.00", _viewModel.ChatMessages[0].Content);
+        Assert.Contains("Service Charge Calculation Results", _viewModel.ChatMessages[0].Text);
+        Assert.Contains("$150.00", _viewModel.ChatMessages[0].Text);
+        Assert.Contains("$140.00", _viewModel.ChatMessages[0].Text);
         Assert.False(_viewModel.ChatMessages[0].IsUser);
         Assert.False(_viewModel.IsTyping);
     }
@@ -273,7 +288,7 @@ public class AIAssistViewModelTests
 
         // Assert
         Assert.Single(_viewModel.ChatMessages);
-        Assert.Contains("Sorry, I encountered an error calculating the service charge", _viewModel.ChatMessages[0].Content);
+        Assert.Contains("Sorry, I encountered an error calculating the service charge", _viewModel.ChatMessages[0].Text);
         Assert.False(_viewModel.ChatMessages[0].IsUser);
         Assert.False(_viewModel.IsTyping);
     }
@@ -290,7 +305,7 @@ public class AIAssistViewModelTests
 
         // Assert
         Assert.Single(_viewModel.ChatMessages);
-        Assert.Contains("describe your what-if scenario", _viewModel.ChatMessages[0].Content);
+        Assert.Contains("describe your what-if scenario", _viewModel.ChatMessages[0].Text);
         Assert.False(_viewModel.ChatMessages[0].IsUser);
         Assert.False(_viewModel.IsTyping);
     }
@@ -307,10 +322,10 @@ public class AIAssistViewModelTests
 
         // Assert
         Assert.Equal(2, _viewModel.ChatMessages.Count);
-        Assert.Equal("15% pay raise, benefits improvement, 10% reserve", _viewModel.ChatMessages[0].Content);
+        Assert.Equal("15% pay raise, benefits improvement, 10% reserve", _viewModel.ChatMessages[0].Text);
         Assert.True(_viewModel.ChatMessages[0].IsUser);
-        Assert.Contains("What-If Scenario Analysis", _viewModel.ChatMessages[1].Content);
-        Assert.Contains("$12,000.00", _viewModel.ChatMessages[1].Content);
+        Assert.Contains("What-If Scenario Analysis", _viewModel.ChatMessages[1].Text);
+        Assert.Contains("$12,000.00", _viewModel.ChatMessages[1].Text);
         Assert.False(_viewModel.ChatMessages[1].IsUser);
         Assert.Empty(_viewModel.CurrentMessage);
         Assert.False(_viewModel.IsTyping);
@@ -342,8 +357,8 @@ public class AIAssistViewModelTests
 
         // Assert
         Assert.Single(_viewModel.ChatMessages);
-        Assert.Contains("Proactive Insights", _viewModel.ChatMessages[0].Content);
-        Assert.Contains("temporarily disabled", _viewModel.ChatMessages[0].Content);
+        Assert.Contains("Proactive Insights", _viewModel.ChatMessages[0].Text);
+        Assert.Contains("temporarily disabled", _viewModel.ChatMessages[0].Text);
         Assert.False(_viewModel.ChatMessages[0].IsUser);
         Assert.False(_viewModel.IsTyping);
     }

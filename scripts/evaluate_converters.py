@@ -27,7 +27,7 @@ Converters evaluated:
 """
 
 import sys
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Tuple
 from dataclasses import dataclass
 from enum import Enum
 import re
@@ -70,7 +70,7 @@ class ConverterEvaluator:
     @staticmethod
     def evaluate_balance_color_converter(value: Any) -> str:
         """Python implementation of BalanceColorConverter logic"""
-        if isinstance(value, (int, float, complex)):
+        if isinstance(value, (int, float)):
             numeric_value = float(value)
             if numeric_value > 0:
                 return "Green"
@@ -85,7 +85,7 @@ class ConverterEvaluator:
         """Python implementation of BudgetProgressConverter logic"""
         max_budget = 100000.0
 
-        if isinstance(value, (int, float, complex)):
+        if isinstance(value, (int, float)):
             numeric_value = float(value)
             scaled_value = (numeric_value / max_budget) * 100
             return max(0.0, min(scaled_value, 100.0))
@@ -136,14 +136,14 @@ class ConverterEvaluator:
     @staticmethod
     def evaluate_profit_loss_text_converter(value: Any) -> str:
         """Python implementation of ProfitLossTextConverter logic"""
-        if isinstance(value, (int, float, complex)):
+        if isinstance(value, (int, float)):
             return "Monthly Profit" if float(value) >= 0 else "Monthly Loss"
         return "Monthly Position"
 
     @staticmethod
     def evaluate_profit_brush_converter(value: Any) -> str:
         """Python implementation of ProfitBrushConverter logic"""
-        if isinstance(value, (int, float, complex)):
+        if isinstance(value, (int, float)):
             profit = float(value)
             if profit >= 0:
                 return "Light Green (#E8F5E8)"  # Profit background
@@ -154,7 +154,7 @@ class ConverterEvaluator:
     @staticmethod
     def evaluate_profit_border_brush_converter(value: Any) -> str:
         """Python implementation of ProfitBorderBrushConverter logic"""
-        if isinstance(value, (int, float, complex)):
+        if isinstance(value, (int, float)):
             profit = float(value)
             if profit >= 0:
                 return "Dark Green (#388E3C)"  # Profit border
@@ -165,7 +165,7 @@ class ConverterEvaluator:
     @staticmethod
     def evaluate_profit_text_brush_converter(value: Any) -> str:
         """Python implementation of ProfitTextBrushConverter logic"""
-        if isinstance(value, (int, float, complex)):
+        if isinstance(value, (int, float)):
             profit = float(value)
             if profit >= 0:
                 return "Dark Green (#388E3C)"  # Profit text

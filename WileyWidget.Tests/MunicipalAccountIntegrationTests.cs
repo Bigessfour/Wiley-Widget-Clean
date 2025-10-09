@@ -37,7 +37,7 @@ public class MunicipalAccountIntegrationTests : IDisposable
         // Arrange
         var account = new MunicipalAccount
         {
-            AccountNumber = "101-1000",
+            AccountNumber = new AccountNumber("101-1000"),
             Name = "General Fund - Cash",
             Type = AccountType.Asset,
             Fund = FundType.General,
@@ -51,7 +51,7 @@ public class MunicipalAccountIntegrationTests : IDisposable
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal("101-1000", result.AccountNumber);
+        Assert.Equal("101-1000", result.AccountNumber.ToString());
         Assert.Equal(AccountType.Asset, result.Type);
         Assert.Equal(FundType.General, result.Fund);
     }
@@ -62,7 +62,7 @@ public class MunicipalAccountIntegrationTests : IDisposable
         // Arrange
         var account1 = new MunicipalAccount
         {
-            AccountNumber = "101-1000",
+            AccountNumber = new AccountNumber("101-1000"),
             Name = "General Fund - Cash",
             Type = AccountType.Asset,
             Fund = FundType.General,
@@ -73,7 +73,7 @@ public class MunicipalAccountIntegrationTests : IDisposable
 
         var account2 = new MunicipalAccount
         {
-            AccountNumber = "201-2000",
+            AccountNumber = new AccountNumber("201-2000"),
             Name = "General Fund - Salaries",
             Type = AccountType.Expense,
             Fund = FundType.General,
@@ -90,8 +90,8 @@ public class MunicipalAccountIntegrationTests : IDisposable
 
         // Assert
         Assert.Equal(2, accounts.Count());
-        Assert.Contains(accounts, a => a.AccountNumber == "101-1000");
-        Assert.Contains(accounts, a => a.AccountNumber == "201-2000");
+        Assert.Contains(accounts, a => a.AccountNumber.ToString() == "101-1000");
+        Assert.Contains(accounts, a => a.AccountNumber.ToString() == "201-2000");
     }
 
     [Fact]
@@ -100,7 +100,7 @@ public class MunicipalAccountIntegrationTests : IDisposable
         // Arrange
         var generalFundAccount = new MunicipalAccount
         {
-            AccountNumber = "101-1000",
+            AccountNumber = new AccountNumber("101-1000"),
             Name = "General Fund - Cash",
             Type = AccountType.Asset,
             Fund = FundType.General,
@@ -111,7 +111,7 @@ public class MunicipalAccountIntegrationTests : IDisposable
 
         var EnterpriseAccount = new MunicipalAccount
         {
-            AccountNumber = "102-1000",
+            AccountNumber = new AccountNumber("102-1000"),
             Name = "Special Revenue Fund - Grants",
             Type = AccountType.Asset,
             Fund = FundType.Enterprise,
@@ -128,7 +128,7 @@ public class MunicipalAccountIntegrationTests : IDisposable
 
         // Assert
         Assert.Single(generalFundAccounts);
-        Assert.Equal("101-1000", generalFundAccounts.First().AccountNumber);
+        Assert.Equal("101-1000", generalFundAccounts.First().AccountNumber.ToString());
         Assert.Equal(FundType.General, generalFundAccounts.First().Fund);
     }
 
@@ -138,7 +138,7 @@ public class MunicipalAccountIntegrationTests : IDisposable
         // Arrange
         var account = new MunicipalAccount
         {
-            AccountNumber = "101-1000",
+            AccountNumber = new AccountNumber("101-1000"),
             Name = "General Fund - Cash",
             Type = AccountType.Asset,
             Fund = FundType.General,

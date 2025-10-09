@@ -199,7 +199,7 @@ public partial class SplashScreenWindow : Window, INotifyPropertyChanged, IDispo
         }
 
         // Schedule forced close if something hangs
-        _ = EnforceLifetimeAsync();
+        // _ = EnforceLifetimeAsync();
     }
 
     /// <summary>

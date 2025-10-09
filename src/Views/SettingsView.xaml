@@ -6,7 +6,9 @@
         xmlns:local="clr-namespace:WileyWidget"
         xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
         xmlns:notification="http://schemas.syncfusion.com/wpf"
+        xmlns:prism="http://prismlibrary.com/"
         mc:Ignorable="d"
+        prism:ViewModelLocator.AutoWireViewModel="True"
         Title="Application Settings" Height="600" Width="800"
         WindowStartupLocation="CenterScreen">
     <Window.Resources>
@@ -181,6 +183,95 @@
                                 <ComboBox ItemsSource="{Binding AzureAuthMethods}"
                                          SelectedItem="{Binding SelectedAzureAuthMethod, Mode=TwoWay}"
                                          Margin="0,0,0,8" />
+                            </StackPanel>
+                        </GroupBox>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- Fiscal Year Settings -->
+            <TabItem Header="Fiscal Year">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="8">
+                        <GroupBox Header="Fiscal Year Configuration" Margin="0,0,0,8">
+                            <StackPanel>
+                                <TextBlock Text="Configure when your organization's fiscal year begins."
+                                         FontStyle="Italic"
+                                         Foreground="Gray"
+                                         Margin="0,0,0,8"
+                                         TextWrapping="Wrap" />
+
+                                <Label Content="Fiscal Year Start Month:" />
+                                <ComboBox ItemsSource="{Binding FiscalYearMonths}"
+                                         SelectedValue="{Binding FiscalYearStartMonth, Mode=TwoWay}"
+                                         DisplayMemberPath="Name"
+                                         SelectedValuePath="Value"
+                                         Margin="0,0,0,8" />
+
+                                <Label Content="Fiscal Year Start Day:" />
+                                <syncfusion:IntegerTextBox Value="{Binding FiscalYearStartDay, Mode=TwoWay}"
+                                                         MinValue="1"
+                                                         MaxValue="31"
+                                                         Margin="0,0,0,8" />
+
+                                <Separator Margin="0,8" />
+
+                                <Label Content="Current Fiscal Year:" FontWeight="Bold" />
+                                <TextBlock Text="{Binding CurrentFiscalYearDisplay}"
+                                         FontSize="14"
+                                         Foreground="#2196F3"
+                                         Margin="0,0,0,8" />
+
+                                <Label Content="Fiscal Year Period:" />
+                                <TextBlock Text="{Binding FiscalYearPeriodDisplay}"
+                                         Margin="0,0,0,8" />
+
+                                <Label Content="Days Remaining in Fiscal Year:" />
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                    <TextBlock Text="{Binding DaysRemainingInFiscalYear}"
+                                             FontWeight="Bold"
+                                             FontSize="20"
+                                             Foreground="#4CAF50" />
+                                    <TextBlock Text=" days"
+                                             VerticalAlignment="Bottom"
+                                             Margin="4,0,0,4" />
+                                </StackPanel>
+
+                                <Separator Margin="0,8" />
+
+                                <TextBlock FontWeight="Bold" 
+                                         Foreground="DarkOrange"
+                                         TextWrapping="Wrap"
+                                         Margin="0,0,0,4">
+                                    ⚠️ Warning: Changing fiscal year settings affects:
+                                </TextBlock>
+                                <TextBlock TextWrapping="Wrap" 
+                                         Foreground="Gray"
+                                         Margin="16,0,0,8">
+                                    • Budget period calculations<LineBreak/>
+                                    • Financial reports and comparisons<LineBreak/>
+                                    • Year-to-date (YTD) calculations<LineBreak/>
+                                    • Historical data categorization
+                                </TextBlock>
+
+                                <Button Content="Save Fiscal Year Settings"
+                                       Command="{Binding SaveFiscalYearSettingsCommand}"
+                                       HorizontalAlignment="Left"
+                                       Margin="0,8,0,0"
+                                       Padding="16,8" />
+                            </StackPanel>
+                        </GroupBox>
+
+                        <GroupBox Header="Fiscal Year Preview" Margin="0,0,0,8">
+                            <StackPanel>
+                                <Label Content="Available Fiscal Years:" />
+                                <ListBox ItemsSource="{Binding AvailableFiscalYears}"
+                                        Height="120"
+                                        Margin="0,0,0,8" />
+                                
+                                <TextBlock Text="Note: Budget periods and reports can filter by these fiscal years."
+                                         FontStyle="Italic"
+                                         Foreground="Gray" />
                             </StackPanel>
                         </GroupBox>
                     </StackPanel>

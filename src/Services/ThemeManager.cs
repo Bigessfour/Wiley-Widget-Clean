@@ -10,7 +10,7 @@ namespace WileyWidget.Services;
 /// ThemeManager - Centralized service for managing Syncfusion themes with persistence.
 /// Provides consistent theming for mayoral dashboards across the application.
 /// </summary>
-public class ThemeManager
+public class ThemeManager : IThemeManager
 {
     private static readonly Lazy<ThemeManager> _instance = new(() => new ThemeManager());
     public static ThemeManager Instance => _instance.Value;
@@ -94,7 +94,7 @@ public class ThemeManager
 
         try
         {
-            var visualStyle = ThemeUtility.NormalizeTheme(themeName);
+            var visualStyle = ThemeUtility.ToVisualStyle(themeName);
             SfSkinManager.SetVisualStyle(control, visualStyle);
         }
         catch (Exception ex)
