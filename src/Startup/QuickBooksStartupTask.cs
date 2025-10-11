@@ -38,21 +38,21 @@ public sealed class QuickBooksStartupTask : IStartupTask
         {
             using var scope = _scopeFactory.CreateScope();
             var quickBooksService = scope.ServiceProvider.GetRequiredService<IQuickBooksService>();
-            var keyVaultService = scope.ServiceProvider.GetService<IAzureKeyVaultService>();
+            var secretVaultService = scope.ServiceProvider.GetService<ISecretVaultService>();
 
             _logger.LogInformation("Starting QuickBooks Online service initialization");
 
-            // Test Azure Key Vault connectivity for QBO secrets
-            if (keyVaultService != null)
+            // Test secret vault connectivity for QBO secrets
+            if (secretVaultService != null)
             {
-                var kvTestResult = await keyVaultService.TestConnectionAsync();
-                if (kvTestResult)
+                var svTestResult = await secretVaultService.TestConnectionAsync();
+                if (svTestResult)
                 {
-                    _logger.LogInformation("Azure Key Vault connection verified for QBO secrets");
+                    _logger.LogInformation("Secret vault connection verified for QBO secrets");
                 }
                 else
                 {
-                    _logger.LogWarning("Azure Key Vault not available - QBO secrets will be loaded from environment variables");
+                    _logger.LogWarning("Secret vault not available - QBO secrets will be loaded from environment variables");
                 }
             }
 

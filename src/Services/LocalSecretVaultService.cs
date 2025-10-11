@@ -13,7 +13,7 @@ namespace WileyWidget.Services;
 /// Provides a drop-in replacement for the deprecated Azure Key Vault integration so that
 /// existing workflows (saving credentials, testing connectivity) continue to function.
 /// </summary>
-public sealed class LocalSecretVaultService : IAzureKeyVaultService
+public sealed class LocalSecretVaultService : ISecretVaultService, IDisposable
 {
     private readonly string _secretsPath;
     private readonly ILogger<LocalSecretVaultService> _logger;
@@ -118,5 +118,10 @@ public sealed class LocalSecretVaultService : IAzureKeyVaultService
             WriteIndented = true
         };
         await JsonSerializer.SerializeAsync(stream, secrets, options).ConfigureAwait(false);
+    }
+
+    public void Dispose()
+    {
+        _fileLock.Dispose();
     }
 }

@@ -8,7 +8,6 @@ using Intuit.Ipp.DataService;
 using Intuit.Ipp.OAuth2PlatformClient;
 using Intuit.Ipp.Security;
 using Intuit.Ipp.QueryFilter;
-using Microsoft.Identity.Client;
 using Microsoft.Extensions.Logging;
 
 namespace WileyWidget.Services;
@@ -28,25 +27,25 @@ public sealed class QuickBooksService : IQuickBooksService
     private readonly OAuth2Client _oauthClient;
     private readonly SettingsService _settings;
 
-    public QuickBooksService(SettingsService settings, IAzureKeyVaultService keyVaultService, ILogger<QuickBooksService> logger)
+    public QuickBooksService(SettingsService settings, ISecretVaultService keyVaultService, ILogger<QuickBooksService> logger)
     {
         _settings = settings ?? throw new ArgumentNullException(nameof(settings));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-    // Load QBO credentials from secret vault with fallback to environment variables
-        _clientId = TryGetFromKeyVault(keyVaultService, "QBO-CLIENT-ID", logger) ??
-                   Environment.GetEnvironmentVariable("QBO_CLIENT_ID", EnvironmentVariableTarget.User) ??
-                   throw new InvalidOperationException("QBO_CLIENT_ID not found in Key Vault or environment variables.");
+        // Load QBO credentials from secret vault with fallback to environment variables
+    _clientId = TryGetFromSecretVault(keyVaultService, "QBO-CLIENT-ID", logger) ??
+           Environment.GetEnvironmentVariable("QBO_CLIENT_ID", EnvironmentVariableTarget.User) ??
+           throw new InvalidOperationException("QBO_CLIENT_ID not found in the secret vault or environment variables.");
 
-        _clientSecret = TryGetFromKeyVault(keyVaultService, "QBO-CLIENT-SECRET", logger) ??
+        _clientSecret = TryGetFromSecretVault(keyVaultService, "QBO-CLIENT-SECRET", logger) ??
                        Environment.GetEnvironmentVariable("QBO_CLIENT_SECRET", EnvironmentVariableTarget.User) ??
                        string.Empty;
 
-        _realmId = TryGetFromKeyVault(keyVaultService, "QBO-REALM-ID", logger) ??
-                  Environment.GetEnvironmentVariable("QBO_REALM_ID", EnvironmentVariableTarget.User) ??
-                  throw new InvalidOperationException("QBO_REALM_ID not found in Key Vault or environment variables.");
+    _realmId = TryGetFromSecretVault(keyVaultService, "QBO-REALM-ID", logger) ??
+          Environment.GetEnvironmentVariable("QBO_REALM_ID", EnvironmentVariableTarget.User) ??
+          throw new InvalidOperationException("QBO_REALM_ID not found in the secret vault or environment variables.");
 
-        _environment = TryGetFromKeyVault(keyVaultService, "QBO-ENVIRONMENT", logger) ??
+        _environment = TryGetFromSecretVault(keyVaultService, "QBO-ENVIRONMENT", logger) ??
                       Environment.GetEnvironmentVariable("QBO_ENVIRONMENT", EnvironmentVariableTarget.User) ??
                       "sandbox";
 
@@ -56,7 +55,7 @@ public sealed class QuickBooksService : IQuickBooksService
             _clientId.Substring(0, Math.Min(8, _clientId.Length)), _realmId, _environment);
     }
 
-    private static string? TryGetFromKeyVault(IAzureKeyVaultService? keyVaultService, string secretName, ILogger logger)
+    private static string? TryGetFromSecretVault(ISecretVaultService? keyVaultService, string secretName, ILogger logger)
     {
         try
         {

@@ -103,7 +103,7 @@ class Program {
                 .ConfigureServices((context, services) => {
                     // Register minimal services needed for QBO
                     services.AddSingleton<SettingsService>(SettingsService.Instance);
-                    services.AddSingleton<IAzureKeyVaultService, AzureKeyVaultService>();
+                    services.AddSingleton<ISecretVaultService, LocalSecretVaultService>();
                     services.AddLogging();
                 })
                 .Build();
@@ -113,7 +113,7 @@ class Program {
             var logger = loggerFactory.CreateLogger<Program>();
 
             // Test Azure Key Vault service
-            var kvService = serviceProvider.GetRequiredService<IAzureKeyVaultService>();
+            var kvService = serviceProvider.GetRequiredService<ISecretVaultService>();
             Console.WriteLine("✓ Azure Key Vault service resolved");
 
             // Test QBO service creation

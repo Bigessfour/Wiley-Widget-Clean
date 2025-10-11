@@ -14,7 +14,7 @@ namespace WileyWidget.Tests.ViewModels
     public class SettingsViewModelTests : IDisposable
     {
         private readonly Mock<AppDbContext> _mockDbContext;
-        private readonly Mock<IAzureKeyVaultService> _mockAzureService;
+        private readonly Mock<ISecretVaultService> _mockSecretVaultService;
         private readonly Mock<IQuickBooksService> _mockQuickBooksService;
         private readonly Mock<ISyncfusionLicenseService> _mockSyncfusionService;
         private readonly Mock<ILogger<SettingsViewModel>> _mockLogger;
@@ -32,7 +32,7 @@ namespace WileyWidget.Tests.ViewModels
                 .ReturnsAsync(true);
             _mockDbContext.Setup(db => db.Database).Returns(mockDatabaseFacade.Object);
 
-            _mockAzureService = new Mock<IAzureKeyVaultService>();
+            _mockSecretVaultService = new Mock<ISecretVaultService>();
             _mockQuickBooksService = new Mock<IQuickBooksService>();
             _mockSyncfusionService = new Mock<ISyncfusionLicenseService>();
             _mockLogger = new Mock<ILogger<SettingsViewModel>>();
@@ -40,7 +40,7 @@ namespace WileyWidget.Tests.ViewModels
             _viewModel = new SettingsViewModel(
                 _mockLogger.Object,
                 _mockDbContext.Object,
-                _mockAzureService.Object,
+                _mockSecretVaultService.Object,
                 _mockQuickBooksService.Object,
                 _mockSyncfusionService.Object);
         }
@@ -83,39 +83,18 @@ namespace WileyWidget.Tests.ViewModels
         }
 
         [Fact]
-        public async Task LoadAzureSettingsAsync_SuccessfulConnection_UpdatesStatus()
-        {
-            // Arrange
-            Environment.SetEnvironmentVariable("AZURE_KEY_VAULT_URL", "https://test.vault.azure.net");
-            Environment.SetEnvironmentVariable("AZURE_SQL_SERVER", "test-server.database.windows.net");
-            Environment.SetEnvironmentVariable("AZURE_SQL_DATABASE", "test-db");
-
-            // Act
-            await _viewModel.LoadSettingsAsync();
-
-            // Assert
-            Assert.Equal("Configured", _viewModel.AzureConnectionStatus);
-            Assert.Equal(Brushes.Orange, _viewModel.AzureStatusColor);
-
-            // Cleanup
-            Environment.SetEnvironmentVariable("AZURE_KEY_VAULT_URL", null);
-            Environment.SetEnvironmentVariable("AZURE_SQL_SERVER", null);
-            Environment.SetEnvironmentVariable("AZURE_SQL_DATABASE", null);
-        }
-
-        [Fact]
         public async Task SaveSyncfusionSettingsAsync_SavesLicenseKey()
         {
             // Arrange
             _viewModel.SyncfusionLicenseKey = "test-license-key";
-            _mockAzureService.Setup(x => x.SetSecretAsync("Syncfusion-LicenseKey", "test-license-key"))
+            _mockSecretVaultService.Setup(x => x.SetSecretAsync("Syncfusion-LicenseKey", "test-license-key"))
                 .Returns(Task.CompletedTask);
 
             // Act
             await _viewModel.SaveSettingsCommand.ExecuteAsync(null);
 
             // Assert
-            _mockAzureService.Verify(x => x.SetSecretAsync("Syncfusion-LicenseKey", "test-license-key"), Times.Once);
+            _mockSecretVaultService.Verify(x => x.SetSecretAsync("Syncfusion-LicenseKey", "test-license-key"), Times.Once);
         }
 
         [Fact]
@@ -125,7 +104,7 @@ namespace WileyWidget.Tests.ViewModels
             var freshViewModel = new SettingsViewModel(
                 _mockLogger.Object,
                 _mockDbContext.Object,
-                _mockAzureService.Object,
+                _mockSecretVaultService.Object,
                 _mockQuickBooksService.Object,
                 _mockSyncfusionService.Object);
 

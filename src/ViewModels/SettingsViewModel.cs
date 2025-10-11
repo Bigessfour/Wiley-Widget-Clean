@@ -18,7 +18,7 @@ namespace WileyWidget.ViewModels
     {
         private readonly ILogger<SettingsViewModel> _logger;
         private readonly AppDbContext _dbContext;
-        private readonly IAzureKeyVaultService _azureKeyVaultService;
+    private readonly ISecretVaultService _secretVaultService;
         private readonly IQuickBooksService _quickBooksService;
         private readonly ISyncfusionLicenseService _syncfusionLicenseService;
 
@@ -88,28 +88,6 @@ namespace WileyWidget.ViewModels
 
         [ObservableProperty]
         private Brush syncfusionLicenseStatusColor = Brushes.Orange;
-
-        // Azure Settings
-        [ObservableProperty]
-        private string azureKeyVaultUrl;
-
-        [ObservableProperty]
-        private string azureConnectionStatus = "Not Connected";
-
-        [ObservableProperty]
-        private Brush azureStatusColor = Brushes.Red;
-
-        [ObservableProperty]
-        private string azureSqlServer;
-
-        [ObservableProperty]
-        private string azureSqlDatabase;
-
-        [ObservableProperty]
-        private ObservableCollection<string> azureAuthMethods = new() { "Managed Identity", "Service Principal", "Connection String" };
-
-        [ObservableProperty]
-        private string selectedAzureAuthMethod = "Managed Identity";
 
         // Fiscal Year Settings
         [ObservableProperty]
@@ -184,14 +162,14 @@ namespace WileyWidget.ViewModels
         public SettingsViewModel(
             ILogger<SettingsViewModel> logger,
             AppDbContext dbContext,
-            IAzureKeyVaultService azureKeyVaultService,
+            ISecretVaultService secretVaultService,
             IQuickBooksService quickBooksService,
             ISyncfusionLicenseService syncfusionLicenseService)
         {
             // Validate required dependencies
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
-            _azureKeyVaultService = azureKeyVaultService ?? throw new ArgumentNullException(nameof(azureKeyVaultService));
+            _secretVaultService = secretVaultService ?? throw new ArgumentNullException(nameof(secretVaultService));
             _quickBooksService = quickBooksService ?? throw new ArgumentNullException(nameof(quickBooksService));
             _syncfusionLicenseService = syncfusionLicenseService ?? throw new ArgumentNullException(nameof(syncfusionLicenseService));
 
@@ -226,7 +204,6 @@ namespace WileyWidget.ViewModels
                 await LoadDatabaseSettingsAsync();
                 await LoadQuickBooksSettingsAsync();
                 await LoadSyncfusionSettingsAsync();
-                await LoadAzureSettingsAsync();
                 await LoadAdvancedSettingsAsync();
                 await LoadFiscalYearDisplayAsync();
 
@@ -287,13 +264,13 @@ namespace WileyWidget.ViewModels
 
                 // Fallback (disabled): Uncomment to re-enable Key Vault retrieval
                 // if (string.IsNullOrEmpty(QuickBooksClientId))
-                //     QuickBooksClientId = await _azureKeyVaultService.GetSecretAsync("QuickBooks-ClientId") ?? "";
+                //     QuickBooksClientId = await _secretVaultService.GetSecretAsync("QuickBooks-ClientId") ?? "";
                 // if (string.IsNullOrEmpty(QuickBooksClientSecret))
-                //     QuickBooksClientSecret = await _azureKeyVaultService.GetSecretAsync("QuickBooks-ClientSecret") ?? "";
+                //     QuickBooksClientSecret = await _secretVaultService.GetSecretAsync("QuickBooks-ClientSecret") ?? "";
                 // if (string.IsNullOrEmpty(QuickBooksRedirectUri))
-                //     QuickBooksRedirectUri = await _azureKeyVaultService.GetSecretAsync("QuickBooks-RedirectUri") ?? "";
+                //     QuickBooksRedirectUri = await _secretVaultService.GetSecretAsync("QuickBooks-RedirectUri") ?? "";
                 // if (string.IsNullOrEmpty(SelectedQuickBooksEnvironment))
-                //     SelectedQuickBooksEnvironment = await _azureKeyVaultService.GetSecretAsync("QuickBooks-Environment") ?? "Sandbox";
+                //     SelectedQuickBooksEnvironment = await _secretVaultService.GetSecretAsync("QuickBooks-Environment") ?? "Sandbox";
 
                 // Test connection if credentials are available
                 if (!string.IsNullOrEmpty(QuickBooksClientId))
@@ -324,7 +301,7 @@ namespace WileyWidget.ViewModels
 
                 // Fallback (disabled): Uncomment to re-enable Key Vault retrieval
                 // if (string.IsNullOrEmpty(SyncfusionLicenseKey))
-                //     SyncfusionLicenseKey = await _azureKeyVaultService.GetSecretAsync("Syncfusion-LicenseKey") ?? "";
+                //     SyncfusionLicenseKey = await _secretVaultService.GetSecretAsync("Syncfusion-LicenseKey") ?? "";
 
                 // Simple license validation - check if key exists and is not empty
                 var isValid = !string.IsNullOrEmpty(SyncfusionLicenseKey);
@@ -337,29 +314,6 @@ namespace WileyWidget.ViewModels
             {
                 SyncfusionLicenseStatus = $"Error: {ex.Message}";
                 SyncfusionLicenseStatusColor = Brushes.Red;
-            }
-        }
-
-        private async Task LoadAzureSettingsAsync()
-        {
-            try
-            {
-                // Prefer environment variables for DB configuration during troubleshooting
-                AzureKeyVaultUrl = Environment.GetEnvironmentVariable("AZURE_KEY_VAULT_URL") ?? "";
-                AzureSqlServer = Environment.GetEnvironmentVariable("AZURE_SQL_SERVER") ?? "";
-                AzureSqlDatabase = Environment.GetEnvironmentVariable("AZURE_SQL_DATABASE") ?? "";
-
-                // Skip Key Vault connectivity status while running from env vars
-                AzureConnectionStatus = string.IsNullOrEmpty(AzureKeyVaultUrl) ? "Key Vault Skipped" : "Configured";
-                AzureStatusColor = Brushes.Orange;
-
-                // Keep method async without Key Vault calls
-                await Task.CompletedTask;
-            }
-            catch (Exception ex)
-            {
-                AzureConnectionStatus = $"Error: {ex.Message}";
-                AzureStatusColor = Brushes.Red;
             }
         }
 
@@ -386,7 +340,6 @@ namespace WileyWidget.ViewModels
                 await SaveGeneralSettingsAsync();
                 await SaveQuickBooksSettingsAsync();
                 await SaveSyncfusionSettingsAsync();
-                await SaveAzureSettingsAsync();
                 await SaveAdvancedSettingsAsync();
 
                 SettingsStatus = "Settings saved successfully";
@@ -414,33 +367,21 @@ namespace WileyWidget.ViewModels
         private async Task SaveQuickBooksSettingsAsync()
         {
             if (!string.IsNullOrEmpty(QuickBooksClientId))
-                await _azureKeyVaultService.SetSecretAsync("QuickBooks-ClientId", QuickBooksClientId);
+                await _secretVaultService.SetSecretAsync("QuickBooks-ClientId", QuickBooksClientId);
 
             if (!string.IsNullOrEmpty(QuickBooksClientSecret))
-                await _azureKeyVaultService.SetSecretAsync("QuickBooks-ClientSecret", QuickBooksClientSecret);
+                await _secretVaultService.SetSecretAsync("QuickBooks-ClientSecret", QuickBooksClientSecret);
 
             if (!string.IsNullOrEmpty(QuickBooksRedirectUri))
-                await _azureKeyVaultService.SetSecretAsync("QuickBooks-RedirectUri", QuickBooksRedirectUri);
+                await _secretVaultService.SetSecretAsync("QuickBooks-RedirectUri", QuickBooksRedirectUri);
 
-            await _azureKeyVaultService.SetSecretAsync("QuickBooks-Environment", SelectedQuickBooksEnvironment);
+            await _secretVaultService.SetSecretAsync("QuickBooks-Environment", SelectedQuickBooksEnvironment);
         }
 
         private async Task SaveSyncfusionSettingsAsync()
         {
             if (!string.IsNullOrEmpty(SyncfusionLicenseKey))
-                await _azureKeyVaultService.SetSecretAsync("Syncfusion-LicenseKey", SyncfusionLicenseKey);
-        }
-
-        private async Task SaveAzureSettingsAsync()
-        {
-            if (!string.IsNullOrEmpty(AzureKeyVaultUrl))
-                await _azureKeyVaultService.SetSecretAsync("Azure-KeyVaultUrl", AzureKeyVaultUrl);
-
-            if (!string.IsNullOrEmpty(AzureSqlServer))
-                await _azureKeyVaultService.SetSecretAsync("Azure-SqlServer", AzureSqlServer);
-
-            if (!string.IsNullOrEmpty(AzureSqlDatabase))
-                await _azureKeyVaultService.SetSecretAsync("Azure-SqlDatabase", AzureSqlDatabase);
+                await _secretVaultService.SetSecretAsync("Syncfusion-LicenseKey", SyncfusionLicenseKey);
         }
 
         private async Task SaveAdvancedSettingsAsync()
@@ -503,25 +444,6 @@ namespace WileyWidget.ViewModels
             {
                 SyncfusionLicenseStatus = $"Error: {ex.Message}";
                 SyncfusionLicenseStatusColor = Brushes.Red;
-            }
-        }
-
-        [RelayCommand]
-        private async Task TestAzureConnectionAsync()
-        {
-            try
-            {
-                AzureConnectionStatus = "Testing...";
-                AzureStatusColor = Brushes.Orange;
-
-                var isConnected = await _azureKeyVaultService.TestConnectionAsync();
-                AzureConnectionStatus = isConnected ? "Connected" : "Connection Failed";
-                AzureStatusColor = isConnected ? Brushes.Green : Brushes.Red;
-            }
-            catch (Exception ex)
-            {
-                AzureConnectionStatus = $"Error: {ex.Message}";
-                AzureStatusColor = Brushes.Red;
             }
         }
 

@@ -1,5 +1,3 @@
-#nullable enable
-
 using System.ComponentModel.DataAnnotations;
 using System.Text.RegularExpressions;
 
@@ -17,11 +15,6 @@ public class ConnectionStringsOptions
     [ConnectionStringValidation]
     public string DefaultConnection { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Azure SQL connection string (optional, used in production)
-    /// </summary>
-    [ConnectionStringValidation(AllowEmpty = true)]
-    public string AzureConnection { get; set; } = string.Empty;
 }
 
 /// <summary>
@@ -53,31 +46,6 @@ public class QuickBooksOptions
     /// </summary>
     [RegularExpression("^(sandbox|production)$", ErrorMessage = "QuickBooks.Environment must be either 'sandbox' or 'production'")]
     public string Environment { get; set; } = "sandbox";
-}
-
-/// <summary>
-/// Strongly-typed configuration options for Azure AD authentication
-/// </summary>
-public class AzureAdOptions
-{
-    /// <summary>
-    /// Azure AD authority URL
-    /// </summary>
-    [Required(ErrorMessage = "AzureAd.Authority is required for Azure AD authentication")]
-    [Url(ErrorMessage = "AzureAd.Authority must be a valid URL")]
-    public string Authority { get; set; } = "https://login.microsoftonline.com/common";
-
-    /// <summary>
-    /// Azure AD client ID
-    /// </summary>
-    [Required(ErrorMessage = "AzureAd.ClientId is required for Azure AD authentication")]
-    public string ClientId { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Azure AD tenant ID
-    /// </summary>
-    [Required(ErrorMessage = "AzureAd.TenantId is required for Azure AD authentication")]
-    public string TenantId { get; set; } = string.Empty;
 }
 
 /// <summary>
@@ -127,31 +95,6 @@ public class DatabaseOptions
     public int MaxRetryCount { get; set; } = 3;
 
     public TimeSpan MaxRetryDelay { get; set; } = TimeSpan.FromSeconds(30);
-}
-
-/// <summary>
-/// Configuration options for Azure integration settings.
-/// </summary>
-public class AzureOptions
-{
-    public string SubscriptionId { get; set; } = string.Empty;
-    public string TenantId { get; set; } = string.Empty;
-    public string SqlServer { get; set; } = string.Empty;
-    public string Database { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Azure Key Vault settings
-    /// </summary>
-    public AzureKeyVaultOptions KeyVault { get; set; } = new();
-}
-
-/// <summary>
-/// Configuration options for Azure Key Vault.
-/// </summary>
-public class AzureKeyVaultOptions
-{
-    [System.ComponentModel.DataAnnotations.Url(ErrorMessage = "KeyVault.Url must be a valid URL")]
-    public string Url { get; set; } = string.Empty;
 }
 
 /// <summary>

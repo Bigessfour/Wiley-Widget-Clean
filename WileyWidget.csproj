@@ -66,8 +66,6 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
   <PackageReference Include="Microsoft.Extensions.Http" />
     <PackageReference Include="Microsoft.Extensions.Logging" />
-    <PackageReference Include="Microsoft.Identity.Client.Broker" />
-    <PackageReference Include="Microsoft.Graph" />
     <PackageReference Include="Serilog" />
     <PackageReference Include="Serilog.Enrichers.Environment" />
     <PackageReference Include="Serilog.Enrichers.Process" />
@@ -103,7 +101,6 @@
   <!-- QuickBooks SDK packages (Step 2) - modern package IDs differ from older docs -->
     <PackageReference Include="IppOAuth2PlatformSdk" />
     <PackageReference Include="IppDotNetSdkForQuickBooksApiV3" />
-    <PackageReference Include="Microsoft.Identity.Client" />
   </ItemGroup>
 
   <!-- Exclude test files and sample files from main project build -->

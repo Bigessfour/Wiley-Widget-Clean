@@ -1,51 +1,39 @@
 ﻿using System;
 using System.Data;
-using Microsoft.Data.SqlClient;
-using Azure.Identity;
-using System.Threading.Tasks;
 using System.Diagnostics;
+using System.Threading.Tasks;
+using Microsoft.Data.SqlClient;
 
 namespace DatabaseTest
 {
     class Program
     {
-        // Fallback values - environment variables will override these
-        private const string ServerName = "wileywidget-sql.database.windows.net";
-        private const string DatabaseName = "WileyWidgetDB";
+        private const string ServerName = @".\SQLEXPRESS";
+        private const string DatabaseName = "WileyWidgetDev";
 
         static async Task Main(string[] args)
         {
-            // Get actual values from environment variables
-            var serverName = Environment.GetEnvironmentVariable("AZURE_SQL_SERVER") ?? ServerName;
-            var databaseName = Environment.GetEnvironmentVariable("AZURE_SQL_DATABASE") ?? DatabaseName;
+            var serverName = Environment.GetEnvironmentVariable("WILEY_SQL_SERVER") ?? ServerName;
+            var databaseName = Environment.GetEnvironmentVariable("WILEY_SQL_DATABASE") ?? DatabaseName;
 
-            Console.WriteLine("🔍 Wiley Widget Enterprise Database Connection Test");
-            Console.WriteLine("==================================================");
+            Console.WriteLine("🔍 Wiley Widget Local Database Connection Test");
+            Console.WriteLine("================================================");
             Console.WriteLine();
 
             try
             {
-                Console.WriteLine("📋 Testing Azure AD Interactive Authentication (Recommended)...");
+                Console.WriteLine("📋 Testing SQL Server Express connectivity...");
                 Console.WriteLine($"Server: {serverName}");
                 Console.WriteLine($"Database: {databaseName}");
                 Console.WriteLine();
 
-                // Test 1: Basic Connection Test
-                await TestBasicConnection();
-
-                // Test 2: Connection Pooling Test
-                await TestConnectionPooling();
-
-                // Test 3: Retry Logic Test
-                await TestRetryLogic();
-
-                // Test 4: Performance Test
-                await TestPerformance();
+                await TestBasicConnection(serverName, databaseName);
+                await TestConnectionPooling(serverName, databaseName);
+                await TestPerformance(serverName, databaseName);
 
                 Console.WriteLine();
                 Console.WriteLine("✅ All tests completed successfully!");
-                Console.WriteLine("🎉 Enterprise database connection is working perfectly!");
-
+                Console.WriteLine("🎉 Local database connection is working perfectly!");
             }
             catch (Exception ex)
             {
@@ -60,10 +48,10 @@ namespace DatabaseTest
 
                 Console.WriteLine();
                 Console.WriteLine("🔧 Troubleshooting Tips:");
-                Console.WriteLine("1. Ensure you're logged in to Azure CLI: az login");
-                Console.WriteLine("2. Verify your user has access to the database");
-                Console.WriteLine("3. Check firewall settings for Azure SQL Database");
-                Console.WriteLine("4. Confirm the server and database names are correct");
+                Console.WriteLine("1. Ensure SQL Server Express is installed and running");
+                Console.WriteLine("2. Confirm the SQL Browser service is enabled");
+                Console.WriteLine("3. Verify the database exists or update the name");
+                Console.WriteLine("4. Check that Windows authentication is permitted");
 
                 return;
             }
@@ -73,17 +61,15 @@ namespace DatabaseTest
             Console.ReadKey();
         }
 
-        private static async Task TestBasicConnection()
+        private static async Task TestBasicConnection(string serverName, string databaseName)
         {
             Console.WriteLine("🔗 Test 1: Basic Connection Test");
 
-            using var connection = CreateEnterpriseConnection();
+            await using var connection = CreateLocalConnection(serverName, databaseName);
             await connection.OpenAsync();
-
             Console.WriteLine("✅ Connection opened successfully");
 
-            // Test a simple query
-            using var command = new SqlCommand("SELECT @@VERSION AS SqlVersion", connection);
+            await using var command = new SqlCommand("SELECT @@VERSION AS SqlVersion", connection);
             var version = await command.ExecuteScalarAsync();
             Console.WriteLine($"✅ SQL Server Version: {version}");
 
@@ -92,24 +78,21 @@ namespace DatabaseTest
             Console.WriteLine();
         }
 
-        private static async Task TestConnectionPooling()
+        private static async Task TestConnectionPooling(string serverName, string databaseName)
         {
             Console.WriteLine("🏊 Test 2: Connection Pooling Test");
 
             var stopwatch = Stopwatch.StartNew();
             var tasks = new Task[10];
 
-            for (int i = 0; i < 10; i++)
+            for (int i = 0; i < tasks.Length; i++)
             {
                 tasks[i] = Task.Run(async () =>
                 {
-                    using var connection = CreateEnterpriseConnection();
+                    await using var connection = CreateLocalConnection(serverName, databaseName);
                     await connection.OpenAsync();
-
-                    using var command = new SqlCommand("SELECT 1", connection);
+                    await using var command = new SqlCommand("SELECT 1", connection);
                     await command.ExecuteScalarAsync();
-
-                    await connection.CloseAsync();
                 });
             }
 
@@ -121,68 +104,42 @@ namespace DatabaseTest
             Console.WriteLine();
         }
 
-        private static async Task TestRetryLogic()
+        private static async Task TestPerformance(string serverName, string databaseName)
         {
-            Console.WriteLine("🔄 Test 3: Retry Logic Test");
+            Console.WriteLine("⚡ Test 3: Performance Smoke Test");
 
-            // Test with a query that might timeout to trigger retry logic
-            using var connection = CreateEnterpriseConnection();
-            await connection.OpenAsync();
-
-            using var command = new SqlCommand("WAITFOR DELAY '00:00:01'; SELECT 'Retry Test Successful'", connection);
-            command.CommandTimeout = 30; // 30 seconds timeout
-
-            var result = await command.ExecuteScalarAsync();
-            Console.WriteLine($"✅ {result}");
-            Console.WriteLine("✅ Retry logic handled the operation successfully");
-            Console.WriteLine();
-        }
-
-        private static async Task TestPerformance()
-        {
-            Console.WriteLine("⚡ Test 4: Performance Test");
-
-            using var connection = CreateEnterpriseConnection();
+            await using var connection = CreateLocalConnection(serverName, databaseName);
             await connection.OpenAsync();
 
             var stopwatch = Stopwatch.StartNew();
-
-            // Execute 100 simple queries
             for (int i = 0; i < 100; i++)
             {
-                using var command = new SqlCommand("SELECT GETDATE()", connection);
+                await using var command = new SqlCommand("SELECT SYSDATETIME()", connection);
                 await command.ExecuteScalarAsync();
             }
-
             stopwatch.Stop();
 
             Console.WriteLine($"✅ 100 queries executed in {stopwatch.ElapsedMilliseconds}ms");
-            Console.WriteLine($"✅ Average query time: {stopwatch.ElapsedMilliseconds / 100.0}ms");
-            Console.WriteLine("✅ Performance is excellent!");
+            Console.WriteLine($"✅ Average query time: {stopwatch.ElapsedMilliseconds / 100.0:F2}ms");
             Console.WriteLine();
         }
 
-        private static SqlConnection CreateEnterpriseConnection()
+        private static SqlConnection CreateLocalConnection(string serverName, string databaseName)
         {
-            // Get server and database from environment variables (machine-level)
-            var serverName = Environment.GetEnvironmentVariable("AZURE_SQL_SERVER") ?? ServerName;
-            var databaseName = Environment.GetEnvironmentVariable("AZURE_SQL_DATABASE") ?? DatabaseName;
+            var builder = new SqlConnectionStringBuilder
+            {
+                DataSource = serverName,
+                InitialCatalog = databaseName,
+                IntegratedSecurity = true,
+                TrustServerCertificate = true,
+                ConnectTimeout = 15,
+                ApplicationName = "WileyWidget-Local-DbTest"
+            };
 
-            Console.WriteLine($"📡 Using server: {serverName}");
-            Console.WriteLine($"📊 Using database: {databaseName}");
+            Console.WriteLine($"📡 Using server: {builder.DataSource}");
+            Console.WriteLine($"📊 Using database: {builder.InitialCatalog}");
 
-            // Per Azure documentation: Active Directory Interactive is recommended for development
-            // It supports MFA and caches tokens for subsequent connections
-            // https://learn.microsoft.com/en-us/sql/connect/ado-net/sql/azure-active-directory-authentication
-            var connectionString = $"Server={serverName};" +
-                                  $"Authentication=Active Directory Interactive;" +
-                                  $"Encrypt=True;" +
-                                  $"Database={databaseName};" +
-                                  $"Connect Timeout=30;" +
-                                  $"Application Name=WileyWidget-Enterprise-Test";
-
-            var connection = new SqlConnection(connectionString);
-            return connection;
+            return new SqlConnection(builder.ConnectionString);
         }
     }
 }

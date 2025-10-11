@@ -92,24 +92,6 @@ public static class WpfHostingExtensions
             Log.Debug("🔧 User secrets added for development environment");
         }
 
-        // After base config assembled, attempt to add Azure Key Vault provider if a vault name is configured.
-        var tempConfig = builder.Configuration.Build();
-        var keyVaultName = tempConfig["Azure:KeyVaultName"]; // expected config key
-        if (!string.IsNullOrWhiteSpace(keyVaultName))
-        {
-            try
-            {
-                // TODO: Re-implement Azure Key Vault configuration for WPF apps
-                // The AddAzureKeyVault method from ASP.NET Core is not available in desktop apps
-                // Need to implement custom Key Vault configuration provider
-                Log.Warning("Azure Key Vault configuration temporarily disabled for WPF compatibility");
-            }
-            catch (Exception ex)
-            {
-                Log.Warning(ex, "Failed to add Azure Key Vault configuration provider for vault {Vault}", keyVaultName);
-            }
-        }
-
         Log.Information("✅ Application configuration setup completed");
     }
 
@@ -208,7 +190,7 @@ public static class WpfHostingExtensions
         services.AddSingleton<IStartupProgressReporter>(_ => App.StartupProgress);
         services.AddSingleton<IViewManager, ViewManager>();
         services.AddSingleton<IThemeManager>(_ => ThemeManager.Instance);
-    services.AddSingleton<IAzureKeyVaultService, LocalSecretVaultService>();
+        services.AddSingleton<ISecretVaultService, LocalSecretVaultService>();
         services.AddMemoryCache();
         services.AddSingleton<IDispatcherHelper, DispatcherHelper>();
         services.AddTransient<IProgressReporter, ProgressReporter>();
@@ -268,7 +250,6 @@ public static class WpfHostingExtensions
         services.AddTransient<ToolsViewModel>();
         services.AddTransient<ProgressViewModel>();
         services.AddTransient<MunicipalAccountViewModel>();
-        services.AddTransient<ChartOfAccountsViewModel>();
     }
 
     private static void ConfigureHostedServices(IServiceCollection services)
@@ -303,7 +284,7 @@ public static class WpfHostingExtensions
             return "Environment";
         }
 
-        return "AzureKeyVault";
+    return "SecretVault";
     }
 
     /// <summary>

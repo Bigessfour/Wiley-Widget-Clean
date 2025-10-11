@@ -204,30 +204,11 @@ public static class DatabaseConfiguration
     {
         logger?.LogInformation("🏭 CONFIGURING DATABASE CONNECTION - Environment: {Environment}", environment);
 
-        // Get connection string from configuration
-        string? connectionString = null;
+        var connectionString = config.GetConnectionString("DefaultConnection");
 
-        var isProduction = environment.Equals("Production", StringComparison.OrdinalIgnoreCase) ||
-                           environment.Equals("Staging", StringComparison.OrdinalIgnoreCase) ||
-                           environment.Equals("Release", StringComparison.OrdinalIgnoreCase);
-
-        if (isProduction)
+        if (string.IsNullOrWhiteSpace(connectionString))
         {
-            connectionString = config.GetConnectionString("AzureConnection");
-            if (string.IsNullOrEmpty(connectionString))
-            {
-                logger?.LogWarning("AzureConnection not found in configuration, falling back to DefaultConnection");
-                connectionString = config.GetConnectionString("DefaultConnection");
-            }
-        }
-        else
-        {
-            connectionString = config.GetConnectionString("DefaultConnection");
-        }
-
-        if (string.IsNullOrEmpty(connectionString))
-        {
-            throw new InvalidOperationException("No valid database connection string found in configuration");
+            throw new InvalidOperationException("DefaultConnection must be configured for local database access");
         }
 
         logger?.LogInformation("Using database connection: {Server}",
@@ -309,20 +290,20 @@ public static class DatabaseConfiguration
         services.AddScoped<IQuickBooksService>(sp =>
         {
             var settings = SettingsService.Instance;
-        var keyVaultService = sp.GetService<IAzureKeyVaultService>();
+            var secretVaultService = sp.GetService<ISecretVaultService>();
             var logger = sp.GetRequiredService<ILogger<QuickBooksService>>();
-            return new QuickBooksService(settings, keyVaultService, logger);
+            return new QuickBooksService(settings, secretVaultService, logger);
         });
 
         services.AddScoped<IAIService>(sp =>
         {
             var logger = sp.GetRequiredService<ILogger<IAIService>>();
             var configuration = sp.GetRequiredService<IConfiguration>();
-        var keyVaultService = sp.GetService<IAzureKeyVaultService>();
+            var secretVaultService = sp.GetService<ISecretVaultService>();
 
         // Priority order: Environment variable -> local secret vault -> appsettings
             var xaiApiKey = Environment.GetEnvironmentVariable("XAI_API_KEY") ??
-                           TryGetFromKeyVault(keyVaultService, "XAI-API-KEY", logger) ??
+                           TryGetFromSecretVault(secretVaultService, "XAI-API-KEY", logger) ??
                            configuration["XAI:ApiKey"];
 
             var requireAi = string.Equals(Environment.GetEnvironmentVariable("REQUIRE_AI_SERVICE"), "true", StringComparison.OrdinalIgnoreCase) ||
@@ -362,31 +343,31 @@ public static class DatabaseConfiguration
             }
         });
 
-    services.TryAddSingleton<IChargeCalculatorService, ServiceChargeCalculatorService>();
-    services.TryAddSingleton<IWhatIfScenarioEngine, WhatIfScenarioEngine>();
+        services.TryAddSingleton<IChargeCalculatorService, ServiceChargeCalculatorService>();
+        services.TryAddSingleton<IWhatIfScenarioEngine, WhatIfScenarioEngine>();
 
-    // Register health check configuration (service lifetime singleton)
-    services.AddSingleton<Models.HealthCheckConfiguration>();
-    // NOTE: HealthCheckService is registered as a singleton in WPF hosting extensions.
-    // Do not register it here to avoid conflicting lifetimes.
+        // Register health check configuration (service lifetime singleton)
+        services.AddSingleton<Models.HealthCheckConfiguration>();
+        // NOTE: HealthCheckService is registered as a singleton in WPF hosting extensions.
+        // Do not register it here to avoid conflicting lifetimes.
     }
 
-    private static string? TryGetFromKeyVault(IAzureKeyVaultService? keyVaultService, string secretName, ILogger logger)
+    private static string? TryGetFromSecretVault(ISecretVaultService? secretVaultService, string secretName, ILogger logger)
     {
-        if (keyVaultService == null)
+        if (secretVaultService == null)
             return null;
 
         try
         {
             // For now, we'll use a synchronous approach. In a real scenario, you might want to
             // preload the secret or use a different pattern
-            var task = keyVaultService.GetSecretAsync(secretName);
+            var task = secretVaultService.GetSecretAsync(secretName);
             task.Wait(); // Synchronous wait - not ideal but works for DI registration
             var secret = task.Result;
 
             if (!string.IsNullOrEmpty(secret))
             {
-                logger.LogInformation("Retrieved XAI API key from secret vault");
+                logger.LogInformation("Retrieved XAI API key from local secret vault");
                 return secret;
             }
         }
@@ -405,7 +386,7 @@ public static class DatabaseConfiguration
         if (Environment.GetEnvironmentVariable("XAI_API_KEY") == apiKey)
             return "Environment";
 
-    return "SecretVault"; // Since we check env first, if we get here it must be from the local vault
+        return "SecretVault"; // Since we check env first, if we get here it must be from the local vault
     }
 
     /// <summary>

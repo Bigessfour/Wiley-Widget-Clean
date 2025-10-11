@@ -2,33 +2,6 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "clean-build-log",
-      "type": "shell",
-      "command": "pwsh",
-      "args": [
-        "-NoProfile",
-        "-Command",
-        "Remove-Item -Path '${workspaceFolder}/build-errors.log' -Force -ErrorAction SilentlyContinue; Remove-Item -Path '${workspaceFolder}/build-errors-categorized.log' -Force -ErrorAction SilentlyContinue"
-      ],
-      "presentation": {
-        "reveal": "never"
-      }
-    },
-    {
-      "label": "categorize-errors",
-      "type": "shell",
-      "command": "pwsh",
-      "args": [
-        "-ExecutionPolicy",
-        "Bypass",
-        "-File",
-        "${workspaceFolder}/scripts/categorize-build-errors.ps1"
-      ],
-      "presentation": {
-        "reveal": "silent"
-      }
-    },
-    {
       "label": "build",
       "command": "dotnet",
       "type": "process",
@@ -43,8 +16,7 @@
       "group": {
         "kind": "build",
         "isDefault": true
-      },
-      "dependsOn": ["clean-build-log", "categorize-errors"]
+      }
     },
     {
       "label": "build-incremental",
@@ -201,35 +173,6 @@
       "command": "python",
       "args": ["${workspaceFolder}/scripts/load-env.py", "--load"],
       "group": "build",
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared"
-      }
-    },
-    {
-      "label": "azure-setup",
-      "type": "shell",
-      "command": "python",
-      "args": ["${workspaceFolder}/scripts/azure-setup.py"],
-      "group": "build",
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared"
-      }
-    },
-    {
-      "label": "azure-test-connection",
-      "type": "shell",
-      "command": "python",
-      "args": [
-        "${workspaceFolder}/scripts/azure-setup.py",
-        "--test-connection"
-      ],
-      "group": "test",
       "presentation": {
         "echo": true,
         "reveal": "always",

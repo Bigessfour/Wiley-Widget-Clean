@@ -146,47 +146,6 @@
                 </ScrollViewer>
             </TabItem>
 
-            <!-- Azure Settings -->
-            <TabItem Header="Azure Configuration">
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <StackPanel Margin="8">
-                        <GroupBox Header="Azure Key Vault" Margin="0,0,0,8">
-                            <StackPanel>
-                                <Label Content="Key Vault URL:" />
-                                <TextBox Text="{Binding AzureKeyVaultUrl, Mode=TwoWay}"
-                                       Margin="0,0,0,8" />
-
-                                <Label Content="Connection Status:" />
-                                <TextBlock Text="{Binding AzureConnectionStatus}"
-                                         Foreground="{Binding AzureStatusColor}"
-                                         Margin="0,0,0,8" />
-
-                                <Button Content="Test Azure Connection"
-                                       Command="{Binding TestAzureConnectionCommand}"
-                                       HorizontalAlignment="Left" />
-                            </StackPanel>
-                        </GroupBox>
-
-                        <GroupBox Header="Azure SQL Database" Margin="0,0,0,8">
-                            <StackPanel>
-                                <Label Content="Server:" />
-                                <TextBox Text="{Binding AzureSqlServer, Mode=TwoWay}"
-                                       Margin="0,0,0,8" />
-
-                                <Label Content="Database:" />
-                                <TextBox Text="{Binding AzureSqlDatabase, Mode=TwoWay}"
-                                       Margin="0,0,0,8" />
-
-                                <Label Content="Authentication:" />
-                                <ComboBox ItemsSource="{Binding AzureAuthMethods}"
-                                         SelectedItem="{Binding SelectedAzureAuthMethod, Mode=TwoWay}"
-                                         Margin="0,0,0,8" />
-                            </StackPanel>
-                        </GroupBox>
-                    </StackPanel>
-                </ScrollViewer>
-            </TabItem>
-
             <!-- Advanced Settings -->
             <TabItem Header="Advanced">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">

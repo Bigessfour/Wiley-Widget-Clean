@@ -18,20 +18,20 @@ public sealed class SyncfusionStartupTask : IStartupTask
     private readonly ISyncfusionLicenseService _licenseService;
     private readonly ILogger<SyncfusionStartupTask> _logger;
     private readonly SyncfusionLicenseState _licenseState;
-    private readonly IAzureKeyVaultService? _keyVaultService;
+    private readonly ISecretVaultService? _secretVaultService;
 
     public SyncfusionStartupTask(
         IConfiguration configuration,
         ISyncfusionLicenseService licenseService,
         ILogger<SyncfusionStartupTask> logger,
         SyncfusionLicenseState licenseState,
-        IAzureKeyVaultService? keyVaultService = null)
+        ISecretVaultService? secretVaultService = null)
     {
         _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         _licenseService = licenseService ?? throw new ArgumentNullException(nameof(licenseService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _licenseState = licenseState ?? throw new ArgumentNullException(nameof(licenseState));
-        _keyVaultService = keyVaultService; // optional dependency
+        _secretVaultService = secretVaultService; // optional dependency
     }
 
     public string Name => "Syncfusion licensing";
@@ -126,12 +126,12 @@ public sealed class SyncfusionStartupTask : IStartupTask
 
         // 3) Secret vault (optional)
         var secretName = _configuration["Syncfusion:KeyVaultSecretName"] ?? "Syncfusion-LicenseKey";
-        if (_keyVaultService != null)
+        if (_secretVaultService != null)
         {
             cancellationToken.ThrowIfCancellationRequested();
             try
             {
-                key = await _keyVaultService.GetSecretAsync(secretName).ConfigureAwait(false);
+                key = await _secretVaultService.GetSecretAsync(secretName).ConfigureAwait(false);
                 if (!string.IsNullOrWhiteSpace(key) && !IsPlaceholder(key))
                 {
                     return (key, $"Secret vault entry '{secretName}'", null);

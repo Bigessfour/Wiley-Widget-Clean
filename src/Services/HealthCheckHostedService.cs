@@ -113,11 +113,8 @@ public class HealthCheckHostedService : IHostedService, IDisposable
             healthCheckTasks.Add(ExecuteHealthCheckWithPollyAsync("Database", CheckDatabaseHealthAsync()));
 
             // External services (with circuit breakers)
-            if (!IsServiceSkipped("Azure AD"))
-                healthCheckTasks.Add(ExecuteHealthCheckWithPollyAsync("Azure AD", CheckAzureAdHealthAsync()));
-
-            if (!IsServiceSkipped("Azure Key Vault"))
-                healthCheckTasks.Add(ExecuteHealthCheckWithPollyAsync("Azure Key Vault", CheckAzureKeyVaultHealthAsync()));
+            if (!IsServiceSkipped("Secret Vault"))
+                healthCheckTasks.Add(ExecuteHealthCheckWithPollyAsync("Secret Vault", CheckSecretVaultHealthAsync()));
 
             if (!IsServiceSkipped("QuickBooks"))
                 healthCheckTasks.Add(ExecuteHealthCheckWithPollyAsync("QuickBooks", CheckQuickBooksHealthAsync()));
@@ -324,9 +321,6 @@ public class HealthCheckHostedService : IHostedService, IDisposable
             var issues = new List<string>();
 
             // Check required configuration sections
-            if (string.IsNullOrEmpty(_configuration["AzureAd:ClientId"]))
-                issues.Add("Azure AD Client ID not configured");
-
             if (string.IsNullOrEmpty(_configuration.GetConnectionString("DefaultConnection")))
                 issues.Add("Database connection string not configured");
 
@@ -361,86 +355,32 @@ public class HealthCheckHostedService : IHostedService, IDisposable
         }
     }
 
-    private Task<HealthCheckResult> CheckAzureAdHealthAsync()
+    private async Task<HealthCheckResult> CheckSecretVaultHealthAsync()
     {
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
         try
         {
-            var authService = _serviceProvider.GetService<AuthenticationService>();
-            if (authService == null)
+            var secretVaultService = _serviceProvider.GetService<ISecretVaultService>();
+            if (secretVaultService == null)
             {
-                return Task.FromResult(HealthCheckResult.Unhealthy("Azure AD", "Authentication service not available"));
-            }
-
-            // Check configuration
-            if (string.IsNullOrEmpty(_configuration["AzureAd:ClientId"]))
-            {
-                return Task.FromResult(HealthCheckResult.Unhealthy("Azure AD", "Azure AD Client ID not configured"));
-            }
-
-            if (string.IsNullOrEmpty(_configuration["AzureAd:TenantId"]))
-            {
-                return Task.FromResult(HealthCheckResult.Unhealthy("Azure AD", "Azure AD Tenant ID not configured"));
-            }
-
-            // Basic connectivity check (without actual authentication)
-            // This validates that the configuration is correct for potential authentication
-            var clientId = _configuration["AzureAd:ClientId"];
-            var tenantId = _configuration["AzureAd:TenantId"];
-
-            if (!Guid.TryParse(clientId, out _) || !Guid.TryParse(tenantId, out _))
-            {
-                return Task.FromResult(HealthCheckResult.Unhealthy("Azure AD", "Azure AD Client ID or Tenant ID is not a valid GUID"));
-            }
-
-            stopwatch.Stop();
-            return Task.FromResult(HealthCheckResult.Healthy("Azure AD", "Azure AD configuration validated successfully", stopwatch.Elapsed));
-        }
-        catch (Exception ex)
-        {
-            stopwatch.Stop();
-            return Task.FromResult(HealthCheckResult.Unhealthy("Azure AD", $"Azure AD health check failed: {ex.Message}", ex, stopwatch.Elapsed));
-        }
-    }
-
-    private async Task<HealthCheckResult> CheckAzureKeyVaultHealthAsync()
-    {
-        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-        try
-        {
-            var keyVaultService = _serviceProvider.GetService<IAzureKeyVaultService>();
-            if (keyVaultService == null)
-            {
-                return HealthCheckResult.Unavailable("Azure Key Vault", "Azure Key Vault service not configured");
-            }
-
-            var keyVaultUrl = _configuration["Azure:KeyVault:Url"];
-            if (string.IsNullOrEmpty(keyVaultUrl))
-            {
-                return HealthCheckResult.Unavailable("Azure Key Vault", "Azure Key Vault URL not configured");
-            }
-
-            // Attempt to list secrets (this validates connectivity and permissions)
-            // Note: This is a basic check and may fail in production due to permissions
-            try
-            {
-                // We don't actually list secrets, just check if the client can be created
-                await Task.CompletedTask; // Placeholder for actual connectivity check
-            }
-            catch
-            {
-                // If we can't connect, mark as degraded rather than unhealthy
                 stopwatch.Stop();
-                return HealthCheckResult.Degraded("Azure Key Vault", "Azure Key Vault connectivity could not be verified", stopwatch.Elapsed);
+                return HealthCheckResult.Unavailable("Secret Vault", "Secret vault service not configured");
             }
 
+            var healthy = await secretVaultService.TestConnectionAsync();
             stopwatch.Stop();
-            return HealthCheckResult.Healthy("Azure Key Vault", "Azure Key Vault service configured and accessible", stopwatch.Elapsed);
+
+            if (healthy)
+            {
+                return HealthCheckResult.Healthy("Secret Vault", "Local secret vault accessible", stopwatch.Elapsed);
+            }
+
+            return HealthCheckResult.Degraded("Secret Vault", "Local secret vault is not accessible", stopwatch.Elapsed);
         }
         catch (Exception ex)
         {
             stopwatch.Stop();
-            return HealthCheckResult.Unhealthy("Azure Key Vault", $"Azure Key Vault health check failed: {ex.Message}", ex, stopwatch.Elapsed);
+            return HealthCheckResult.Unhealthy("Secret Vault", $"Secret vault health check failed: {ex.Message}", ex, stopwatch.Elapsed);
         }
     }
 
@@ -537,41 +477,29 @@ public class HealthCheckHostedService : IHostedService, IDisposable
             // Check configuration - prioritize xAI since that's what Wiley Widget uses
             var xaiApiKey = _configuration["XAI:ApiKey"] ?? Environment.GetEnvironmentVariable("XAI_API_KEY");
             var openAiKey = _configuration["Secrets:OpenAI:ApiKey"] ?? _configuration["OpenAI:ApiKey"] ?? Environment.GetEnvironmentVariable("OPENAI_API_KEY");
-            var azureAiEndpoint = _configuration["Secrets:AzureAI:Endpoint"] ?? _configuration["Azure:AI:Endpoint"];
 
-            if (string.IsNullOrEmpty(xaiApiKey) && string.IsNullOrEmpty(openAiKey) && string.IsNullOrEmpty(azureAiEndpoint))
+            if (string.IsNullOrEmpty(xaiApiKey) && string.IsNullOrEmpty(openAiKey))
             {
-                return Task.FromResult(HealthCheckResult.Unavailable("AI Service", "No AI service API key configured (XAI, OpenAI, or Azure AI)"));
+                return Task.FromResult(HealthCheckResult.Unavailable("AI Service", "No AI service API key configured (XAI or OpenAI)"));
             }
 
             // Perform lightweight connectivity probe (2s budget)
             using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(2));
             var clientFactory = scope.ServiceProvider.GetService<System.Net.Http.IHttpClientFactory>();
-            var httpClient = clientFactory != null ? clientFactory.CreateClient("AIHealthCheck") : null;
-            httpClient.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", "WileyWidget-AIHealthCheck/1.0");
-            System.Net.Http.HttpResponseMessage response = null;
-            string target = null;
+            using var activeClient = clientFactory?.CreateClient("AIHealthCheck") ?? new System.Net.Http.HttpClient();
+            activeClient.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", "WileyWidget-AIHealthCheck/1.0");
+            System.Net.Http.HttpResponseMessage? response = null;
+            string? target = null;
             string serviceType = "Unknown";
 
             try
             {
-                using var transientClient = httpClient ?? new System.Net.Http.HttpClient();
-                var activeClient = transientClient;
-
-                // Prioritize xAI since that's the primary service for Wiley Widget
                 if (!string.IsNullOrWhiteSpace(xaiApiKey))
                 {
                     serviceType = "xAI";
                     activeClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", xaiApiKey);
                     var baseUrl = _configuration["XAI:BaseUrl"] ?? "https://api.x.ai/v1/";
                     target = baseUrl.TrimEnd('/') + "/models";
-                    response = activeClient.GetAsync(target, cts.Token).GetAwaiter().GetResult();
-                }
-                else if (!string.IsNullOrWhiteSpace(azureAiEndpoint))
-                {
-                    serviceType = "Azure AI";
-                    var endpoint = azureAiEndpoint.TrimEnd('/');
-                    target = endpoint + "/openai/deployments?api-version=2023-05-01";
                     response = activeClient.GetAsync(target, cts.Token).GetAwaiter().GetResult();
                 }
                 else if (!string.IsNullOrWhiteSpace(openAiKey))
@@ -665,18 +593,6 @@ public class HealthCheckHostedService : IHostedService, IDisposable
             catch
             {
                 issues.Add("Internet connectivity check failed");
-            }
-
-            // Check Azure endpoints if configured
-            var azureSqlConnection = _configuration.GetConnectionString("AzureConnection");
-            if (!string.IsNullOrEmpty(azureSqlConnection))
-            {
-                // Basic Azure SQL connectivity check would go here
-                // For now, just validate the connection string format
-                if (!azureSqlConnection.Contains("database.windows.net"))
-                {
-                    issues.Add("Azure SQL connection string format appears invalid");
-                }
             }
 
             stopwatch.Stop();
@@ -795,7 +711,7 @@ public class HealthCheckHostedService : IHostedService, IDisposable
         return serviceName switch
         {
             "Database" => _healthCheckConfig.DatabaseTimeout,
-            "Azure AD" or "Azure Key Vault" or "QuickBooks" or "AI Service" or "External Dependencies" => _healthCheckConfig.ExternalServiceTimeout,
+            "Secret Vault" or "QuickBooks" or "AI Service" or "External Dependencies" => _healthCheckConfig.ExternalServiceTimeout,
             _ => _healthCheckConfig.DefaultTimeout
         };
     }
