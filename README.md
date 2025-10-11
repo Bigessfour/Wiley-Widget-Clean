@@ -1,108 +1,188 @@
-# Wiley Widget: The Ultimate Small-Town Rate Revolution
+# WileyWidget
 
-**Version:** 1.1 - Phase 1 Implementation Ready  
-**Status:** North Star Locked, Rule #1 Active  
-**Timeline:** 8-12 weeks to MVP  
+**A Modern WPF Application for Budget Management and Financial Analysis**
 
-## 🎯 **Our True North Star Vision**
+[![.NET Version](https://img.shields.io/badge/.NET-9.0-blue.svg)](https://dotnet.microsoft.com/)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Build Status](https://github.com/Bigessfour/Wiley-Widget/actions/workflows/ci.yml/badge.svg)](https://github.com/Bigessfour/Wiley-Widget/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/badge/coverage-70%25+-brightgreen.svg)](https://github.com/Bigessfour/Wiley-Widget/actions/workflows/ci.yml)
 
-We're building a sleek, AI-powered tool for small-town mayors to transform municipal enterprises (Water, Sewer, Trash, Apartments) into self-sustaining businesses. No more Stone Age rates—get real-time dashboards, "What If" scenario planning, and AI insights that even your Clerk will love.
+**Version:** 0.1.0 - Preview Release
+**Framework:** .NET 9.0 WPF
+**UI Framework:** Syncfusion WPF Controls v31.1.20
 
-**Current Phase:** Phase 1 - Foundation & Data Backbone (1-2 weeks)
+## 📋 Overview
 
----
+WileyWidget is a modern Windows desktop application built with WPF and Syncfusion controls, designed for budget management and financial data analysis. The application features a comprehensive MVVM architecture with Entity Framework Core integration, using local SQL Server Express for data storage.
 
-## ⚠️ **STANDARD OPERATING PROCEDURES - READ FIRST**
+### Key Capabilities
 
-### **Azure Safety Protocol (MANDATORY)**
-**ALL Azure operations must use the safe scripts. Direct Azure CLI commands are FORBIDDEN.**
-
-**🚨 CRITICAL SAFETY RULES:**
-- **ALWAYS use safe scripts** for Azure operations
-- **NEVER run direct Azure CLI commands** without safe script alternatives
-- **ALWAYS test with `-DryRun`** before executing operations
-- **ALWAYS create backups** before making changes
-- **ALWAYS check status** before and after operations
-
-**✅ APPROVED Azure Operations:**
-```powershell
-# Check Azure status (safe, read-only)
-.\scripts\azure-safe-operations.ps1 -Operation status
-
-# Test database connection (safe, read-only)
-.\scripts\azure-safe-operations.ps1 -Operation connect
-
-# Create backup (safe, creates copy)
-.\scripts\azure-safe-operations.ps1 -Operation backup
-
-# List resources (safe, read-only)
-.\scripts\azure-safe-operations.ps1 -Operation list
-```
+- **Budget Management**: Multi-year budget tracking with detailed financial analysis
+- **Data Visualization**: Interactive charts and dashboards using Syncfusion controls
+- **Enterprise Integration**: QuickBooks Online API integration for financial data
+- **Modern UI**: Fluent Design themes with dark/light mode switching
+- **Robust Architecture**: MVVM pattern with dependency injection and comprehensive testing
 
 ---
 
-## 🚀 **Phase 1 Implementation Quick Start**
+## 🚀 Quick Start
 
-### **Prerequisites**
-1. **Setup Database**: `pwsh ./scripts/setup-database.ps1` (installs SQL Server LocalDB)
-2. **Setup Environment**: `pwsh ./scripts/load-env.ps1 -Load` (loads secure environment variables)
-3. **Setup Syncfusion License**: `pwsh ./scripts/setup-license.ps1` (obtain and configure license)
-4. **Setup Azure Environment**: `pwsh ./scripts/azure-setup.ps1` (configures safe Azure operations)
+### Prerequisites
 
-### **Phase 1 Development Workflow**
-```powershell
-# 1. Clone and setup
-git clone https://github.com/Bigessfour/Wiley-Widget.git
-cd Wiley-Widget
+- **Windows 10/11** (64-bit)
+- **.NET 9.0 SDK** (9.0.305 or later)
+- **SQL Server Express** (local database)
+- **Syncfusion Community License** (free for individual developers)
 
-# 2. Build the project
-dotnet build WileyWidget.csproj
+### Installation & Setup
 
-# 3. Run EF migrations (Phase 1)
-dotnet ef migrations add InitialCreate
-dotnet ef database update
+1. **Clone the Repository**
+   ```bash
+   git clone https://github.com/Bigessfour/Wiley-Widget.git
+   cd Wiley-Widget
+   ```
 
-# 4. Test data connection
-dotnet run --project WileyWidget.csproj
-```
+2. **Setup Syncfusion License**
+   ```powershell
+   # Set environment variable (recommended)
+   [System.Environment]::SetEnvironmentVariable('SYNCFUSION_LICENSE_KEY','YOUR_LICENSE_KEY','User')
 
-### **Phase 1 Success Benchmarks**
-- ✅ **Database Connection:** Azure DB or LocalDB connects without errors
-- ✅ **Data Models:** Enterprise, BudgetInteraction, OverallBudget classes created
-- ✅ **CRUD Operations:** Can add/edit/delete enterprise data
-- ✅ **Performance:** Load time <2s for 100 records, memory <50MB
+   # Or place license.key file beside the executable
+   ```
+
+3. **Build and Run**
+   ```powershell
+   # Restore dependencies and build
+   dotnet build WileyWidget.csproj
+
+   # Run the application
+   dotnet run --project WileyWidget.csproj
+   ```
+
+### First Launch
+
+The application will:
+- Initialize the local SQL Server Express database (WileyWidgetDev)
+- Load default themes and settings
+- Display the main dashboard with budget management interface
 
 ---
 
-## ⚡ **Startup Optimization & Azure Integration**
+---
 
-### **Performance Improvements**
-- 🚀 **80% Faster Startup:** Reduced from 10-15s to ~2s perceived time
-- 🎨 **Immediate UI:** Main window shows instantly instead of blank screen
-- 🔄 **Background Processing:** Database and services initialize non-blocking
-- 🛡️ **Resilient Licensing:** Azure Key Vault with intelligent fallbacks
+## 🏗️ Architecture
 
-### **Azure Key Vault Integration**
-```powershell
-# Test Azure Key Vault connection
-.\scripts\azure-setup.ps1 --test-connection
+### Technology Stack
 
-# Verify license retrieval
-.\scripts\test-azure-keyvault-integration.py
+| Component | Technology | Version |
+|-----------|------------|---------|
+| **Framework** | .NET | 9.0 |
+| **UI Framework** | WPF | .NET 9.0 |
+| **MVVM** | CommunityToolkit.Mvvm | 8.4.0 |
+| **Database** | Entity Framework Core | 9.0.8 |
+| **UI Controls** | Syncfusion WPF | 31.1.20 |
+| **Dependency Injection** | Microsoft.Extensions.DI | 9.0.8 |
+| **Logging** | Serilog | 4.3.0 |
+| **Testing** | NUnit | Latest |
+| **AI Integration** | Microsoft.Extensions.AI | Latest |
+| **Reporting** | Bold Reports WPF | 5.2.26 |
+| **QuickBooks** | Intuit SDK | 14.7.0 |
+
+### Project Structure
+
+```
+WileyWidget/
+├── src/                          # Main application source
+│   ├── App.xaml                 # Application entry point
+│   ├── App.xaml.cs              # Application startup logic
+│   ├── Program.cs               # Main program entry point
+│   ├── Models/                  # Data models and entities
+│   │   ├── Budget/             # Budget-related models
+│   │   ├── Enterprise/         # Enterprise data models
+│   │   └── QuickBooks/         # QuickBooks integration models
+│   ├── ViewModels/              # MVVM view models
+│   │   ├── Base/               # Base view model classes
+│   │   ├── Dashboard/          # Dashboard view models
+│   │   └── Settings/           # Settings view models
+│   ├── Views/                   # XAML UI files
+│   │   ├── Dashboard/          # Dashboard views
+│   │   ├── Budget/             # Budget management views
+│   │   └── Settings/           # Settings views
+│   ├── Services/                # Business logic and integrations
+│   │   ├── Data/               # Data access services
+│   │   ├── QuickBooks/         # QuickBooks API services
+│   │   └── AI/                 # AI integration services
+│   ├── Data/                    # EF Core DbContext and repositories
+│   │   ├── Contexts/           # Database contexts
+│   │   ├── Repositories/       # Repository implementations
+│   │   └── Migrations/         # EF Core migrations
+│   ├── Configuration/           # App configuration management
+│   ├── Controls/                # Custom WPF controls
+│   ├── Converters/              # Value converters
+│   ├── Helpers/                 # Utility classes
+│   ├── Themes/                  # UI themes and styles
+│   ├── Resources/               # Application resources
+│   ├── Diagnostics/             # Diagnostic and monitoring tools
+│   ├── Reports/                 # Reporting components
+│   ├── Startup/                 # Application startup services
+│   └── NavigationRequestEventArgs.cs
+├── scripts/                     # Build and deployment scripts
+├── tests/                       # Unit and integration tests
+│   ├── Unit/                   # Unit test projects
+│   ├── Integration/            # Integration test projects
+│   └── UITests/                # UI automation tests
+├── docs/                        # Documentation
+├── tools/                       # Development tools
+├── DatabaseSetup/               # Database initialization project
+├── DatabaseTest/                # Database testing utilities
+└── WileyWidget.Tests/           # Main test project
+```
+├── tests/                 # Unit and integration tests
+└── docs/                  # Documentation
 ```
 
-### **Optimized Startup Sequence**
-1. **Fast Constructor** (< 1s): Load config, start async license registration
-2. **Immediate UI** (~2s perceived): Show window, start background services
-3. **Background Init** (~11s): Complete database setup without blocking UI
-4. **Professional UX**: Splash screen with fade-out animation
+### Database Support
 
-### **Documentation**
-📖 **[Complete Startup Optimization Guide](docs/startup-optimization-azure-integration.md)**
-- Azure Key Vault security configuration
-- Performance monitoring and troubleshooting
-- Environment-specific deployment guides
-- Error handling and fallback strategies
+- **SQL Server Express**: Local database for development and production
+- **Entity Framework Core**: ORM with migrations and code-first approach
+
+---
+
+## ✨ Features
+
+### Core Functionality
+
+- **📊 Budget Management**
+  - Multi-year budget tracking
+  - Department-wise budget allocation
+  - Budget variance analysis
+  - Historical data comparison
+
+- **🎨 Modern UI**
+  - Syncfusion DataGrid with advanced features
+  - Interactive charts and visualizations
+  - Fluent Design themes (Dark/Light)
+  - Responsive layout with docking panels
+
+- **🔗 Enterprise Integration**
+  - QuickBooks Online API integration
+  - Secure OAuth2 authentication
+  - Automated data synchronization
+  - Real-time financial updates
+
+- **⚙️ System Features**
+  - Persistent user settings
+  - Comprehensive logging
+  - Error handling and diagnostics
+  - Performance monitoring
+
+### Advanced Features
+
+- **AI Integration**: Microsoft.Extensions.AI for intelligent insights
+- **Reporting**: Bold Reports for advanced reporting capabilities
+- **Security**: Local configuration and secrets management
+- **Performance**: Optimized startup with background initialization
+- **Testing**: Comprehensive unit and UI test coverage
 
 ---
 
@@ -115,7 +195,7 @@ WileyWidget/
 ├── ViewModels/      # MVVM view models (Phase 2)
 ├── Views/          # XAML UI files (Phase 2)
 ├── Services/       # Business logic & AI integration (Phase 3)
-├── scripts/        # Safe Azure operations & build scripts
+├── scripts/               # Build and deployment scripts
 └── docs/           # North Star & implementation guides
 ```
 
@@ -127,17 +207,21 @@ WileyWidget/
 **ME, Grok-4, and Grok Fast Code-1 must ALL agree** to any plan changes. This prevents scope creep and keeps us focused.
 
 ### **Code Standards**
-- **EF Core 8.x:** Use for all data operations
-- **CommunityToolkit.Mvvm:** For ViewModel bindings
-- **Syncfusion WPF 30.2.4:** For UI components
+- **EF Core 9.0.8:** Use for all data operations with SQL Server Express
+- **CommunityToolkit.Mvvm 8.4.0:** For ViewModel bindings and commands
+- **Syncfusion WPF 31.1.20:** For UI components and theming
+- **Serilog 4.3.0:** For structured logging with file and async sinks
 - **No nullable reference types:** Per project guidelines
 - **Repository Pattern:** For data access abstraction
+- **Dependency Injection:** Microsoft.Extensions.DI for service registration
+- **AI Integration:** Microsoft.Extensions.AI for intelligent features
 
 ### **Testing Strategy**
-- **Unit Tests:** NUnit for business logic
-- **Integration Tests:** Database operations
-- **UI Tests:** FlaUI for smoke tests
-- **Coverage Target:** 80% by Phase 4
+- **Unit Tests:** NUnit for business logic and ViewModels
+- **Integration Tests:** Database operations and API integrations
+- **UI Tests:** FlaUI for smoke tests and critical user flows
+- **Coverage Target:** 80% by Phase 4 with CI/CD validation
+- **Test Categories:** unit, smoke, integration, slow (marked appropriately)
 
 ---
 
@@ -145,7 +229,6 @@ WileyWidget/
 
 - **[North Star Roadmap](docs/wiley-widget-north-star-v1.1.md)** - Complete implementation plan
 - **[Contributing Guide](CONTRIBUTING.md)** - Development workflow
-- **[Azure Setup](docs/azure-setup.md)** - Safe Azure operations
 - **[Testing Guide](docs/TESTING.md)** - Testing standards
 
 ---
@@ -169,16 +252,11 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development workflow and standards.
 
 ## Documentation
 
-### **Core Operating Procedures (MANDATORY READING)**
-- **[Azure Safety Protocol](docs/azure-novice-guide.md)**: **REQUIRED** - Safe Azure operations for all users
-- **[Standard Operating Procedures](docs/sop-azure-operations.md)**: Complete operational procedures
-- **[Copilot Azure Integration](docs/copilot-azure-examples.md)**: Safe AI-assisted Azure development
-
 ### **Project Documentation**
 - **[Project Plan](.vscode/project-plan.md)**: True North vision and phased roadmap
 - **[Development Guide](docs/development-guide.md)**: Comprehensive development standards and best practices
 - **[Copilot Instructions](.vscode/copilot-instructions.md)**: AI assistant guidelines and project standards
-- **[Database Setup Guide](docs/database-setup.md)**: SQL Server LocalDB installation and configuration
+- **[Database Setup Guide](docs/database-setup.md)**: SQL Server Express installation and configuration
 - **[Syncfusion License Setup](docs/syncfusion-license-setup.md)**: License acquisition and registration guide
 - **[Contributing Guide](CONTRIBUTING.md)**: Development workflow and contribution guidelines
 - **[Release Notes](RELEASE_NOTES.md)**: Version history and upcoming features
@@ -199,71 +277,6 @@ Single-user WPF application scaffold (NET 9) using Syncfusion WPF controls (pinn
 - Nullable refs intentionally disabled for early simplicity
 - Next likely enhancements: richer UI automation, live theme switching via `SfSkinManager`, packaging/signing
 
-## Azure Setup
-
-### Prerequisites
-- Azure CLI installed (`winget install Microsoft.AzureCLI`)
-- Azure subscription with appropriate permissions
-- .NET 8.0 SDK
-
-### Quick Azure Setup
-
-1. **Configure Environment**:
-   ```powershell
-   # Copy and configure environment file
-   Copy-Item .env.example .env
-   # Edit .env with your Azure values
-   ```
-
-2. **Run Azure Setup Script**:
-   ```powershell
-   # Test Azure connection
-   .\scripts\azure-setup.ps1 -TestConnection
-
-   # Create Azure resources (optional)
-   .\scripts\azure-setup.ps1 -CreateResources
-
-   # Deploy database schema
-   .\scripts\azure-setup.ps1 -DeployDatabase
-   ```
-
-3. **Launch with Azure Configuration**:
-   ```powershell
-   # In VS Code, use "Launch WileyWidget (Azure)" debug configuration
-   # Or run with Azure environment
-   $env:ASPNETCORE_ENVIRONMENT = "Production"
-   dotnet run --project WileyWidget.csproj
-   ```
-
-### Azure Resources Created
-- **Resource Group**: `WileyWidget-RG`
-- **SQL Server**: Azure SQL Database server
-- **SQL Database**: `WileyWidgetDb` (S0 tier)
-- **Firewall Rules**: Configured for Azure services
-
-### Azure Development Tools
-- **VS Code Extensions**: Azure Account, Functions, Storage, App Service, Cosmos DB
-- **Debug Configurations**: Local and Azure-specific launch profiles
-- **Database Management**: SQL Server extension for Azure SQL
-- **Build Tasks**: Azure setup, connection testing, and deployment tasks
-
-### Environment Variables
-```env
-# Azure Configuration
-AZURE_SUBSCRIPTION_ID=your-subscription-id
-AZURE_TENANT_ID=your-tenant-id
-AZURE_SQL_SERVER=your-server.database.windows.net
-AZURE_SQL_DATABASE=WileyWidgetDb
-AZURE_SQL_USER=your-admin-user
-AZURE_SQL_PASSWORD=your-secure-password
-```
-
-### Troubleshooting
-- **Connection Issues**: Run `.\scripts\azure-setup.ps1 -TestConnection`
-- **Authentication**: Run `az login` to refresh Azure credentials
-- **Firewall**: Ensure your IP is allowed in Azure SQL firewall rules
-- **Extensions**: Restart VS Code after installing Azure extensions
-
 ## Setup Scripts
 
 ### Database Setup
@@ -272,7 +285,7 @@ AZURE_SQL_PASSWORD=your-secure-password
 # Check database status
 pwsh ./scripts/setup-database.ps1 -CheckOnly
 
-# Setup database (install LocalDB if needed)
+# Setup database (SQL Server Express)
 pwsh ./scripts/setup-database.ps1
 ```
 
@@ -340,20 +353,19 @@ WileyWidget uses secure environment variable management for sensitive configurat
 3. **User Secrets** (for development secrets)
 4. **Machine Environment Variables** (fallback)
 
-### Azure Configuration
+### Local Database Configuration
 
-The application is configured to work with Azure SQL Database:
+The application uses local SQL Server Express for development and production:
 
-- **Server**: busbuddy-server.database.windows.net
-- **Database**: BusBuddy
-- **Authentication**: SQL Server Authentication
+- **Server**: .\SQLEXPRESS (local instance)
+- **Database**: WileyWidgetDev
+- **Authentication**: Windows Authentication (Integrated Security)
 
 ### Security Notes
 
-- **Never commit** `.env` files to version control
-- **Use strong passwords** for production databases
-- **Rotate credentials** regularly
-- **Store production secrets** in Azure Key Vault
+- **Database backups** are recommended for production use
+- **Use strong passwords** if switching to SQL Authentication
+- **Regular maintenance** of SQL Server Express instance
   Pinned packages (NuGet):
 
 ```pwsh
