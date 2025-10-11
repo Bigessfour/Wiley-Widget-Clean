@@ -148,6 +148,52 @@
                 </ScrollViewer>
             </TabItem>
 
+            <!-- XAI Settings -->
+            <TabItem Header="XAI Integration">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="8">
+                        <GroupBox Header="XAI Configuration" Margin="0,0,0,8">
+                            <StackPanel>
+                                <Label Content="API Key:" />
+                                <TextBox Text="{Binding XaiApiKey, Mode=TwoWay}"
+                                       Margin="0,0,0,8" />
+
+                                <Label Content="Base URL:" />
+                                <TextBox Text="{Binding XaiBaseUrl, Mode=TwoWay}"
+                                       Margin="0,0,0,8" />
+
+                                <Label Content="Model:" />
+                                <TextBox Text="{Binding XaiModel, Mode=TwoWay}"
+                                       Margin="0,0,0,8" />
+
+                                <Label Content="Timeout (seconds):" />
+                                <syncfusion:IntegerTextBox Value="{Binding XaiTimeoutSeconds, Mode=TwoWay}"
+                                                         MinValue="5"
+                                                         MaxValue="300"
+                                                         Margin="0,0,0,8" />
+                            </StackPanel>
+                        </GroupBox>
+
+                        <GroupBox Header="Connection Status" Margin="0,0,0,8">
+                            <StackPanel>
+                                <TextBlock Text="{Binding XaiConnectionStatus}"
+                                         Foreground="{Binding XaiStatusColor}"
+                                         Margin="0,0,0,8" />
+
+                                <Button Content="Test XAI Connection"
+                                       Command="{Binding TestXaiConnectionCommand}"
+                                       HorizontalAlignment="Left" />
+                            </StackPanel>
+                        </GroupBox>
+
+                        <TextBlock Text="Note: API key is stored securely. Configure these settings to enable AI-powered features."
+                                 FontStyle="Italic"
+                                 Foreground="Gray"
+                                 TextWrapping="Wrap" />
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
             <!-- Fiscal Year Settings -->
             <TabItem Header="Fiscal Year">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">

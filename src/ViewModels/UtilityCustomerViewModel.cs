@@ -7,6 +7,7 @@ using WileyWidget.Data;
 using WileyWidget.Models;
 using System.Threading.Tasks;
 using Serilog;
+using WileyWidget.Business.Interfaces;
 
 namespace WileyWidget.ViewModels;
 
@@ -83,9 +84,9 @@ public partial class UtilityCustomerViewModel : ObservableObject
     /// <summary>
     /// Constructor with dependency injection
     /// </summary>
-    public UtilityCustomerViewModel(IUtilityCustomerRepository customerRepository)
+    public UtilityCustomerViewModel(IUnitOfWork unitOfWork)
     {
-        _customerRepository = customerRepository ?? throw new ArgumentNullException(nameof(customerRepository));
+        _customerRepository = unitOfWork.UtilityCustomers ?? throw new ArgumentNullException(nameof(unitOfWork));
         selectedCustomer = new UtilityCustomer(); // Initialize to avoid null warning
     }
 

@@ -17,6 +17,7 @@ namespace WileyWidget.Tests.ViewModels
         private readonly Mock<ISecretVaultService> _mockSecretVaultService;
         private readonly Mock<IQuickBooksService> _mockQuickBooksService;
         private readonly Mock<ISyncfusionLicenseService> _mockSyncfusionService;
+        private readonly Mock<IAIService> _mockAIService;
         private readonly Mock<ILogger<SettingsViewModel>> _mockLogger;
         private readonly SettingsViewModel _viewModel;
         private bool _disposed;
@@ -35,6 +36,7 @@ namespace WileyWidget.Tests.ViewModels
             _mockSecretVaultService = new Mock<ISecretVaultService>();
             _mockQuickBooksService = new Mock<IQuickBooksService>();
             _mockSyncfusionService = new Mock<ISyncfusionLicenseService>();
+            _mockAIService = new Mock<IAIService>();
             _mockLogger = new Mock<ILogger<SettingsViewModel>>();
 
             _viewModel = new SettingsViewModel(
@@ -42,7 +44,8 @@ namespace WileyWidget.Tests.ViewModels
                 _mockDbContext.Object,
                 _mockSecretVaultService.Object,
                 _mockQuickBooksService.Object,
-                _mockSyncfusionService.Object);
+                _mockSyncfusionService.Object,
+                _mockAIService.Object);
         }
 
         public void Dispose()
@@ -79,7 +82,8 @@ namespace WileyWidget.Tests.ViewModels
                 _mockDbContext.Object,
                 _mockSecretVaultService.Object,
                 null, // null QuickBooks service
-                _mockSyncfusionService.Object));
+                _mockSyncfusionService.Object,
+                _mockAIService.Object));
         }
 
         [Fact]
@@ -106,7 +110,8 @@ namespace WileyWidget.Tests.ViewModels
                 _mockDbContext.Object,
                 _mockSecretVaultService.Object,
                 _mockQuickBooksService.Object,
-                _mockSyncfusionService.Object);
+                _mockSyncfusionService.Object,
+                _mockAIService.Object);
 
             // Act - trigger property change for a tracked property (SettingsStatus)
             freshViewModel.SettingsStatus = "Test Status";

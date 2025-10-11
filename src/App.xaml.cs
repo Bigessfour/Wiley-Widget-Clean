@@ -19,8 +19,9 @@ using Microsoft.Extensions.Configuration.EnvironmentVariables;
 using Microsoft.Extensions.Configuration.UserSecrets;
 using Microsoft.Extensions.Logging; // For ILogger<T> extension methods
 using WileyWidget.Configuration;
-using WileyWidget.Models;
-using WileyWidget.Data;
+// Removed direct references to Models and Data layers for Clean Architecture
+// using WileyWidget.Models;
+// using WileyWidget.Data;
 using System.Threading;
 using WileyWidget.ViewModels;
 using System.Windows.Controls; // For Grid, TextBlock, Button
@@ -35,6 +36,8 @@ using Microsoft.Data.SqlClient;
 using WileyWidget.Diagnostics;
 using Prism.Ioc;
 using Prism.DryIoc;
+// Clean Architecture repository interfaces and implementations
+using WileyWidget.Business.Interfaces;
 
 namespace WileyWidget;
 
@@ -307,6 +310,9 @@ public partial class App : PrismApplication, IDisposable
         containerRegistry.RegisterSingleton<ISettingsService, SettingsService>();
         containerRegistry.RegisterSingleton<IThemeManager, ThemeManager>();
         containerRegistry.RegisterSingleton<ISyncfusionLicenseService, SyncfusionLicenseService>();
+        
+        // Register Unit of Work (Clean Architecture - UI only depends on Business layer)
+        containerRegistry.RegisterSingleton<IUnitOfWork, UnitOfWork>();
         
         // Register other ViewModels
         containerRegistry.Register<DashboardViewModel>();

@@ -103,12 +103,19 @@
     <PackageReference Include="IppDotNetSdkForQuickBooksApiV3" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="WileyWidget.Business\WileyWidget.Business.csproj" />
+    <ProjectReference Include="WileyWidget.Data\WileyWidget.Data.csproj" />
+    <ProjectReference Include="WileyWidget.Models\WileyWidget.Models.csproj" />
+  </ItemGroup>
+
   <!-- Exclude test files and sample files from main project build -->
   <ItemGroup>
     <Compile Remove="WileyWidget.Tests\**" />
     <Compile Remove="WileyWidget.UiTests\**" />
     <Compile Remove="WileyWidget.TestModels\**" />
     <Compile Remove="tests\**" />
+    <Compile Remove="src\**" />
     <Compile Remove="samples\LicenseKey.Private.sample.cs" />
     <Compile Remove="Services\GrokAIService.cs" />
     <Compile Remove="DatabaseTest\DatabaseConnectionTest.cs" />

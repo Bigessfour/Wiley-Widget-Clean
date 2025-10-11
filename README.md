@@ -72,79 +72,248 @@ The application will:
 
 ## 🏗️ Architecture
 
-### Technology Stack
+### Why Layered Architecture?
 
-| Component | Technology | Version |
-|-----------|------------|---------|
-| **Framework** | .NET | 9.0 |
-| **UI Framework** | WPF | .NET 9.0 |
-| **MVVM** | CommunityToolkit.Mvvm | 8.4.0 |
-| **Database** | Entity Framework Core | 9.0.8 |
-| **UI Controls** | Syncfusion WPF | 31.1.20 |
-| **Dependency Injection** | Microsoft.Extensions.DI | 9.0.8 |
-| **Logging** | Serilog | 4.3.0 |
-| **Testing** | NUnit | Latest |
-| **AI Integration** | Microsoft.Extensions.AI | Latest |
-| **Reporting** | Bold Reports WPF | 5.2.26 |
-| **QuickBooks** | Intuit SDK | 14.7.0 |
+WileyWidget implements a **modern N-Tier layered architecture** following Microsoft's official guidance for enterprise .NET applications. This architectural pattern provides several critical benefits:
 
-### Project Structure
+#### **🎯 Separation of Concerns**
+- **Presentation Layer**: Pure UI logic with MVVM pattern
+- **Business Layer**: Domain logic and validation rules
+- **Data Layer**: Database operations and persistence
+- **Domain Layer**: Core business entities and interfaces
+
+#### **🔧 Maintainability & Testability**
+- Each layer can be developed, tested, and deployed independently
+- Clear contracts between layers enable parallel development
+- Isolated testing prevents cascading failures
+
+#### **📈 Scalability & Performance**
+- Business logic can be reused across multiple presentation layers (WPF, Web API, etc.)
+- Database operations are optimized and cached at the data layer
+- UI remains responsive through proper async/await patterns
+
+#### **🛡️ Security & Reliability**
+- Input validation at multiple layers prevents malicious data
+- Database constraints and business rules work together
+- Comprehensive error handling and logging at each layer
+
+---
+
+### How We Implemented the Layered System
+
+#### **Migration from Monolithic to Layered Architecture**
+
+Starting from a traditional WPF project structure, we systematically migrated to a layered architecture through three phases:
+
+1. **Phase 1**: Extracted domain models into `WileyWidget.Models`
+2. **Phase 2**: Moved data access logic into `WileyWidget.Data`
+3. **Phase 3**: Created business logic layer in `WileyWidget.Business`
+
+#### **Framework Strategy**
+- **Presentation**: .NET 9.0-windows (WPF) for modern Windows features
+- **Business/Data/Domain**: .NET 8.0 for stability and LTS support
+- **Testing**: .NET 8.0 for compatibility with data/business layers
+
+#### **Dependency Flow**
+```
+WileyWidget (UI) → WileyWidget.Business → WileyWidget.Data → WileyWidget.Models
+     ↓                                                            ↑
+WileyWidget.UiTests                                       WileyWidget.IntegrationTests
+     ↓                                                            ↑
+WileyWidget.Tests
+```
+
+---
+
+### Layered Workspace Structure
 
 ```
 WileyWidget/
-├── src/                          # Main application source
-│   ├── App.xaml                 # Application entry point
-│   ├── App.xaml.cs              # Application startup logic
-│   ├── Program.cs               # Main program entry point
-│   ├── Models/                  # Data models and entities
-│   │   ├── Budget/             # Budget-related models
-│   │   ├── Enterprise/         # Enterprise data models
-│   │   └── QuickBooks/         # QuickBooks integration models
-│   ├── ViewModels/              # MVVM view models
-│   │   ├── Base/               # Base view model classes
-│   │   ├── Dashboard/          # Dashboard view models
-│   │   └── Settings/           # Settings view models
-│   ├── Views/                   # XAML UI files
-│   │   ├── Dashboard/          # Dashboard views
-│   │   ├── Budget/             # Budget management views
-│   │   └── Settings/           # Settings views
-│   ├── Services/                # Business logic and integrations
-│   │   ├── Data/               # Data access services
-│   │   ├── QuickBooks/         # QuickBooks API services
-│   │   └── AI/                 # AI integration services
-│   ├── Data/                    # EF Core DbContext and repositories
-│   │   ├── Contexts/           # Database contexts
-│   │   ├── Repositories/       # Repository implementations
-│   │   └── Migrations/         # EF Core migrations
-│   ├── Configuration/           # App configuration management
-│   ├── Controls/                # Custom WPF controls
-│   ├── Converters/              # Value converters
-│   ├── Helpers/                 # Utility classes
-│   ├── Themes/                  # UI themes and styles
-│   ├── Resources/               # Application resources
-│   ├── Diagnostics/             # Diagnostic and monitoring tools
-│   ├── Reports/                 # Reporting components
-│   ├── Startup/                 # Application startup services
-│   └── NavigationRequestEventArgs.cs
-├── scripts/                     # Build and deployment scripts
-├── tests/                       # Unit and integration tests
-│   ├── Unit/                   # Unit test projects
-│   ├── Integration/            # Integration test projects
-│   └── UITests/                # UI automation tests
-├── docs/                        # Documentation
-├── tools/                       # Development tools
-├── DatabaseSetup/               # Database initialization project
-├── DatabaseTest/                # Database testing utilities
-└── WileyWidget.Tests/           # Main test project
-```
-├── tests/                 # Unit and integration tests
-└── docs/                  # Documentation
+├── WileyWidget/                          # 🖥️ PRESENTATION LAYER (.NET 9.0-windows)
+│   ├── Views/                           # XAML UI files
+│   ├── ViewModels/                      # MVVM view models
+│   ├── App.xaml                         # Application entry point
+│   ├── Program.cs                       # Startup logic
+│   └── WileyWidget.csproj               # WPF project file
+│
+├── WileyWidget.Business/                 # 💼 BUSINESS LOGIC LAYER (.NET 8.0)
+│   ├── Services/                        # Application services
+│   ├── Validators/                      # Business validation rules
+│   ├── Interfaces/                      # Service contracts
+│   └── WileyWidget.Business.csproj      # Class library project
+│
+├── WileyWidget.Data/                     # 🗄️ DATA ACCESS LAYER (.NET 8.0)
+│   ├── AppDbContext.cs                  # EF Core database context
+│   ├── Repositories/                    # Repository implementations
+│   ├── Migrations/                      # Database schema migrations
+│   └── WileyWidget.Data.csproj          # Class library project
+│
+├── WileyWidget.Models/                   # 📋 DOMAIN MODEL LAYER (.NET 8.0)
+│   ├── MunicipalAccount.cs              # Core business entities
+│   ├── Department.cs                    # Domain models
+│   ├── BudgetEntry.cs                   # Business objects
+│   ├── DTOs/                            # Data transfer objects
+│   └── WileyWidget.Models.csproj        # Class library project
+│
+├── WileyWidget.IntegrationTests/         # 🧪 INTEGRATION TESTS (.NET 8.0)
+│   ├── Infrastructure/                  # Test infrastructure
+│   ├── Relationships/                   # Relationship tests
+│   ├── Performance/                     # Performance benchmarks
+│   └── Concurrency/                     # Concurrency tests
+│
+├── WileyWidget.Tests/                    # ✅ UNIT TESTS (.NET 8.0)
+│   ├── Business/                        # Business logic unit tests
+│   ├── Data/                           # Data access unit tests
+│   └── Models/                          # Model validation tests
+│
+└── WileyWidget.UiTests/                  # 🎭 UI TESTS (.NET 9.0-windows)
+    ├── Automation/                      # UI automation scripts
+    ├── PageObjects/                     # UI test page objects
+    └── Scenarios/                       # End-to-end test scenarios
 ```
 
-### Database Support
+---
 
-- **SQL Server Express**: Local database for development and production
-- **Entity Framework Core**: ORM with migrations and code-first approach
+### Layer Responsibilities & Design Patterns
+
+#### **🏛️ Domain Layer (WileyWidget.Models)**
+**Purpose**: Core business entities and domain logic
+**Responsibilities**:
+- Entity Framework Core entities with data annotations
+- Domain validation rules and business constraints
+- Value objects (AccountNumber, owned entities)
+- Interfaces for cross-cutting concerns (IAuditable, ISoftDeletable)
+
+**Design Patterns**:
+- **Entity Framework Core Code-First**: Database schema from code
+- **Owned Entity Types**: Complex value objects within entities
+- **Table-per-Hierarchy**: Inheritance mapping for related entities
+
+#### **🗄️ Data Access Layer (WileyWidget.Data)**
+**Purpose**: Database operations and data persistence
+**Responsibilities**:
+- Entity Framework Core DbContext configuration
+- Repository pattern implementations
+- Database migrations and schema management
+- Connection management and transaction handling
+
+**Design Patterns**:
+- **Repository Pattern**: Abstract data access behind interfaces
+- **Unit of Work**: Transaction management across repositories
+- **Specification Pattern**: Query composition and filtering
+
+#### **💼 Business Logic Layer (WileyWidget.Business)**
+**Purpose**: Application business rules and workflows
+**Responsibilities**:
+- Business validation and rule enforcement
+- Application services coordinating multiple operations
+- Cross-cutting concerns (logging, caching, security)
+- Integration with external services (QuickBooks, Azure)
+
+**Design Patterns**:
+- **Service Layer Pattern**: Business operations as services
+- **Strategy Pattern**: Pluggable business rules
+- **Decorator Pattern**: Cross-cutting concerns
+
+#### **🖥️ Presentation Layer (WileyWidget)**
+**Purpose**: User interface and interaction logic
+**Responsibilities**:
+- WPF UI with Syncfusion controls
+- MVVM pattern implementation
+- User input validation and feedback
+- Navigation and state management
+
+**Design Patterns**:
+- **MVVM Pattern**: Separation of UI and logic
+- **Command Pattern**: UI actions and commands
+- **Observer Pattern**: Data binding and property change notifications
+
+---
+
+### Testing Strategy by Layer
+
+#### **🧪 Integration Testing (WileyWidget.IntegrationTests)**
+**Scope**: End-to-end data operations and relationships
+**Tools**: xUnit, TestContainers.MsSql, FluentAssertions, BenchmarkDotNet
+
+**Test Categories**:
+- **Relationship Tests**: Foreign key constraints, cascading deletes
+- **Performance Tests**: Query optimization, bulk operations
+- **Concurrency Tests**: Multi-user scenarios, deadlock prevention
+- **Data Integrity**: Transaction boundaries, rollback scenarios
+
+**Key Features**:
+- **TestContainers**: Isolated SQL Server instances per test
+- **Database Seeding**: Consistent test data across runs
+- **Performance Benchmarking**: Automated performance regression detection
+
+#### **✅ Unit Testing (WileyWidget.Tests)**
+**Scope**: Individual components and business logic
+**Tools**: xUnit, Moq, FluentAssertions, AutoFixture
+
+**Coverage by Layer**:
+- **Models**: Entity validation, property constraints
+- **Data**: Repository operations, query logic
+- **Business**: Service methods, validation rules
+- **ViewModels**: Command execution, property changes
+
+**Testing Patterns**:
+- **Arrange-Act-Assert**: Clear test structure
+- **Builder Pattern**: TestDataBuilder for complex objects
+- **Mocking**: External dependencies (database, APIs)
+- **Theory Tests**: Data-driven test scenarios
+
+#### **🎭 UI Testing (WileyWidget.UiTests)**
+**Scope**: User interface behavior and workflows
+**Tools**: FlaUI, Appium, or TestStack.White
+
+**Test Categories**:
+- **UI Automation**: Button clicks, form submissions
+- **Visual Verification**: Layout, styling, responsiveness
+- **Workflow Testing**: End-to-end user scenarios
+- **Accessibility**: Screen reader compatibility, keyboard navigation
+
+**Implementation Strategy**:
+- **Page Object Model**: Reusable UI component abstractions
+- **Test Data Management**: Realistic test data for UI scenarios
+- **Screenshot Comparison**: Visual regression detection
+
+---
+
+### Architecture Benefits Realized
+
+#### **🚀 Development Velocity**
+- **Parallel Development**: Teams can work on different layers simultaneously
+- **Independent Deployment**: Layers can be updated without affecting others
+- **Clear Contracts**: Well-defined interfaces prevent integration issues
+
+#### **🔧 Maintenance Efficiency**
+- **Isolated Changes**: Bug fixes in one layer don't cascade
+- **Comprehensive Testing**: Each layer has dedicated test coverage
+- **Code Reusability**: Business logic can be reused across applications
+
+#### **📊 Quality Assurance**
+- **Layer Isolation**: Issues are contained within their layer
+- **Comprehensive Coverage**: Unit + Integration + UI testing
+- **Performance Monitoring**: Automated benchmarks prevent regressions
+
+#### **🏢 Enterprise Readiness**
+- **Scalability**: Architecture supports multiple frontends (WPF, Web, Mobile)
+- **Security**: Multi-layer validation and authorization
+- **Monitoring**: Comprehensive logging and diagnostics at each layer
+
+---
+
+### Technology Stack by Layer
+
+| Layer | Framework | ORM | Testing | UI | External APIs |
+|-------|-----------|-----|---------|----|---------------|
+| **Presentation** | .NET 9.0 WPF | - | FlaUI | Syncfusion | - |
+| **Business** | .NET 8.0 | - | xUnit, Moq | - | QuickBooks API |
+| **Data** | .NET 8.0 | EF Core 9.0.8 | xUnit, TestContainers | - | Azure SQL |
+| **Domain** | .NET 8.0 | - | xUnit | - | - |
+
+This layered architecture ensures WileyWidget is maintainable, testable, and ready for enterprise-scale deployment while following Microsoft's recommended patterns for modern .NET applications.
 
 ---
 

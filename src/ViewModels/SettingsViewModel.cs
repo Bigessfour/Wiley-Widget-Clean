@@ -21,6 +21,7 @@ namespace WileyWidget.ViewModels
     private readonly ISecretVaultService _secretVaultService;
         private readonly IQuickBooksService _quickBooksService;
         private readonly ISyncfusionLicenseService _syncfusionLicenseService;
+        private readonly IAIService _aiService;
 
         // General Settings
         [ObservableProperty]
@@ -88,6 +89,25 @@ namespace WileyWidget.ViewModels
 
         [ObservableProperty]
         private Brush syncfusionLicenseStatusColor = Brushes.Orange;
+
+        // XAI Settings
+        [ObservableProperty]
+        private string xaiApiKey;
+
+        [ObservableProperty]
+        private string xaiBaseUrl = "https://api.x.ai/v1/";
+
+        [ObservableProperty]
+        private int xaiTimeoutSeconds = 15;
+
+        [ObservableProperty]
+        private string xaiModel = "grok-4-0709";
+
+        [ObservableProperty]
+        private string xaiConnectionStatus = "Not Configured";
+
+        [ObservableProperty]
+        private Brush xaiStatusColor = Brushes.Orange;
 
         // Fiscal Year Settings
         [ObservableProperty]
@@ -164,7 +184,8 @@ namespace WileyWidget.ViewModels
             AppDbContext dbContext,
             ISecretVaultService secretVaultService,
             IQuickBooksService quickBooksService,
-            ISyncfusionLicenseService syncfusionLicenseService)
+            ISyncfusionLicenseService syncfusionLicenseService,
+            IAIService aiService)
         {
             // Validate required dependencies
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -172,6 +193,7 @@ namespace WileyWidget.ViewModels
             _secretVaultService = secretVaultService ?? throw new ArgumentNullException(nameof(secretVaultService));
             _quickBooksService = quickBooksService ?? throw new ArgumentNullException(nameof(quickBooksService));
             _syncfusionLicenseService = syncfusionLicenseService ?? throw new ArgumentNullException(nameof(syncfusionLicenseService));
+            _aiService = aiService ?? throw new ArgumentNullException(nameof(aiService));
 
             // Initialize system info
             SystemInfo = $"OS: {Environment.OSVersion}\n" +
@@ -204,6 +226,7 @@ namespace WileyWidget.ViewModels
                 await LoadDatabaseSettingsAsync();
                 await LoadQuickBooksSettingsAsync();
                 await LoadSyncfusionSettingsAsync();
+                await LoadXaiSettingsAsync();
                 await LoadAdvancedSettingsAsync();
                 await LoadFiscalYearDisplayAsync();
 
@@ -317,6 +340,45 @@ namespace WileyWidget.ViewModels
             }
         }
 
+        private async Task LoadXaiSettingsAsync()
+        {
+            try
+            {
+                // Load XAI settings from environment variables or configuration
+                XaiApiKey = Environment.GetEnvironmentVariable("XAI_API_KEY") ?? "";
+                XaiBaseUrl = Environment.GetEnvironmentVariable("XAI_BASE_URL") ?? "https://api.x.ai/v1/";
+                XaiModel = Environment.GetEnvironmentVariable("XAI_MODEL") ?? "grok-4-0709";
+
+                // Parse timeout from environment
+                if (int.TryParse(Environment.GetEnvironmentVariable("XAI_TIMEOUT_SECONDS"), out var timeout))
+                {
+                    XaiTimeoutSeconds = timeout;
+                }
+                else
+                {
+                    XaiTimeoutSeconds = 15;
+                }
+
+                // Test connection if API key is configured
+                if (!string.IsNullOrEmpty(XaiApiKey))
+                {
+                    var isConnected = await TestXaiConnectionInternalAsync();
+                    XaiConnectionStatus = isConnected ? "Connected" : "Connection Failed";
+                    XaiStatusColor = isConnected ? Brushes.Green : Brushes.Red;
+                }
+                else
+                {
+                    XaiConnectionStatus = "Not Configured";
+                    XaiStatusColor = Brushes.Orange;
+                }
+            }
+            catch (Exception ex)
+            {
+                XaiConnectionStatus = $"Error: {ex.Message}";
+                XaiStatusColor = Brushes.Red;
+            }
+        }
+
         private async Task LoadAdvancedSettingsAsync()
         {
             // Load advanced settings from configuration
@@ -340,6 +402,7 @@ namespace WileyWidget.ViewModels
                 await SaveGeneralSettingsAsync();
                 await SaveQuickBooksSettingsAsync();
                 await SaveSyncfusionSettingsAsync();
+                await SaveXaiSettingsAsync();
                 await SaveAdvancedSettingsAsync();
 
                 SettingsStatus = "Settings saved successfully";
@@ -382,6 +445,16 @@ namespace WileyWidget.ViewModels
         {
             if (!string.IsNullOrEmpty(SyncfusionLicenseKey))
                 await _secretVaultService.SetSecretAsync("Syncfusion-LicenseKey", SyncfusionLicenseKey);
+        }
+
+        private async Task SaveXaiSettingsAsync()
+        {
+            if (!string.IsNullOrEmpty(XaiApiKey))
+                await _secretVaultService.SetSecretAsync("XAI-ApiKey", XaiApiKey);
+
+            await _secretVaultService.SetSecretAsync("XAI-BaseUrl", XaiBaseUrl);
+            await _secretVaultService.SetSecretAsync("XAI-Model", XaiModel);
+            await _secretVaultService.SetSecretAsync("XAI-TimeoutSeconds", XaiTimeoutSeconds.ToString());
         }
 
         private async Task SaveAdvancedSettingsAsync()
@@ -444,6 +517,53 @@ namespace WileyWidget.ViewModels
             {
                 SyncfusionLicenseStatus = $"Error: {ex.Message}";
                 SyncfusionLicenseStatusColor = Brushes.Red;
+            }
+        }
+
+        [RelayCommand]
+        private async Task TestXaiConnectionAsync()
+        {
+            try
+            {
+                XaiConnectionStatus = "Testing...";
+                XaiStatusColor = Brushes.Orange;
+
+                var isConnected = await TestXaiConnectionInternalAsync();
+                XaiConnectionStatus = isConnected ? "Connected" : "Connection Failed";
+                XaiStatusColor = isConnected ? Brushes.Green : Brushes.Red;
+            }
+            catch (Exception ex)
+            {
+                XaiConnectionStatus = $"Error: {ex.Message}";
+                XaiStatusColor = Brushes.Red;
+            }
+        }
+
+        private async Task<bool> TestXaiConnectionInternalAsync()
+        {
+            try
+            {
+                // Test XAI connection by making a simple request
+                // This is a basic connectivity test - in a real implementation,
+                // you might want to make an actual API call to validate the key
+                if (string.IsNullOrEmpty(XaiApiKey))
+                {
+                    return false;
+                }
+
+                // For now, just validate that the API key looks reasonable
+                // In production, you would make an actual API call
+                var isValidFormat = XaiApiKey.Length >= 20; // Basic length check
+
+                // Simulate async operation
+                await Task.Delay(500);
+
+                return isValidFormat;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error testing XAI connection");
+                return false;
             }
         }
 

@@ -23,10 +23,10 @@ public class MessageConvertersTests
         // Arrange
         var converter = new UserMessageBackgroundConverter();
         bool isUser = true;
-        var expectedColor = Color.FromRgb(25, 118, 210); // Blue
+        var expectedColor = Color.FromRgb(0, 123, 255); // Blue
 
         // Act
-        var result = converter.Convert(isUser, typeof(SolidColorBrush), null, CultureInfo.InvariantCulture);
+        var result = converter.Convert(isUser, typeof(SolidColorBrush), null!, CultureInfo.InvariantCulture);
 
         // Assert
         Assert.IsType<SolidColorBrush>(result);
@@ -43,7 +43,7 @@ public class MessageConvertersTests
         var expectedColor = Color.FromRgb(224, 224, 224); // Gray
 
         // Act
-        var result = converter.Convert(isUser, typeof(SolidColorBrush), null, CultureInfo.InvariantCulture);
+        var result = converter.Convert(isUser, typeof(SolidColorBrush), null!, CultureInfo.InvariantCulture);
 
         // Assert
         Assert.IsType<SolidColorBrush>(result);
@@ -61,7 +61,7 @@ public class MessageConvertersTests
         var expectedColor = Color.FromRgb(224, 224, 224); // Gray (default for non-user)
 
         // Act
-        var result = converter.Convert(nullValue, typeof(SolidColorBrush), null, CultureInfo.InvariantCulture);
+        var result = converter.Convert(nullValue, typeof(SolidColorBrush), null!, CultureInfo.InvariantCulture);
 
         // Assert
         Assert.IsType<SolidColorBrush>(result);
@@ -79,7 +79,7 @@ public class MessageConvertersTests
         var expectedColor = Color.FromRgb(224, 224, 224); // Gray (default for non-user)
 
         // Act
-        var result = converter.Convert(nonBoolValue, typeof(SolidColorBrush), null, CultureInfo.InvariantCulture);
+        var result = converter.Convert(nonBoolValue, typeof(SolidColorBrush), null!, CultureInfo.InvariantCulture);
 
         // Assert
         Assert.IsType<SolidColorBrush>(result);
@@ -96,7 +96,7 @@ public class MessageConvertersTests
 
         // Act & Assert
         Assert.Throws<NotImplementedException>(() =>
-            converter.ConvertBack(brush, typeof(bool), null, CultureInfo.InvariantCulture));
+            converter.ConvertBack(brush, typeof(bool), null!, CultureInfo.InvariantCulture));
     }
 
     #endregion
@@ -111,7 +111,7 @@ public class MessageConvertersTests
         bool isUser = true;
 
         // Act
-        var result = converter.Convert(isUser, typeof(HorizontalAlignment), null, CultureInfo.InvariantCulture);
+        var result = converter.Convert(isUser, typeof(HorizontalAlignment), null!, CultureInfo.InvariantCulture);
 
         // Assert
         Assert.IsType<HorizontalAlignment>(result);
@@ -126,7 +126,7 @@ public class MessageConvertersTests
         bool isUser = false;
 
         // Act
-        var result = converter.Convert(isUser, typeof(HorizontalAlignment), null, CultureInfo.InvariantCulture);
+        var result = converter.Convert(isUser, typeof(HorizontalAlignment), null!, CultureInfo.InvariantCulture);
 
         // Assert
         Assert.IsType<HorizontalAlignment>(result);
@@ -142,7 +142,7 @@ public class MessageConvertersTests
         object nullValue = null;
 
         // Act
-        var result = converter.Convert(nullValue, typeof(HorizontalAlignment), null, CultureInfo.InvariantCulture);
+        var result = converter.Convert(nullValue, typeof(HorizontalAlignment), null!, CultureInfo.InvariantCulture);
 
         // Assert
         Assert.IsType<HorizontalAlignment>(result);
@@ -158,7 +158,7 @@ public class MessageConvertersTests
         string nonBoolValue = "invalid";
 
         // Act
-        var result = converter.Convert(nonBoolValue, typeof(HorizontalAlignment), null, CultureInfo.InvariantCulture);
+        var result = converter.Convert(nonBoolValue, typeof(HorizontalAlignment), null!, CultureInfo.InvariantCulture);
 
         // Assert
         Assert.IsType<HorizontalAlignment>(result);
@@ -174,7 +174,7 @@ public class MessageConvertersTests
 
         // Act & Assert
         Assert.Throws<NotImplementedException>(() =>
-            converter.ConvertBack(alignment, typeof(bool), null, CultureInfo.InvariantCulture));
+            converter.ConvertBack(alignment, typeof(bool), null!, CultureInfo.InvariantCulture));
     }
 
     #endregion
@@ -189,7 +189,7 @@ public class MessageConvertersTests
         bool isUser = true;
 
         // Act
-        var result = converter.Convert(isUser, typeof(SolidColorBrush), null, CultureInfo.InvariantCulture);
+        var result = converter.Convert(isUser, typeof(SolidColorBrush), null!, CultureInfo.InvariantCulture);
 
         // Assert
         Assert.IsType<SolidColorBrush>(result);
@@ -205,7 +205,7 @@ public class MessageConvertersTests
         bool isUser = false;
 
         // Act
-        var result = converter.Convert(isUser, typeof(SolidColorBrush), null, CultureInfo.InvariantCulture);
+        var result = converter.Convert(isUser, typeof(SolidColorBrush), null!, CultureInfo.InvariantCulture);
 
         // Assert
         Assert.IsType<SolidColorBrush>(result);
@@ -222,7 +222,7 @@ public class MessageConvertersTests
         object nullValue = null;
 
         // Act
-        var result = converter.Convert(nullValue, typeof(SolidColorBrush), null, CultureInfo.InvariantCulture);
+        var result = converter.Convert(nullValue, typeof(SolidColorBrush), null!, CultureInfo.InvariantCulture);
 
         // Assert
         Assert.IsType<SolidColorBrush>(result);
@@ -239,7 +239,7 @@ public class MessageConvertersTests
         string nonBoolValue = "invalid";
 
         // Act
-        var result = converter.Convert(nonBoolValue, typeof(SolidColorBrush), null, CultureInfo.InvariantCulture);
+        var result = converter.Convert(nonBoolValue, typeof(SolidColorBrush), null!, CultureInfo.InvariantCulture);
 
         // Assert
         Assert.IsType<SolidColorBrush>(result);
@@ -256,7 +256,7 @@ public class MessageConvertersTests
 
         // Act & Assert
         Assert.Throws<NotImplementedException>(() =>
-            converter.ConvertBack(brush, typeof(bool), null, CultureInfo.InvariantCulture));
+            converter.ConvertBack(brush, typeof(bool), null!, CultureInfo.InvariantCulture));
     }
 
     #endregion
@@ -277,9 +277,9 @@ public class MessageConvertersTests
         var alignmentConverter = new MessageAlignmentConverter();
 
         // Act
-        var background = backgroundConverter.Convert(isUser, typeof(SolidColorBrush), null, CultureInfo.InvariantCulture);
-        var foreground = foregroundConverter.Convert(isUser, typeof(SolidColorBrush), null, CultureInfo.InvariantCulture);
-        var alignment = alignmentConverter.Convert(isUser, typeof(HorizontalAlignment), null, CultureInfo.InvariantCulture);
+        var background = backgroundConverter.Convert(isUser, typeof(SolidColorBrush), null!, CultureInfo.InvariantCulture);
+        var foreground = foregroundConverter.Convert(isUser, typeof(SolidColorBrush), null!, CultureInfo.InvariantCulture);
+        var alignment = alignmentConverter.Convert(isUser, typeof(HorizontalAlignment), null!, CultureInfo.InvariantCulture);
 
         // Assert
         Assert.IsType<SolidColorBrush>(background);

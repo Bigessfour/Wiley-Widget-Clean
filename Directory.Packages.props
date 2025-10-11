@@ -9,6 +9,10 @@
     <PackageVersion Include="Microsoft.CodeAnalysis.VisualBasic" Version="4.8.0" />
     <PackageVersion Include="Microsoft.Data.SqlClient" Version="6.1.1" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="9.0.8" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.8">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageVersion>
     <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.8" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.8" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.8" />
@@ -22,7 +26,7 @@
     <PackageVersion Include="Microsoft.Identity.Client" Version="4.77.0" />
     <PackageVersion Include="Microsoft.Graph" Version="5.67.0" />
     <!-- Serilog -->
-    <PackageVersion Include="Serilog" Version="4.3.0" />
+    <PackageVersion Include="Serilog" Version="4.2.0" />
     <PackageVersion Include="Serilog.Enrichers.Environment" Version="3.0.1" />
     <PackageVersion Include="Serilog.Enrichers.Process" Version="3.0.0" />
     <PackageVersion Include="Serilog.Enrichers.Thread" Version="4.0.0" />
@@ -47,10 +51,10 @@
     <!-- QuickBooks -->
     <PackageVersion Include="IppOAuth2PlatformSdk" Version="14.0.0" />
     <PackageVersion Include="IppDotNetSdkForQuickBooksApiV3" Version="14.7.0" />
-  <!-- AI Integration Packages -->
-  <PackageVersion Include="Microsoft.Extensions.AI" Version="9.0.0-preview.9.24556.5" />
-  <PackageVersion Include="OpenAI" Version="2.1.0" />
-  <PackageVersion Include="Microsoft.SemanticKernel" Version="1.65.0" />
+    <!-- AI Integration Packages -->
+    <PackageVersion Include="Microsoft.Extensions.AI" Version="9.0.0-preview.9.24556.5" />
+    <PackageVersion Include="OpenAI" Version="2.1.0" />
+    <PackageVersion Include="Microsoft.SemanticKernel" Version="1.65.0" />
     <!-- Health Check Packages -->
     <PackageVersion Include="Microsoft.Extensions.Diagnostics.HealthChecks.ResourceUtilization" Version="9.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Diagnostics.HealthChecks.Common" Version="9.0.0" />
@@ -66,7 +70,7 @@
     <PackageVersion Include="Microsoft.Extensions.Http" Version="9.0.8" />
     <PackageVersion Include="DotNetEnv" Version="3.1.1" />
     <!-- Resilience Packages -->
-    <PackageVersion Include="Polly" Version="8.4.2" />
+    <PackageVersion Include="Polly" Version="8.5.0" />
     <!-- Test Packages -->
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageVersion Include="xunit" Version="2.9.2" />
@@ -79,6 +83,10 @@
     <!-- UI Test Packages -->
     <PackageVersion Include="FlaUI.Core" Version="5.0.0" />
     <PackageVersion Include="FlaUI.UIA3" Version="5.0.0" />
+    <!-- Integration Test Packages -->
+    <PackageVersion Include="Testcontainers.MsSql" Version="4.2.0" />
+    <PackageVersion Include="BenchmarkDotNet" Version="0.14.0" />
+    <PackageVersion Include="Respawn" Version="6.2.1" />
     <!-- Prism MVVM Framework -->
     <PackageVersion Include="Prism.Core" Version="9.0.537" />
     <PackageVersion Include="Prism.Wpf" Version="9.0.537" />

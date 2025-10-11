@@ -64,31 +64,8 @@ public class ComprehensiveDatabaseIntegrationTests : IDisposable
         _context.Enterprises.AddRange(enterprise1, enterprise2);
         _context.SaveChanges();
 
-        // Create test municipal accounts
-        var account1 = new MunicipalAccount
-        {
-            AccountNumber = new AccountNumber("101-1000"),
-            Name = "General Fund - Utilities",
-            Type = AccountType.Asset,
-            Fund = FundType.General,
-            Balance = 500000.00m,
-            BudgetAmount = 550000.00m,
-            IsActive = true
-        };
-
-        var account2 = new MunicipalAccount
-        {
-            AccountNumber = new AccountNumber("201-2000"),
-            Name = "Utility Expenses",
-            Type = AccountType.Expense,
-            Fund = FundType.Enterprise,
-            Balance = 0.00m,
-            BudgetAmount = 150000.00m,
-            IsActive = true
-        };
-
-        _context.MunicipalAccounts.AddRange(account1, account2);
-        _context.SaveChanges();
+        // Note: MunicipalAccounts are not seeded for this test as they are not required
+        // for testing Enterprise error handling validation
 
         // Create test utility customers
         var customer1 = new UtilityCustomer

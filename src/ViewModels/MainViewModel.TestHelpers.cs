@@ -1,9 +1,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Threading;
 using WileyWidget.Data;
 using WileyWidget.Services;
 using WileyWidget.Models;
+using WileyWidget.Business.Interfaces;
+using Microsoft.EntityFrameworkCore.Storage;
 
 #nullable enable
 
@@ -17,12 +20,30 @@ namespace WileyWidget.ViewModels
         /// without full DI wiring or external services.
         /// </summary>
         public MainViewModel()
-            : this(new TestEnterpriseRepository(), new TestMunicipalAccountRepository(), null, new TestAIService(), autoInitialize: false)
+            : this(new TestUnitOfWork(), null, new TestAIService(), autoInitialize: false)
         {
         }
 
         // Minimal test/dummy implementations used only for test-time construction.
-        private class TestEnterpriseRepository : IEnterpriseRepository
+        private class TestUnitOfWork : IUnitOfWork
+        {
+            public Business.Interfaces.IEnterpriseRepository Enterprises => new TestEnterpriseRepository();
+            public Business.Interfaces.IMunicipalAccountRepository MunicipalAccounts => new TestMunicipalAccountRepository();
+            public Business.Interfaces.IUtilityCustomerRepository UtilityCustomers => new TestUtilityCustomerRepository();
+            public Task<FiscalYearSettings?> GetFiscalYearSettingsAsync() => Task.FromResult<FiscalYearSettings?>(null);
+            public Task SaveFiscalYearSettingsAsync(FiscalYearSettings settings) => Task.CompletedTask;
+            public Task<int> SaveChangesAsync() => Task.FromResult(0);
+            public Task<int> SaveChangesAsync(CancellationToken cancellationToken) => Task.FromResult(0);
+            public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default) => throw new NotImplementedException();
+            public Task CommitTransactionAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+            public Task RollbackTransactionAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+            public Task<TResult> ExecuteInTransactionAsync<TResult>(Func<Task<TResult>> operation, CancellationToken cancellationToken = default) => operation();
+            public Task ExecuteInTransactionAsync(Func<Task> operation, CancellationToken cancellationToken = default) => operation();
+            public void Dispose() { }
+            public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+        }
+
+        private class TestEnterpriseRepository : Business.Interfaces.IEnterpriseRepository
         {
             public Task<Enterprise> AddAsync(Enterprise enterprise) => Task.FromResult(enterprise);
             public Task<bool> DeleteAsync(int id) => Task.FromResult(true);
@@ -38,10 +59,10 @@ namespace WileyWidget.ViewModels
             public Task<Enterprise> UpdateAsync(Enterprise enterprise) => Task.FromResult(enterprise);
             public Task<bool> ExistsByNameAsync(string name, int? excludeId = null) => Task.FromResult(false);
             public Task<IEnumerable<Models.DTOs.EnterpriseSummary>> GetSummariesAsync() => Task.FromResult(Enumerable.Empty<Models.DTOs.EnterpriseSummary>());
-            public Task<IEnumerable<Models.DTOs.EnterpriseSummary>> GetActiveSummariesAsync() => Task.FromResult(Enumerable.Empty<Models.DTOs.EnterpriseSummary>());
+            public Task<IEnumerable<Enterprise>> GetByTypeAsync(string type) => Task.FromResult(Enumerable.Empty<Enterprise>());
         }
 
-        private class TestMunicipalAccountRepository : IMunicipalAccountRepository
+        private class TestMunicipalAccountRepository : Business.Interfaces.IMunicipalAccountRepository
         {
             public Task<MunicipalAccount> AddAsync(MunicipalAccount account) => Task.FromResult(account);
             public Task<bool> DeleteAsync(int id) => Task.FromResult(true);
@@ -64,6 +85,24 @@ namespace WileyWidget.ViewModels
             public Task<bool> AccountNumberExistsAsync(string accountNumber, int? excludeId = null) => Task.FromResult(false);
             public Task<int> GetCountAsync() => Task.FromResult(0);
             public Task<IEnumerable<MunicipalAccount>> GetAccountsWithBudgetEntriesAsync(int budgetPeriodId) => Task.FromResult<IEnumerable<MunicipalAccount>>(new List<MunicipalAccount>());
+        }
+
+        private class TestUtilityCustomerRepository : Business.Interfaces.IUtilityCustomerRepository
+        {
+            public Task<IEnumerable<UtilityCustomer>> GetAllAsync() => Task.FromResult(Enumerable.Empty<UtilityCustomer>());
+            public Task<UtilityCustomer?> GetByIdAsync(int id) => Task.FromResult<UtilityCustomer?>(null);
+            public Task<UtilityCustomer?> GetByAccountNumberAsync(string accountNumber) => Task.FromResult<UtilityCustomer?>(null);
+            public Task<IEnumerable<UtilityCustomer>> GetByCustomerTypeAsync(CustomerType customerType) => Task.FromResult(Enumerable.Empty<UtilityCustomer>());
+            public Task<IEnumerable<UtilityCustomer>> GetByServiceLocationAsync(ServiceLocation serviceLocation) => Task.FromResult(Enumerable.Empty<UtilityCustomer>());
+            public Task<IEnumerable<UtilityCustomer>> GetActiveCustomersAsync() => Task.FromResult(Enumerable.Empty<UtilityCustomer>());
+            public Task<IEnumerable<UtilityCustomer>> GetCustomersWithBalanceAsync() => Task.FromResult(Enumerable.Empty<UtilityCustomer>());
+            public Task<IEnumerable<UtilityCustomer>> SearchAsync(string searchTerm) => Task.FromResult(Enumerable.Empty<UtilityCustomer>());
+            public Task<UtilityCustomer> AddAsync(UtilityCustomer customer) => Task.FromResult(customer);
+            public Task<UtilityCustomer> UpdateAsync(UtilityCustomer customer) => Task.FromResult(customer);
+            public Task<bool> DeleteAsync(int id) => Task.FromResult(true);
+            public Task<bool> ExistsByAccountNumberAsync(string accountNumber, int? excludeId = null) => Task.FromResult(false);
+            public Task<int> GetCountAsync() => Task.FromResult(0);
+            public Task<IEnumerable<UtilityCustomer>> GetCustomersOutsideCityLimitsAsync() => Task.FromResult(Enumerable.Empty<UtilityCustomer>());
         }
 
         private class TestAIService : IAIService

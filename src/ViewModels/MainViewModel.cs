@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using Serilog;
 using System;
 using System.Threading;
+using WileyWidget.Business.Interfaces;
 using System.Diagnostics;
 using System.Windows;
 using System.Linq;
@@ -292,8 +293,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     }
 
     public MainViewModel(
-    IEnterpriseRepository enterpriseRepository,
-    IMunicipalAccountRepository municipalAccountRepository,
+    IUnitOfWork unitOfWork,
 #pragma warning disable CS8632 // Nullable annotation is legitimate for optional QuickBooks service
     IQuickBooksService? quickBooksService,
 #pragma warning restore CS8632
@@ -303,14 +303,14 @@ public partial class MainViewModel : ObservableObject, IDisposable
         var constructorTimer = Stopwatch.StartNew();
         App.LogDebugEvent("VIEWMODEL_INIT", "MainViewModel constructor started");
 
-        _enterpriseRepository = enterpriseRepository ?? throw new ArgumentNullException(nameof(enterpriseRepository));
+        _enterpriseRepository = unitOfWork.Enterprises ?? throw new ArgumentNullException(nameof(unitOfWork));
         _quickBooksService = quickBooksService;
         _aiService = aiService ?? throw new ArgumentNullException(nameof(aiService));
 
         App.LogDebugEvent("VIEWMODEL_INIT", "Dependencies injected, initializing MunicipalAccountViewModel");
 
         // Initialize Municipal Account View Model
-        _municipalAccountViewModel = new MunicipalAccountViewModel(municipalAccountRepository, quickBooksService);
+        _municipalAccountViewModel = new MunicipalAccountViewModel(unitOfWork.MunicipalAccounts, quickBooksService);
 
         App.LogDebugEvent("VIEWMODEL_INIT", "Starting background data loading tasks");
 
