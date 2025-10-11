@@ -51,10 +51,7 @@ public class Phase1HostInfrastructureTests : TestApplication
     [StaFact]
     public void WpfHostingExtensions_ShouldRegisterRequiredServices()
     {
-        // Arrange - Set dummy Azure AD environment variables for testing
-        Environment.SetEnvironmentVariable("AZURE_AD_CLIENT_ID", "00000000-0000-0000-0000-000000000000");
-        Environment.SetEnvironmentVariable("AZURE_AD_TENANT_ID", "00000000-0000-0000-0000-000000000000");
-
+        // Arrange
         var builder = Host.CreateApplicationBuilder();
 
         // Act
@@ -73,9 +70,6 @@ public class Phase1HostInfrastructureTests : TestApplication
         finally
         {
             host.Dispose();
-            // Clean up environment variables
-            Environment.SetEnvironmentVariable("AZURE_AD_CLIENT_ID", null);
-            Environment.SetEnvironmentVariable("AZURE_AD_TENANT_ID", null);
         }
     }
 
