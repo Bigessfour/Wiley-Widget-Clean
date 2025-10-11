@@ -1,7 +1,5 @@
 using System;
 using System.IO;
-using Microsoft.ApplicationInsights;
-using Microsoft.ApplicationInsights.Extensibility;
 using System.Net.Http;
 using System.Windows;
 using Microsoft.Extensions.Configuration;
@@ -16,7 +14,6 @@ using WileyWidget.Models;
 using WileyWidget.Services;
 using WileyWidget.Services.Excel;
 using WileyWidget.Services.Hosting;
-using WileyWidget.Services.Telemetry;
 using WileyWidget.Services.Threading;
 using WileyWidget.Startup;
 using WileyWidget.ViewModels;
@@ -134,7 +131,7 @@ public static class WpfHostingExtensions
             var tempLogsDirectory = Path.Combine(Path.GetTempPath(), "WileyWidget", "logs");
             Directory.CreateDirectory(tempLogsDirectory);
             logsDirectory = tempLogsDirectory;
-            Console.WriteLine($"[Bootstrap] Failed to create logs directory at '{contentRoot}'; using fallback '{logsDirectory}'. Exception: {directoryEx.Message}");
+            Log.Warning(directoryEx, "[Bootstrap] Failed to create logs directory at '{ContentRoot}'; using fallback '{FallbackDirectory}'", contentRoot, logsDirectory);
         }
 
         var selfLogPath = Path.Combine(logsDirectory, "serilog-selflog.txt");
@@ -152,32 +149,30 @@ public static class WpfHostingExtensions
 
         var serilogSection = builder.Configuration.GetSection("Serilog");
         var firstSinkName = builder.Configuration["Serilog:WriteTo:0:Name"];
-        Console.WriteLine($"[Bootstrap] Serilog configuration section found: {serilogSection.Exists()}");
-        Console.WriteLine($"[Bootstrap] Serilog WriteTo[0] Name from configuration: {firstSinkName}");
+        Log.Debug("[Bootstrap] Serilog configuration section found: {Exists}", serilogSection.Exists());
+        Log.Debug("[Bootstrap] Serilog WriteTo[0] Name from configuration: {FirstSinkName}", firstSinkName);
 
         if (!serilogSection.Exists() || string.IsNullOrWhiteSpace(firstSinkName))
         {
-            Console.WriteLine("[Bootstrap] Serilog configuration appears missing or invalid. Current configuration view:");
+            Log.Warning("[Bootstrap] Serilog configuration appears missing or invalid. Current configuration view will be logged at Debug level.");
 
             if (builder.Configuration is IConfigurationRoot configurationRoot)
             {
-                Console.WriteLine(configurationRoot.GetDebugView());
+                Log.Debug("Serilog configuration debug view: {DebugView}", configurationRoot.GetDebugView());
             }
             else
             {
-                Console.WriteLine(builder.Configuration.Build().GetDebugView());
+                Log.Debug("Serilog configuration debug view: {DebugView}", builder.Configuration.Build().GetDebugView());
             }
         }
 
         // Microsoft documented pattern: Create configured logger and set as global
         var configuredLogger = new LoggerConfiguration()
             .ReadFrom.Configuration(builder.Configuration)
-            .Enrich.FromLogContext()
             .Enrich.WithMachineName()
             .Enrich.WithProcessId()
             .Enrich.WithThreadId()
             .Enrich.WithEnvironmentName()
-            .WriteTo.Console()
             .CreateLogger();
 
         // Replace the bootstrap logger with the configured logger
@@ -189,48 +184,12 @@ public static class WpfHostingExtensions
 
         Log.Information("Serilog logging configured from configuration sources for {Environment} environment", 
             builder.Environment.EnvironmentName);
-
-        // Application Insights (optional) - support ConnectionString or InstrumentationKey
-        var aiConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"];
-        var aiInstrumentationKey = builder.Configuration["ApplicationInsights:InstrumentationKey"]; // legacy
-        if (!string.IsNullOrWhiteSpace(aiConnectionString) || !string.IsNullOrWhiteSpace(aiInstrumentationKey))
-        {
-            var isDevelopment = builder.Environment.IsDevelopment();
-
-            // Create + register TelemetryConfiguration manually for non-ASP.NET WPF host
-            builder.Services.AddSingleton(sp =>
-            {
-                var cfg = Microsoft.ApplicationInsights.Extensibility.TelemetryConfiguration.CreateDefault();
-                if (!string.IsNullOrWhiteSpace(aiConnectionString))
-                    cfg.ConnectionString = aiConnectionString;
-                else if (!string.IsNullOrWhiteSpace(aiInstrumentationKey))
-                    cfg.ConnectionString = $"InstrumentationKey={aiInstrumentationKey}"; // legacy support
-
-                if (cfg.TelemetryChannel != null && isDevelopment)
-                {
-                    // Fast flush & no sampling in dev
-                    cfg.TelemetryChannel.DeveloperMode = true;
-                }
-                return cfg;
-            });
-
-            // TelemetryClient
-            builder.Services.AddSingleton(sp => new TelemetryClient(sp.GetRequiredService<TelemetryConfiguration>()));
-
-            // Initializer + startup hosted service
-            builder.Services.AddSingleton<ITelemetryInitializer, WileyWidget.Services.Telemetry.EnvironmentTelemetryInitializer>();
-            builder.Services.AddHostedService<WileyWidget.Services.Telemetry.TelemetryStartupService>();
-
-            Log.Information("Application Insights telemetry configured (Environment: {Environment}, DeveloperMode: {DeveloperMode})", 
-                builder.Environment.EnvironmentName, isDevelopment);
-        }
     }
 
     private static void ConfigureOptions(IServiceCollection services, IConfiguration configuration)
     {
         services.AddSingleton(configuration);
         services.Configure<DatabaseOptions>(configuration.GetSection("Database"));
-        services.Configure<AzureOptions>(configuration.GetSection("Azure"));
         services.Configure<SyncfusionOptions>(configuration.GetSection("Syncfusion"));
         services.Configure<HealthCheckConfiguration>(configuration.GetSection("HealthChecks"));
         services.AddSingleton(sp => sp.GetRequiredService<IOptions<HealthCheckConfiguration>>().Value);
@@ -238,67 +197,30 @@ public static class WpfHostingExtensions
 
     private static void ConfigureCoreServices(IServiceCollection services, IConfiguration configuration)
     {
+        // Critical services - load immediately
         services.AddSingleton<AuthenticationService>();
-        services.AddSingleton<IAzureKeyVaultService, AzureKeyVaultService>();
         services.AddSingleton<ISyncfusionLicenseService, SyncfusionLicenseService>();
         services.AddSingleton<ApplicationMetricsService>();
         services.AddSingleton(SettingsService.Instance);
         services.AddSingleton(ErrorReportingService.Instance);
         services.AddSingleton<LocalizationService>();
-    services.AddSingleton<SyncfusionLicenseState>();
+        services.AddSingleton<SyncfusionLicenseState>();
         services.AddSingleton<IStartupProgressReporter>(_ => App.StartupProgress);
         services.AddSingleton<IViewManager, ViewManager>();
         services.AddSingleton<IThemeManager>(_ => ThemeManager.Instance);
         services.AddMemoryCache();
         services.AddSingleton<IDispatcherHelper, DispatcherHelper>();
         services.AddTransient<IProgressReporter, ProgressReporter>();
+
+        // Lazy-loaded services - defer heavy initialization
         services.AddTransient<IExcelReaderService, ExcelReaderService>();
         services.AddScoped<IGrokSupercomputer, GrokSupercomputer>();
 
+        // AI Service with lazy initialization
         services.AddSingleton<IAIService>(sp =>
         {
-            var logger = sp.GetService<ILogger<XAIService>>() ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<XAIService>.Instance;
-            var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
-            var configuration = sp.GetRequiredService<IConfiguration>();
-            var keyVaultService = sp.GetService<IAzureKeyVaultService>();
-
-            var apiKey = Environment.GetEnvironmentVariable("XAI_API_KEY") ??
-                         TryGetFromKeyVault(keyVaultService, "XAI-API-KEY", logger) ??
-                         configuration["XAI:ApiKey"];
-
-            var requireAi = string.Equals(Environment.GetEnvironmentVariable("REQUIRE_AI_SERVICE"), "true", StringComparison.OrdinalIgnoreCase) ||
-                            string.Equals(configuration["XAI:RequireService"], "true", StringComparison.OrdinalIgnoreCase);
-
-            logger.LogInformation("🤖 XAI CONFIGURATION: API_KEY_SET={ApiKeySet}, REQUIRE_AI={RequireAi}, API_KEY_LENGTH={Length}, SOURCE={Source}",
-                !string.IsNullOrEmpty(apiKey) && apiKey != "${XAI_API_KEY}",
-                requireAi,
-                string.IsNullOrEmpty(apiKey) ? 0 : apiKey.Length,
-                GetApiKeySource(apiKey));
-
-            if (string.IsNullOrEmpty(apiKey) || apiKey == "${XAI_API_KEY}")
-            {
-                if (requireAi)
-                {
-                    logger.LogError("AI service required but XAI_API_KEY not set. Falling back to stub; functionality limited.");
-                }
-                else
-                {
-                    logger.LogWarning("XAI_API_KEY not set. Using NullAIService stub. Configure XAI:ApiKey in appsettings.json or set XAI_API_KEY environment variable.");
-                }
-
-                return new NullAIService();
-            }
-
-            try
-            {
-                logger.LogInformation("Initializing XAIService with provided API key (length {Len}).", apiKey.Length);
-                return new XAIService(httpClientFactory, configuration, logger, apiKey);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Failed to initialize XAIService. Falling back to NullAIService");
-                return new NullAIService();
-            }
+            // Return a lazy wrapper that defers actual initialization
+            return new LazyAIService(sp);
         });
 
         services.AddSingleton<WileyWidget.Services.HealthCheckService>();
@@ -345,15 +267,19 @@ public static class WpfHostingExtensions
         services.AddTransient<ToolsViewModel>();
         services.AddTransient<ProgressViewModel>();
         services.AddTransient<MunicipalAccountViewModel>();
+        services.AddTransient<ChartOfAccountsViewModel>();
     }
 
     private static void ConfigureHostedServices(IServiceCollection services)
     {
+        // Defer heavy background services to reduce startup time
         services.AddSingleton<BackgroundInitializationService>();
-        services.AddHostedService(sp => sp.GetRequiredService<BackgroundInitializationService>());
-        services.AddHostedService<HealthCheckHostedService>();
+        // Only start critical hosted services immediately
         services.AddHostedService<HostedWpfApplication>();
         services.AddHostedService<StartupTaskRunner>();
+
+        // Defer non-critical services to background initialization
+        services.AddSingleton<HealthCheckHostedService>();
     }
 
     private static void RegisterStartupPipeline(IServiceCollection services)
@@ -362,32 +288,6 @@ public static class WpfHostingExtensions
         services.AddSingleton<IStartupTask, SettingsStartupTask>();
         services.AddSingleton<IStartupTask, DiagnosticsStartupTask>();
         services.AddSingleton<IStartupTask, QuickBooksStartupTask>();
-    }
-
-    private static string? TryGetFromKeyVault(IAzureKeyVaultService? keyVaultService, string secretName, Microsoft.Extensions.Logging.ILogger logger)
-    {
-        if (keyVaultService == null)
-        {
-            return null;
-        }
-
-        try
-        {
-            var task = keyVaultService.GetSecretAsync(secretName);
-            task.Wait();
-            var secret = task.Result;
-            if (!string.IsNullOrEmpty(secret))
-            {
-                logger.LogInformation("Retrieved XAI API key from Azure Key Vault");
-                return secret;
-            }
-        }
-        catch (Exception ex)
-        {
-            logger.LogWarning(ex, "Failed to retrieve XAI API key from Azure Key Vault, trying next source");
-        }
-
-        return null;
     }
 
     private static string GetApiKeySource(string? apiKey)
@@ -403,6 +303,89 @@ public static class WpfHostingExtensions
         }
 
         return "AzureKeyVault";
+    }
+
+    /// <summary>
+    /// Lazy wrapper for AI service to defer expensive initialization until first use
+    /// </summary>
+    private class LazyAIService : IAIService
+    {
+        private readonly IServiceProvider _serviceProvider;
+        private IAIService? _instance;
+        private readonly object _lock = new();
+
+        public LazyAIService(IServiceProvider serviceProvider)
+        {
+            _serviceProvider = serviceProvider;
+        }
+
+        private IAIService GetInstance()
+        {
+            if (_instance == null)
+            {
+                lock (_lock)
+                {
+                    if (_instance == null)
+                    {
+                        var logger = _serviceProvider.GetService<ILogger<XAIService>>() ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<XAIService>.Instance;
+                        var httpClientFactory = _serviceProvider.GetRequiredService<IHttpClientFactory>();
+                        var configuration = _serviceProvider.GetRequiredService<IConfiguration>();
+
+                        var apiKey = Environment.GetEnvironmentVariable("XAI_API_KEY") ??
+                                     configuration["XAI:ApiKey"];
+
+                        var requireAi = string.Equals(Environment.GetEnvironmentVariable("REQUIRE_AI_SERVICE"), "true", StringComparison.OrdinalIgnoreCase) ||
+                                        string.Equals(configuration["XAI:RequireService"], "true", StringComparison.OrdinalIgnoreCase);
+
+                        logger.LogInformation("🤖 XAI CONFIGURATION: API_KEY_SET={ApiKeySet}, REQUIRE_AI={RequireAi}, API_KEY_LENGTH={Length}, SOURCE={Source}",
+                            !string.IsNullOrEmpty(apiKey) && apiKey != "${XAI_API_KEY}",
+                            requireAi,
+                            string.IsNullOrEmpty(apiKey) ? 0 : apiKey.Length,
+                            GetApiKeySource(apiKey));
+
+                        if (string.IsNullOrEmpty(apiKey) || apiKey == "${XAI_API_KEY}")
+                        {
+                            if (requireAi)
+                            {
+                                logger.LogError("AI service required but XAI_API_KEY not set. Falling back to stub; functionality limited.");
+                            }
+                            else
+                            {
+                                logger.LogWarning("XAI_API_KEY not set. Using NullAIService stub. Configure XAI:ApiKey in appsettings.json or set XAI_API_KEY environment variable.");
+                            }
+
+                            _instance = new NullAIService();
+                        }
+                        else
+                        {
+                            try
+                            {
+                                logger.LogInformation("Initializing XAIService with provided API key (length {Len}).", apiKey.Length);
+                                _instance = new XAIService(httpClientFactory, configuration, logger, apiKey);
+                            }
+                            catch (Exception ex)
+                            {
+                                logger.LogError(ex, "Failed to initialize XAIService. Falling back to NullAIService");
+                                _instance = new NullAIService();
+                            }
+                        }
+                    }
+                }
+            }
+            return _instance;
+        }
+
+        public Task<string> GetInsightsAsync(string context, string question, CancellationToken cancellationToken = default)
+            => GetInstance().GetInsightsAsync(context, question, cancellationToken);
+
+        public Task<string> AnalyzeDataAsync(string data, string analysisType, CancellationToken cancellationToken = default)
+            => GetInstance().AnalyzeDataAsync(data, analysisType, cancellationToken);
+
+        public Task<string> ReviewApplicationAreaAsync(string areaName, string currentState, CancellationToken cancellationToken = default)
+            => GetInstance().ReviewApplicationAreaAsync(areaName, currentState, cancellationToken);
+
+        public Task<string> GenerateMockDataSuggestionsAsync(string dataType, string requirements, CancellationToken cancellationToken = default)
+            => GetInstance().GenerateMockDataSuggestionsAsync(dataType, requirements, cancellationToken);
     }
 
     private static class SplashScreenFactory

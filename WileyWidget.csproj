@@ -43,10 +43,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Azure.Identity" />
-    <PackageReference Include="Azure.Security.KeyVault.Secrets" />
-  <PackageReference Include="Azure.Extensions.AspNetCore.Configuration.Secrets" />
+    <PackageReference Include="BoldReports.WPF" />
     <PackageReference Include="CommunityToolkit.Mvvm" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Common" />
     <PackageReference Include="Prism.Core" />
     <PackageReference Include="Prism.Wpf" />
     <PackageReference Include="Prism.DryIoc" />
@@ -57,6 +56,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <PackageReference Include="Microsoft.Data.SqlClient" />
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" />
     <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" />
     <PackageReference Include="DotNetEnv" />
@@ -91,15 +91,11 @@
     <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" PrivateAssets="all" />
     <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.ResourceUtilization" />
     <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.Common" />
-  <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" />
-  <PackageReference Include="Microsoft.ApplicationInsights.WorkerService" />
-  <PackageReference Include="Microsoft.ApplicationInsights" />
     <PackageReference Include="System.Management" />
     <!-- Resilience Packages -->
     <PackageReference Include="Polly" />
     <!-- AI Integration Packages -->
     <PackageReference Include="Microsoft.Extensions.AI" />
-    <PackageReference Include="Azure.AI.OpenAI" />
     <PackageReference Include="OpenAI" />
     <PackageReference Include="Microsoft.SemanticKernel" />
   <!-- No external QuickBooks SDK yet; using raw HTTP + PKCE. Add Intuit packages later if desired. -->
@@ -141,12 +137,6 @@
   <!-- Ensure configuration files are copied to output directory -->
   <ItemGroup>
     <Content Include="appsettings.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="appsettings.Development.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="appsettings.Production.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

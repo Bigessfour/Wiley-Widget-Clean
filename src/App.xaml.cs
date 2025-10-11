@@ -9,7 +9,9 @@ using System.Windows;
 using System.Management;
 using Syncfusion.Licensing; // Official Syncfusion licensing namespace
 using Syncfusion.SfSkinManager; // Syncfusion theme management
+using Bold.Licensing; // Bold Reports licensing namespace
 using WileyWidget.Services;
+using WileyWidget.Services.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Configuration.Json;
@@ -19,10 +21,6 @@ using Microsoft.Extensions.Logging; // For ILogger<T> extension methods
 using WileyWidget.Configuration;
 using WileyWidget.Models;
 using WileyWidget.Data;
-using Azure.Identity;
-using Azure.Security.KeyVault.Secrets;
-using Azure.Core;
-using Azure;
 using System.Threading;
 using WileyWidget.ViewModels;
 using System.Windows.Controls; // For Grid, TextBlock, Button
@@ -110,7 +108,6 @@ public partial class App : PrismApplication, IDisposable
                 .Enrich.WithProcessId()
                 .Enrich.WithThreadId()
                 .Enrich.WithEnvironmentName()
-                .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss.fff}] [{Level:u3}] {ProcessId}:{ThreadId} {SourceContext} {Message:lj}{NewLine}{Exception}")
                 .WriteTo.File("logs/startup-.log",
                     rollingInterval: RollingInterval.Day,
                     retainedFileCountLimit: 7,
@@ -124,14 +121,9 @@ public partial class App : PrismApplication, IDisposable
         }
 
         Log.Information("Starting up WileyWidget application");
-        
-        // FIRST THING: Output to console to prove we get this far
-        Console.WriteLine("[DIAG] App static constructor called - application is loading");
-        
+
         _enableDebugInstrumentation = Environment.GetEnvironmentVariable("WILEY_DEBUG_STARTUP") == "true";
         _debugLogPath = Path.Combine(Path.GetTempPath(), "WileyWidget", "startup-debug.log");
-        
-        Console.WriteLine("[DIAG] App static constructor completed");
         Log.Information("Bootstrap logger initialized, debug instrumentation configured");
     }
 
@@ -281,7 +273,7 @@ public partial class App : PrismApplication, IDisposable
     {
         // SAFE PATTERN: Only minimal, non-blocking setup in constructor
         // Per Microsoft: "avoid calling overridable methods or setting dependency property values from constructor"
-        Console.WriteLine("[DIAG] App constructor called - safe initialization pattern");
+    Log.Debug("[DIAG] App constructor called - safe initialization pattern");
 
         // CRITICAL: Register Syncfusion license BEFORE any Syncfusion components are initialized
         // Per Syncfusion documentation: License must be registered in App constructor before any controls are used
@@ -312,7 +304,6 @@ public partial class App : PrismApplication, IDisposable
         
         // Register existing services
         containerRegistry.RegisterSingleton<INavigationService, NavigationService>();
-        containerRegistry.RegisterSingleton<IAzureKeyVaultService, AzureKeyVaultService>();
         containerRegistry.RegisterSingleton<ISettingsService, SettingsService>();
         containerRegistry.RegisterSingleton<IThemeManager, ThemeManager>();
         containerRegistry.RegisterSingleton<ISyncfusionLicenseService, SyncfusionLicenseService>();
@@ -456,9 +447,14 @@ public partial class App : PrismApplication, IDisposable
             }
             catch (Exception earlyEx)
             {
-                Console.Error.WriteLine("EARLY HOST BUILD FAILURE: " + earlyEx.Message);
-                Console.Error.WriteLine(earlyEx);
-                try { Serilog.Log.Fatal(earlyEx, "Host build failed before full logging initialization"); } catch { }
+                    try
+                    {
+                        Log.Fatal(earlyEx, "EARLY HOST BUILD FAILURE: Host build failed before full logging initialization");
+                    }
+                    catch
+                    {
+                        // Suppress secondary failures when logging infrastructure is unavailable
+                    }
                 ShowFallbackUI(earlyEx);
                 Shutdown();
                 return;
@@ -595,7 +591,24 @@ public partial class App : PrismApplication, IDisposable
                 // 5. Complete initialization (100%)
                 _splashScreen?.Complete();
 
-                // 6. Background initialization is handled by hosted services now
+                // 6. Start background initialization services after UI is ready
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        var backgroundService = _host.Services.GetRequiredService<BackgroundInitializationService>();
+                        await backgroundService.StartAsync(CancellationToken.None);
+                        
+                        var healthCheckService = _host.Services.GetRequiredService<HealthCheckHostedService>();
+                        await healthCheckService.StartAsync(CancellationToken.None);
+                        
+                        Log.Information("Background services started successfully after UI initialization");
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "Failed to start background services");
+                    }
+                });
 
                 Log.Information("=== Application Startup Completed in {TotalElapsedMs}ms - ID: {StartupId} ===", 
                     startupStopwatch.ElapsedMilliseconds, startupId);
@@ -1056,7 +1069,14 @@ public partial class App : PrismApplication, IDisposable
         catch (Exception logEx)
         {
             // Last resort fallback logging
-            Console.Error.WriteLine($"[CRITICAL] Failed to log Syncfusion license status: {logEx.Message}");
+            try
+            {
+                Log.Fatal(logEx, "[CRITICAL] Failed to log Syncfusion license status");
+            }
+            catch
+            {
+                // Suppress any failures triggered by logging infrastructure
+            }
             LogDebugEvent("SYNCFUSION_LICENSE", $"Logging failure: {logEx.Message}");
         }
     }
@@ -1068,29 +1088,55 @@ public partial class App : PrismApplication, IDisposable
     // RegisterSyncfusionLicense() stub method REMOVED - functionality in InitializeConfigurationAndRegisterSyncfusionLicense()
 
     /// <summary>
-    /// CRITICAL: Register Syncfusion license in App constructor BEFORE any Syncfusion components are initialized
-    /// Per Syncfusion documentation: License must be registered before any controls are used to prevent evaluation dialogs
+    /// CRITICAL: Register Syncfusion and Bold Reports licenses in App constructor BEFORE any components are initialized
+    /// Per documentation: Licenses must be registered before any controls are used to prevent evaluation dialogs
     /// </summary>
     private void RegisterSyncfusionLicenseInConstructor()
     {
         try
         {
-            var licenseKey = GetSyncfusionLicenseKey();
-            if (string.IsNullOrWhiteSpace(licenseKey) || licenseKey == "${SYNCFUSION_LICENSE_KEY}")
+            // Register Syncfusion license first
+            var syncfusionLicenseKey = GetSyncfusionLicenseKey();
+            if (string.IsNullOrWhiteSpace(syncfusionLicenseKey) || syncfusionLicenseKey == "${SYNCFUSION_LICENSE_KEY}")
             {
                 // Non-fatal: allow app to run in evaluation mode for development
-                Console.WriteLine("[DIAG] Syncfusion license key not found - running in evaluation mode");
-                return;
+                Log.Warning("[DIAG] Syncfusion license key not found - running in evaluation mode");
             }
+            else
+            {
+                // Register license with Syncfusion BEFORE any components are initialized
+                SyncfusionLicenseProvider.RegisterLicense(syncfusionLicenseKey);
+                Log.Information("[DIAG] Syncfusion license registered successfully in constructor");
 
-            // Register license with Syncfusion BEFORE any components are initialized
-            SyncfusionLicenseProvider.RegisterLicense(licenseKey);
-            Console.WriteLine("[DIAG] Syncfusion license registered successfully in constructor");
+                // Register Bold Reports license using the same Syncfusion license key
+                // Bold Reports is included in Syncfusion community license
+                try
+                {
+                    Bold.Licensing.BoldLicenseProvider.RegisterLicense(syncfusionLicenseKey);
+                    Log.Information("[DIAG] Bold Reports license registered successfully using Syncfusion license key");
+                }
+                catch (Exception boldEx)
+                {
+                    Log.Warning(boldEx, "[DIAG] Failed to register Bold Reports with Syncfusion license key, trying Bold Reports specific key");
+                    
+                    // Fallback: try Bold Reports specific license key
+                    var boldReportsLicenseKey = GetBoldReportsLicenseKey();
+                    if (!string.IsNullOrWhiteSpace(boldReportsLicenseKey) && boldReportsLicenseKey != "${BOLD_REPORTS_LICENSE_KEY}")
+                    {
+                        Bold.Licensing.BoldLicenseProvider.RegisterLicense(boldReportsLicenseKey);
+                        Log.Information("[DIAG] Bold Reports license registered successfully with fallback key");
+                    }
+                    else
+                    {
+                        Log.Warning("[DIAG] Bold Reports license key not found - running in evaluation mode");
+                    }
+                }
+            }
         }
         catch (Exception ex)
         {
             // Non-fatal: allow app to continue in evaluation mode
-            Console.WriteLine($"[DIAG] Syncfusion license registration failed in constructor: {ex.Message}");
+            Log.Error(ex, "[DIAG] License registration failed in constructor");
         }
     }
 
@@ -1161,9 +1207,15 @@ public partial class App : PrismApplication, IDisposable
             catch (Exception reportEx)
             {
                 Log.Fatal(reportEx, "❌ FAILED to report AppDomain exception via ErrorReportingService");
-                // Last resort: write to console
-                Console.Error.WriteLine($"CRITICAL UNHANDLED EXCEPTION: {ex.Message}");
-                Console.Error.WriteLine($"StackTrace: {ex.StackTrace}");
+                try
+                {
+                    Log.Fatal("CRITICAL UNHANDLED EXCEPTION: {Message}", ex.Message);
+                    Log.Fatal("StackTrace: {StackTrace}", ex.StackTrace);
+                }
+                catch
+                {
+                    // Suppress secondary failures if logging infrastructure is unavailable
+                }
             }
 
             ShowCriticalErrorDialog(ex);
@@ -1457,7 +1509,6 @@ public partial class App : PrismApplication, IDisposable
 
             // External services (may be deferred)
             Enqueue("Azure AD", CheckAzureAdHealthAsync);
-            Enqueue("Azure Key Vault", CheckAzureKeyVaultHealthAsync);
             Enqueue("QuickBooks", CheckQuickBooksHealthAsync);
             Enqueue("AI Service", CheckAIServiceHealthAsync);
             Enqueue("External Dependencies", CheckExternalDependenciesHealthAsync);
@@ -1657,52 +1708,6 @@ public partial class App : PrismApplication, IDisposable
         {
             stopwatch.Stop();
             return Task.FromResult(HealthCheckResult.Unhealthy("Azure AD", $"Azure AD health check failed: {ex.Message}", ex, stopwatch.Elapsed));
-        }
-    }
-
-    private async Task<HealthCheckResult> CheckAzureKeyVaultHealthAsync()
-    {
-        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-        try
-        {
-            var keyVaultService = ServiceProvider.GetService<IAzureKeyVaultService>();
-            if (keyVaultService == null)
-            {
-                return HealthCheckResult.Unavailable("Azure Key Vault", "Azure Key Vault service not configured");
-            }
-
-            var configuration = GetConfiguration();
-            var keyVaultUrl = configuration["Azure:KeyVault:Url"];
-            if (string.IsNullOrEmpty(keyVaultUrl))
-            {
-                return HealthCheckResult.Unavailable("Azure Key Vault", "Azure Key Vault URL not configured");
-            }
-
-            // Use service level TestConnection with timeout budget (3s)
-            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(3));
-            bool connected = false;
-            try
-            {
-                connected = await keyVaultService.TestConnectionAsync();
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "Azure Key Vault test connection threw");
-            }
-            finally
-            {
-                stopwatch.Stop();
-            }
-
-            if (connected)
-                return HealthCheckResult.Healthy("Azure Key Vault", "Azure Key Vault reachable", stopwatch.Elapsed);
-
-            return HealthCheckResult.Degraded("Azure Key Vault", "Azure Key Vault unreachable or insufficient permissions", stopwatch.Elapsed);
-        }
-        catch (Exception ex)
-        {
-            stopwatch.Stop();
-            return HealthCheckResult.Unhealthy("Azure Key Vault", $"Azure Key Vault health check failed: {ex.Message}", ex, stopwatch.Elapsed);
         }
     }
 
@@ -2411,34 +2416,70 @@ public partial class App : PrismApplication, IDisposable
             }
 
             System.Diagnostics.Debug.WriteLine("Syncfusion license key not found in any source");
-            // 4) Azure Key Vault (final fallback) if service already constructed
-            try
-            {
-                if (ServiceProvider != null)
-                {
-                    using var scope = ServiceProvider.CreateScope();
-                    var kv = scope.ServiceProvider.GetService<IAzureKeyVaultService>();
-                    if (kv != null)
-                    {
-                        var config = GetConfiguration();
-                        var secretName = config?["Syncfusion:KeyVaultSecretName"] ?? "Syncfusion-LicenseKey";
-                        var kvValue = kv.GetSecretAsync(secretName).GetAwaiter().GetResult();
-                        if (!string.IsNullOrWhiteSpace(kvValue) && kvValue != "${SYNCFUSION_LICENSE_KEY}")
-                        {
-                            System.Diagnostics.Debug.WriteLine("Syncfusion license retrieved from Azure Key Vault");
-                            return kvValue.Trim();
-                        }
-                    }
-                }
-            }
-            catch (Exception kvEx)
-            {
-                System.Diagnostics.Debug.WriteLine($"Azure Key Vault license retrieval failed: {kvEx.Message}");
-            }
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Error resolving Syncfusion license key: {ex.Message}");
+            // ignore resolution errors and fall through
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Resolves the Bold Reports license key from supported sources in priority order:
+    /// 1) Environment variable BOLD_REPORTS_LICENSE_KEY
+    /// 2) appsettings (BoldReports:LicenseKey)
+    /// 3) User Secrets (BoldReports:LicenseKey)
+    /// Returns null if not found or if placeholder value is detected.
+    /// </summary>
+    private string? GetBoldReportsLicenseKey()
+    {
+        try
+        {
+            // 1) Environment variable (check all scopes: Process, User, Machine)
+            var key = Environment.GetEnvironmentVariable("BOLD_REPORTS_LICENSE_KEY");
+            if (!string.IsNullOrWhiteSpace(key) && key != "${BOLD_REPORTS_LICENSE_KEY}")
+            {
+                System.Diagnostics.Debug.WriteLine($"Bold Reports license found in environment variables (scope: Process/User/Machine)");
+                return key.Trim();
+            }
+
+            // Explicitly check machine scope (where user said it's stored)
+            key = Environment.GetEnvironmentVariable("BOLD_REPORTS_LICENSE_KEY", EnvironmentVariableTarget.Machine);
+            if (!string.IsNullOrWhiteSpace(key) && key != "${BOLD_REPORTS_LICENSE_KEY}")
+            {
+                System.Diagnostics.Debug.WriteLine("Bold Reports license found in machine scope environment variable");
+                return key.Trim();
+            }
+
+            // 2) Configuration - handled later via DI after host is built
+            // License registration happens early, so rely on environment variables
+            System.Diagnostics.Debug.WriteLine("Configuration access removed - relying on environment variables for early license registration");
+
+            // 3) User secrets (development)
+            try
+            {
+                var userSecretsConfig = new ConfigurationBuilder()
+                    .AddUserSecrets<WileyWidget.App>()
+                    .Build();
+                key = userSecretsConfig["BoldReports:LicenseKey"];
+                if (!string.IsNullOrWhiteSpace(key) && key != "${BOLD_REPORTS_LICENSE_KEY}")
+                {
+                    System.Diagnostics.Debug.WriteLine("Bold Reports license found in user secrets");
+                    return key.Trim();
+                }
+            }
+            catch
+            {
+                // ignore if user secrets unavailable
+            }
+
+            System.Diagnostics.Debug.WriteLine("Bold Reports license key not found in any source");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error resolving Bold Reports license key: {ex.Message}");
             // ignore resolution errors and fall through
         }
 
