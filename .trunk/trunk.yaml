@@ -3,20 +3,25 @@
 version: 0.1
 cli:
   version: 1.25.0
-  # Memory optimization: Limit all trunk commands to 1 concurrent job to prevent memory exhaustion
+  # Enhanced memory and performance optimization
   options:
-    # Restrict concurrent job limit to commands that support the flag to avoid
-    # passing --jobs to git-hooks callbacks (which caused errors during commits).
+    # Limit concurrent jobs to prevent memory exhaustion
     - commands: [check, fmt]
       args: --jobs=1
-    # Default to formatting only changed files for performance
+    # Optimize formatting for performance - only format changed files
     - commands: [fmt]
-      args: --sample=10
+      args: --sample=5
+    # Enable caching for better performance
+    - commands: [check]
+      args: --cache=true
+    # CI-specific optimizations
+    - commands: [check]
+      args: --ci-progress
 # Trunk provides extensibility via plugins. (https://docs.trunk.io/plugins)
 plugins:
   sources:
     - id: trunk
-      ref: v1.7.2
+      ref: v1.7.3
       uri: https://github.com/trunk-io/plugins
 # Many linters and tools depend on runtimes - configure them here. (https://docs.trunk.io/runtimes)
 runtimes:
@@ -27,43 +32,50 @@ runtimes:
 # This is the section where you manage your linters. (https://docs.trunk.io/check/configuration)
 lint:
   enabled:
-    # .NET code formatting and style
+    # .NET code formatting and style (optimized for .NET 8+)
     - pyright@1.1.406
-    - dotnet-format@9.0.0
+    # - dotnet-format@8.0.0  # Disabled due to version availability issues
     # Comprehensive Python linting (replaces black, isort, bandit)
-    - ruff@0.13.3
+    - ruff@0.14.0
     # PowerShell script analysis
     - psscriptanalyzer@1.24.0
     # General code formatting (JSON, YAML, Markdown, etc.)
     - prettier@3.6.2
     # YAML configuration linting
-    - yamllint
-    # Security scanning for secrets and vulnerabilities
+    # - yamllint  # Disabled due to installation issues
+    # Security scanning (optimized selection)
     - gitleaks@8.28.0
     - trufflehog@3.90.8
     # GitHub Actions workflow validation
     - actionlint@1.7.8
-    # Infrastructure security (limited scope to avoid memory issues)
-    - checkov@3.2.474
-  disabled:
-    # Memory-intensive security scanners - disabled to prevent OOM
-    - bandit  # Security now handled by ruff's S rules
-    - semgrep
-    - osv-scanner
+    # Infrastructure security (scoped to avoid memory issues)
+    # - checkov@3.2.477  # Disabled due to argument compatibility issues
+    # Memory-intensive security scanners - replaced by more efficient alternatives
+    # - bandit  # Security now handled by ruff's S rules
+    # - osv-scanner  # Too resource-intensive for regular CI
+    # - semgrep  # Memory intensive, use trufflehog instead
     # Python tools replaced by ruff
-    - black
-    - isort
+    # - black
+    # - isort
     # Memory-intensive formatters and tools
-    - oxipng
-    - shellcheck
-    - shfmt
-    - taplo
+    # - oxipng
+    # - shellcheck  # Use PSScriptAnalyzer for PowerShell instead
+    # - shfmt
+    # - taplo
     # Too aggressive on documentation formatting
-    - markdownlint
+    # - markdownlint
     # Too picky about git whitespace in docs
-    - git-diff-check
+    # - git-diff-check
+    # Additional memory-intensive tools not applicable to this project
+    # - hadolint  # Docker linting not needed
+    # - buf-lint  # Protocol buffer linting not applicable
+    # - buildifier  # Bazel BUILD file linting not applicable
+    # - cfnlint  # CloudFormation not used in this project
+    # - ansible-lint  # Ansible not used in this project
+    # - golangci-lint  # Go not used in this project
+    # - rustfmt  # Rust not used in this project
   ignore:
-    # Skip documentation formatting entirely
+    # Skip documentation formatting entirely (performance optimization)
     - linters: [ALL]
       paths:
         - docs/**/*.md
@@ -71,12 +83,13 @@ lint:
         - README.md
         - CHANGELOG.md
         - CONTRIBUTING.md
-    # Skip YAML formatting for GitHub workflows
+        - RELEASE_NOTES.md
+    # Skip YAML formatting for GitHub workflows (preserve structure)
     - linters: [prettier]
       paths:
         - .github/**/*.yml
         - .github/**/*.yaml
-    # Skip binary and generated files
+    # Skip binary and generated files (performance and correctness)
     - linters: [ALL]
       paths:
         - bin/
@@ -91,10 +104,20 @@ lint:
         - .env*
         - config_backup/
         - env_backup/**
-    # Skip virtual environments, node modules, and user appdata to avoid third-party package linting
+        - temp-grant/
+        - .buildcache/
+        - .packages.lastmodified
+        - startup-performance-results.json
+        - test-error.txt
+        - test-output.txt
+        - WileyWidgetDev.db
+        - WileyWidgetDev.db-shm
+        - WileyWidgetDev.db-wal
+    # Skip virtual environments, node modules, and third-party packages
     - linters: [ALL]
       paths:
         - .venv/
+        - venv/
         - '%APPDATA%/npm/**'
         - node_modules/
         - __pycache__/
@@ -107,15 +130,23 @@ lint:
         - assets/
         - data/
         - tools/
-    # Limit checkov to only essential infrastructure files to prevent memory issues
+        - licenses/
+    # Limit checkov to essential infrastructure files only
     - linters: [checkov]
       paths:
-        - '**/*.py'  # Skip Python files for checkov (handled by ruff)
+        - '**/*.py'  # Skip Python files (handled by ruff)
         - '**/*.cs'  # Skip C# files
         - '**/*.ps1' # Skip PowerShell files
         - docs/
         - logs/
         - TestResults/
+        - scripts/
+        - .github/
+        - '*.md'
+        - '*.json'
+        - '*.txt'
+        - '*.yml'
+        - '*.yaml'
 actions:
   enabled:
     - trunk-announce
@@ -123,6 +154,23 @@ actions:
     - trunk-fmt-pre-commit
     - trunk-upgrade-available
 tools:
+  disabled:
+    - dotnet
+    - shfmt
+    - osv-scanner
+    - buildifier
+    - ansible-lint
+    - cfnlint
+    - semgrep
+    - golangci-lint
+    - taplo
+    - bandit
+    - hadolint
+    - shellcheck
+    - markdownlint
+    - isort
+    - black
+    - yamllint
   enabled:
     - pwsh@7.5.3
     - converttosarif@1.0.0

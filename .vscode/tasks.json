@@ -113,11 +113,7 @@
       "label": "run",
       "command": "dotnet",
       "type": "process",
-      "args": [
-        "run",
-        "--project",
-        "${workspaceFolder}/WileyWidget.csproj"
-      ],
+      "args": ["run", "--project", "${workspaceFolder}/WileyWidget.csproj"],
       "problemMatcher": "$msCompile",
       "group": "build"
     },

@@ -26,6 +26,10 @@ jobs:
               with:
                   dotnet-version: 8.0.x
 
+            - name: Setup Trunk
+              run: .\scripts\trunk-maintenance.ps1 -Diagnose -Fix
+              continue-on-error: true
+
             - name: Cache NuGet
               uses: actions/cache@v4
               with:
@@ -37,7 +41,7 @@ jobs:
             - name: Trunk Check (CI Mode)
               uses: trunk-io/trunk-action@v1
               with:
-                  arguments: --ci --upload --series=${{ github.ref_name }}
+                  arguments: --ci --upload --series=${{ github.ref_name }} --jobs=1 --action_timeout=300
               env:
                   TRUNK_TOKEN: ${{ secrets.TRUNK_TOKEN }}
               continue-on-error: true  # Allow CI to continue even if some tools fail

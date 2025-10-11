@@ -8,7 +8,8 @@ Write-Output ""
 try {
     $account = az account show --query '{name:name, id:id}' -o json 2>$null | ConvertFrom-Json
     Write-Output "✅ Azure CLI logged in: $($account.name)"
-} catch {
+}
+catch {
     Write-Output "⚠️  Azure CLI not logged in - testing with environment variables only"
 }
 
@@ -23,7 +24,8 @@ foreach ($var in $envVars) {
     if ([string]::IsNullOrEmpty($value)) {
         Write-Output "❌ $var : Not set"
         $envStatus[$var] = $false
-    } else {
+    }
+    else {
         Write-Output "✅ $var : Set ($($value.Substring(0, [Math]::Min(8, $value.Length)))...)"
         $envStatus[$var] = $true
     }
@@ -38,7 +40,8 @@ if ([string]::IsNullOrEmpty($keyVaultUrl)) {
     try {
         $appSettings = Get-Content "appsettings.json" | ConvertFrom-Json
         $keyVaultUrl = $appSettings.Azure.KeyVault.Url
-    } catch {
+    }
+    catch {
         $keyVaultUrl = $null
     }
 }
@@ -46,7 +49,8 @@ if ([string]::IsNullOrEmpty($keyVaultUrl)) {
 if ([string]::IsNullOrEmpty($keyVaultUrl)) {
     Write-Output "❌ Azure Key Vault URL not configured"
     $kvConfigured = $false
-} else {
+}
+else {
     Write-Output "✅ Azure Key Vault URL: $keyVaultUrl"
     $kvConfigured = $true
 
@@ -62,10 +66,12 @@ if ([string]::IsNullOrEmpty($keyVaultUrl)) {
             if ($qboSecrets) {
                 Write-Output "✅ Found QBO secrets in Key Vault:"
                 $qboSecrets | ForEach-Object { Write-Output "   - $_" }
-            } else {
+            }
+            else {
                 Write-Output "⚠️  No QBO secrets found in Key Vault"
             }
-        } catch {
+        }
+        catch {
             Write-Output "❌ Cannot access Key Vault (may not be logged in or vault doesn't exist)"
         }
     }
@@ -154,7 +160,8 @@ Remove-Item "TestQboIntegration.cs" -ErrorAction SilentlyContinue
 
 if ($testExitCode -eq 0) {
     Write-Output "✅ QBO service integration test passed"
-} else {
+}
+else {
     Write-Output "❌ QBO service integration test failed"
 }
 
@@ -166,7 +173,8 @@ Write-Output "Azure Key Vault: $(if ($kvConfigured) { "Configured" } else { "Not
 
 if (($envStatus.Values | Where-Object { $_ } | Measure-Object | Select-Object -ExpandProperty Count) -eq $envVars.Count -or $kvConfigured) {
     Write-Output "✅ QBO secrets are available (via environment variables or Azure Key Vault)"
-} else {
+}
+else {
     Write-Output "❌ QBO secrets not available - configure environment variables or Azure Key Vault"
 }
 
@@ -177,7 +185,8 @@ if (-not $kvConfigured) {
     Write-Output "   .\add-qbo-secrets-to-keyvault.ps1 -ClientId '<id>' -ClientSecret '<secret>'"
     Write-Output ""
     Write-Output "2. Configure appsettings.json with Key Vault URL"
-} else {
+}
+else {
     Write-Output "1. Ensure QBO secrets are in Azure Key Vault (QBO-CLIENT-ID, QBO-CLIENT-SECRET, etc.)"
 }
 
