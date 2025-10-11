@@ -2,10 +2,10 @@
 # This script sets up the Town of Wiley municipal accounting structure in QuickBooks sandbox
 
 param(
-    [Parameter(Mandatory=$false)]
+    [Parameter(Mandatory = $false)]
     [switch]$Force,
 
-    [Parameter(Mandatory=$false)]
+    [Parameter(Mandatory = $false)]
     [switch]$VerifyOnly
 )
 
@@ -118,7 +118,8 @@ class Program {
 
     if ($verifyExitCode -eq 0) {
         Write-Output "✓ Sandbox verification completed successfully!"
-    } else {
+    }
+    else {
         Write-Error "✗ Sandbox verification failed!"
         exit 1
     }
@@ -316,7 +317,8 @@ if ($setupExitCode -eq 0) {
     Write-Output "2. Create any missing accounts manually in QuickBooks sandbox if needed"
     Write-Output "3. Run the Wiley Widget application to test the integration"
     Write-Output "4. Use -VerifyOnly flag to check setup status: .\setup-town-of-wiley.ps1 -VerifyOnly"
-} else {
+}
+else {
     Write-Error "✗ Town of Wiley setup failed!"
     exit 1
 }

@@ -77,7 +77,7 @@ namespace WileyWidget.Tests.ViewModels
             Assert.Throws<ArgumentNullException>(() => new SettingsViewModel(
                 _mockLogger.Object,
                 _mockDbContext.Object,
-                _mockAzureService.Object,
+                _mockSecretVaultService.Object,
                 null, // null QuickBooks service
                 _mockSyncfusionService.Object));
         }

@@ -91,12 +91,10 @@ public class Phase1HostInfrastructureTests : TestApplication
         {
             // Act
             var databaseOptions = host.Services.GetService<Microsoft.Extensions.Options.IOptions<DatabaseOptions>>();
-            var azureOptions = host.Services.GetService<Microsoft.Extensions.Options.IOptions<AzureOptions>>();
             var syncfusionOptions = host.Services.GetService<Microsoft.Extensions.Options.IOptions<SyncfusionOptions>>();
 
             // Assert
             Assert.NotNull(databaseOptions);
-            Assert.NotNull(azureOptions);
             Assert.NotNull(syncfusionOptions);
         }
         finally

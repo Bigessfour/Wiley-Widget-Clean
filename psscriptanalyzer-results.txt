@@ -1,0 +1,9 @@
+
+RuleName                            Severity     ScriptName Line  Message
+--------                            --------     ---------- ----  -------
+PSUseBOMForUnicodeEncodedFile       Warning      setup-town       Missing BOM
+                                                 -of-wiley.       encoding for
+                                                 ps1              non-ASCII encoded
+                                                                  file 'setup-town-o
+                                                                  f-wiley.ps1'
+
