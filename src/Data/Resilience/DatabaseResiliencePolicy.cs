@@ -1,6 +1,4 @@
 #nullable enable
-using Azure;
-using Azure.Identity;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Polly;
@@ -18,13 +16,11 @@ namespace WileyWidget.Data.Resilience;
 public static class DatabaseResiliencePolicy
 {
     /// <summary>
-    /// Retry policy for Azure authentication failures
-    /// Retries 3 times with exponential backoff (500ms, 1s, 2s)
+    /// Retry policy for authentication/transient failures when connecting to SQL Server.
+    /// Retries 3 times with exponential backoff (500ms, 1s, 2s).
     /// </summary>
-    public static AsyncRetryPolicy AzureAuthRetryPolicy { get; } = Policy
-        .Handle<AuthenticationFailedException>()
-        .Or<RequestFailedException>(ex => ex.Status == 401 || ex.Status == 403)
-        .Or<SqlException>(ex => IsTransientError(ex))
+    public static AsyncRetryPolicy DatabaseAuthRetryPolicy { get; } = Policy
+        .Handle<SqlException>(ex => IsTransientError(ex))
         .WaitAndRetryAsync(
             retryCount: 3,
             sleepDurationProvider: retryAttempt => TimeSpan.FromMilliseconds(500 * Math.Pow(2, retryAttempt - 1)),
@@ -67,12 +63,10 @@ public static class DatabaseResiliencePolicy
 
     /// <summary>
     /// Combined policy for all database operations
-    /// Wraps auth, timeout, and concurrency policies
+    /// Wraps authentication, timeout, and concurrency policies
     /// </summary>
     public static AsyncRetryPolicy CombinedDatabasePolicy { get; } = Policy
-        .Handle<AuthenticationFailedException>()
-        .Or<RequestFailedException>(ex => ex.Status == 401 || ex.Status == 403)
-        .Or<TimeoutException>()
+        .Handle<TimeoutException>()
         .Or<SqlException>(ex => IsTransientError(ex))
         .Or<DbUpdateConcurrencyException>()
         .WaitAndRetryAsync(

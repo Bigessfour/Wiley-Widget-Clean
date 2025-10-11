@@ -1,3 +1,4 @@
+using System;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.Extensions.Options;
 
@@ -17,18 +18,6 @@ public class ConnectionStringsOptionsValidator : IValidateOptions<ConnectionStri
             string.IsNullOrWhiteSpace(options.AzureConnection))
         {
             failures.Add("At least one connection string (DefaultConnection or AzureConnection) must be configured");
-        }
-
-        // Additional validation for production environments
-        var environment = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") ??
-                         "Development";
-
-        if (environment.Equals("Production", StringComparison.OrdinalIgnoreCase))
-        {
-            if (string.IsNullOrWhiteSpace(options.AzureConnection))
-            {
-                failures.Add("AzureConnection is required in production environment");
-            }
         }
 
         return failures.Any()
@@ -64,12 +53,12 @@ public class AzureOptionsValidator : IValidateOptions<AzureOptions>
                 failures.Add("Both SqlServer and Database must be configured together for Azure SQL");
             }
 
-            // If Key Vault URL is configured, validate it's a proper Azure Key Vault URL
+            // If Key Vault URL is configured, validate it's a proper absolute URI
             if (!string.IsNullOrWhiteSpace(options.KeyVault?.Url))
             {
-                if (!options.KeyVault.Url.Contains("vault.azure.net"))
+                if (!Uri.TryCreate(options.KeyVault.Url, UriKind.Absolute, out _))
                 {
-                    failures.Add("KeyVault.Url must be a valid Azure Key Vault URL (containing 'vault.azure.net')");
+                    failures.Add("KeyVault.Url must be a valid absolute URI");
                 }
             }
         }

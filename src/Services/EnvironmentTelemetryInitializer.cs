@@ -1,37 +1,12 @@
-using System;
-using Microsoft.ApplicationInsights.Channel;
-using Microsoft.ApplicationInsights.Extensibility;
-using Microsoft.Extensions.Hosting;
-
 namespace WileyWidget.Services.Telemetry;
 
 /// <summary>
-/// Adds common environment and application metadata to every telemetry item.
-/// Helps distinguish development vs production data and enables filtering in the portal.
+/// Placeholder initializer retained to preserve startup wiring after removing Azure Application Insights.
 /// </summary>
-public sealed class EnvironmentTelemetryInitializer : ITelemetryInitializer
+public sealed class EnvironmentTelemetryInitializer
 {
-    private readonly IHostEnvironment _environment;
-    private readonly string _appVersion;
-
-    public EnvironmentTelemetryInitializer(IHostEnvironment environment)
+    public void Initialize()
     {
-        _environment = environment ?? throw new ArgumentNullException(nameof(environment));
-        _appVersion = typeof(App).Assembly.GetName().Version?.ToString() ?? "unknown";
-    }
-
-    public void Initialize(ITelemetry telemetry)
-    {
-        if (telemetry == null) return;
-        try
-        {
-            telemetry.Context.Cloud.RoleName = "WileyWidget.Desktop"; // Logical application role
-            telemetry.Context.GlobalProperties["Environment"] = _environment.EnvironmentName;
-            telemetry.Context.GlobalProperties["AppVersion"] = _appVersion;
-        }
-        catch
-        {
-            // Swallow – never let telemetry enrichment crash the app.
-        }
+        // Telemetry pipeline disabled – no initialization required.
     }
 }

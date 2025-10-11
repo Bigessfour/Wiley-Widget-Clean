@@ -33,7 +33,7 @@ public sealed class QuickBooksService : IQuickBooksService
         _settings = settings ?? throw new ArgumentNullException(nameof(settings));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-        // Load QBO credentials from Azure Key Vault with fallback to environment variables
+    // Load QBO credentials from secret vault with fallback to environment variables
         _clientId = TryGetFromKeyVault(keyVaultService, "QBO-CLIENT-ID", logger) ??
                    Environment.GetEnvironmentVariable("QBO_CLIENT_ID", EnvironmentVariableTarget.User) ??
                    throw new InvalidOperationException("QBO_CLIENT_ID not found in Key Vault or environment variables.");
@@ -62,25 +62,25 @@ public sealed class QuickBooksService : IQuickBooksService
         {
             if (keyVaultService == null)
             {
-                logger.LogDebug("Azure Key Vault service not available for {SecretName}", secretName);
+                logger.LogDebug("Secret vault service not available for {SecretName}", secretName);
                 return null;
             }
 
             var secretValue = keyVaultService.GetSecretAsync(secretName).GetAwaiter().GetResult();
             if (!string.IsNullOrEmpty(secretValue))
             {
-                logger.LogInformation("Successfully loaded {SecretName} from Azure Key Vault", secretName);
+                logger.LogInformation("Successfully loaded {SecretName} from secret vault", secretName);
                 return secretValue;
             }
             else
             {
-                logger.LogDebug("{SecretName} not found in Azure Key Vault", secretName);
+                logger.LogDebug("{SecretName} not found in secret vault", secretName);
                 return null;
             }
         }
         catch (Exception ex)
         {
-            logger.LogWarning(ex, "Failed to load {SecretName} from Azure Key Vault", secretName);
+            logger.LogWarning(ex, "Failed to load {SecretName} from secret vault", secretName);
             return null;
         }
     }

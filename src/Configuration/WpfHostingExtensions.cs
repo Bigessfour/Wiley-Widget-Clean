@@ -208,6 +208,7 @@ public static class WpfHostingExtensions
         services.AddSingleton<IStartupProgressReporter>(_ => App.StartupProgress);
         services.AddSingleton<IViewManager, ViewManager>();
         services.AddSingleton<IThemeManager>(_ => ThemeManager.Instance);
+    services.AddSingleton<IAzureKeyVaultService, LocalSecretVaultService>();
         services.AddMemoryCache();
         services.AddSingleton<IDispatcherHelper, DispatcherHelper>();
         services.AddTransient<IProgressReporter, ProgressReporter>();

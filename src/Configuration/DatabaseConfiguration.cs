@@ -6,8 +6,6 @@ using Microsoft.EntityFrameworkCore.Sqlite;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Azure.Identity;
-using Azure.Core;
 using System.Threading.Tasks;
 using System.Diagnostics;
 using Microsoft.Data.SqlClient;
@@ -26,7 +24,7 @@ using Microsoft.Extensions.Hosting;
 namespace WileyWidget.Configuration;
 
 /// <summary>
-/// Enterprise-grade database configuration for Azure SQL Database and SQL Server
+/// Enterprise-grade database configuration for SQL Server
 /// Implements passwordless authentication, connection pooling, health checks, and monitoring
 /// </summary>
 public static class DatabaseConfiguration
@@ -37,7 +35,6 @@ public static class DatabaseConfiguration
     /// </summary>
     internal static readonly AsyncCircuitBreakerPolicy CircuitBreaker = Policy
         .Handle<SqlException>(ex => ex.Number is 4060 or 40197 or 40501 or 40613 or 49918 or 49919 or 49920 or 11001)
-        .Or<Azure.Identity.AuthenticationFailedException>()
         .Or<TimeoutException>()
         .CircuitBreakerAsync(5, TimeSpan.FromSeconds(60));
 
@@ -47,8 +44,8 @@ public static class DatabaseConfiguration
     /// </summary>
     internal static readonly AsyncRetryPolicy DevelopmentRetryPolicy = Policy
         .Handle<SqlException>(ex => ex.Number is 4060 or 40197 or 40501 or 40613 or 49918 or 49919 or 49920 or 11001)
-        .Or<Azure.Identity.AuthenticationFailedException>()
         .Or<DbException>()
+        .Or<TimeoutException>()
         .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt - 1)));
 
     /// <summary>
@@ -201,7 +198,7 @@ public static class DatabaseConfiguration
 
     /// <summary>
     /// Builds enterprise connection string from configuration
-    /// Uses SQL Server Express for Development, Azure SQL for Production
+    /// Uses SQL Server Express for Development, SQL Server for Production
     /// </summary>
     internal static string BuildEnterpriseConnectionString(IConfiguration config, ILogger logger, string environment)
     {
@@ -312,7 +309,7 @@ public static class DatabaseConfiguration
         services.AddScoped<IQuickBooksService>(sp =>
         {
             var settings = SettingsService.Instance;
-            var keyVaultService = sp.GetService<IAzureKeyVaultService>();
+        var keyVaultService = sp.GetService<IAzureKeyVaultService>();
             var logger = sp.GetRequiredService<ILogger<QuickBooksService>>();
             return new QuickBooksService(settings, keyVaultService, logger);
         });
@@ -321,9 +318,9 @@ public static class DatabaseConfiguration
         {
             var logger = sp.GetRequiredService<ILogger<IAIService>>();
             var configuration = sp.GetRequiredService<IConfiguration>();
-            var keyVaultService = sp.GetService<IAzureKeyVaultService>();
+        var keyVaultService = sp.GetService<IAzureKeyVaultService>();
 
-            // Priority order: Environment variable -> Azure Key Vault -> appsettings
+        // Priority order: Environment variable -> local secret vault -> appsettings
             var xaiApiKey = Environment.GetEnvironmentVariable("XAI_API_KEY") ??
                            TryGetFromKeyVault(keyVaultService, "XAI-API-KEY", logger) ??
                            configuration["XAI:ApiKey"];
@@ -389,13 +386,13 @@ public static class DatabaseConfiguration
 
             if (!string.IsNullOrEmpty(secret))
             {
-                logger.LogInformation("Retrieved XAI API key from Azure Key Vault");
+                logger.LogInformation("Retrieved XAI API key from secret vault");
                 return secret;
             }
         }
         catch (Exception ex)
         {
-            logger.LogWarning(ex, "Failed to retrieve XAI API key from Azure Key Vault, trying next source");
+            logger.LogWarning(ex, "Failed to retrieve XAI API key from secret vault, trying next source");
         }
         return null;
     }
@@ -408,7 +405,7 @@ public static class DatabaseConfiguration
         if (Environment.GetEnvironmentVariable("XAI_API_KEY") == apiKey)
             return "Environment";
 
-        return "AzureKeyVault"; // Since we check env first, if we get here it must be from Key Vault
+    return "SecretVault"; // Since we check env first, if we get here it must be from the local vault
     }
 
     /// <summary>
@@ -590,10 +587,10 @@ public static class DatabaseConfiguration
         services.AddHealthChecks()
             // Database health check with enterprise diagnostics
             .AddCheck<DatabaseHealthCheck>("Database",
-                tags: new[] { "database", "azure", "sql", "enterprise" })
-            // Azure SQL health check with connection string validation and connectivity test
-            .AddCheck<AzureSqlHealthCheck>("Azure SQL",
-                tags: new[] { "database", "azure", "sql", "cloud" })
+                tags: new[] { "database", "sql", "enterprise" })
+            // SQL Server health check with connection string validation and connectivity test
+            .AddCheck<SqlServerHealthCheck>("SQL Server",
+                tags: new[] { "database", "sql", "server" })
             // Memory health check
             .AddCheck<MemoryHealthCheck>("Memory",
                 tags: new[] { "resources", "memory" })
@@ -647,7 +644,7 @@ public class MemoryHealthCheck : Microsoft.Extensions.Diagnostics.HealthChecks.I
 }
 
 /// <summary>
-/// Custom database health check for Azure SQL
+/// Custom database health check for SQL Server
 /// </summary>
 public class DatabaseHealthCheck : Microsoft.Extensions.Diagnostics.HealthChecks.IHealthCheck
 {
@@ -726,13 +723,14 @@ public class EnterpriseApplicationHealthCheck : Microsoft.Extensions.Diagnostics
 }
 
 /// <summary>
-/// Azure SQL Database health check with connection string validation and connectivity testing
+/// SQL Server health check with connection string validation and connectivity testing
+/// for local or hosted environments.
 /// </summary>
-public class AzureSqlHealthCheck : Microsoft.Extensions.Diagnostics.HealthChecks.IHealthCheck
+public class SqlServerHealthCheck : Microsoft.Extensions.Diagnostics.HealthChecks.IHealthCheck
 {
     private readonly IConfiguration _configuration;
 
-    public AzureSqlHealthCheck(IConfiguration configuration)
+    public SqlServerHealthCheck(IConfiguration configuration)
     {
         _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
     }
@@ -743,21 +741,22 @@ public class AzureSqlHealthCheck : Microsoft.Extensions.Diagnostics.HealthChecks
     {
         try
         {
-            var connectionString = _configuration.GetConnectionString("AzureConnection");
+            var connectionString = _configuration.GetConnectionString("AzureConnection") ??
+                                    _configuration.GetConnectionString("DefaultConnection");
 
-            // Check if Azure connection string is configured
+        // Check if a connection string is configured
             if (string.IsNullOrEmpty(connectionString))
             {
                 return Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Unhealthy(
-                    "Azure SQL connection string not configured");
+            "SQL Server connection string not configured");
             }
 
-            // Validate connection string format
-            var validationResult = ValidateAzureSqlConnectionString(connectionString);
+        // Validate connection string format
+        var validationResult = ValidateSqlConnectionString(connectionString);
             if (!validationResult.IsValid)
             {
                 return Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Unhealthy(
-                    $"Invalid Azure SQL connection string format: {validationResult.ErrorMessage}");
+            $"Invalid SQL connection string format: {validationResult.ErrorMessage}");
             }
 
             // Test connectivity using ADO.NET
@@ -771,27 +770,27 @@ public class AzureSqlHealthCheck : Microsoft.Extensions.Diagnostics.HealthChecks
             if (result == null || (int)result != 1)
             {
                 return Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Unhealthy(
-                    "Azure SQL connectivity test failed - unexpected query result");
+                    "SQL Server connectivity test failed - unexpected query result");
             }
 
             return Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy(
-                "Azure SQL connection successful and validated");
+                "SQL Server connection successful and validated");
         }
         catch (Exception ex)
         {
             return Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Unhealthy(
-                $"Azure SQL health check failed: {ex.Message}");
+                $"SQL Server health check failed: {ex.Message}");
         }
     }
 
-    private (bool IsValid, string ErrorMessage) ValidateAzureSqlConnectionString(string connectionString)
+    private (bool IsValid, string ErrorMessage) ValidateSqlConnectionString(string connectionString)
     {
         if (string.IsNullOrWhiteSpace(connectionString))
         {
             return (false, "Connection string is empty");
         }
 
-        // Expected format: Server=tcp:<server>.database.windows.net,1433;Initial Catalog=<db>;User ID=<user>;Password=<pass>
+        // Expected format: Server=<server>;Initial Catalog=<db>;User ID=<user>;Password=<pass>
         var parts = connectionString.Split(';');
 
         bool hasServer = false;
@@ -805,11 +804,6 @@ public class AzureSqlHealthCheck : Microsoft.Extensions.Diagnostics.HealthChecks
             if (trimmed.StartsWith("Server=", StringComparison.OrdinalIgnoreCase))
             {
                 var serverValue = trimmed.Substring(7);
-                if (!serverValue.StartsWith("tcp:", StringComparison.OrdinalIgnoreCase) ||
-                    !serverValue.Contains(".database.windows.net"))
-                {
-                    return (false, "Server must be in format tcp:<server>.database.windows.net,1433");
-                }
                 hasServer = true;
             }
             else if (trimmed.StartsWith("Initial Catalog=", StringComparison.OrdinalIgnoreCase))

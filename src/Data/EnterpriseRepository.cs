@@ -4,8 +4,6 @@ using WileyWidget.Models;
 using WileyWidget.Models.DTOs;
 using WileyWidget.Data.Resilience;
 using System.Globalization;
-using Azure.Identity;
-using Azure;
 
 namespace WileyWidget.Data;
 

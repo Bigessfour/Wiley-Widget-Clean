@@ -5,6 +5,7 @@ using System.Timers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Identity.Client;
 using Serilog;
+using WileyWidget.Configuration;
 #nullable enable
 
 namespace WileyWidget.Services

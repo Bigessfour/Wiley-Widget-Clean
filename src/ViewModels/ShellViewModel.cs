@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Microsoft.ApplicationInsights;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using WileyWidget.Services;
@@ -25,7 +24,6 @@ namespace WileyWidget.ViewModels;
 public partial class ShellViewModel : AsyncViewModelBase
 {
     private readonly SettingsService _settingsService;
-    private readonly TelemetryClient? _telemetryClient;
     private readonly Stack<NavigationSnapshot> _backStack = new();
     private readonly Stack<NavigationSnapshot> _forwardStack = new();
     private bool _suppressSelectionChange;
@@ -41,8 +39,7 @@ public partial class ShellViewModel : AsyncViewModelBase
         ToolsViewModel toolsViewModel,
         SettingsViewModel settingsViewModel,
         IDispatcherHelper dispatcherHelper,
-        ILogger<ShellViewModel> logger,
-        TelemetryClient? telemetryClient = null)
+        ILogger<ShellViewModel> logger)
         : this(
             settingsService,
             BuildDefaultNavigation(
@@ -54,8 +51,7 @@ public partial class ShellViewModel : AsyncViewModelBase
                 toolsViewModel,
                 settingsViewModel),
             dispatcherHelper,
-            logger,
-            telemetryClient)
+        logger)
     {
     }
 
@@ -63,12 +59,10 @@ public partial class ShellViewModel : AsyncViewModelBase
         SettingsService settingsService,
         IEnumerable<NavigationItem> navigationItems,
         IDispatcherHelper dispatcherHelper,
-        ILogger<ShellViewModel> logger,
-        TelemetryClient? telemetryClient = null)
+        ILogger<ShellViewModel> logger)
         : base(dispatcherHelper, logger)
     {
         _settingsService = settingsService ?? throw new ArgumentNullException(nameof(settingsService));
-        _telemetryClient = telemetryClient;
 
         var items = navigationItems?.ToList() ?? throw new ArgumentNullException(nameof(navigationItems));
         NavigationItems = new ObservableCollection<NavigationItem>(items);
@@ -347,12 +341,7 @@ public partial class ShellViewModel : AsyncViewModelBase
 
     private void TrackNavigationTelemetry(NavigationSnapshot snapshot, NavigationTrigger trigger)
     {
-        if (_telemetryClient is null)
-        {
-            return;
-        }
-
-        var properties = new Dictionary<string, string>
+        var properties = new Dictionary<string, object>
         {
             ["Route"] = snapshot.Route,
             ["DisplayName"] = snapshot.DisplayName,
@@ -363,6 +352,6 @@ public partial class ShellViewModel : AsyncViewModelBase
             ["ForwardStackDepth"] = _forwardStack.Count.ToString()
         };
 
-        _telemetryClient.TrackEvent("ShellNavigation", properties);
+        ErrorReportingService.Instance.TrackEvent("ShellNavigation", properties);
     }
 }

@@ -131,9 +131,6 @@ public class ParallelStartupService : IHostedService, IDisposable
             ExecuteWithConcurrencyLimitAsync("Database Schema Check", 
                 () => ValidateDatabaseSchemaAsync(), cancellationToken),
                 
-            ExecuteWithConcurrencyLimitAsync("Azure Services Warmup", 
-                () => WarmupAzureServicesAsync(), cancellationToken),
-                
             ExecuteWithConcurrencyLimitAsync("Log Directory Setup", 
                 () => EnsureLogDirectoriesAsync(), cancellationToken)
         };
@@ -275,24 +272,6 @@ public class ParallelStartupService : IHostedService, IDisposable
         {
             _logger.LogWarning(ex, "Database schema validation failed");
         }
-    }
-
-    private async Task WarmupAzureServicesAsync()
-    {
-        await Task.Run(() =>
-        {
-            try
-            {
-                // Prewarm Azure service connections (non-blocking)
-                // This prepares the Azure SDK without making actual calls
-                _ = new Azure.Identity.DefaultAzureCredential();
-                _logger.LogDebug("Azure services warmup completed");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogDebug(ex, "Azure services warmup failed");
-            }
-        });
     }
 
     private async Task EnsureLogDirectoriesAsync()

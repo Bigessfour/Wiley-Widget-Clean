@@ -124,7 +124,7 @@ public sealed class SyncfusionStartupTask : IStartupTask
             return (key, "configuration", null);
         }
 
-        // 3) Azure Key Vault (optional)
+        // 3) Secret vault (optional)
         var secretName = _configuration["Syncfusion:KeyVaultSecretName"] ?? "Syncfusion-LicenseKey";
         if (_keyVaultService != null)
         {
@@ -134,12 +134,12 @@ public sealed class SyncfusionStartupTask : IStartupTask
                 key = await _keyVaultService.GetSecretAsync(secretName).ConfigureAwait(false);
                 if (!string.IsNullOrWhiteSpace(key) && !IsPlaceholder(key))
                 {
-                    return (key, $"Azure Key Vault secret '{secretName}'", null);
+                    return (key, $"Secret vault entry '{secretName}'", null);
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to retrieve Syncfusion license key from Azure Key Vault");
+                _logger.LogWarning(ex, "Failed to retrieve Syncfusion license key from secret vault");
             }
         }
 
@@ -148,7 +148,7 @@ public sealed class SyncfusionStartupTask : IStartupTask
             return (null, null, "Syncfusion license key placeholder detected; configure a real key.");
         }
 
-        return (null, null, "Syncfusion license key not found (env/config/Key Vault).");
+    return (null, null, "Syncfusion license key not found (env/config/secret vault).");
     }
 
     private static string? GetEnvironmentVariable(string name, EnvironmentVariableTarget target)
