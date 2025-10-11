@@ -1,9 +1,9 @@
-﻿<#
+<#
 .SYNOPSIS
     Migrates WileyWidget to a layered N-tier architecture.
 
 .DESCRIPTION
-    Systematically moves Models and Data files from the WPF project to 
+    Systematically moves Models and Data files from the WPF project to
     separate class library projects following Microsoft's N-tier pattern.
 
 .EXAMPLE

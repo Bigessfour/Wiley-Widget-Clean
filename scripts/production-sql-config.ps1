@@ -11,6 +11,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+$script:ConfiguredServer = $Server
 
 # Get system information
 $totalMemoryGB = (Get-CimInstance -ClassName Win32_ComputerSystem).TotalPhysicalMemory / 1GB
@@ -24,10 +25,14 @@ Write-Information "Logical Processors: $logicalProcessors" -InformationAction Co
 Write-Information "" -InformationAction Continue
 
 function Invoke-SqlConfig {
-    param([string]$Query, [string]$Description)
+    param(
+        [string]$Query,
+        [string]$Description,
+        [string]$SqlServer = $script:ConfiguredServer
+    )
     try {
         Write-Information "Applying: $Description" -InformationAction Continue
-        $connectionString = "Server=$Server;Database=master;Trusted_Connection=True;Connection Timeout=30;"
+        $connectionString = "Server=$SqlServer;Database=master;Trusted_Connection=True;Connection Timeout=30;"
         $connection = New-Object System.Data.SqlClient.SqlConnection
         $connection.ConnectionString = $connectionString
         $connection.Open()

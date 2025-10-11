@@ -7,7 +7,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
-using WileyWidget.Data;
+using WileyWidget.Models;
+using WileyWidget.Business.Interfaces;
 using WileyWidget.Services;
 
 namespace WileyWidget.ViewModels

@@ -1,5 +1,7 @@
 #nullable enable
 
+using System.Collections.Generic;
+using Intuit.Ipp.Data;
 using WileyWidget.Models;
 
 namespace WileyWidget.Business.Interfaces;
@@ -13,36 +15,56 @@ public interface IMunicipalAccountRepository
     /// <summary>
     /// Gets all municipal accounts.
     /// </summary>
-    Task<IEnumerable<MunicipalAccount>> GetAllAsync();
+    System.Threading.Tasks.Task<IEnumerable<MunicipalAccount>> GetAllAsync();
 
     /// <summary>
     /// Gets a municipal account by ID.
     /// </summary>
-    Task<MunicipalAccount?> GetByIdAsync(int id);
+    System.Threading.Tasks.Task<MunicipalAccount?> GetByIdAsync(int id);
 
     /// <summary>
     /// Gets accounts by account number.
     /// </summary>
-    Task<MunicipalAccount?> GetByAccountNumberAsync(string accountNumber);
+    System.Threading.Tasks.Task<MunicipalAccount?> GetByAccountNumberAsync(string accountNumber);
 
     /// <summary>
     /// Gets accounts by department.
     /// </summary>
-    Task<IEnumerable<MunicipalAccount>> GetByDepartmentAsync(int departmentId);
+    System.Threading.Tasks.Task<IEnumerable<MunicipalAccount>> GetByDepartmentAsync(int departmentId);
 
     /// <summary>
     /// Adds a new municipal account.
     /// </summary>
-    Task<MunicipalAccount> AddAsync(MunicipalAccount account);
+    System.Threading.Tasks.Task<MunicipalAccount> AddAsync(MunicipalAccount account);
 
     /// <summary>
     /// Updates an existing municipal account.
     /// </summary>
-    Task<MunicipalAccount> UpdateAsync(MunicipalAccount account);
+    System.Threading.Tasks.Task<MunicipalAccount> UpdateAsync(MunicipalAccount account);
 
     /// <summary>
     /// Deletes a municipal account by ID.
     /// </summary>
-    Task<bool> DeleteAsync(int id);
+    System.Threading.Tasks.Task<bool> DeleteAsync(int id);
+
+    /// <summary>
+    /// Syncs municipal accounts from QuickBooks.
+    /// </summary>
+    System.Threading.Tasks.Task SyncFromQuickBooksAsync(List<Account> qbAccounts);
+
+    /// <summary>
+    /// Gets a budget analysis for a specific period.
+    /// </summary>
+    System.Threading.Tasks.Task<object> GetBudgetAnalysisAsync(int periodId);
+
+    /// <summary>
+    /// Gets accounts filtered by fund type.
+    /// </summary>
+    System.Threading.Tasks.Task<IEnumerable<MunicipalAccount>> GetByFundAsync(FundType fund);
+
+    /// <summary>
+    /// Gets accounts filtered by account type.
+    /// </summary>
+    System.Threading.Tasks.Task<IEnumerable<MunicipalAccount>> GetByTypeAsync(AccountType type);
 }
 

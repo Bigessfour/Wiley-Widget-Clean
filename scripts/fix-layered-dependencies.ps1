@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Fixes dependencies and cross-references in the layered architecture.
 
@@ -93,7 +93,7 @@ foreach ($file in $dataFiles) {
         if ($content -notmatch 'using WileyWidget\.Models;') {
             $lines = Get-Content $file.FullName
             $usingIndex = ($lines | Select-Object -First 10 | Select-String -Pattern "^using" | Select-Object -Last 1).LineNumber - 1
-            $lines = @($lines[0..$usingIndex]) + @("using WileyWidget.Models;") + @($lines[($usingIndex+1)..($lines.Count-1)])
+            $lines = @($lines[0..$usingIndex]) + @("using WileyWidget.Models;") + @($lines[($usingIndex + 1)..($lines.Count - 1)])
             Set-Content -Path $file.FullName -Value $lines
         }
     }
@@ -150,7 +150,8 @@ $modelsResult = dotnet build "$rootPath\WileyWidget.Models\WileyWidget.Models.cs
 
 if ($LASTEXITCODE -eq 0) {
     Write-Information "  ✅ Models project builds successfully!" -InformationAction Continue
-} else {
+}
+else {
     Write-Warning "Models build still has issues:"
     Write-Information ($modelsResult | Out-String) -InformationAction Continue
 }
@@ -160,7 +161,8 @@ $dataResult = dotnet build "$rootPath\WileyWidget.Data\WileyWidget.Data.csproj" 
 
 if ($LASTEXITCODE -eq 0) {
     Write-Information "  ✅ Data project builds successfully!" -InformationAction Continue
-} else {
+}
+else {
     Write-Warning "Data build still has issues:"
     Write-Information ($dataResult | Out-String) -InformationAction Continue
 }

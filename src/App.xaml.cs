@@ -19,9 +19,7 @@ using Microsoft.Extensions.Configuration.EnvironmentVariables;
 using Microsoft.Extensions.Configuration.UserSecrets;
 using Microsoft.Extensions.Logging; // For ILogger<T> extension methods
 using WileyWidget.Configuration;
-// Removed direct references to Models and Data layers for Clean Architecture
-// using WileyWidget.Models;
-// using WileyWidget.Data;
+using WileyWidget.Models;
 using System.Threading;
 using WileyWidget.ViewModels;
 using System.Windows.Controls; // For Grid, TextBlock, Button

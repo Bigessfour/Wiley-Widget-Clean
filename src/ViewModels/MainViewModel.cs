@@ -87,6 +87,12 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private bool isLoading;
 
     /// <summary>
+    /// Error message for display in UI
+    /// </summary>
+    [ObservableProperty]
+    private string errorMessage = string.Empty;
+
+    /// <summary>
     /// Current authenticated user name for display in UI
     /// </summary>
     [ObservableProperty]
@@ -185,12 +191,14 @@ public partial class MainViewModel : ObservableObject, IDisposable
         try
         {
             IsLoading = true;
+            ErrorMessage = string.Empty; // Clear any previous errors
             await LoadEnterprisesAsync();
             await _municipalAccountViewModel.InitializeAsync();
         }
         catch (Exception ex)
         {
             Log.Error(ex, "Failed to initialize MainViewModel");
+            ErrorMessage = "Failed to initialize application. Please try restarting.";
         }
         finally
         {
@@ -240,6 +248,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         catch (Exception ex)
         {
             Log.Error(ex, "Failed to select next enterprise");
+            ErrorMessage = "Failed to select the next enterprise. Please try again.";
             // Reset selection to first enterprise as fallback
             try
             {
@@ -249,6 +258,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             catch (Exception fallbackEx)
             {
                 Log.Error(fallbackEx, "Failed to reset enterprise selection to first item");
+                ErrorMessage = "Unable to select any enterprise. Please refresh the data.";
             }
         }
     }
@@ -280,7 +290,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         catch (Exception ex)
         {
             Log.Error(ex, "Failed to add new enterprise");
-            // Could show user notification here if needed
+            ErrorMessage = "Failed to add new enterprise. Please try again.";
         }
     }
 
@@ -331,6 +341,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 {
                     App.LogDebugEvent("VIEWMODEL_INIT_ERROR", $"Failed to load enterprises: {ex.Message}");
                     Log.Error(ex, "Failed to load enterprises during initialization");
+                    ErrorMessage = "Failed to load enterprise data. Some features may not work properly.";
                 }
             });
 
@@ -347,6 +358,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 {
                     App.LogDebugEvent("VIEWMODEL_INIT_ERROR", $"Failed to initialize municipal accounts: {ex.Message}");
                     Log.Error(ex, "Failed to initialize municipal accounts during startup");
+                    ErrorMessage = "Failed to load municipal account data. Some features may not work properly.";
                 }
             });
         }

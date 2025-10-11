@@ -1,4 +1,4 @@
-﻿# Fix Integration Tests - Replace model references and add using statements
+# Fix Integration Tests - Replace model references and add using statements
 
 Write-Information "Fixing integration test files..." -InformationAction Continue
 

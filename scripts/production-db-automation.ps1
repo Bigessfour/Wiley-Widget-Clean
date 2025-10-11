@@ -57,6 +57,8 @@ function Test-ScriptPrerequisite {
 }
 
 function Install-ScheduledTask {
+    param([string]$TaskUser)
+
     Write-SetupLog "Installing scheduled tasks..."
 
     # Create maintenance task (daily at specified time)
@@ -64,7 +66,7 @@ function Install-ScheduledTask {
     $maintenanceTrigger = New-ScheduledTaskTrigger -Daily -At $MaintenanceTime
     $maintenanceSettings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -RunOnlyIfNetworkAvailable
 
-    Register-ScheduledTask -TaskName $maintenanceTaskName -Action $maintenanceAction -Trigger $maintenanceTrigger -Settings $maintenanceSettings -User $User -RunLevel Highest -Description "Daily production database maintenance for Wiley Widget"
+    Register-ScheduledTask -TaskName $maintenanceTaskName -Action $maintenanceAction -Trigger $maintenanceTrigger -Settings $maintenanceSettings -User $TaskUser -RunLevel Highest -Description "Daily production database maintenance for Wiley Widget"
 
     Write-SetupLog "Maintenance task installed: $maintenanceTaskName"
 
@@ -72,7 +74,7 @@ function Install-ScheduledTask {
     $monitorAction = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-ExecutionPolicy Bypass -File `"$monitorScript`" -Server `".\SQLEXPRESS`" -Database `"WileyWidgetDev`" -JsonOutput"
     $monitorTrigger = New-ScheduledTaskTrigger -Once -At (Get-Date) -RepetitionInterval (New-TimeSpan -Minutes $MonitorInterval) -RepetitionDuration (New-TimeSpan -Days 1)
 
-    Register-ScheduledTask -TaskName $monitorTaskName -Action $monitorAction -Trigger $monitorTrigger -Settings $maintenanceSettings -User $User -RunLevel Highest -Description "Continuous production database monitoring for Wiley Widget"
+    Register-ScheduledTask -TaskName $monitorTaskName -Action $monitorAction -Trigger $monitorTrigger -Settings $maintenanceSettings -User $TaskUser -RunLevel Highest -Description "Continuous production database monitoring for Wiley Widget"
 
     Write-SetupLog "Monitor task installed: $monitorTaskName"
 }
@@ -123,7 +125,7 @@ try {
     }
     elseif ($Install) {
         Test-ScriptPrerequisite
-        Install-ScheduledTask
+    Install-ScheduledTask -TaskUser $User
         Write-SetupLog "Installation completed successfully"
         Write-SetupLog "Maintenance schedule: Daily at $MaintenanceTime"
         Write-SetupLog "Monitoring interval: Every $MonitorInterval minutes"

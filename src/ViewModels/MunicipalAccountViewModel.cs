@@ -4,7 +4,7 @@ using System.Diagnostics;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Serilog;
-using WileyWidget.Data;
+    using WileyWidget.Business.Interfaces;
 using WileyWidget.Models;
 using WileyWidget.Services;
 

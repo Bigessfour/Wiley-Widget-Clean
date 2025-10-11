@@ -1,8 +1,8 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using WileyWidget.Data;
 using WileyWidget.Models;
+using WileyWidget.Business.Interfaces;
 using System.Threading.Tasks;
 using System;
 using System.Linq;

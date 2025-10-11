@@ -15,18 +15,21 @@ This project contains comprehensive integration tests for the Wiley Widget appli
 ## 🎯 Testing Scope
 
 ### 1. **Database Integration Tests**
+
 - Real database operations using SQL Server TestContainers
 - Entity Framework Core behavior validation
 - Transaction handling and isolation
 - Migration and schema validation
 
 ### 2. **Concurrency Tests**
+
 - Optimistic concurrency with row versioning
 - Conflict detection and resolution
 - Concurrent update scenarios
 - Timestamp-based concurrency tokens
 
 ### 3. **Relationship & Constraint Tests**
+
 - Foreign key integrity
 - Cascading deletes and updates
 - Navigation property behavior
@@ -34,6 +37,7 @@ This project contains comprehensive integration tests for the Wiley Widget appli
 - Constraint violation handling
 
 ### 4. **Performance Benchmarking**
+
 - SQLite vs SQL Server comparison
 - CRUD operation performance
 - Query optimization validation
@@ -44,11 +48,13 @@ This project contains comprehensive integration tests for the Wiley Widget appli
 This project uses [Testcontainers](https://dotnet.testcontainers.org/) to spin up real SQL Server instances for testing.
 
 ### Prerequisites
+
 - Docker Desktop installed and running
 - .NET 9.0 SDK
 - 4GB+ available RAM for containers
 
 ### Container Configuration
+
 ```csharp
 var container = new MsSqlBuilder()
     .WithImage("mcr.microsoft.com/mssql/server:2022-latest")
@@ -61,11 +67,13 @@ var container = new MsSqlBuilder()
 ## 🚀 Running Tests
 
 ### Run All Integration Tests
+
 ```powershell
 dotnet test WileyWidget.IntegrationTests/WileyWidget.IntegrationTests.csproj
 ```
 
 ### Run Specific Test Categories
+
 ```powershell
 # Concurrency tests only
 dotnet test --filter "FullyQualifiedName~ConcurrencyTests"
@@ -78,11 +86,13 @@ dotnet test --filter "FullyQualifiedName~PerformanceTests"
 ```
 
 ### Run with Detailed Output
+
 ```powershell
 dotnet test --verbosity detailed --logger "console;verbosity=detailed"
 ```
 
 ### Run Performance Benchmarks (BenchmarkDotNet)
+
 ```powershell
 cd WileyWidget.IntegrationTests
 dotnet run -c Release -- --filter *PerformanceBenchmarks*
@@ -91,6 +101,7 @@ dotnet run -c Release -- --filter *PerformanceBenchmarks*
 ## 📊 Performance Benchmarking
 
 ### BenchmarkDotNet Tests
+
 The `DatabasePerformanceBenchmarks` class provides detailed performance metrics:
 
 - **Insert operations**: Single and bulk inserts
@@ -99,18 +110,20 @@ The `DatabasePerformanceBenchmarks` class provides detailed performance metrics:
 - **Delete operations**: Single and cascading deletes
 
 ### Expected Results
+
 Typical performance characteristics (your results may vary):
 
-| Operation | SQLite | SQL Server | Winner |
-|-----------|--------|------------|--------|
-| Single Insert | ~1ms | ~2ms | SQLite |
-| Bulk Insert (100) | ~50ms | ~30ms | SQL Server |
-| Simple Query | ~0.5ms | ~1ms | SQLite |
-| Complex Join | ~5ms | ~3ms | SQL Server |
-| Update | ~1ms | ~2ms | SQLite |
-| Delete | ~1ms | ~2ms | SQLite |
+| Operation         | SQLite | SQL Server | Winner     |
+| ----------------- | ------ | ---------- | ---------- |
+| Single Insert     | ~1ms   | ~2ms       | SQLite     |
+| Bulk Insert (100) | ~50ms  | ~30ms      | SQL Server |
+| Simple Query      | ~0.5ms | ~1ms       | SQLite     |
+| Complex Join      | ~5ms   | ~3ms       | SQL Server |
+| Update            | ~1ms   | ~2ms       | SQLite     |
+| Delete            | ~1ms   | ~2ms       | SQLite     |
 
 **Key Findings:**
+
 - **SQLite**: Faster for single operations and simple queries (no network overhead)
 - **SQL Server**: Better for bulk operations, complex queries, and concurrent access
 - **Production Choice**: SQL Server recommended for multi-user scenarios
@@ -118,6 +131,7 @@ Typical performance characteristics (your results may vary):
 ## 🧪 Test Structure
 
 ### Base Infrastructure
+
 - `SqlServerTestBase`: Base class for SQL Server tests with TestContainers
 - `TestDataBuilder`: Fluent API for creating test data
 - `TestHelpers`: Utility methods for assertions and validation
@@ -125,6 +139,7 @@ Typical performance characteristics (your results may vary):
 ### Test Categories
 
 #### 1. ConcurrencyConflictTests
+
 ```csharp
 [Fact]
 public async Task UpdateWithStaleRowVersion_ShouldThrowConcurrencyException()
@@ -134,6 +149,7 @@ public async Task UpdateWithStaleRowVersion_ShouldThrowConcurrencyException()
 ```
 
 #### 2. ForeignKeyRelationshipTests
+
 ```csharp
 [Fact]
 public async Task DeleteVendorWithInvoices_ShouldCascadeDelete()
@@ -143,6 +159,7 @@ public async Task DeleteVendorWithInvoices_ShouldCascadeDelete()
 ```
 
 #### 3. PerformanceComparisonTests
+
 ```csharp
 [Fact]
 public async Task CompareInsertPerformance_SqlServerVsSqlite()
@@ -154,6 +171,7 @@ public async Task CompareInsertPerformance_SqlServerVsSqlite()
 ## 🔧 Configuration
 
 ### Test Settings
+
 Configuration is managed through `appsettings.test.json` (if needed) or environment variables:
 
 ```json
@@ -169,7 +187,9 @@ Configuration is managed through `appsettings.test.json` (if needed) or environm
 ```
 
 ### Connection Strings
+
 Automatically generated for each test container:
+
 ```csharp
 Server=localhost,{dynamicPort};Database=WileyWidgetTest;User Id=sa;Password=YourStrong!Passw0rd;
 ```
@@ -177,40 +197,54 @@ Server=localhost,{dynamicPort};Database=WileyWidgetTest;User Id=sa;Password=Your
 ## 🐛 Troubleshooting
 
 ### Docker Issues
+
 **Problem**: TestContainers fails to start
+
 ```
 Error: Docker daemon is not running
 ```
+
 **Solution**: Start Docker Desktop and ensure it's fully initialized
 
 ### Port Conflicts
+
 **Problem**: SQL Server container fails to bind port
+
 ```
 Error: Port 1433 is already in use
 ```
+
 **Solution**: Tests use dynamic port binding automatically. Check Docker containers:
+
 ```powershell
 docker ps -a
 docker stop <container-id>
 ```
 
 ### Memory Issues
+
 **Problem**: Container fails to start due to memory
+
 ```
 Error: Cannot allocate memory
 ```
+
 **Solution**: Increase Docker Desktop memory allocation (Settings > Resources)
 
 ### Test Timeout
+
 **Problem**: Tests timeout waiting for container
+
 ```
 Error: Container did not become healthy in time
 ```
+
 **Solution**: Increase timeout in test configuration or check Docker performance
 
 ## 📝 Test Data Management
 
 ### Test Data Builder Pattern
+
 ```csharp
 var vendor = TestDataBuilder.CreateVendor()
     .WithName("Test Vendor")
@@ -225,6 +259,7 @@ var invoice = TestDataBuilder.CreateInvoice()
 ```
 
 ### Cleanup Strategy
+
 - **Per-Test Cleanup**: Each test uses a fresh database
 - **Container Lifecycle**: Containers are disposed after test completion
 - **Transaction Rollback**: Not used (full database isolation instead)
@@ -232,16 +267,19 @@ var invoice = TestDataBuilder.CreateInvoice()
 ## 🎓 Best Practices
 
 ### 1. Test Isolation
+
 ✅ Each test gets a fresh database instance
 ✅ No shared state between tests
 ✅ Parallel test execution supported
 
 ### 2. Performance Testing
+
 ✅ Use Release configuration for benchmarks
 ✅ Run multiple iterations for accuracy
 ✅ Measure cold and warm cache scenarios
 
 ### 3. Assertion Patterns
+
 ```csharp
 // Use xUnit assertions
 Assert.NotNull(result);
@@ -255,6 +293,7 @@ invoices.Should().HaveCount(3);
 ```
 
 ### 4. Async Testing
+
 ```csharp
 [Fact]
 public async Task TestName()
@@ -297,6 +336,7 @@ When adding new integration tests:
 When `WileyWidget.IntegrationTests` (`.NET 8.0`) references `WileyWidget` (`.NET 9.0-windows` WPF), two failures occur:
 
 1. **Framework mismatch** when test project targets `.NET 8.0`:
+
    ```
    error NU1201: Project WileyWidget is not compatible with net8.0
    Project WileyWidget supports: net9.0-windows7.0
@@ -350,6 +390,7 @@ Tests are **excluded from compilation** but preserved for future use:
 ```
 
 Build script validation works:
+
 ```powershell
 .\scripts\build-integration-tests.ps1
 # Output: ⚠️  Integration tests temporarily disabled
@@ -361,6 +402,7 @@ Build script validation works:
 ❌ Tests awaiting architecture refactor
 
 **Related Issues**:
+
 - [WPF Temporary Projects](https://github.com/dotnet/wpf/issues)
 - [.NET Multi-Targeting](https://learn.microsoft.com/en-us/dotnet/standard/frameworks)
 

@@ -3,7 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using WileyWidget.Models;
-using WileyWidget.Data;
+using WileyWidget.Business.Interfaces;
 using WileyWidget.ViewModels.Messages;
 using System.Threading.Tasks;
 using System.Linq;
