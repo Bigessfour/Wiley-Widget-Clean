@@ -98,6 +98,10 @@ Desktop.ini
 *.backup*
 *_backup*
 *.msi
+temp_file_*.txt
+temp_*.txt
+*_temp.txt
+*_tmp.txt
 cleanup_backup_*/
 config_backup/
 env_backup/
