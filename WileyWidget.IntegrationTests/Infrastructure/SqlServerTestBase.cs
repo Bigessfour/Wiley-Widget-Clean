@@ -22,7 +22,7 @@ public abstract class SqlServerTestBase : IAsyncLifetime
         // Create and start SQL Server container
         _sqlContainer = new MsSqlBuilder()
             .WithImage("mcr.microsoft.com/mssql/server:2022-latest")
-            .WithPassword("YourStrong!Passw0rd")
+            .WithPassword("TestPass123!")
             .WithCleanUp(true)
             .Build();
 

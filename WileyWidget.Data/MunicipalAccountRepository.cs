@@ -238,6 +238,7 @@ namespace WileyWidget.Data
                         FundClass = FundClass.Proprietary, // Default for QB imports
                         Balance = qbAccount.CurrentBalance,
                         QuickBooksId = qbAccount.Id,
+                        RowVersion = Array.Empty<byte>(),
                         LastSyncDate = DateTime.UtcNow,
                         IsActive = qbAccount.Active
                     };

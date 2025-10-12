@@ -38,15 +38,19 @@ public class LayeredArchitectureSmokeTest : SqlServerTestBase
     [Fact]
     public async Task CanCreateAndRetrieveMunicipalAccount()
     {
+        await using var context = CreateDbContext();
+        var (department, budgetPeriod) = await EnsureAccountDependenciesAsync(context);
+
         // Arrange
-        var account = new MunicipalAccount
-        {
-            AccountNumber = new AccountNumber("101-1000-000"),
-            Name = "General Fund"
-        };
+        var account = TestDataBuilder.CreateMunicipalAccount(
+            "101-1000-000",
+            "General Fund",
+            5000m,
+            department.Id,
+            budgetPeriod.Id,
+            AccountType.Cash);
 
         // Act
-        await using var context = CreateDbContext();
         context.MunicipalAccounts.Add(account);
         await context.SaveChangesAsync();
 
@@ -75,5 +79,26 @@ public class LayeredArchitectureSmokeTest : SqlServerTestBase
         var retrieved = await context.Departments.FirstOrDefaultAsync(d => d.Code == "PW");
         Assert.NotNull(retrieved);
         Assert.Equal("Public Works", retrieved.Name);
+    }
+
+    private static async Task<(Department Department, BudgetPeriod BudgetPeriod)> EnsureAccountDependenciesAsync(AppDbContext context)
+    {
+        var department = await context.Departments.FirstOrDefaultAsync();
+        if (department == null)
+        {
+            department = TestDataBuilder.CreateDepartment();
+            context.Departments.Add(department);
+            await context.SaveChangesAsync();
+        }
+
+        var budgetPeriod = await context.BudgetPeriods.FirstOrDefaultAsync();
+        if (budgetPeriod == null)
+        {
+            budgetPeriod = TestDataBuilder.CreateBudgetPeriod();
+            context.BudgetPeriods.Add(budgetPeriod);
+            await context.SaveChangesAsync();
+        }
+
+        return (department, budgetPeriod);
     }
 }

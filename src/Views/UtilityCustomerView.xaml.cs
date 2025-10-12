@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,6 +12,9 @@ using WileyWidget.Data;
 using WileyWidget.Models;
 using WileyWidget.Services;
 using WileyWidget.ViewModels;
+using WileyWidget.Business.Interfaces;
+using BusinessInterfaces = WileyWidget.Business.Interfaces;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace WileyWidget;
 
@@ -95,6 +99,36 @@ public partial class UtilityCustomerView : Window
         public Task<UtilityCustomer> UpdateAsync(UtilityCustomer customer) => Task.FromResult(customer);
     }
 
+    private sealed class FallbackUnitOfWork : IUnitOfWork
+    {
+        public FallbackUnitOfWork()
+        {
+            UtilityCustomers = new FallbackUtilityCustomerRepository();
+        }
+
+        public BusinessInterfaces.IEnterpriseRepository Enterprises => throw new NotSupportedException("Fallback unit of work does not provide enterprise repository support.");
+        public BusinessInterfaces.IMunicipalAccountRepository MunicipalAccounts => throw new NotSupportedException("Fallback unit of work does not provide municipal account repository support.");
+        public IUtilityCustomerRepository UtilityCustomers { get; }
+
+        public Task<FiscalYearSettings?> GetFiscalYearSettingsAsync() => Task.FromResult<FiscalYearSettings?>(null);
+        public Task SaveFiscalYearSettingsAsync(FiscalYearSettings settings) => Task.CompletedTask;
+        public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) => Task.FromResult(0);
+        public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default) => throw new NotSupportedException("Fallback unit of work does not support transactions.");
+        public Task CommitTransactionAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task RollbackTransactionAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task<TResult> ExecuteInTransactionAsync<TResult>(Func<Task<TResult>> operation, CancellationToken cancellationToken = default) => throw new NotSupportedException("Fallback unit of work does not support transactional execution.");
+        public Task ExecuteInTransactionAsync(Func<Task> operation, CancellationToken cancellationToken = default) => throw new NotSupportedException("Fallback unit of work does not support transactional execution.");
+        public void Dispose()
+        {
+        }
+
+        public ValueTask DisposeAsync()
+        {
+            Dispose();
+            return ValueTask.CompletedTask;
+        }
+    }
+
     /// <summary>
     /// Show the Customer Management window
     /// </summary>
@@ -175,9 +209,8 @@ public partial class UtilityCustomerView : Window
             {
                 _viewScope = provider.CreateScope();
                 var scopedProvider = _viewScope.ServiceProvider;
-                var customerRepository = scopedProvider.GetRequiredService<IUtilityCustomerRepository>();
-                var logger = scopedProvider.GetRequiredService<Microsoft.Extensions.Logging.ILogger<UtilityCustomerViewModel>>();
-                return new UtilityCustomerViewModel(customerRepository);
+                var unitOfWork = scopedProvider.GetRequiredService<IUnitOfWork>();
+                return new UtilityCustomerViewModel(unitOfWork);
             }
             catch (Exception ex)
             {
@@ -187,7 +220,8 @@ public partial class UtilityCustomerView : Window
             }
         }
 
-        var fallbackLogger = App.ServiceProvider?.GetService<Microsoft.Extensions.Logging.ILogger<UtilityCustomerViewModel>>() ?? NullLogger<UtilityCustomerViewModel>.Instance;
-        return new UtilityCustomerViewModel(new FallbackUtilityCustomerRepository());
+#pragma warning disable CA2000 // The ViewModel takes ownership of the FallbackUnitOfWork and disposes it
+        return new UtilityCustomerViewModel(new FallbackUnitOfWork());
+#pragma warning restore CA2000
     }
 }

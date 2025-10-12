@@ -104,18 +104,13 @@ public class AccountTypeValidator
     /// <returns>True if the account type is valid for the account number, false otherwise</returns>
     public bool ValidateAccountTypeForNumber(AccountType accountType, string accountNumber)
     {
-        if (string.IsNullOrWhiteSpace(accountNumber))
-            return false;
-
-        // Extract the root account number (before any decimals)
-        var rootNumber = accountNumber.Split('.')[0];
-        if (!int.TryParse(rootNumber, out var accountNum))
+        if (!TryGetAccountRootValue(accountNumber, out var accountRoot))
             return false;
 
         if (!AccountRanges.TryGetValue(accountType, out var ranges))
             return false;
 
-        return ranges.Any(range => accountNum >= range.Min && accountNum <= range.Max);
+        return ranges.Any(range => accountRoot >= range.Min && accountRoot <= range.Max);
     }
 
     /// <summary>
@@ -139,16 +134,11 @@ public class AccountTypeValidator
     /// <returns>A collection of valid account types</returns>
     public IEnumerable<AccountType> GetValidAccountTypesForNumber(string accountNumber)
     {
-        if (string.IsNullOrWhiteSpace(accountNumber))
-            return Enumerable.Empty<AccountType>();
-
-        // Extract the root account number (before any decimals)
-        var rootNumber = accountNumber.Split('.')[0];
-        if (!int.TryParse(rootNumber, out var accountNum))
+        if (!TryGetAccountRootValue(accountNumber, out var accountRoot))
             return Enumerable.Empty<AccountType>();
 
         return AccountRanges
-            .Where(kvp => kvp.Value.Any(range => accountNum >= range.Min && accountNum <= range.Max))
+            .Where(kvp => kvp.Value.Any(range => accountRoot >= range.Min && accountRoot <= range.Max))
             .Select(kvp => kvp.Key);
     }
 
@@ -230,5 +220,24 @@ public class AccountTypeValidator
         public bool IsValid { get; set; }
         public List<string> Errors { get; set; } = new();
         public List<string> Warnings { get; set; } = new();
+    }
+
+    private static bool TryGetAccountRootValue(string accountNumber, out int accountRoot)
+    {
+        accountRoot = 0;
+
+        if (string.IsNullOrWhiteSpace(accountNumber))
+            return false;
+
+        var rootSegment = accountNumber.Split(new[] { '.', '-' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+        if (string.IsNullOrEmpty(rootSegment))
+            return false;
+
+        if (rootSegment.Length > 3)
+        {
+            rootSegment = rootSegment[..3];
+        }
+
+        return int.TryParse(rootSegment, out accountRoot);
     }
 }

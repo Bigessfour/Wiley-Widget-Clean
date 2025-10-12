@@ -7,9 +7,12 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Xunit;
-using WileyWidget.Data;
 using WileyWidget.Models;
 using WileyWidget.Services;
+using WileyWidget.Business.Interfaces;
+using EnterpriseRepo = WileyWidget.Business.Interfaces.IEnterpriseRepository;
+using MunicipalRepo = WileyWidget.Business.Interfaces.IMunicipalAccountRepository;
+using Enterprise = WileyWidget.Models.Enterprise;
 
 namespace WileyWidget.Tests;
 
@@ -23,8 +26,8 @@ public class ServiceChargeCalculatorServiceTests
     private readonly Mock<IServiceScopeFactory> _mockScopeFactory;
     private readonly Mock<IServiceScope> _mockScope;
     private readonly Mock<IServiceProvider> _mockScopedServiceProvider;
-    private readonly Mock<IEnterpriseRepository> _mockEnterpriseRepo;
-    private readonly Mock<IMunicipalAccountRepository> _mockAccountRepo;
+    private readonly Mock<EnterpriseRepo> _mockEnterpriseRepo;
+    private readonly Mock<MunicipalRepo> _mockAccountRepo;
     private readonly ServiceChargeCalculatorService _service;
 
     public ServiceChargeCalculatorServiceTests()
@@ -33,8 +36,8 @@ public class ServiceChargeCalculatorServiceTests
         _mockScopeFactory = new Mock<IServiceScopeFactory>();
         _mockScope = new Mock<IServiceScope>();
         _mockScopedServiceProvider = new Mock<IServiceProvider>();
-        _mockEnterpriseRepo = new Mock<IEnterpriseRepository>();
-        _mockAccountRepo = new Mock<IMunicipalAccountRepository>();
+        _mockEnterpriseRepo = new Mock<EnterpriseRepo>();
+        _mockAccountRepo = new Mock<MunicipalRepo>();
 
         // Setup the service provider to return IServiceScopeFactory when requested
         _mockServiceProvider.Setup(sp => sp.GetService(typeof(IServiceScopeFactory)))

@@ -121,10 +121,10 @@ public class GASBValidator
     {
         // GASB account numbers typically follow patterns like:
         // - 1-3 digits for major categories
-        // - Optional decimal points for sub-accounts
-        // - Examples: "101", "405.1", "410.2.1"
+        // - Optional separators (dots or hyphens) for sub-accounts
+        // - Examples: "101", "405.1", "410.2.1", "101-1000-000"
 
-        if (!System.Text.RegularExpressions.Regex.IsMatch(accountNumber, @"^\d+(\.\d+)*$"))
+        if (!System.Text.RegularExpressions.Regex.IsMatch(accountNumber, @"^\d+([.-]\d+)*$"))
         {
             errors.Add($"Account {accountId} ({accountName}) has invalid account number format: {accountNumber}");
         }

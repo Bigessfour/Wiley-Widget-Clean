@@ -749,6 +749,7 @@ public class AppDbContext : DbContext, IAppDbContext
         ConfigureRowVersion<Enterprise>(modelBuilder.Entity<Enterprise>(), isSqlite);
         ConfigureRowVersion<UtilityCustomer>(modelBuilder.Entity<UtilityCustomer>(), isSqlite);
         ConfigureRowVersion<Widget>(modelBuilder.Entity<Widget>(), isSqlite);
+        ConfigureRowVersion<MunicipalAccount>(modelBuilder.Entity<MunicipalAccount>(), isSqlite);
     }
 
     /// <summary>

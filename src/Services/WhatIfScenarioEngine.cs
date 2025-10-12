@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using WileyWidget.Data;
 using WileyWidget.Models;
+using BusinessInterfaces = WileyWidget.Business.Interfaces;
 using WileyWidget.Services;
 
 namespace WileyWidget.Services;
@@ -33,8 +34,8 @@ public class WhatIfScenarioEngine : IWhatIfScenarioEngine
     {
         var scopeFactory = _serviceProvider.GetRequiredService<IServiceScopeFactory>();
         using var scope = scopeFactory.CreateScope();
-        var enterpriseRepo = scope.ServiceProvider.GetRequiredService<IEnterpriseRepository>();
-        var accountRepo = scope.ServiceProvider.GetRequiredService<IMunicipalAccountRepository>();
+        var enterpriseRepo = scope.ServiceProvider.GetRequiredService<BusinessInterfaces.IEnterpriseRepository>();
+        var accountRepo = scope.ServiceProvider.GetRequiredService<BusinessInterfaces.IMunicipalAccountRepository>();
 
         var enterprise = await enterpriseRepo.GetByIdAsync(enterpriseId);
         if (enterprise == null)

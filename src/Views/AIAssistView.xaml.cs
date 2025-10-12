@@ -5,6 +5,7 @@ using WileyWidget.Services;
 using WileyWidget.Data;
 using Serilog;
 using Microsoft.Extensions.DependencyInjection;
+using BusinessInterfaces = WileyWidget.Business.Interfaces;
 
 namespace WileyWidget;
 
@@ -30,7 +31,7 @@ public partial class AIAssistView : Window
         var chargeCalculator = _viewScope.ServiceProvider.GetRequiredService<IChargeCalculatorService>();
         var whatIfEngine = _viewScope.ServiceProvider.GetRequiredService<IWhatIfScenarioEngine>();
     var grokSupercomputer = _viewScope.ServiceProvider.GetRequiredService<IGrokSupercomputer>();
-        var enterpriseRepository = _viewScope.ServiceProvider.GetRequiredService<IEnterpriseRepository>();
+        var enterpriseRepository = _viewScope.ServiceProvider.GetRequiredService<BusinessInterfaces.IEnterpriseRepository>();
         var dispatcherHelper = _viewScope.ServiceProvider.GetRequiredService<WileyWidget.Services.Threading.IDispatcherHelper>();
         var logger = _viewScope.ServiceProvider.GetRequiredService<Microsoft.Extensions.Logging.ILogger<ViewModels.AIAssistViewModel>>();
         DataContext = new ViewModels.AIAssistViewModel(aiService, chargeCalculator, whatIfEngine, grokSupercomputer, enterpriseRepository, dispatcherHelper, logger);

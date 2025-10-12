@@ -7,6 +7,8 @@ using WileyWidget.Services;
 using WileyWidget.Models;
 using WileyWidget.Business.Interfaces;
 using Microsoft.EntityFrameworkCore.Storage;
+using EnterpriseModel = WileyWidget.Models.Enterprise;
+using BusinessInterfaces = WileyWidget.Business.Interfaces;
 
 #nullable enable
 
@@ -19,17 +21,19 @@ namespace WileyWidget.ViewModels
         /// Provides minimal in-memory implementations so tests can construct the ViewModel
         /// without full DI wiring or external services.
         /// </summary>
+#pragma warning disable CA2000 // The ViewModel takes ownership of the TestUnitOfWork and disposes it
         public MainViewModel()
             : this(new TestUnitOfWork(), null, new TestAIService(), autoInitialize: false)
         {
         }
+#pragma warning restore CA2000
 
         // Minimal test/dummy implementations used only for test-time construction.
         private class TestUnitOfWork : IUnitOfWork
         {
-            public Business.Interfaces.IEnterpriseRepository Enterprises => new TestEnterpriseRepository();
-            public Business.Interfaces.IMunicipalAccountRepository MunicipalAccounts => new TestMunicipalAccountRepository();
-            public Business.Interfaces.IUtilityCustomerRepository UtilityCustomers => new TestUtilityCustomerRepository();
+            public BusinessInterfaces.IEnterpriseRepository Enterprises => new TestEnterpriseRepository();
+            public BusinessInterfaces.IMunicipalAccountRepository MunicipalAccounts => new TestMunicipalAccountRepository();
+            public IUtilityCustomerRepository UtilityCustomers => new TestUtilityCustomerRepository();
             public Task<FiscalYearSettings?> GetFiscalYearSettingsAsync() => Task.FromResult<FiscalYearSettings?>(null);
             public Task SaveFiscalYearSettingsAsync(FiscalYearSettings settings) => Task.CompletedTask;
             public Task<int> SaveChangesAsync() => Task.FromResult(0);
@@ -43,51 +47,32 @@ namespace WileyWidget.ViewModels
             public ValueTask DisposeAsync() => ValueTask.CompletedTask;
         }
 
-        private class TestEnterpriseRepository : Business.Interfaces.IEnterpriseRepository
+        private class TestEnterpriseRepository : BusinessInterfaces.IEnterpriseRepository
         {
-            public Task<Enterprise> AddAsync(Enterprise enterprise) => Task.FromResult(enterprise);
+            public Task<IEnumerable<EnterpriseModel>> GetAllAsync() => Task.FromResult(Enumerable.Empty<EnterpriseModel>());
+            public Task<EnterpriseModel?> GetByIdAsync(int id) => Task.FromResult<EnterpriseModel?>(null);
+            public Task<IEnumerable<EnterpriseModel>> GetByTypeAsync(string type) => Task.FromResult(Enumerable.Empty<EnterpriseModel>());
+            public Task<EnterpriseModel> AddAsync(EnterpriseModel enterprise) => Task.FromResult(enterprise);
+            public Task<EnterpriseModel> UpdateAsync(EnterpriseModel enterprise) => Task.FromResult(enterprise);
             public Task<bool> DeleteAsync(int id) => Task.FromResult(true);
-            public Task<bool> SoftDeleteAsync(int id) => Task.FromResult(true);
-            public Task<bool> RestoreAsync(int id) => Task.FromResult(true);
-            public Enterprise CreateFromHeaderMapping(IDictionary<string, string> headerValueMap) => new Enterprise { Id = 1, Name = headerValueMap.Values.FirstOrDefault() ?? "Test" };
-            public Task<IEnumerable<Enterprise>> GetAllAsync() => Task.FromResult(Enumerable.Empty<Enterprise>());
-            public Task<IEnumerable<Enterprise>> GetAllIncludingDeletedAsync() => Task.FromResult(Enumerable.Empty<Enterprise>());
-            public Task<int> GetCountAsync() => Task.FromResult(0);
-            public Task<Enterprise> GetByIdAsync(int id) => Task.FromResult<Enterprise>(null!);
-            public Task<Enterprise> GetByNameAsync(string name) => Task.FromResult<Enterprise>(null!);
-            public Task<IEnumerable<Enterprise>> GetWithInteractionsAsync() => Task.FromResult(Enumerable.Empty<Enterprise>());
-            public Task<Enterprise> UpdateAsync(Enterprise enterprise) => Task.FromResult(enterprise);
-            public Task<bool> ExistsByNameAsync(string name, int? excludeId = null) => Task.FromResult(false);
-            public Task<IEnumerable<Models.DTOs.EnterpriseSummary>> GetSummariesAsync() => Task.FromResult(Enumerable.Empty<Models.DTOs.EnterpriseSummary>());
-            public Task<IEnumerable<Enterprise>> GetByTypeAsync(string type) => Task.FromResult(Enumerable.Empty<Enterprise>());
         }
 
-        private class TestMunicipalAccountRepository : Business.Interfaces.IMunicipalAccountRepository
+        private class TestMunicipalAccountRepository : BusinessInterfaces.IMunicipalAccountRepository
         {
             public Task<MunicipalAccount> AddAsync(MunicipalAccount account) => Task.FromResult(account);
             public Task<bool> DeleteAsync(int id) => Task.FromResult(true);
             public Task<IEnumerable<MunicipalAccount>> GetAllAsync() => Task.FromResult<IEnumerable<MunicipalAccount>>(new List<MunicipalAccount>());
             public Task<MunicipalAccount?> GetByAccountNumberAsync(string accountNumber) => Task.FromResult<MunicipalAccount?>(null);
             public Task<MunicipalAccount?> GetByIdAsync(int id) => Task.FromResult<MunicipalAccount?>(null);
-            public Task<IEnumerable<MunicipalAccount>> GetActiveAsync() => Task.FromResult<IEnumerable<MunicipalAccount>>(new List<MunicipalAccount>());
+            public Task<IEnumerable<MunicipalAccount>> GetByDepartmentAsync(int departmentId) => Task.FromResult<IEnumerable<MunicipalAccount>>(new List<MunicipalAccount>());
+            public Task<MunicipalAccount> UpdateAsync(MunicipalAccount account) => Task.FromResult(account);
+            public Task<object> GetBudgetAnalysisAsync(int periodId) => Task.FromResult<object>(new { });
+            public Task SyncFromQuickBooksAsync(List<Intuit.Ipp.Data.Account> qbAccounts) => Task.CompletedTask;
             public Task<IEnumerable<MunicipalAccount>> GetByFundAsync(FundType fund) => Task.FromResult<IEnumerable<MunicipalAccount>>(new List<MunicipalAccount>());
             public Task<IEnumerable<MunicipalAccount>> GetByTypeAsync(AccountType type) => Task.FromResult<IEnumerable<MunicipalAccount>>(new List<MunicipalAccount>());
-            public Task<object> GetBudgetAnalysisAsync(int periodId) => Task.FromResult<object>(new { });
-            public Task SyncFromQuickBooksAsync() => Task.CompletedTask;
-            public Task SyncFromQuickBooksAsync(List<Intuit.Ipp.Data.Account> qbAccounts) => Task.CompletedTask;
-            public Task<MunicipalAccount> UpdateAsync(MunicipalAccount account) => Task.FromResult(account);
-            public Task<IEnumerable<MunicipalAccount>> GetByDepartmentAsync(int departmentId) => Task.FromResult<IEnumerable<MunicipalAccount>>(new List<MunicipalAccount>());
-            public Task<IEnumerable<MunicipalAccount>> GetByFundClassAsync(FundClass fundClass) => Task.FromResult<IEnumerable<MunicipalAccount>>(new List<MunicipalAccount>());
-            public Task<IEnumerable<MunicipalAccount>> GetByAccountTypeAsync(AccountType accountType) => Task.FromResult<IEnumerable<MunicipalAccount>>(new List<MunicipalAccount>());
-            public Task<IEnumerable<MunicipalAccount>> GetChildAccountsAsync(int parentAccountId) => Task.FromResult<IEnumerable<MunicipalAccount>>(new List<MunicipalAccount>());
-            public Task<IEnumerable<MunicipalAccount>> GetAccountHierarchyAsync(int rootAccountId) => Task.FromResult<IEnumerable<MunicipalAccount>>(new List<MunicipalAccount>());
-            public Task<IEnumerable<MunicipalAccount>> SearchByNameAsync(string searchTerm) => Task.FromResult<IEnumerable<MunicipalAccount>>(new List<MunicipalAccount>());
-            public Task<bool> AccountNumberExistsAsync(string accountNumber, int? excludeId = null) => Task.FromResult(false);
-            public Task<int> GetCountAsync() => Task.FromResult(0);
-            public Task<IEnumerable<MunicipalAccount>> GetAccountsWithBudgetEntriesAsync(int budgetPeriodId) => Task.FromResult<IEnumerable<MunicipalAccount>>(new List<MunicipalAccount>());
         }
 
-        private class TestUtilityCustomerRepository : Business.Interfaces.IUtilityCustomerRepository
+    private class TestUtilityCustomerRepository : IUtilityCustomerRepository
         {
             public Task<IEnumerable<UtilityCustomer>> GetAllAsync() => Task.FromResult(Enumerable.Empty<UtilityCustomer>());
             public Task<UtilityCustomer?> GetByIdAsync(int id) => Task.FromResult<UtilityCustomer?>(null);

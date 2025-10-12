@@ -12,6 +12,7 @@ using Syncfusion.SfSkinManager; // Syncfusion theme management
 using Bold.Licensing; // Bold Reports licensing namespace
 using WileyWidget.Services;
 using WileyWidget.Services.Hosting;
+using WileyWidget.Data;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Configuration.Json;

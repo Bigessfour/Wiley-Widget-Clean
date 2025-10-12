@@ -17,10 +17,10 @@ namespace WileyWidget.Models;
 public class AccountNumber
 {
     /// <summary>
-    /// The account number value (e.g., "405.1", "410.2.1")
+    /// The account number value (e.g., "405.1", "410.2.1", "101-1000-000")
     /// </summary>
     [Required]
-    [RegularExpression(@"^\d+(\.\d+)*$", ErrorMessage = "Account number must be numeric with optional decimal levels")]
+    [RegularExpression(@"^\d+([.-]\d+)*$", ErrorMessage = "Account number must be numeric with optional separators (dots or hyphens)")]
     public string Value { get; private set; }
 
     /// <summary>
@@ -55,8 +55,8 @@ public class AccountNumber
         if (string.IsNullOrWhiteSpace(value))
             throw new ArgumentException("Account number cannot be null or empty");
 
-        if (!Regex.IsMatch(value, @"^\d+(\.\d+)*$"))
-            throw new ArgumentException("Invalid account number format. Must be numeric with optional decimal levels (e.g., 405, 405.1, 410.2.1)");
+        if (!Regex.IsMatch(value, @"^\d+([.-]\d+)*$"))
+            throw new ArgumentException("Invalid account number format. Must be numeric with optional separators (dots or hyphens) (e.g., 405, 405.1, 410.2.1, 101-1000-000)");
 
         Value = value;
     }
@@ -109,6 +109,12 @@ public class MunicipalAccount : INotifyPropertyChanged
     /// </summary>
     [Key]
     public int Id { get; set; }
+
+    /// <summary>
+    /// Row version for optimistic concurrency control
+    /// </summary>
+    [Timestamp]
+    public byte[] RowVersion { get; set; } = Array.Empty<byte>();
 
     private AccountNumber? _accountNumber;
 

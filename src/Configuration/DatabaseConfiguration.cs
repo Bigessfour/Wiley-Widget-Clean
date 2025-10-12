@@ -11,6 +11,7 @@ using System.Diagnostics;
 using Microsoft.Data.SqlClient;
 using WileyWidget.Data;
 using WileyWidget.Services;
+using WileyWidget.Business.Interfaces;
 using System.Data.Common;
 using System.Net.Http;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -277,9 +278,9 @@ public static class DatabaseConfiguration
     /// </summary>
     private static void RegisterEnterpriseRepositories(IServiceCollection services)
     {
-        services.AddScoped<IEnterpriseRepository, EnterpriseRepository>();
-        services.AddScoped<IMunicipalAccountRepository, MunicipalAccountRepository>();
-        services.AddScoped<IUtilityCustomerRepository, UtilityCustomerRepository>();
+        services.AddScoped<WileyWidget.Business.Interfaces.IEnterpriseRepository, WileyWidget.Data.EnterpriseRepository>();
+        services.AddScoped<WileyWidget.Business.Interfaces.IMunicipalAccountRepository, WileyWidget.Data.MunicipalAccountRepository>();
+        services.AddScoped<WileyWidget.Business.Interfaces.IUtilityCustomerRepository, WileyWidget.Data.UtilityCustomerRepository>();
     }
 
     /// <summary>

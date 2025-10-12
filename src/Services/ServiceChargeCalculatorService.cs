@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using WileyWidget.Data;
 using WileyWidget.Models;
+using BusinessInterfaces = WileyWidget.Business.Interfaces;
 
 namespace WileyWidget.Services;
 
@@ -34,8 +35,8 @@ public class ServiceChargeCalculatorService : IChargeCalculatorService
     {
         var scopeFactory = _serviceProvider.GetRequiredService<IServiceScopeFactory>();
         using var scope = scopeFactory.CreateScope();
-        var enterpriseRepo = scope.ServiceProvider.GetRequiredService<IEnterpriseRepository>();
-        var accountRepo = scope.ServiceProvider.GetRequiredService<IMunicipalAccountRepository>();
+        var enterpriseRepo = scope.ServiceProvider.GetRequiredService<BusinessInterfaces.IEnterpriseRepository>();
+        var accountRepo = scope.ServiceProvider.GetRequiredService<BusinessInterfaces.IMunicipalAccountRepository>();
 
         try
         {
@@ -155,7 +156,7 @@ public class ServiceChargeCalculatorService : IChargeCalculatorService
 
         var scopeFactory = _serviceProvider.GetRequiredService<IServiceScopeFactory>();
         using var scope = scopeFactory.CreateScope();
-        var enterpriseRepo = scope.ServiceProvider.GetRequiredService<IEnterpriseRepository>();
+        var enterpriseRepo = scope.ServiceProvider.GetRequiredService<BusinessInterfaces.IEnterpriseRepository>();
 
         var enterprise = await enterpriseRepo.GetByIdAsync(enterpriseId);
         if (enterprise == null)

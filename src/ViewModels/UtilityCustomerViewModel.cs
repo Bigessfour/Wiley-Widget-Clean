@@ -86,7 +86,13 @@ public partial class UtilityCustomerViewModel : ObservableObject
     /// </summary>
     public UtilityCustomerViewModel(IUnitOfWork unitOfWork)
     {
-        _customerRepository = unitOfWork.UtilityCustomers ?? throw new ArgumentNullException(nameof(unitOfWork));
+        if (unitOfWork is null)
+        {
+            throw new ArgumentNullException(nameof(unitOfWork));
+        }
+
+        _customerRepository = unitOfWork.UtilityCustomers
+            ?? throw new ArgumentNullException(nameof(IUnitOfWork.UtilityCustomers));
         selectedCustomer = new UtilityCustomer(); // Initialize to avoid null warning
     }
 

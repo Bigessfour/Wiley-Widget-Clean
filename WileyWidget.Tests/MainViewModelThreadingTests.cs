@@ -7,13 +7,15 @@ using WileyWidget.ViewModels;
 using WileyWidget.Data;
 using WileyWidget.Services;
 using WileyWidget.Models;
+using WileyWidget.Business.Interfaces;
 
 namespace WileyWidget.Tests
 {
     public class MainViewModelThreadingTests : IDisposable
     {
-        private readonly Mock<IEnterpriseRepository> _mockEnterpriseRepository;
-        private readonly Mock<IMunicipalAccountRepository> _mockMunicipalAccountRepository;
+    private readonly Mock<IEnterpriseRepository> _mockEnterpriseRepository;
+    private readonly Mock<IMunicipalAccountRepository> _mockMunicipalAccountRepository;
+    private readonly Mock<IUnitOfWork> _mockUnitOfWork;
         private readonly Mock<IQuickBooksService> _mockQuickBooksService;
         private readonly Mock<IAIService> _mockAIService;
         private readonly MainViewModel _viewModel;
@@ -22,15 +24,18 @@ namespace WileyWidget.Tests
         {
             _mockEnterpriseRepository = new Mock<IEnterpriseRepository>();
             _mockMunicipalAccountRepository = new Mock<IMunicipalAccountRepository>();
+            _mockUnitOfWork = new Mock<IUnitOfWork>();
             _mockQuickBooksService = new Mock<IQuickBooksService>();
             _mockAIService = new Mock<IAIService>();
 
             _mockEnterpriseRepository.Setup(repo => repo.GetAllAsync())
                 .ReturnsAsync(new System.Collections.Generic.List<Enterprise>());
 
+            _mockUnitOfWork.SetupGet(u => u.Enterprises).Returns(_mockEnterpriseRepository.Object);
+            _mockUnitOfWork.SetupGet(u => u.MunicipalAccounts).Returns(_mockMunicipalAccountRepository.Object);
+
             _viewModel = new MainViewModel(
-                _mockEnterpriseRepository.Object,
-                _mockMunicipalAccountRepository.Object,
+                _mockUnitOfWork.Object,
                 _mockQuickBooksService.Object,
                 _mockAIService.Object,
                 autoInitialize: false);

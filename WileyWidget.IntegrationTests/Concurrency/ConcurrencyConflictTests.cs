@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using WileyWidget.Data;
 using WileyWidget.IntegrationTests.Infrastructure;
 using WileyWidget.Models;
 using Xunit;
@@ -12,12 +13,34 @@ namespace WileyWidget.IntegrationTests.Concurrency;
 /// </summary>
 public class ConcurrencyConflictTests : SqlServerTestBase
 {
+    /// <summary>
+    /// Seeds required reference data for tests.
+    /// </summary>
+    private async Task SeedRequiredDataAsync(AppDbContext context)
+    {
+        // Seed Department (will get Id=1 if table is empty)
+        if (!await context.Departments.AnyAsync())
+        {
+            var department = TestDataBuilder.CreateDepartment("General Government", "GEN GOVT");
+            context.Departments.Add(department);
+        }
+
+        // Seed BudgetPeriod (will get Id=1 if table is empty)
+        if (!await context.BudgetPeriods.AnyAsync())
+        {
+            var budgetPeriod = TestDataBuilder.CreateBudgetPeriod(2024, "FY2024", BudgetStatus.Adopted);
+            context.BudgetPeriods.Add(budgetPeriod);
+        }
+
+        await context.SaveChangesAsync();
+    }
     [Fact]
     public async Task UpdateAccount_WhenRowVersionMatches_ShouldSucceed()
     {
         // Arrange
         using var context = CreateDbContext();
-        var account = TestDataBuilder.CreateMunicipalAccount("Concurrent Test", "2000-001");
+        await SeedRequiredDataAsync(context);
+        var account = TestDataBuilder.CreateMunicipalAccount("101.1", "Concurrent Test");
         context.MunicipalAccounts.Add(account);
         await context.SaveChangesAsync();
         
@@ -35,7 +58,8 @@ public class ConcurrencyConflictTests : SqlServerTestBase
     {
         // Arrange - Create account in first context
         using var context1 = CreateDbContext();
-        var account = TestDataBuilder.CreateMunicipalAccount("Concurrent Test", "2000-002");
+        await SeedRequiredDataAsync(context1);
+        var account = TestDataBuilder.CreateMunicipalAccount("101.2", "Concurrent Test");
         context1.MunicipalAccounts.Add(account);
         await context1.SaveChangesAsync();
         var accountId = account.Id;
@@ -64,7 +88,8 @@ public class ConcurrencyConflictTests : SqlServerTestBase
     {
         // Arrange
         using var context1 = CreateDbContext();
-        var account = TestDataBuilder.CreateMunicipalAccount("Retry Test", "2000-003");
+        await SeedRequiredDataAsync(context1);
+        var account = TestDataBuilder.CreateMunicipalAccount("101.7", "Retry Test");
         context1.MunicipalAccounts.Add(account);
         await context1.SaveChangesAsync();
         var accountId = account.Id;
@@ -98,7 +123,8 @@ public class ConcurrencyConflictTests : SqlServerTestBase
         }
         
         // Assert
-        var final = await context1.MunicipalAccounts.FindAsync(accountId);
+        using var finalContext = CreateDbContext();
+        var final = await finalContext.MunicipalAccounts.FindAsync(accountId);
         final.Balance.Should().Be(3000m);
     }
 
@@ -107,7 +133,8 @@ public class ConcurrencyConflictTests : SqlServerTestBase
     {
         // Arrange
         using var context1 = CreateDbContext();
-        var account = TestDataBuilder.CreateMunicipalAccount("Client Wins", "2000-004");
+        await SeedRequiredDataAsync(context1);
+        var account = TestDataBuilder.CreateMunicipalAccount("101.3", "Client Wins");
         context1.MunicipalAccounts.Add(account);
         await context1.SaveChangesAsync();
         var accountId = account.Id;
@@ -141,7 +168,8 @@ public class ConcurrencyConflictTests : SqlServerTestBase
         }
         
         // Assert
-        var final = await context1.MunicipalAccounts.FindAsync(accountId);
+        using var finalContext = CreateDbContext();
+        var final = await finalContext.MunicipalAccounts.FindAsync(accountId);
         final.Balance.Should().Be(3000m);
     }
 
@@ -150,7 +178,8 @@ public class ConcurrencyConflictTests : SqlServerTestBase
     {
         // Arrange
         using var context1 = CreateDbContext();
-        var account = TestDataBuilder.CreateMunicipalAccount("Server Wins", "2000-005");
+        await SeedRequiredDataAsync(context1);
+        var account = TestDataBuilder.CreateMunicipalAccount("101.4", "Server Wins");
         context1.MunicipalAccounts.Add(account);
         await context1.SaveChangesAsync();
         var accountId = account.Id;
@@ -186,7 +215,8 @@ public class ConcurrencyConflictTests : SqlServerTestBase
         
         // Assert
         finalBalance.Should().Be(2000m); // Server value preserved
-        var final = await context1.MunicipalAccounts.FindAsync(accountId);
+        using var finalContext = CreateDbContext();
+        var final = await finalContext.MunicipalAccounts.FindAsync(accountId);
         final.Balance.Should().Be(2000m);
     }
 
@@ -195,7 +225,8 @@ public class ConcurrencyConflictTests : SqlServerTestBase
     {
         // Arrange
         using var context1 = CreateDbContext();
-        var account = TestDataBuilder.CreateMunicipalAccount("Merge Test", "2000-006", 1000m);
+        await SeedRequiredDataAsync(context1);
+        var account = TestDataBuilder.CreateMunicipalAccount("101.5", "Merge Test", 1000m);
         context1.MunicipalAccounts.Add(account);
         await context1.SaveChangesAsync();
         var accountId = account.Id;
@@ -249,7 +280,8 @@ public class ConcurrencyConflictTests : SqlServerTestBase
         }
         
         // Assert - Both changes should be preserved
-        var final = await context1.MunicipalAccounts.FindAsync(accountId);
+        using var finalContext = CreateDbContext();
+        var final = await finalContext.MunicipalAccounts.FindAsync(accountId);
         final.Balance.Should().Be(2000m); // From User 1
         final.Name.Should().Be("Merged Account Name"); // From User 2
     }
@@ -259,7 +291,8 @@ public class ConcurrencyConflictTests : SqlServerTestBase
     {
         // Arrange
         using var context1 = CreateDbContext();
-        var account = TestDataBuilder.CreateMunicipalAccount("Delete Test", "2000-007");
+        await SeedRequiredDataAsync(context1);
+        var account = TestDataBuilder.CreateMunicipalAccount("101.6", "Delete Test");
         context1.MunicipalAccounts.Add(account);
         await context1.SaveChangesAsync();
         var accountId = account.Id;

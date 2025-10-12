@@ -150,7 +150,7 @@ lint:
 actions:
   enabled:
     - trunk-announce
-    - trunk-check-pre-push
+    # - trunk-check-pre-push  # Temporarily disabled due to --ci-progress argument issue
     - trunk-fmt-pre-commit
     - trunk-upgrade-available
 tools:

@@ -182,15 +182,15 @@
                      and additional dropdown menu items for common operations. -->
                 <syncfusion:QuickAccessToolBar>
                     <!-- Frequently used commands in QAT -->
-                    <syncfusion:RibbonButton SizeForm="ExtraSmall" Label="Save" Command="{Binding SaveCommand}" IconTemplate="{StaticResource SaveIcon}" />
-                    <syncfusion:RibbonButton SizeForm="ExtraSmall" Label="Refresh" Command="{Binding RefreshCommand}" />
-                    <syncfusion:RibbonButton SizeForm="ExtraSmall" Label="Settings" Command="{Binding OpenSettingsCommand}" IconTemplate="{StaticResource SaveIcon}" />
+                    <syncfusion:RibbonButton SizeForm="ExtraSmall" Label="Save" Command="{Binding SaveCommand}" IconTemplate="{StaticResource SaveIcon}" AutomationProperties.Name="Save Budget Data" AutomationProperties.HelpText="Saves the current budget and financial data" />
+                    <syncfusion:RibbonButton SizeForm="ExtraSmall" Label="Refresh" Command="{Binding RefreshCommand}" AutomationProperties.Name="Refresh Data" AutomationProperties.HelpText="Refreshes all displayed data from the database" />
+                    <syncfusion:RibbonButton SizeForm="ExtraSmall" Label="Settings" Command="{Binding OpenSettingsCommand}" IconTemplate="{StaticResource SaveIcon}" AutomationProperties.Name="Open Settings" AutomationProperties.HelpText="Opens the application settings dialog" />
                     <!-- QAT Menu Items - Additional commands in dropdown -->
                     <syncfusion:QuickAccessToolBar.QATMenuItems>
-                        <syncfusion:RibbonButton Label="New Widget" Command="{Binding AddWidgetCommand}" />
-                        <syncfusion:RibbonButton Label="Export Data" Command="{Binding ExportDataCommand}" />
-                        <syncfusion:RibbonButton Label="Import Data" Command="{Binding ImportDataCommand}" />
-                        <syncfusion:RibbonButton Label="Help" Command="{Binding OpenHelpCommand}" />
+                        <syncfusion:RibbonButton Label="New Widget" Command="{Binding AddWidgetCommand}" AutomationProperties.Name="Create New Widget" AutomationProperties.HelpText="Creates a new budget widget" />
+                        <syncfusion:RibbonButton Label="Export Data" Command="{Binding ExportDataCommand}" AutomationProperties.Name="Export Financial Data" AutomationProperties.HelpText="Exports budget data to a file" />
+                        <syncfusion:RibbonButton Label="Import Data" Command="{Binding ImportDataCommand}" AutomationProperties.Name="Import Financial Data" AutomationProperties.HelpText="Imports budget data from a file" />
+                        <syncfusion:RibbonButton Label="Help" Command="{Binding OpenHelpCommand}" AutomationProperties.Name="Open Help" AutomationProperties.HelpText="Opens the application help documentation" />
                     </syncfusion:QuickAccessToolBar.QATMenuItems>
                 </syncfusion:QuickAccessToolBar>
             </syncfusion:Ribbon.QuickAccessToolBar>

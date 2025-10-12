@@ -394,6 +394,171 @@ WileyWidget/
 
 ---
 
+## 🧪 **Testing Framework**
+
+WileyWidget implements a comprehensive, multi-layered testing strategy designed for enterprise-grade reliability and maintainability. Our testing framework combines traditional unit testing with modern integration and UI automation approaches.
+
+### **Testing Architecture Overview**
+
+| Test Type | Framework | Target | Execution | Coverage Focus |
+|-----------|-----------|--------|-----------|----------------|
+| **Unit Tests** | xUnit + Moq | Business Logic | CI/CD Pipeline | Logic & Algorithms |
+| **Integration Tests** | xUnit + TestContainers | Data Layer | CI/CD Pipeline | Database Operations |
+| **UI Tests** | xUnit + FlaUI | WPF Controls | CI/CD Pipeline | User Interactions |
+| **Python Tests** | pytest | System Resources | Development | Memory & Performance |
+| **PowerShell Scripts** | Pester-like | Build Automation | CI/CD Pipeline | Deployment Validation |
+
+### **1. C# Unit Testing (`WileyWidget.Tests/`)**
+
+**Framework:** xUnit 2.9.2 with Moq 4.20.70 and FluentAssertions 7.0.0
+**Target Files:** ViewModels, Services, Business Logic, Data Operations
+**Test Categories:** Unit, Smoke, Component
+
+**Key Test Files & Coverage:**
+- `MainViewModelTests.cs` - Main application ViewModel (enterprise management, QuickBooks integration)
+- `AIAssistViewModelTests.cs` - AI assistant functionality (conversation modes, financial calculations)
+- `UtilityCustomerViewModelTests.cs` - Customer management operations (CRUD, search, validation)
+- `WhatIfScenarioEngineTests.cs` - Financial scenario modeling (pay raises, equipment costs, reserves)
+- `ServiceChargeCalculatorServiceTests.cs` - Rate calculation algorithms (break-even analysis, revenue projections)
+- `EnterpriseRepositoryTests.cs` - Data access layer (EF Core operations, query optimization)
+- `MunicipalAccountRepositoryUnitTests.cs` - Account management (budget tracking, department allocation)
+
+**Testing Patterns:**
+- **Mock Dependencies:** All external services mocked with Moq for isolated testing
+- **Async Testing:** Comprehensive async/await operation testing with cancellation tokens
+- **Exception Handling:** Error condition testing and graceful failure validation
+- **Property Validation:** Observable property changes and data binding verification
+- **Command Testing:** RelayCommand execution and CanExecute logic validation
+
+### **2. C# Integration Testing (`WileyWidget.IntegrationTests/`)**
+
+**Framework:** xUnit 2.9.2 with TestContainers 4.2.0 and Respawn 6.2.1
+**Target Files:** Database operations, Entity relationships, Concurrency handling
+**Test Categories:** Integration, Database, Performance
+
+**Key Test Areas:**
+- **Database Integration Tests** - Real SQL Server operations using TestContainers
+- **Concurrency Tests** - Multi-threaded database access and transaction isolation
+- **Relationship Tests** - Foreign key constraints and cascade operations
+- **Performance Tests** - Query optimization and benchmark comparisons
+- **Migration Tests** - Schema changes and data integrity validation
+
+**Infrastructure:**
+- **TestContainers:** Spins up real SQL Server instances for each test run
+- **Database Reset:** Respawn library for clean database state between tests
+- **BenchmarkDotNet:** Performance benchmarking for critical operations
+- **Transaction Testing:** ACID compliance validation under concurrent load
+
+### **3. C# UI Testing (`WileyWidget.UiTests/`)**
+
+**Framework:** xUnit 2.9.2 with FlaUI 4.0.0 for WPF automation
+**Target Files:** XAML views, User controls, Window interactions
+**Test Categories:** UI, Component, E2E
+
+**Key Test Files:**
+- `MainWindowComponentTests.cs` - Main window layout, ribbon controls, navigation
+- `AIAssistViewBindingTests.cs` - AI assistant UI bindings and conversation modes
+- `BudgetViewComponentTests.cs` - Budget management interface validation
+- `EnterpriseViewComponentTests.cs` - Enterprise data grid operations
+- `FlaUISmokeTests.cs` - Critical user journey validation
+- `SyncfusionControlsComponentTests.cs` - Third-party control integration
+
+**Testing Capabilities:**
+- **UI Automation:** Window manipulation, control interaction, data binding validation
+- **Visual Regression:** Layout and rendering verification
+- **Accessibility:** Keyboard navigation and screen reader compatibility
+- **Theming:** Dark/light mode switching and visual consistency
+- **Performance:** UI responsiveness and memory usage during interactions
+
+### **4. Python System Testing (`tests/`)**
+
+**Framework:** pytest 7.0+ with custom memory monitoring utilities
+**Target Files:** System resources, Memory management, Performance monitoring
+**Test Categories:** System, Memory, Resources
+
+**Key Test Files:**
+- `test_memory_leaks.py` - Memory leak detection and garbage collection validation
+- `test_resource_exhaustion.py` - Resource usage monitoring and cleanup verification
+- `WileyWidget.DependencyInjection.Tests/` - DI container validation
+- `WileyWidget.LifecycleTests/` - Object lifecycle management
+- `WileyWidget.ThemeResource.Tests/` - Resource dictionary management
+
+**Testing Focus:**
+- **Memory Management:** Weak references, object disposal, GC pressure testing
+- **Resource Monitoring:** File handles, network connections, thread usage
+- **Performance Profiling:** Startup time, memory footprint, CPU utilization
+- **Dependency Injection:** Service registration, lifetime management, scoping
+
+### **5. PowerShell Test Automation (`scripts/`)**
+
+**Framework:** PowerShell scripts with process monitoring and cleanup
+**Target Files:** Build processes, Deployment automation, Environment validation
+**Test Categories:** Build, Deployment, Environment
+
+**Key Scripts:**
+- `test-stafact-with-cleanup.ps1` - UI test execution with orphaned process cleanup
+- `test-stafact-phase2.ps1` - Advanced UI testing with diagnostics
+- `test-with-kill.ps1` - Test execution with forced process termination
+- `test-enterprise-connections.ps1` - Database connectivity validation
+- `test-serilog-config.ps1` - Logging configuration verification
+- `test-quickbooks-connection.ps1` - External API integration testing
+
+**Automation Features:**
+- **Process Management:** Automatic cleanup of orphaned .NET processes
+- **Environment Validation:** Database connections, API endpoints, configuration
+- **Build Verification:** Compilation success, dependency resolution, packaging
+- **Deployment Testing:** Installation validation, service startup, rollback procedures
+
+### **Test Execution & CI/CD Integration**
+
+**Local Development:**
+```powershell
+# Run all unit tests
+dotnet test WileyWidget.Tests/WileyWidget.Tests.csproj
+
+# Run UI tests with cleanup
+.\scripts\test-stafact-with-cleanup.ps1
+
+# Run Python system tests
+python -m pytest tests/ -v
+
+# Run integration tests (requires Docker)
+dotnet test WileyWidget.IntegrationTests/WileyWidget.IntegrationTests.csproj
+```
+
+**CI/CD Pipeline Execution:**
+- **Unit Tests:** Run on every PR and push (5-10 seconds)
+- **Integration Tests:** Run on main branch merges (2-5 minutes with TestContainers)
+- **UI Tests:** Run on release branches (3-8 minutes with FlaUI)
+- **Coverage Reporting:** 70% minimum threshold enforced
+- **Parallel Execution:** Tests run in parallel for faster feedback
+
+### **Test Organization & Naming Conventions**
+
+**File Naming:** `{ClassName}Tests.cs` (e.g., `MainViewModelTests.cs`)
+**Method Naming:** `{MethodName}_{Scenario}_{ExpectedResult}` (e.g., `LoadEnterprisesAsync_WithValidData_LoadsEnterprises`)
+**Categories:** `[Trait("Category", "Unit")]` for filtering and parallel execution
+**Setup/Teardown:** xUnit constructor/disposal for test isolation
+
+### **Coverage Targets & Quality Gates**
+
+- **Unit Tests:** 80% line coverage, 90% branch coverage
+- **Integration Tests:** All critical database operations covered
+- **UI Tests:** All user workflows and error conditions
+- **Performance Tests:** Sub-100ms response times for critical operations
+- **Memory Tests:** No memory leaks in common usage patterns
+
+### **Testing Best Practices**
+
+- **Test Isolation:** Each test completely independent with proper mocking
+- **Arrange-Act-Assert:** Clear test structure for maintainability
+- **Meaningful Names:** Test names describe business behavior, not implementation
+- **Fast Feedback:** Unit tests run in <100ms, integration tests <30 seconds
+- **Realistic Data:** Test data reflects production scenarios and edge cases
+- **Continuous Evolution:** Tests updated alongside code changes
+
+---
+
 ## 📚 **Documentation**
 
 - **[North Star Roadmap](docs/wiley-widget-north-star-v1.1.md)** - Complete implementation plan

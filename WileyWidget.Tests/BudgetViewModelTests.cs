@@ -3,8 +3,10 @@ using System.Threading.Tasks;
 using Xunit;
 using Moq;
 using WileyWidget.ViewModels;
-using WileyWidget.Data;
 using WileyWidget.Models;
+using WileyWidget.Business.Interfaces;
+using EnterpriseRepo = WileyWidget.Business.Interfaces.IEnterpriseRepository;
+using Enterprise = WileyWidget.Models.Enterprise;
 
 namespace WileyWidget.Tests;
 
@@ -13,12 +15,12 @@ namespace WileyWidget.Tests;
 /// </summary>
 public class BudgetViewModelTests
 {
-    private readonly Mock<IEnterpriseRepository> _mockRepository;
+    private readonly Mock<EnterpriseRepo> _mockRepository;
     private readonly BudgetViewModel _viewModel;
 
     public BudgetViewModelTests()
     {
-        _mockRepository = new Mock<IEnterpriseRepository>();
+        _mockRepository = new Mock<EnterpriseRepo>();
         _viewModel = new BudgetViewModel(_mockRepository.Object);
     }
 

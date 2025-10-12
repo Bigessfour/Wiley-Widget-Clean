@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Serilog;
-using WileyWidget.Services;
 
 namespace WileyWidget.Models;
 
@@ -304,10 +303,10 @@ public class HealthCheckCircuitBreaker
         // Record state transition if it changed
         if (previousState != CircuitBreakerState.Closed)
         {
-            _metricsService?.RecordCircuitBreakerTransition(
-                previousState.ToString(), 
-                CircuitBreakerState.Closed.ToString(), 
-                _serviceName);
+            // _metricsService?.RecordCircuitBreakerTransition(
+            //     previousState.ToString(), 
+            //     CircuitBreakerState.Closed.ToString(), 
+            //     _serviceName);
         }
     }
 
@@ -329,10 +328,10 @@ public class HealthCheckCircuitBreaker
         // Record state transition if it changed
         if (previousState != _state)
         {
-            _metricsService?.RecordCircuitBreakerTransition(
-                previousState.ToString(), 
-                _state.ToString(), 
-                _serviceName);
+            // _metricsService?.RecordCircuitBreakerTransition(
+            //     previousState.ToString(), 
+            //     _state.ToString(), 
+            //     _serviceName);
         }
     }
 }

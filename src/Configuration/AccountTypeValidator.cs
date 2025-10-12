@@ -107,8 +107,8 @@ public class AccountTypeValidator
         if (string.IsNullOrWhiteSpace(accountNumber))
             return false;
 
-        // Extract the root account number (before any decimals)
-        var rootNumber = accountNumber.Split('.')[0];
+        // Extract the root account number (before any separators)
+        var rootNumber = accountNumber.Split(new[] { '.', '-' }, StringSplitOptions.RemoveEmptyEntries)[0];
         if (!int.TryParse(rootNumber, out var accountNum))
             return false;
 
@@ -142,8 +142,8 @@ public class AccountTypeValidator
         if (string.IsNullOrWhiteSpace(accountNumber))
             return Enumerable.Empty<AccountType>();
 
-        // Extract the root account number (before any decimals)
-        var rootNumber = accountNumber.Split('.')[0];
+        // Extract the root account number (before any separators)
+        var rootNumber = accountNumber.Split(new[] { '.', '-' }, StringSplitOptions.RemoveEmptyEntries)[0];
         if (!int.TryParse(rootNumber, out var accountNum))
             return Enumerable.Empty<AccountType>();
 

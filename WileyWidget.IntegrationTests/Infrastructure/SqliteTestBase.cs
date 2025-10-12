@@ -36,6 +36,15 @@ public abstract class SqliteTestBase : IDisposable
 
     public void Dispose()
     {
-        Context?.Dispose();
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            Context?.Dispose();
+        }
     }
 }

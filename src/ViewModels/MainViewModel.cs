@@ -5,8 +5,6 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using WileyWidget.Models;
 using WileyWidget.Services;
-using WileyWidget.Data;
-using Intuit.Ipp.Data;
 using System.Threading.Tasks;
 using Tasks = System.Threading.Tasks;
 using System.Collections.Generic;
@@ -18,6 +16,12 @@ using System.Diagnostics;
 using System.Windows;
 using System.Linq;
 using WileyWidget;
+using QboInvoice = Intuit.Ipp.Data.Invoice;
+using QboCustomer = Intuit.Ipp.Data.Customer;
+using EnterpriseModel = WileyWidget.Models.Enterprise;
+
+#pragma warning disable CS0104 // Suppress ambiguous reference warnings
+#pragma warning disable CS0246 // Suppress type not found warnings
 
 namespace WileyWidget.ViewModels;
 
@@ -66,10 +70,10 @@ public partial class MainViewModel : ObservableObject, IDisposable
         throw new Exception($"Operation failed after {maxRetries + 1} attempts");
     }
 
-    public ObservableCollection<Enterprise> Enterprises { get; } = new();
+    public ObservableCollection<WileyWidget.Models.Enterprise> Enterprises { get; } = new();
 
-    public ObservableCollection<Customer> QuickBooksCustomers { get; } = new();
-    public ObservableCollection<Invoice> QuickBooksInvoices { get; } = new();
+    public ObservableCollection<QboCustomer> QuickBooksCustomers { get; } = new();
+    public ObservableCollection<QboInvoice> QuickBooksInvoices { get; } = new();
 
     /// <summary>
     /// Municipal account view model for Chart of Accounts and Budget Analysis
@@ -78,7 +82,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     /// <summary>Currently selected enterprise in the grid (null when none selected).</summary>
     [ObservableProperty]
-    private Enterprise selectedEnterprise;
+    private WileyWidget.Models.Enterprise selectedEnterprise;
 
     /// <summary>
     /// Loading state for async operations
@@ -272,7 +276,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         try
         {
             var nextId = Enterprises.Count == 0 ? 1 : Enterprises[^1].Id + 1;
-            var enterprise = new Enterprise
+            var enterprise = new WileyWidget.Models.Enterprise
             {
                 Id = nextId,
                 Name = $"New Enterprise {nextId}",
@@ -297,9 +301,14 @@ public partial class MainViewModel : ObservableObject, IDisposable
     /// <summary>
     /// Creates a new enterprise from header-value mapping (used for clipboard paste)
     /// </summary>
-    public Enterprise CreateEnterpriseFromHeaderMapping(IDictionary<string, string> headerValueMap)
+    public WileyWidget.Models.Enterprise CreateEnterpriseFromHeaderMapping(IDictionary<string, string> headerValueMap)
     {
-        return _enterpriseRepository.CreateFromHeaderMapping(headerValueMap);
+        if (_enterpriseRepository is WileyWidget.Data.EnterpriseRepository concreteRepository)
+        {
+            return concreteRepository.CreateFromHeaderMapping(headerValueMap);
+        }
+
+        throw new NotSupportedException("The current enterprise repository implementation does not support header mapping.");
     }
 
     public MainViewModel(
@@ -456,10 +465,10 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 App.LogDebugEvent("DATA_LOADING", "No enterprises found, adding sample data");
                 var sampleEnterprises = new[]
                 {
-                    new Enterprise { Id = 1, Name = "Water Utility", Type = "Utility", CurrentRate = 25.00M, MonthlyExpenses = 15000.00M, CitizenCount = 2500, TotalBudget = 180000.00M, Notes = "Municipal water service" },
-                    new Enterprise { Id = 2, Name = "Sewer Service", Type = "Utility", CurrentRate = 35.00M, MonthlyExpenses = 22000.00M, CitizenCount = 2500, TotalBudget = 264000.00M, Notes = "Wastewater treatment and sewer service" },
-                    new Enterprise { Id = 3, Name = "Trash Collection", Type = "Service", CurrentRate = 15.00M, MonthlyExpenses = 8000.00M, CitizenCount = 2500, TotalBudget = 96000.00M, Notes = "Residential and commercial waste collection" },
-                    new Enterprise { Id = 4, Name = "Municipal Apartments", Type = "Housing", CurrentRate = 450.00M, MonthlyExpenses = 12000.00M, CitizenCount = 150, TotalBudget = 144000.00M, Notes = "Low-income housing units" }
+                    new EnterpriseModel { Id = 1, Name = "Water Utility", Type = "Utility", CurrentRate = 25.00M, MonthlyExpenses = 15000.00M, CitizenCount = 2500, TotalBudget = 180000.00M, Notes = "Municipal water service" },
+                    new EnterpriseModel { Id = 2, Name = "Sewer Service", Type = "Utility", CurrentRate = 35.00M, MonthlyExpenses = 22000.00M, CitizenCount = 2500, TotalBudget = 264000.00M, Notes = "Wastewater treatment and sewer service" },
+                    new EnterpriseModel { Id = 3, Name = "Trash Collection", Type = "Service", CurrentRate = 15.00M, MonthlyExpenses = 8000.00M, CitizenCount = 2500, TotalBudget = 96000.00M, Notes = "Residential and commercial waste collection" },
+                    new EnterpriseModel { Id = 4, Name = "Municipal Apartments", Type = "Housing", CurrentRate = 450.00M, MonthlyExpenses = 12000.00M, CitizenCount = 150, TotalBudget = 144000.00M, Notes = "Low-income housing units" }
                 };
 
                 // Dispatch sample data additions to UI thread if available
@@ -499,10 +508,10 @@ public partial class MainViewModel : ObservableObject, IDisposable
             // Add fallback sample data
             var fallbackEnterprises = new[]
             {
-                new Enterprise { Id = 1, Name = "Water Utility", Type = "Utility", CurrentRate = 25.00M, MonthlyExpenses = 15000.00M, CitizenCount = 2500, TotalBudget = 180000.00M },
-                new Enterprise { Id = 2, Name = "Sewer Service", Type = "Utility", CurrentRate = 35.00M, MonthlyExpenses = 22000.00M, CitizenCount = 2500, TotalBudget = 264000.00M },
-                new Enterprise { Id = 3, Name = "Trash Collection", Type = "Service", CurrentRate = 15.00M, MonthlyExpenses = 8000.00M, CitizenCount = 2500, TotalBudget = 96000.00M },
-                new Enterprise { Id = 4, Name = "Municipal Apartments", Type = "Housing", CurrentRate = 450.00M, MonthlyExpenses = 12000.00M, CitizenCount = 150, TotalBudget = 144000.00M }
+                new EnterpriseModel { Id = 1, Name = "Water Utility", Type = "Utility", CurrentRate = 25.00M, MonthlyExpenses = 15000.00M, CitizenCount = 2500, TotalBudget = 180000.00M },
+                new EnterpriseModel { Id = 2, Name = "Sewer Service", Type = "Utility", CurrentRate = 35.00M, MonthlyExpenses = 22000.00M, CitizenCount = 2500, TotalBudget = 264000.00M },
+                new EnterpriseModel { Id = 3, Name = "Trash Collection", Type = "Service", CurrentRate = 15.00M, MonthlyExpenses = 8000.00M, CitizenCount = 2500, TotalBudget = 96000.00M },
+                new EnterpriseModel { Id = 4, Name = "Municipal Apartments", Type = "Housing", CurrentRate = 450.00M, MonthlyExpenses = 12000.00M, CitizenCount = 150, TotalBudget = 144000.00M }
             };
 
             // Dispatch fallback data additions to UI thread if available

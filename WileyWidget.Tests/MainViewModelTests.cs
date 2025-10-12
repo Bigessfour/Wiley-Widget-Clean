@@ -5,9 +5,13 @@ using WileyWidget.ViewModels;
 using WileyWidget.Data;
 using WileyWidget.Models;
 using WileyWidget.Services;
+using WileyWidget.Business.Interfaces;
 using Intuit.Ipp.Data;
 using System.Threading.Tasks;
 using Serilog;
+using EnterpriseRepo = WileyWidget.Business.Interfaces.IEnterpriseRepository;
+using MunicipalRepo = WileyWidget.Business.Interfaces.IMunicipalAccountRepository;
+using Enterprise = WileyWidget.Models.Enterprise;
 
 namespace WileyWidget.Tests;
 
@@ -17,16 +21,20 @@ namespace WileyWidget.Tests;
 /// </summary>
 public class MainViewModelTests : TestApplication
 {
-    private readonly Mock<IEnterpriseRepository> _mockEnterpriseRepository;
-    private readonly Mock<IMunicipalAccountRepository> _mockMunicipalAccountRepository;
+    private readonly Mock<EnterpriseRepo> _mockEnterpriseRepository;
+    private readonly Mock<MunicipalRepo> _mockMunicipalAccountRepository;
+    private readonly Mock<IUnitOfWork> _mockUnitOfWork;
     private readonly Mock<IQuickBooksService> _mockQuickBooksService;
     private readonly Mock<IAIService> _mockAIService;
     private readonly MainViewModel _viewModel;
 
     public MainViewModelTests()
     {
-        _mockEnterpriseRepository = new Mock<IEnterpriseRepository>();
-        _mockMunicipalAccountRepository = new Mock<IMunicipalAccountRepository>();
+        _mockEnterpriseRepository = new Mock<EnterpriseRepo>();
+        _mockMunicipalAccountRepository = new Mock<MunicipalRepo>();
+        _mockUnitOfWork = new Mock<IUnitOfWork>();
+        _mockUnitOfWork.Setup(u => u.Enterprises).Returns(_mockEnterpriseRepository.Object);
+        _mockUnitOfWork.Setup(u => u.MunicipalAccounts).Returns(_mockMunicipalAccountRepository.Object);
         _mockQuickBooksService = new Mock<IQuickBooksService>();
         _mockAIService = new Mock<IAIService>();
 
@@ -39,11 +47,10 @@ public class MainViewModelTests : TestApplication
             .ReturnsAsync(new List<Invoice>());
 
         _viewModel = new MainViewModel(
-            _mockEnterpriseRepository.Object,
-            _mockMunicipalAccountRepository.Object,
+            _mockUnitOfWork.Object,
             _mockQuickBooksService.Object,
             _mockAIService.Object,
-            autoInitialize: false);
+            false);
     }
 
     /// <summary>
@@ -72,23 +79,29 @@ public class MainViewModelTests : TestApplication
     [Fact]
     public void Constructor_WithNullEnterpriseRepository_ThrowsArgumentNullException()
     {
+        // Arrange
+        _mockUnitOfWork.Setup(u => u.Enterprises).Returns((IEnterpriseRepository)null!);
+
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() =>
-            new MainViewModel(null!, _mockMunicipalAccountRepository.Object, _mockQuickBooksService.Object, _mockAIService.Object, autoInitialize: false));
+            new MainViewModel(_mockUnitOfWork.Object, _mockQuickBooksService.Object, _mockAIService.Object, false));
     }
 
     [Fact]
     public void Constructor_WithNullMunicipalAccountRepository_ThrowsArgumentNullException()
     {
+        // Arrange
+        _mockUnitOfWork.Setup(u => u.MunicipalAccounts).Returns((IMunicipalAccountRepository)null!);
+
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() =>
-            new MainViewModel(_mockEnterpriseRepository.Object, null!, _mockQuickBooksService.Object, _mockAIService.Object, autoInitialize: false));
+            new MainViewModel(_mockUnitOfWork.Object, _mockQuickBooksService.Object, _mockAIService.Object, false));
     }
     [Fact]
     public void Constructor_WithNullQuickBooksService_DoesNotThrow()
     {
         // Act & Assert - Should not throw
-        using var viewModel = new MainViewModel(_mockEnterpriseRepository.Object, _mockMunicipalAccountRepository.Object, null, _mockAIService.Object, autoInitialize: false);
+        using var viewModel = new MainViewModel(_mockUnitOfWork.Object, null, _mockAIService.Object, false);
         Assert.NotNull(viewModel);
     }
 
@@ -186,8 +199,7 @@ public class MainViewModelTests : TestApplication
     {
         // Arrange
         using var viewModel = new MainViewModel(
-            _mockEnterpriseRepository.Object,
-            _mockMunicipalAccountRepository.Object,
+            _mockUnitOfWork.Object,
             null!, // No QuickBooks service
             _mockAIService.Object,
             autoInitialize: false);

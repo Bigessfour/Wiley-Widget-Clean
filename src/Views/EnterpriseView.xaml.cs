@@ -8,6 +8,7 @@ using WileyWidget.Data;
 using Syncfusion.SfSkinManager;
 using Syncfusion.Windows.Shared;
 using Serilog;
+using BusinessInterfaces = WileyWidget.Business.Interfaces;
 
 namespace WileyWidget;
 
@@ -32,7 +33,7 @@ public partial class EnterpriseView : Window
         if (provider != null)
         {
             _viewScope = provider.CreateScope();
-            var enterpriseRepository = _viewScope.ServiceProvider.GetRequiredService<IEnterpriseRepository>();
+            var enterpriseRepository = _viewScope.ServiceProvider.GetRequiredService<BusinessInterfaces.IEnterpriseRepository>();
             DataContext = new EnterpriseViewModel(enterpriseRepository);
 
             // Dispose the scope when the window is closed

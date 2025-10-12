@@ -26,7 +26,9 @@ public class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
         var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
         optionsBuilder.UseSqlServer(connectionString);
         optionsBuilder.EnableDetailedErrors();
+#pragma warning disable CA2000 // UseLoggerFactory takes ownership of the ILoggerFactory and disposes it when the DbContext is disposed
         optionsBuilder.UseLoggerFactory(LoggerFactory.Create(builder => builder.AddConsole()));
+#pragma warning restore CA2000
 
         return new AppDbContext(optionsBuilder.Options);
     }

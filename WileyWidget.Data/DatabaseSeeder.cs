@@ -273,7 +273,8 @@ public class DatabaseSeeder
                 Fund = FundType.Enterprise,
                 FundClass = FundClass.Proprietary,
                 Balance = 2500.00m,
-                BudgetAmount = 2500.00m
+                BudgetAmount = 2500.00m,
+                RowVersion = Array.Empty<byte>()
             },
             new MunicipalAccount
             {
@@ -283,7 +284,8 @@ public class DatabaseSeeder
                 Fund = FundType.Enterprise,
                 FundClass = FundClass.Proprietary,
                 Balance = 1750.00m,
-                BudgetAmount = 1750.00m
+                BudgetAmount = 1750.00m,
+                RowVersion = Array.Empty<byte>()
             },
             new MunicipalAccount
             {
@@ -293,7 +295,8 @@ public class DatabaseSeeder
                 Fund = FundType.Enterprise,
                 FundClass = FundClass.Proprietary,
                 Balance = 7500.00m,
-                BudgetAmount = 7500.00m
+                BudgetAmount = 7500.00m,
+                RowVersion = Array.Empty<byte>()
             },
             new MunicipalAccount
             {
@@ -303,7 +306,8 @@ public class DatabaseSeeder
                 Fund = FundType.Enterprise,
                 FundClass = FundClass.Proprietary,
                 Balance = -7500.00m,
-                BudgetAmount = -7500.00m
+                BudgetAmount = -7500.00m,
+                RowVersion = Array.Empty<byte>()
             },
             new MunicipalAccount
             {
@@ -313,7 +317,8 @@ public class DatabaseSeeder
                 Fund = FundType.Enterprise,
                 FundClass = FundClass.Proprietary,
                 Balance = -4200.00m,
-                BudgetAmount = -4200.00m
+                BudgetAmount = -4200.00m,
+                RowVersion = Array.Empty<byte>()
             },
             new MunicipalAccount
             {
@@ -323,7 +328,8 @@ public class DatabaseSeeder
                 Fund = FundType.Enterprise,
                 FundClass = FundClass.Proprietary,
                 Balance = -2800.00m,
-                BudgetAmount = -2800.00m
+                BudgetAmount = -2800.00m,
+                RowVersion = Array.Empty<byte>()
             }
         };
 

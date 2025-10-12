@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using WileyWidget.Data;
 using WileyWidget.IntegrationTests.Infrastructure;
 using Xunit;
 using WileyWidget.Models;
@@ -17,7 +18,8 @@ public class ForeignKeyIntegrityTests : SqlServerTestBase
     {
         // Arrange
         using var context = CreateDbContext();
-        var account = TestDataBuilder.CreateMunicipalAccount("Cascade Test", "3000-001");
+        var (departmentId, budgetPeriodId) = await EnsureAccountDependenciesAsync(context);
+        var account = TestDataBuilder.CreateMunicipalAccount("101-001", "Cascade Test", 1000m, departmentId, budgetPeriodId);
         context.MunicipalAccounts.Add(account);
         await context.SaveChangesAsync();
         
@@ -62,7 +64,8 @@ public class ForeignKeyIntegrityTests : SqlServerTestBase
     {
         // Arrange
         using var context = CreateDbContext();
-        var account = TestDataBuilder.CreateMunicipalAccount("Navigation Test", "3000-002");
+        var (departmentId, budgetPeriodId) = await EnsureAccountDependenciesAsync(context);
+        var account = TestDataBuilder.CreateMunicipalAccount("101-002", "Navigation Test", 1000m, departmentId, budgetPeriodId);
         context.MunicipalAccounts.Add(account);
         await context.SaveChangesAsync();
         
@@ -92,7 +95,8 @@ public class ForeignKeyIntegrityTests : SqlServerTestBase
         // Arrange
         using var context = CreateDbContext();
         var vendor = TestDataBuilder.CreateVendor("Test Vendor Inc.");
-        var account = TestDataBuilder.CreateMunicipalAccount("Invoice Test", "3000-003");
+        var (departmentId, budgetPeriodId) = await EnsureAccountDependenciesAsync(context);
+        var account = TestDataBuilder.CreateMunicipalAccount("200-001", "Invoice Test", 1000m, departmentId, budgetPeriodId, AccountType.Payables);
         
         context.Vendors.Add(vendor);
         context.MunicipalAccounts.Add(account);
@@ -116,7 +120,7 @@ public class ForeignKeyIntegrityTests : SqlServerTestBase
         loadedInvoice.Vendor.Should().NotBeNull();
         loadedInvoice.Vendor.Name.Should().Be("Test Vendor Inc.");
         loadedInvoice.MunicipalAccount.Should().NotBeNull();
-        loadedInvoice.MunicipalAccount.AccountNumber.Should().Be("3000-003");
+        loadedInvoice.MunicipalAccount.AccountNumber.Should().Be("200-001");
     }
 
     [Fact]
@@ -125,7 +129,8 @@ public class ForeignKeyIntegrityTests : SqlServerTestBase
         // Arrange
         using var context = CreateDbContext();
         var vendor = TestDataBuilder.CreateVendor("Vendor To Delete");
-        var account = TestDataBuilder.CreateMunicipalAccount("Invoice Account", "3000-004");
+    var (departmentId, budgetPeriodId) = await EnsureAccountDependenciesAsync(context);
+    var account = TestDataBuilder.CreateMunicipalAccount("200-002", "Invoice Account", 1000m, departmentId, budgetPeriodId, AccountType.Payables);
         
         context.Vendors.Add(vendor);
         context.MunicipalAccounts.Add(account);
@@ -162,7 +167,8 @@ public class ForeignKeyIntegrityTests : SqlServerTestBase
     {
         // Arrange
         using var context = CreateDbContext();
-        var account = TestDataBuilder.CreateMunicipalAccount("Update Test", "3000-005");
+    var (departmentId, budgetPeriodId) = await EnsureAccountDependenciesAsync(context);
+    var account = TestDataBuilder.CreateMunicipalAccount("100-001", "Update Test", 1000m, departmentId, budgetPeriodId, AccountType.Cash);
         context.MunicipalAccounts.Add(account);
         await context.SaveChangesAsync();
         
@@ -190,7 +196,8 @@ public class ForeignKeyIntegrityTests : SqlServerTestBase
     {
         // Arrange
         using var context = CreateDbContext();
-        var account = TestDataBuilder.CreateMunicipalAccount("Bidirectional Test", "3000-006");
+    var (departmentId, budgetPeriodId) = await EnsureAccountDependenciesAsync(context);
+    var account = TestDataBuilder.CreateMunicipalAccount("100-002", "Bidirectional Test", 1000m, departmentId, budgetPeriodId, AccountType.Cash);
         context.MunicipalAccounts.Add(account);
         await context.SaveChangesAsync();
         
@@ -226,8 +233,9 @@ public class ForeignKeyIntegrityTests : SqlServerTestBase
     {
         // Arrange
         using var context = CreateDbContext();
-        var account1 = TestDataBuilder.CreateMunicipalAccount("Bulk Test 1", "3000-007");
-        var account2 = TestDataBuilder.CreateMunicipalAccount("Bulk Test 2", "3000-008");
+    var (departmentId, budgetPeriodId) = await EnsureAccountDependenciesAsync(context);
+    var account1 = TestDataBuilder.CreateMunicipalAccount("100-003", "Bulk Test 1", 1000m, departmentId, budgetPeriodId, AccountType.Cash);
+    var account2 = TestDataBuilder.CreateMunicipalAccount("100-004", "Bulk Test 2", 1000m, departmentId, budgetPeriodId, AccountType.Cash);
         context.MunicipalAccounts.AddRange(account1, account2);
         await context.SaveChangesAsync();
         
@@ -244,7 +252,7 @@ public class ForeignKeyIntegrityTests : SqlServerTestBase
         // Assert
         var remainingAccounts = await context.MunicipalAccounts.ToListAsync();
         remainingAccounts.Should().HaveCount(1);
-        remainingAccounts.First().AccountNumber.Should().Be("3000-008");
+        remainingAccounts.First().AccountNumber.Should().Be("100-004");
         
         var remainingTransactions = await context.Transactions.ToListAsync();
         remainingTransactions.Should().HaveCount(1);
@@ -252,23 +260,50 @@ public class ForeignKeyIntegrityTests : SqlServerTestBase
     }
 
     [Fact]
-    public async Task NullForeignKey_ShouldAllowOrphanedRecords_WhenConfigured()
+    public async Task BudgetEntry_WithRequiredRelationships_ShouldPersist()
     {
         // Arrange
         using var context = CreateDbContext();
-        
-        // Some models might allow null foreign keys for optional relationships
-        // This test verifies that behavior when applicable
-        
-        var budgetEntry = TestDataBuilder.CreateBudgetEntry(0);
-        context.BudgetEntries.Add(budgetEntry);
-        
-        // Act - Save without required relationships (if allowed by model)
+        var (departmentId, budgetPeriodId) = await EnsureAccountDependenciesAsync(context);
+        var account = TestDataBuilder.CreateMunicipalAccount("100-900", "Budget Entry Account", 1000m, departmentId, budgetPeriodId, AccountType.Cash);
+        context.MunicipalAccounts.Add(account);
         await context.SaveChangesAsync();
-        
+
+        var budgetEntry = TestDataBuilder.CreateBudgetEntry(account.Id, 1000m, budgetPeriodId);
+        context.BudgetEntries.Add(budgetEntry);
+
+        // Act
+        await context.SaveChangesAsync();
+
         // Assert
-        var loaded = await context.BudgetEntries.FindAsync(budgetEntry.Id);
+        var loaded = await context.BudgetEntries
+            .Include(be => be.MunicipalAccount)
+            .Include(be => be.BudgetPeriod)
+            .FirstAsync(be => be.Id == budgetEntry.Id);
         loaded.Should().NotBeNull();
+        loaded.MunicipalAccount.Should().NotBeNull();
+        loaded.BudgetPeriod.Should().NotBeNull();
+    }
+
+    private static async Task<(int DepartmentId, int BudgetPeriodId)> EnsureAccountDependenciesAsync(AppDbContext context)
+    {
+        var department = await context.Departments.FirstOrDefaultAsync();
+        if (department == null)
+        {
+            department = TestDataBuilder.CreateDepartment();
+            context.Departments.Add(department);
+            await context.SaveChangesAsync();
+        }
+
+        var budgetPeriod = await context.BudgetPeriods.FirstOrDefaultAsync();
+        if (budgetPeriod == null)
+        {
+            budgetPeriod = TestDataBuilder.CreateBudgetPeriod();
+            context.BudgetPeriods.Add(budgetPeriod);
+            await context.SaveChangesAsync();
+        }
+
+        return (department.Id, budgetPeriod.Id);
     }
 }
 

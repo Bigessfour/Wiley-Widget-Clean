@@ -6,6 +6,7 @@ using Xunit;
 using WileyWidget.Data;
 using WileyWidget.Models;
 using WileyWidget.ViewModels;
+using WileyWidget.Business.Interfaces;
 
 namespace WileyWidget.Tests;
 
@@ -16,19 +17,22 @@ namespace WileyWidget.Tests;
 public class UtilityCustomerViewModelTests
 {
     private readonly Mock<IUtilityCustomerRepository> _mockRepository;
+    private readonly Mock<IUnitOfWork> _mockUnitOfWork;
     private readonly UtilityCustomerViewModel _viewModel;
 
     public UtilityCustomerViewModelTests()
     {
-        _mockRepository = new Mock<IUtilityCustomerRepository>();
-        _viewModel = new UtilityCustomerViewModel(_mockRepository.Object);
+    _mockRepository = new Mock<IUtilityCustomerRepository>();
+    _mockUnitOfWork = new Mock<IUnitOfWork>();
+    _mockUnitOfWork.SetupGet(u => u.UtilityCustomers).Returns(_mockRepository.Object);
+    _viewModel = new UtilityCustomerViewModel(_mockUnitOfWork.Object);
     }
 
     [Fact]
     public void Constructor_WithNullRepository_ThrowsArgumentNullException()
     {
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new UtilityCustomerViewModel(null));
+    Assert.Throws<ArgumentNullException>(() => new UtilityCustomerViewModel(null!));
     }
 
     [Fact]

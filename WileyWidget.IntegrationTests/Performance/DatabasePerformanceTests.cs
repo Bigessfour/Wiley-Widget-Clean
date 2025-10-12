@@ -131,12 +131,15 @@ public class DatabasePerformanceTests : SqlServerTestBase
         using var context = new AppDbContext(options);
         await context.Database.OpenConnectionAsync();
         await context.Database.EnsureCreatedAsync();
+        var (departmentId, budgetPeriodId) = await EnsureAccountDependenciesAsync(context);
+        var existingCount = await context.MunicipalAccounts.CountAsync();
 
         var sw = Stopwatch.StartNew();
         
         for (int i = 0; i < count; i++)
         {
-            var account = TestDataBuilder.CreateMunicipalAccount($"SQLite Account {i}", $"SQLITE-{i:D4}");
+            var accountNumber = BuildAccountNumber(100, existingCount + i);
+            var account = TestDataBuilder.CreateMunicipalAccount(accountNumber, $"SQLite Account {i}", 1000m, departmentId, budgetPeriodId);
             context.MunicipalAccounts.Add(account);
         }
         
@@ -241,12 +244,15 @@ public class DatabasePerformanceTests : SqlServerTestBase
     private async Task<long> MeasureSqlServerInsert(int count)
     {
         using var context = CreateDbContext();
+        var (departmentId, budgetPeriodId) = await EnsureAccountDependenciesAsync(context);
+        var existingCount = await context.MunicipalAccounts.CountAsync();
         
         var sw = Stopwatch.StartNew();
         
         for (int i = 0; i < count; i++)
         {
-            var account = TestDataBuilder.CreateMunicipalAccount($"SQL Server Account {i}", $"SQLSRV-{i:D4}");
+            var accountNumber = BuildAccountNumber(200, existingCount + i);
+            var account = TestDataBuilder.CreateMunicipalAccount(accountNumber, $"SQL Server Account {i}", 1000m, departmentId, budgetPeriodId);
             context.MunicipalAccounts.Add(account);
         }
         
@@ -317,9 +323,12 @@ public class DatabasePerformanceTests : SqlServerTestBase
 
     private async Task SeedContext(AppDbContext context, int count)
     {
+        var (departmentId, budgetPeriodId) = await EnsureAccountDependenciesAsync(context);
+        var existingCount = await context.MunicipalAccounts.CountAsync();
         for (int i = 0; i < count; i++)
         {
-            var account = TestDataBuilder.CreateMunicipalAccount($"Account {i}", $"ACC-{i:D4}", 1000m + (i * 100));
+            var accountNumber = BuildAccountNumber(300, existingCount + i);
+            var account = TestDataBuilder.CreateMunicipalAccount(accountNumber, $"Account {i}", 1000m + (i * 100), departmentId, budgetPeriodId);
             context.MunicipalAccounts.Add(account);
         }
         await context.SaveChangesAsync();
@@ -327,9 +336,12 @@ public class DatabasePerformanceTests : SqlServerTestBase
 
     private async Task SeedContextWithRelationships(AppDbContext context, int count)
     {
+        var (departmentId, budgetPeriodId) = await EnsureAccountDependenciesAsync(context);
+        var existingCount = await context.MunicipalAccounts.CountAsync();
         for (int i = 0; i < count; i++)
         {
-            var account = TestDataBuilder.CreateMunicipalAccount($"Account {i}", $"ACC-{i:D4}", 1000m + (i * 100));
+            var accountNumber = BuildAccountNumber(300, existingCount + i);
+            var account = TestDataBuilder.CreateMunicipalAccount(accountNumber, $"Account {i}", 1000m + (i * 100), departmentId, budgetPeriodId);
             context.MunicipalAccounts.Add(account);
         }
         await context.SaveChangesAsync();
@@ -344,5 +356,31 @@ public class DatabasePerformanceTests : SqlServerTestBase
     }
 
     #endregion
+
+    private static async Task<(int DepartmentId, int BudgetPeriodId)> EnsureAccountDependenciesAsync(AppDbContext context)
+    {
+        var department = await context.Departments.FirstOrDefaultAsync();
+        if (department == null)
+        {
+            department = TestDataBuilder.CreateDepartment();
+            context.Departments.Add(department);
+            await context.SaveChangesAsync();
+        }
+
+        var budgetPeriod = await context.BudgetPeriods.FirstOrDefaultAsync();
+        if (budgetPeriod == null)
+        {
+            budgetPeriod = TestDataBuilder.CreateBudgetPeriod();
+            context.BudgetPeriods.Add(budgetPeriod);
+            await context.SaveChangesAsync();
+        }
+
+        return (department.Id, budgetPeriod.Id);
+    }
+
+    private static string BuildAccountNumber(int baseSegment, int index)
+    {
+        return $"{baseSegment:D3}-{index + 1:0000}";
+    }
 }
 

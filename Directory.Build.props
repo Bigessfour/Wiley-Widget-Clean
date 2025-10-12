@@ -8,6 +8,7 @@
   <PropertyGroup>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <Nullable>disable</Nullable>
+    <NoWarn>$(NoWarn);NETSDK1206</NoWarn>
 
     <!-- Build Caching and Performance Optimizations -->
     <UseSharedCompilation>true</UseSharedCompilation>

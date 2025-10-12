@@ -6,6 +6,7 @@ using Xunit;
 using WileyWidget.Data;
 using WileyWidget.Models;
 using WileyWidget.Services;
+using WileyWidget.Business.Interfaces;
 
 namespace WileyWidget.Tests;
 
