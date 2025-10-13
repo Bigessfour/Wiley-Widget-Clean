@@ -37,7 +37,7 @@ public class EnterpriseRepositoryTests : IDisposable
     public void Constructor_WithNullContext_ThrowsArgumentNullException()
     {
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new EnterpriseRepository(null));
+        Assert.Throws<ArgumentNullException>(() => new EnterpriseRepository(null!));
     }
 
     [Fact]
@@ -55,9 +55,9 @@ public class EnterpriseRepositoryTests : IDisposable
     public async Task GetAllAsync_WithEnterprises_ReturnsOrderedByName()
     {
         // Arrange
-        var enterprise1 = new Enterprise { Name = "Zeta Corp", Description = "Test enterprise Z" };
-        var enterprise2 = new Enterprise { Name = "Alpha Corp", Description = "Test enterprise A" };
-        var enterprise3 = new Enterprise { Name = "Beta Corp", Description = "Test enterprise B" };
+        var enterprise1 = new Enterprise { Name = "Zeta Corp", Description = "Test enterprise Z", RowVersion = new byte[8] };
+        var enterprise2 = new Enterprise { Name = "Alpha Corp", Description = "Test enterprise A", RowVersion = new byte[8] };
+        var enterprise3 = new Enterprise { Name = "Beta Corp", Description = "Test enterprise B", RowVersion = new byte[8] };
 
         await _context.Enterprises.AddRangeAsync(enterprise1, enterprise2, enterprise3);
         await _context.SaveChangesAsync();
@@ -77,7 +77,7 @@ public class EnterpriseRepositoryTests : IDisposable
     public async Task GetByIdAsync_ExistingId_ReturnsEnterprise()
     {
         // Arrange
-        var enterprise = new Enterprise { Name = "Test Corp", Description = "Test enterprise" };
+        var enterprise = new Enterprise { Name = "Test Corp", Description = "Test enterprise", RowVersion = new byte[8] };
         _context.Enterprises.Add(enterprise);
         await _context.SaveChangesAsync();
 
@@ -104,7 +104,7 @@ public class EnterpriseRepositoryTests : IDisposable
     public async Task GetByNameAsync_ExistingName_ReturnsEnterprise()
     {
         // Arrange
-        var enterprise = new Enterprise { Name = "Test Corp", Description = "Test enterprise" };
+        var enterprise = new Enterprise { Name = "Test Corp", Description = "Test enterprise", RowVersion = new byte[8] };
         _context.Enterprises.Add(enterprise);
         await _context.SaveChangesAsync();
 
@@ -121,7 +121,7 @@ public class EnterpriseRepositoryTests : IDisposable
     public async Task GetByNameAsync_CaseInsensitiveSearch_Works()
     {
         // Arrange
-        var enterprise = new Enterprise { Name = "Test Corp", Description = "Test enterprise" };
+        var enterprise = new Enterprise { Name = "Test Corp", Description = "Test enterprise", RowVersion = new byte[8] };
         _context.Enterprises.Add(enterprise);
         await _context.SaveChangesAsync();
 
@@ -151,7 +151,8 @@ public class EnterpriseRepositoryTests : IDisposable
         {
             Name = "New Corp",
             Description = "New enterprise",
-            BudgetAmount = 100000.00m
+            BudgetAmount = 100000.00m,
+            RowVersion = new byte[8]
         };
 
         // Act
@@ -172,7 +173,7 @@ public class EnterpriseRepositoryTests : IDisposable
     public async Task UpdateAsync_ExistingEnterprise_UpdatesAndReturnsEnterprise()
     {
         // Arrange
-        var enterprise = new Enterprise { Name = "Original Corp", Description = "Original" };
+        var enterprise = new Enterprise { Name = "Original Corp", Description = "Original", RowVersion = new byte[8] };
         _context.Enterprises.Add(enterprise);
         await _context.SaveChangesAsync();
 
@@ -197,7 +198,7 @@ public class EnterpriseRepositoryTests : IDisposable
     public async Task DeleteAsync_ExistingId_DeletesAndReturnsTrue()
     {
         // Arrange
-        var enterprise = new Enterprise { Name = "Delete Corp", Description = "To be deleted" };
+        var enterprise = new Enterprise { Name = "Delete Corp", Description = "To be deleted", RowVersion = new byte[8] };
         _context.Enterprises.Add(enterprise);
         await _context.SaveChangesAsync();
 
@@ -226,7 +227,7 @@ public class EnterpriseRepositoryTests : IDisposable
     public async Task ExistsByNameAsync_ExistingName_ReturnsTrue()
     {
         // Arrange
-        var enterprise = new Enterprise { Name = "Existing Corp", Description = "Existing" };
+        var enterprise = new Enterprise { Name = "Existing Corp", Description = "Existing", RowVersion = new byte[8] };
         _context.Enterprises.Add(enterprise);
         await _context.SaveChangesAsync();
 
@@ -241,7 +242,7 @@ public class EnterpriseRepositoryTests : IDisposable
     public async Task ExistsByNameAsync_CaseInsensitiveCheck_Works()
     {
         // Arrange
-        var enterprise = new Enterprise { Name = "Existing Corp", Description = "Existing" };
+        var enterprise = new Enterprise { Name = "Existing Corp", Description = "Existing", RowVersion = new byte[8] };
         _context.Enterprises.Add(enterprise);
         await _context.SaveChangesAsync();
 
@@ -256,8 +257,8 @@ public class EnterpriseRepositoryTests : IDisposable
     public async Task ExistsByNameAsync_WithExcludeId_ExcludesSpecifiedEnterprise()
     {
         // Arrange
-        var enterprise1 = new Enterprise { Name = "Unique Corp 1", Description = "First" };
-        var enterprise2 = new Enterprise { Name = "Unique Corp 2", Description = "Second" };
+        var enterprise1 = new Enterprise { Name = "Unique Corp 1", Description = "First", RowVersion = new byte[8] };
+        var enterprise2 = new Enterprise { Name = "Unique Corp 2", Description = "Second", RowVersion = new byte[8] };
         _context.Enterprises.AddRange(enterprise1, enterprise2);
         await _context.SaveChangesAsync();
 
@@ -294,9 +295,9 @@ public class EnterpriseRepositoryTests : IDisposable
         // Arrange
         var enterprises = new List<Enterprise>
         {
-            new Enterprise { Name = "Corp 1", Description = "Test 1" },
-            new Enterprise { Name = "Corp 2", Description = "Test 2" },
-            new Enterprise { Name = "Corp 3", Description = "Test 3" }
+            new Enterprise { Name = "Corp 1", Description = "Test 1", RowVersion = new byte[8] },
+            new Enterprise { Name = "Corp 2", Description = "Test 2", RowVersion = new byte[8] },
+            new Enterprise { Name = "Corp 3", Description = "Test 3", RowVersion = new byte[8] }
         };
 
         _context.Enterprises.AddRange(enterprises);
@@ -324,7 +325,7 @@ public class EnterpriseRepositoryTests : IDisposable
     public async Task GetWithInteractionsAsync_WithEnterprises_IncludesBudgetInteractions()
     {
         // Arrange
-        var enterprise = new Enterprise { Name = "Test Corp", Description = "Test enterprise" };
+        var enterprise = new Enterprise { Name = "Test Corp", Description = "Test enterprise", RowVersion = new byte[8] };
         var budgetInteraction = new BudgetInteraction
         {
             Enterprise = enterprise,
@@ -354,8 +355,8 @@ public class EnterpriseRepositoryTests : IDisposable
     public async Task GetWithInteractionsAsync_OrdersByName()
     {
         // Arrange
-        var enterprise1 = new Enterprise { Name = "Zeta Corp", Description = "Test Z" };
-        var enterprise2 = new Enterprise { Name = "Alpha Corp", Description = "Test A" };
+        var enterprise1 = new Enterprise { Name = "Zeta Corp", Description = "Test Z", RowVersion = new byte[8] };
+        var enterprise2 = new Enterprise { Name = "Alpha Corp", Description = "Test A", RowVersion = new byte[8] };
 
         _context.Enterprises.AddRange(enterprise1, enterprise2);
         await _context.SaveChangesAsync();
@@ -452,7 +453,7 @@ public class EnterpriseRepositoryTests : IDisposable
     public void CreateFromHeaderMapping_WithNullMap_ThrowsArgumentNullException()
     {
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => _repository.CreateFromHeaderMapping(null));
+        Assert.Throws<ArgumentNullException>(() => _repository.CreateFromHeaderMapping(null!));
     }
 
     [Fact]
@@ -480,7 +481,7 @@ public class EnterpriseRepositoryTests : IDisposable
     public async Task UpdateAsync_ConcurrencyConflict_ThrowsConcurrencyConflictException()
     {
         // Arrange
-        var enterprise = new Enterprise { Name = "Test Corp", Description = "Test Description" };
+        var enterprise = new Enterprise { Name = "Test Corp", Description = "Test Description", RowVersion = new byte[8] };
         _context.Enterprises.Add(enterprise);
         await _context.SaveChangesAsync();
 
@@ -505,7 +506,7 @@ public class EnterpriseRepositoryTests : IDisposable
     public async Task DeleteAsync_ConcurrencyConflict_ThrowsConcurrencyConflictException()
     {
         // Arrange
-        var enterprise = new Enterprise { Name = "Test Corp", Description = "Test Description" };
+        var enterprise = new Enterprise { Name = "Test Corp", Description = "Test Description", RowVersion = new byte[8] };
         _context.Enterprises.Add(enterprise);
         await _context.SaveChangesAsync();
 

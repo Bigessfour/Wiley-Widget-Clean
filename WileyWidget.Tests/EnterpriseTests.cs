@@ -36,12 +36,12 @@ public class EnterpriseTests
     [InlineData("Valid Name", true)]    // Valid name
     [InlineData("A", true)]             // Minimum valid name
     [InlineData("This is a very long enterprise name that exceeds the maximum allowed length of one hundred characters for testing validation purposes", false)] // Too long
-    public void Enterprise_Name_Validation(string name, bool shouldBeValid)
+    public void Enterprise_Name_Validation(string? name, bool shouldBeValid)
     {
         // Arrange
         var enterprise = new Enterprise
         {
-            Name = name,
+            Name = name!,
             CurrentRate = 1.00m,
             MonthlyExpenses = 1000.00m,
             CitizenCount = 1000

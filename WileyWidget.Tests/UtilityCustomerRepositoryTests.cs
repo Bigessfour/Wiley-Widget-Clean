@@ -37,7 +37,7 @@ public class UtilityCustomerRepositoryTests : IDisposable
     public void Constructor_WithNullContext_ThrowsArgumentNullException()
     {
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new UtilityCustomerRepository(null));
+        Assert.Throws<ArgumentNullException>(() => new UtilityCustomerRepository(null!));
     }
 
     [Fact]
@@ -60,21 +60,24 @@ public class UtilityCustomerRepositoryTests : IDisposable
             FirstName = "John",
             LastName = "Smith",
             AccountNumber = "1001",
-            CustomerType = CustomerType.Residential
+            CustomerType = CustomerType.Residential,
+            RowVersion = new byte[8]
         };
         var customer2 = new UtilityCustomer
         {
             FirstName = "Jane",
             LastName = "Doe",
             AccountNumber = "1002",
-            CustomerType = CustomerType.Residential
+            CustomerType = CustomerType.Residential,
+            RowVersion = new byte[8]
         };
         var customer3 = new UtilityCustomer
         {
             FirstName = "Bob",
             LastName = "Smith",
             AccountNumber = "1003",
-            CustomerType = CustomerType.Commercial
+            CustomerType = CustomerType.Commercial,
+            RowVersion = new byte[8]
         };
 
         await _context.UtilityCustomers.AddRangeAsync(customer1, customer2, customer3);
@@ -101,7 +104,8 @@ public class UtilityCustomerRepositoryTests : IDisposable
             FirstName = "John",
             LastName = "Smith",
             AccountNumber = "1001",
-            CustomerType = CustomerType.Residential
+            CustomerType = CustomerType.Residential,
+            RowVersion = new byte[8]
         };
         _context.UtilityCustomers.Add(customer);
         await _context.SaveChangesAsync();
@@ -135,7 +139,8 @@ public class UtilityCustomerRepositoryTests : IDisposable
             FirstName = "John",
             LastName = "Smith",
             AccountNumber = "ACC-1001",
-            CustomerType = CustomerType.Residential
+            CustomerType = CustomerType.Residential,
+            RowVersion = new byte[8]
         };
         _context.UtilityCustomers.Add(customer);
         await _context.SaveChangesAsync();
@@ -168,21 +173,24 @@ public class UtilityCustomerRepositoryTests : IDisposable
             FirstName = "John",
             LastName = "Smith",
             AccountNumber = "1001",
-            CustomerType = CustomerType.Residential
+            CustomerType = CustomerType.Residential,
+            RowVersion = new byte[8]
         };
         var residentialCustomer2 = new UtilityCustomer
         {
             FirstName = "Jane",
             LastName = "Doe",
             AccountNumber = "1002",
-            CustomerType = CustomerType.Residential
+            CustomerType = CustomerType.Residential,
+            RowVersion = new byte[8]
         };
         var commercialCustomer = new UtilityCustomer
         {
             FirstName = "Bob",
             LastName = "Johnson",
             AccountNumber = "2001",
-            CustomerType = CustomerType.Commercial
+            CustomerType = CustomerType.Commercial,
+            RowVersion = new byte[8]
         };
 
         await _context.UtilityCustomers.AddRangeAsync(residentialCustomer1, residentialCustomer2, commercialCustomer);
@@ -207,7 +215,8 @@ public class UtilityCustomerRepositoryTests : IDisposable
             FirstName = "John",
             LastName = "Smith",
             AccountNumber = "1001",
-            CustomerType = CustomerType.Residential
+            CustomerType = CustomerType.Residential,
+            RowVersion = new byte[8]
         };
         _context.UtilityCustomers.Add(customer);
         await _context.SaveChangesAsync();
@@ -259,21 +268,24 @@ public class UtilityCustomerRepositoryTests : IDisposable
             FirstName = "John",
             LastName = "Smith",
             AccountNumber = "1001",
-            Status = CustomerStatus.Active
+            Status = CustomerStatus.Active,
+            RowVersion = new byte[8]
         };
         var activeCustomer2 = new UtilityCustomer
         {
             FirstName = "Jane",
             LastName = "Doe",
             AccountNumber = "1002",
-            Status = CustomerStatus.Active
+            Status = CustomerStatus.Active,
+            RowVersion = new byte[8]
         };
         var inactiveCustomer = new UtilityCustomer
         {
             FirstName = "Bob",
             LastName = "Johnson",
             AccountNumber = "1003",
-            Status = CustomerStatus.Inactive
+            Status = CustomerStatus.Inactive,
+            RowVersion = new byte[8]
         };
 
         await _context.UtilityCustomers.AddRangeAsync(activeCustomer1, activeCustomer2, inactiveCustomer);
@@ -453,7 +465,7 @@ public class UtilityCustomerRepositoryTests : IDisposable
 
         // Assert
         Assert.Equal(2, result.Count());
-        Assert.Contains(result, c => c.CompanyName.Contains("Corporation"));
+        Assert.Contains(result, c => c.CompanyName?.Contains("Corporation") == true);
     }
 
     [Fact]
@@ -478,7 +490,7 @@ public class UtilityCustomerRepositoryTests : IDisposable
 
         // Act
         var result1 = await _repository.SearchAsync("");
-        var result2 = await _repository.SearchAsync(null);
+        var result2 = await _repository.SearchAsync(null!);
 
         // Assert
         Assert.Equal(2, result1.Count());
@@ -661,9 +673,9 @@ public class UtilityCustomerRepositoryTests : IDisposable
         // Arrange
         var customers = new List<UtilityCustomer>
         {
-            new UtilityCustomer { FirstName = "John", LastName = "Smith", AccountNumber = "1001" },
-            new UtilityCustomer { FirstName = "Jane", LastName = "Doe", AccountNumber = "1002" },
-            new UtilityCustomer { FirstName = "Bob", LastName = "Johnson", AccountNumber = "1003" }
+            new UtilityCustomer { FirstName = "John", LastName = "Smith", AccountNumber = "1001", RowVersion = new byte[8] },
+            new UtilityCustomer { FirstName = "Jane", LastName = "Doe", AccountNumber = "1002", RowVersion = new byte[8] },
+            new UtilityCustomer { FirstName = "Bob", LastName = "Johnson", AccountNumber = "1003", RowVersion = new byte[8] }
         };
 
         _context.UtilityCustomers.AddRange(customers);
@@ -743,8 +755,8 @@ public class UtilityCustomerRepositoryTests : IDisposable
                 await seed.SaveChangesAsync();
             }
 
-            AppDbContext ctx1 = null;
-            AppDbContext ctx2 = null;
+            AppDbContext? ctx1 = null;
+            AppDbContext? ctx2 = null;
             try
             {
                 // First, capture the original RowVersion before any updates

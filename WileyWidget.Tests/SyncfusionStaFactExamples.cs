@@ -33,7 +33,7 @@ namespace WileyWidget.Tests.SyncfusionExamples
             };
 
             // Prepare to wait for the visual to be fully loaded
-            RoutedEventHandler loadedHandler = null;
+            RoutedEventHandler? loadedHandler = null;
             var frame = new DispatcherFrame();
             if (content is FrameworkElement fe)
             {
@@ -537,34 +537,34 @@ namespace WileyWidget.Tests.SyncfusionExamples
         public class TestItem
         {
             public int Id { get; set; }
-            public string Name { get; set; }
+            public string? Name { get; set; }
             public int Value { get; set; }
         }
 
         public class ComplexItem
         {
-            public string Name { get; set; }
-            public SubItem Details { get; set; }
+            public string? Name { get; set; }
+            public SubItem? Details { get; set; }
         }
 
         public class SubItem
         {
             public int Value { get; set; }
-            public string Status { get; set; }
+            public string? Status { get; set; }
         }
 
         public class ChartPoint
         {
-            public string X { get; set; }
+            public string? X { get; set; }
             public double Y { get; set; }
         }
 
         public class TestViewModel : System.ComponentModel.INotifyPropertyChanged
         {
-            private string _title;
+            private string? _title;
             public string Title
             {
-                get => _title;
+                get => _title ?? string.Empty;
                 set
                 {
                     _title = value;
@@ -572,7 +572,7 @@ namespace WileyWidget.Tests.SyncfusionExamples
                 }
             }
 
-            public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
+            public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
         }
 
         public class TestCommand : System.Windows.Input.ICommand
@@ -585,12 +585,12 @@ namespace WileyWidget.Tests.SyncfusionExamples
             }
 
 #pragma warning disable CS0067 // The event 'CanExecuteChanged' is never used
-            public event EventHandler CanExecuteChanged;
+            public event EventHandler? CanExecuteChanged;
 #pragma warning restore CS0067
 
-            public bool CanExecute(object parameter) => true;
+            public bool CanExecute(object? parameter) => true;
 
-            public void Execute(object parameter) => _execute();
+            public void Execute(object? parameter) => _execute();
         }
 
         #endregion

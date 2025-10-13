@@ -125,7 +125,7 @@ public class AIAssistViewModelTests
         // Assert
         Assert.NotNull(_viewModel.ChatMessages);
         Assert.IsType<ObservableCollection<ChatMessage>>(_viewModel.ChatMessages);
-        Assert.Empty(_viewModel.CurrentMessage);
+        Assert.Empty(_viewModel.MessageText);
         Assert.False(_viewModel.IsTyping);
         Assert.NotNull(_viewModel.AvailableModes);
         Assert.Equal(4, _viewModel.AvailableModes.Count);
@@ -150,14 +150,14 @@ public class AIAssistViewModelTests
     public async Task SendMessage_WithEmptyMessage_DoesNothing()
     {
         // Arrange
-        _viewModel.CurrentMessage = "";
+        _viewModel.MessageText = "";
 
         // Act
         await InvokePrivateMethod(_viewModel, "SendMessage");
 
         // Assert
         Assert.Empty(_viewModel.ChatMessages);
-        Assert.Empty(_viewModel.CurrentMessage);
+        Assert.Empty(_viewModel.MessageText);
         _mockAIService.Verify(ai => ai.GetInsightsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -165,14 +165,14 @@ public class AIAssistViewModelTests
     public async Task SendMessage_WithWhitespaceMessage_DoesNothing()
     {
         // Arrange
-        _viewModel.CurrentMessage = "   ";
+        _viewModel.MessageText = "   ";
 
         // Act
         await InvokePrivateMethod(_viewModel, "SendMessage");
 
         // Assert
         Assert.Empty(_viewModel.ChatMessages);
-        Assert.Empty(_viewModel.CurrentMessage);
+        Assert.Empty(_viewModel.MessageText);
         _mockAIService.Verify(ai => ai.GetInsightsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -180,7 +180,7 @@ public class AIAssistViewModelTests
     public async Task SendMessage_WithValidMessage_InGeneralMode_AddsMessages()
     {
         // Arrange
-        _viewModel.CurrentMessage = "Test message";
+        _viewModel.MessageText = "Test message";
         SetConversationMode(_viewModel, "General");
 
         // Act
@@ -192,7 +192,7 @@ public class AIAssistViewModelTests
         Assert.True(_viewModel.ChatMessages[0].IsUser);
         Assert.Equal("Mock AI response", _viewModel.ChatMessages[1].Text);
         Assert.False(_viewModel.ChatMessages[1].IsUser);
-        Assert.Empty(_viewModel.CurrentMessage);
+        Assert.Empty(_viewModel.MessageText);
         Assert.False(_viewModel.IsTyping);
     }
 
@@ -200,7 +200,7 @@ public class AIAssistViewModelTests
     public async Task SendMessage_WithAIServiceException_HandlesError()
     {
         // Arrange
-        _viewModel.CurrentMessage = "Test message";
+        _viewModel.MessageText = "Test message";
         _mockAIService.Setup(ai => ai.GetInsightsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("AI service error"));
 
@@ -299,7 +299,7 @@ public class AIAssistViewModelTests
     {
         // Arrange
         SetConversationMode(_viewModel, "WhatIf");
-        _viewModel.CurrentMessage = "";
+        _viewModel.MessageText = "";
 
         // Act
         await InvokePrivateMethod(_viewModel, "GenerateWhatIfScenario");
@@ -316,7 +316,7 @@ public class AIAssistViewModelTests
     {
         // Arrange
         SetConversationMode(_viewModel, "WhatIf");
-        _viewModel.CurrentMessage = "15% pay raise, benefits improvement, 10% reserve";
+        _viewModel.MessageText = "15% pay raise, benefits improvement, 10% reserve";
 
         // Act
         await InvokePrivateMethod(_viewModel, "GenerateWhatIfScenario");
@@ -328,7 +328,7 @@ public class AIAssistViewModelTests
         Assert.Contains("What-If Scenario Analysis", _viewModel.ChatMessages[1].Text);
         Assert.Contains("$12,000.00", _viewModel.ChatMessages[1].Text);
         Assert.False(_viewModel.ChatMessages[1].IsUser);
-        Assert.Empty(_viewModel.CurrentMessage);
+        Assert.Empty(_viewModel.MessageText);
         Assert.False(_viewModel.IsTyping);
     }
 
@@ -337,7 +337,7 @@ public class AIAssistViewModelTests
     {
         // Arrange
         SetConversationMode(_viewModel, "General");
-        _viewModel.CurrentMessage = "Test scenario";
+        _viewModel.MessageText = "Test scenario";
 
         // Act
         await InvokePrivateMethod(_viewModel, "GenerateWhatIfScenario");

@@ -27,6 +27,8 @@ public class UtilityCustomerRepository : IUtilityCustomerRepository
         await using var context = await _contextFactory.CreateDbContextAsync();
         return await context.UtilityCustomers
             .AsNoTracking()
+            .OrderBy(c => c.LastName)
+            .ThenBy(c => c.FirstName)
             .ToListAsync();
     }
 
@@ -77,13 +79,13 @@ public class UtilityCustomerRepository : IUtilityCustomerRepository
     }
 
     /// <summary>
-    /// Gets active customers only
+    /// Gets all active customers
     /// </summary>
     public async Task<IEnumerable<UtilityCustomer>> GetActiveCustomersAsync()
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
         return await context.UtilityCustomers
-            .Where(c => c.IsActive)
+            .Where(c => c.Status == CustomerStatus.Active)
             .AsNoTracking()
             .ToListAsync();
     }
@@ -107,7 +109,9 @@ public class UtilityCustomerRepository : IUtilityCustomerRepository
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
         return await context.UtilityCustomers
-            .Where(c => c.DisplayName.Contains(searchTerm) || c.AccountNumber.Contains(searchTerm))
+            .Where(c => (c.CompanyName != null && c.CompanyName.Contains(searchTerm)) || 
+                       ((c.FirstName + " " + c.LastName).Contains(searchTerm)) || 
+                       c.AccountNumber.Contains(searchTerm))
             .AsNoTracking()
             .ToListAsync();
     }

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using WileyWidget.Models;
+using WileyWidget.Models.DTOs;
 using WileyWidget.Business.Interfaces;
 
 namespace WileyWidget.Data;
@@ -26,6 +27,19 @@ public class EnterpriseRepository : IEnterpriseRepository
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
         return await context.Enterprises
+            .AsNoTracking()
+            .OrderBy(e => e.Name)
+            .ToListAsync();
+    }
+
+    /// <summary>
+    /// Gets all enterprises including soft-deleted ones
+    /// </summary>
+    public async Task<IEnumerable<Enterprise>> GetAllIncludingDeletedAsync()
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        return await context.Enterprises
+            .IgnoreQueryFilters()
             .AsNoTracking()
             .ToListAsync();
     }
@@ -65,14 +79,28 @@ public class EnterpriseRepository : IEnterpriseRepository
     }
 
     /// <summary>
-    /// Updates an existing enterprise
+    /// Updates an enterprise
     /// </summary>
     public async Task<Enterprise> UpdateAsync(Enterprise enterprise)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
         context.Enterprises.Update(enterprise);
-        await context.SaveChangesAsync();
-        return enterprise;
+        try
+        {
+            await context.SaveChangesAsync();
+            return enterprise;
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            var entry = ex.Entries.Single();
+            var databaseValues = await entry.GetDatabaseValuesAsync();
+            var clientValues = entry.CurrentValues;
+            throw new ConcurrencyConflictException(
+                "Enterprise",
+                ConcurrencyConflictException.ToDictionary(databaseValues),
+                ConcurrencyConflictException.ToDictionary(clientValues),
+                ex);
+        }
     }
 
     /// <summary>
@@ -86,8 +114,22 @@ public class EnterpriseRepository : IEnterpriseRepository
             return false;
 
         context.Enterprises.Remove(enterprise);
-        await context.SaveChangesAsync();
-        return true;
+        try
+        {
+            await context.SaveChangesAsync();
+            return true;
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            var entry = ex.Entries.Single();
+            var databaseValues = await entry.GetDatabaseValuesAsync();
+            var clientValues = entry.CurrentValues;
+            throw new ConcurrencyConflictException(
+                "Enterprise",
+                ConcurrencyConflictException.ToDictionary(databaseValues),
+                ConcurrencyConflictException.ToDictionary(clientValues),
+                ex);
+        }
     }
 
     /// <summary>
@@ -151,5 +193,107 @@ public class EnterpriseRepository : IEnterpriseRepository
         }
 
         return enterprise;
+    }
+    public async Task<Enterprise?> GetByNameAsync(string name)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        return await context.Enterprises
+            .AsNoTracking()
+            .FirstOrDefaultAsync(e => e.Name == name);
+    }
+
+    /// <summary>
+    /// Checks if an enterprise exists by name
+    /// </summary>
+    public async Task<bool> ExistsByNameAsync(string name, int? excludeId = null)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        var query = context.Enterprises.AsQueryable();
+        if (excludeId.HasValue)
+        {
+            query = query.Where(e => e.Id != excludeId.Value);
+        }
+        return await query.AnyAsync(e => e.Name == name);
+    }
+
+    /// <summary>
+    /// Soft deletes an enterprise
+    /// </summary>
+    public async Task<bool> SoftDeleteAsync(int id)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        var enterprise = await context.Enterprises.FindAsync(id);
+        if (enterprise == null)
+            return false;
+
+        enterprise.IsDeleted = true;
+        enterprise.DeletedDate = DateTime.UtcNow;
+        await context.SaveChangesAsync();
+        return true;
+    }
+
+    /// <summary>
+    /// Gets all enterprises including their budget interactions
+    /// </summary>
+    public async Task<IEnumerable<Enterprise>> GetWithInteractionsAsync()
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        return await context.Enterprises
+            .Include(e => e.BudgetInteractions)
+            .AsNoTracking()
+            .ToListAsync();
+    }
+
+    /// <summary>
+    /// Gets enterprise summaries
+    /// </summary>
+    public async Task<IEnumerable<EnterpriseSummary>> GetSummariesAsync()
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        return await context.Enterprises
+            .AsNoTracking()
+            .Select(e => new EnterpriseSummary
+            {
+                Id = e.Id,
+                Name = e.Name,
+                CurrentRate = e.CurrentRate,
+                CitizenCount = e.CitizenCount
+            })
+            .ToListAsync();
+    }
+
+    /// <summary>
+    /// Gets active enterprise summaries
+    /// </summary>
+    public async Task<IEnumerable<EnterpriseSummary>> GetActiveSummariesAsync()
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        return await context.Enterprises
+            .Where(e => !e.IsDeleted)
+            .AsNoTracking()
+            .Select(e => new EnterpriseSummary
+            {
+                Id = e.Id,
+                Name = e.Name,
+                CurrentRate = e.CurrentRate,
+                CitizenCount = e.CitizenCount
+            })
+            .ToListAsync();
+    }
+
+    /// <summary>
+    /// Restores a soft-deleted enterprise
+    /// </summary>
+    public async Task<bool> RestoreAsync(int id)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        var enterprise = await context.Enterprises.FindAsync(id);
+        if (enterprise == null)
+            return false;
+
+        enterprise.IsDeleted = false;
+        enterprise.DeletedDate = null;
+        await context.SaveChangesAsync();
+        return true;
     }
 }

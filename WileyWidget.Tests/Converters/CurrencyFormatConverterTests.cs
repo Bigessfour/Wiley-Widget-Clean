@@ -25,7 +25,7 @@ public class CurrencyFormatConverterTests
         object testValue = "test";
 
         // Act
-        var result = _converter.Convert(testValue, typeof(CultureInfo), null, CultureInfo.InvariantCulture);
+        var result = _converter.Convert(testValue, typeof(CultureInfo), null!, CultureInfo.InvariantCulture);
 
         // Assert
         Assert.IsType<CultureInfo>(result);
@@ -37,10 +37,10 @@ public class CurrencyFormatConverterTests
     public void Convert_WithNullValue_ReturnsEnUsCulture()
     {
         // Arrange
-        object nullValue = null;
+        object? nullValue = null;
 
         // Act
-        var result = _converter.Convert(nullValue, typeof(CultureInfo), null, CultureInfo.InvariantCulture);
+        var result = _converter.Convert(nullValue!, typeof(CultureInfo), null!, CultureInfo.InvariantCulture);
 
         // Assert
         Assert.IsType<CultureInfo>(result);
@@ -55,7 +55,7 @@ public class CurrencyFormatConverterTests
         string stringValue = "currency";
 
         // Act
-        var result = _converter.Convert(stringValue, typeof(CultureInfo), null, CultureInfo.InvariantCulture);
+        var result = _converter.Convert(stringValue, typeof(CultureInfo), null!, CultureInfo.InvariantCulture);
 
         // Assert
         Assert.IsType<CultureInfo>(result);
@@ -70,7 +70,7 @@ public class CurrencyFormatConverterTests
         decimal numericValue = 123.45m;
 
         // Act
-        var result = _converter.Convert(numericValue, typeof(CultureInfo), null, CultureInfo.InvariantCulture);
+        var result = _converter.Convert(numericValue, typeof(CultureInfo), null!, CultureInfo.InvariantCulture);
 
         // Assert
         Assert.IsType<CultureInfo>(result);
@@ -88,7 +88,7 @@ public class CurrencyFormatConverterTests
         foreach (var targetType in targetTypes)
         {
             // Act
-            var result = _converter.Convert(testValue, targetType, null, CultureInfo.InvariantCulture);
+            var result = _converter.Convert(testValue, targetType, null!, CultureInfo.InvariantCulture);
 
             // Assert
             Assert.IsType<CultureInfo>(result);
@@ -102,12 +102,12 @@ public class CurrencyFormatConverterTests
     {
         // Arrange
         object testValue = "test";
-        var parameters = new object[] { null, "param", 123, new object() };
+        var parameters = new object?[] { null, "param", 123, new object() };
 
         foreach (var parameter in parameters)
         {
             // Act
-            var result = _converter.Convert(testValue, typeof(CultureInfo), parameter, CultureInfo.InvariantCulture);
+            var result = _converter.Convert(testValue, typeof(CultureInfo), parameter!, CultureInfo.InvariantCulture);
 
             // Assert
             Assert.IsType<CultureInfo>(result);
@@ -133,7 +133,7 @@ public class CurrencyFormatConverterTests
         foreach (var culture in cultures)
         {
             // Act
-            var result = _converter.Convert(testValue, typeof(CultureInfo), null, culture);
+            var result = _converter.Convert(testValue, typeof(CultureInfo), null!, culture);
 
             // Assert
             Assert.IsType<CultureInfo>(result);
@@ -149,8 +149,8 @@ public class CurrencyFormatConverterTests
         object testValue = "test";
 
         // Act
-        var result1 = _converter.Convert(testValue, typeof(CultureInfo), null, CultureInfo.InvariantCulture);
-        var result2 = _converter.Convert(testValue, typeof(CultureInfo), null, CultureInfo.InvariantCulture);
+        var result1 = _converter.Convert(testValue, typeof(CultureInfo), null!, CultureInfo.InvariantCulture);
+        var result2 = _converter.Convert(testValue, typeof(CultureInfo), null!, CultureInfo.InvariantCulture);
 
         // Assert
         Assert.IsType<CultureInfo>(result1);
@@ -169,18 +169,18 @@ public class CurrencyFormatConverterTests
 
         // Act & Assert
         Assert.Throws<NotImplementedException>(() =>
-            _converter.ConvertBack(cultureInfo, typeof(object), null, CultureInfo.InvariantCulture));
+            _converter.ConvertBack(cultureInfo, typeof(object), null!, CultureInfo.InvariantCulture));
     }
 
     [Fact]
     public void ConvertBack_WithNullValue_ThrowsNotImplementedException()
     {
         // Arrange
-        object nullValue = null;
+        object? nullValue = null;
 
         // Act & Assert
         Assert.Throws<NotImplementedException>(() =>
-            _converter.ConvertBack(nullValue, typeof(object), null, CultureInfo.InvariantCulture));
+            _converter.ConvertBack(nullValue!, typeof(object), null!, CultureInfo.InvariantCulture));
     }
 
     [Fact]
@@ -194,7 +194,7 @@ public class CurrencyFormatConverterTests
         {
             // Act & Assert
             Assert.Throws<NotImplementedException>(() =>
-                _converter.ConvertBack(cultureInfo, targetType, null, CultureInfo.InvariantCulture));
+                _converter.ConvertBack(cultureInfo, targetType, null!, CultureInfo.InvariantCulture));
         }
     }
 }

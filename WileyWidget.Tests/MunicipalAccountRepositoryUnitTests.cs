@@ -59,7 +59,7 @@ public sealed class MunicipalAccountRepositoryUnitTests : IDisposable
     public void Constructor_WithNullContext_ThrowsArgumentNullException()
     {
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new MunicipalAccountRepository(null));
+        Assert.Throws<ArgumentNullException>(() => new MunicipalAccountRepository(null!));
     }
 
     [Fact]

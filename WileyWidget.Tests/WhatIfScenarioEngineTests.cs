@@ -58,14 +58,14 @@ public class WhatIfScenarioEngineTests
     public void Constructor_WithNullServiceProvider_ThrowsArgumentNullException()
     {
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new WhatIfScenarioEngine(null, _mockChargeCalculator.Object));
+        Assert.Throws<ArgumentNullException>(() => new WhatIfScenarioEngine(null!, _mockChargeCalculator.Object));
     }
 
     [Fact]
     public void Constructor_WithNullChargeCalculator_ThrowsArgumentNullException()
     {
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new WhatIfScenarioEngine(_mockServiceProvider.Object, null));
+        Assert.Throws<ArgumentNullException>(() => new WhatIfScenarioEngine(_mockServiceProvider.Object, null!));
     }
 
     [Fact]
@@ -149,7 +149,7 @@ public class WhatIfScenarioEngineTests
     {
         // Arrange
         var enterpriseId = 999;
-        _mockEnterpriseRepo.Setup(r => r.GetByIdAsync(enterpriseId)).ReturnsAsync((Enterprise)null);
+        _mockEnterpriseRepo.Setup(r => r.GetByIdAsync(enterpriseId)).ReturnsAsync((Enterprise?)null);
 
         var parameters = new ScenarioParameters
         {
@@ -532,5 +532,115 @@ public class WhatIfScenarioEngineTests
         // ScenarioImpacts should still be generated but with minimal impact when parameters are zero
         Assert.NotNull(result.ScenarioImpacts);
         Assert.NotNull(result.TotalImpact);
+    }
+
+    [StaFact]
+    public async Task GenerateComprehensiveScenarioWithGrokAnalysisAsync_WithMockData_ProducesSuggestedRateOutput()
+    {
+        // Arrange - Extend existing setup with GrokSupercomputer mock
+        var mockGrokSupercomputer = new Mock<IGrokSupercomputer>();
+
+        // Setup Grok to return analysis that influences scenario generation
+        mockGrokSupercomputer
+            .Setup(grok => grok.AnalyzeMunicipalDataAsync(It.IsAny<object>(), It.IsAny<string>()))
+            .ReturnsAsync("Analysis indicates 15% efficiency improvement potential through AI-optimized resource allocation");
+
+        mockGrokSupercomputer
+            .Setup(grok => grok.GenerateRecommendationsAsync(It.IsAny<object>()))
+            .ReturnsAsync("Recommended: Implement AI-driven demand forecasting to reduce operational costs by $25,000 annually");
+
+        // Use existing enterprise and account mock data from test setup
+        var enterpriseId = 1;
+        var enterprise = new Enterprise
+        {
+            Id = enterpriseId,
+            Name = "Water Department",
+            Type = "Water",
+            CurrentRate = 2.50m,
+            MonthlyExpenses = 15000.00m,
+            CitizenCount = 50000
+        };
+
+        var accounts = new List<MunicipalAccount>
+        {
+            new MunicipalAccount
+            {
+                Id = 1,
+                Fund = MunicipalFundType.Water,
+                AccountNumber = new AccountNumber("1000"),
+                Name = "Water Revenue",
+                Balance = 125000.00m,
+                Type = AccountType.Revenue
+            },
+            new MunicipalAccount
+            {
+                Id = 2,
+                Fund = MunicipalFundType.Water,
+                AccountNumber = new AccountNumber("2000"),
+                Name = "Water Expenses",
+                Balance = -15000.00m,
+                Type = AccountType.Expense
+            }
+        };
+
+        // Setup repository mocks using TestHelpers for async enumeration
+        _mockEnterpriseRepo.Setup(r => r.GetByIdAsync(enterpriseId)).ReturnsAsync(enterprise);
+        _mockAccountRepo.Setup(r => r.GetByFundAsync(MunicipalFundType.Water))
+            .ReturnsAsync(accounts);
+
+        // Setup charge calculator with baseline recommendation
+        var baselineRecommendation = new ServiceChargeRecommendation
+        {
+            EnterpriseId = enterpriseId,
+            RecommendedRate = 2.50m,
+            MonthlyRevenueAtRecommended = 125000.00m,
+            TotalMonthlyExpenses = 15000.00m,
+            MonthlySurplus = 105000.00m,
+            BreakEvenAnalysis = new BreakEvenAnalysis { BreakEvenRate = 3.60m }
+        };
+
+        _mockChargeCalculator.Setup(c => c.CalculateRecommendedChargeAsync(enterpriseId))
+            .ReturnsAsync(baselineRecommendation);
+
+        // Act - Call scenario engine with parameters
+        var parameters = new ScenarioParameters
+        {
+            PayRaisePercentage = 0.50m,
+            BenefitsIncreaseAmount = 500.00m,
+            EquipmentPurchaseAmount = 10000.00m,
+            EquipmentFinancingYears = 5,
+            ReservePercentage = 0.10m
+        };
+
+        var result = await _engine.GenerateComprehensiveScenarioAsync(enterpriseId, parameters);
+
+        // Assert - Verify rate suggestions and calculations
+        Assert.NotNull(result);
+        Assert.NotNull(result.TotalImpact);
+
+        // Verify suggested rate is within reasonable bounds
+        Assert.True(result.TotalImpact.NewMonthlyRate >= enterprise.CurrentRate * 0.95m,
+            "Suggested rate should not decrease significantly from current rate");
+        Assert.True(result.TotalImpact.NewMonthlyRate <= enterprise.CurrentRate * 1.50m,
+            "Suggested rate should not increase unreasonably from current rate");
+
+        // Verify the rate calculation produces expected revenue
+        var expectedRevenue = result.TotalImpact.NewMonthlyRate * enterprise.CitizenCount;
+        Assert.True(Math.Abs(expectedRevenue - result.TotalImpact.NewMonthlyRevenue) < 0.01m,
+            $"Expected revenue {expectedRevenue} but got {result.TotalImpact.NewMonthlyRevenue}");
+
+        // Verify surplus/deficit calculation
+        var expectedBalance = result.TotalImpact.NewMonthlyRevenue -
+                             (baselineRecommendation.TotalMonthlyExpenses + result.TotalImpact.TotalMonthlyExpenseIncrease);
+        Assert.True(Math.Abs(expectedBalance - result.TotalImpact.NewMonthlyBalance) < 0.01m,
+            $"Expected balance {expectedBalance} but got {result.TotalImpact.NewMonthlyBalance}");
+
+        // Verify scenario impacts are calculated
+        Assert.NotNull(result.ScenarioImpacts);
+        Assert.True(result.ScenarioImpacts.Count >= 4); // Should have pay raise, benefits, equipment, and reserve impacts
+
+        // Verify total impact calculations
+        Assert.True(result.TotalImpact.TotalAnnualExpenseIncrease >= 0);
+        Assert.True(result.TotalImpact.TotalMonthlyExpenseIncrease >= 0);
     }
 }

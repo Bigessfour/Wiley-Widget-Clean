@@ -27,7 +27,7 @@ public class BudgetProgressConverterTests
         const double expectedProgress = 50.0;
 
         // Act
-        var result = _converter.Convert(budgetAmount, typeof(double), null, CultureInfo.InvariantCulture);
+        var result = _converter.Convert(budgetAmount, typeof(double), null!, CultureInfo.InvariantCulture);
 
         // Assert
         Assert.IsType<double>(result);
@@ -41,7 +41,7 @@ public class BudgetProgressConverterTests
         decimal budgetAmount = 0m;
 
         // Act
-        var result = _converter.Convert(budgetAmount, typeof(double), null, CultureInfo.InvariantCulture);
+        var result = _converter.Convert(budgetAmount, typeof(double), null!, CultureInfo.InvariantCulture);
 
         // Assert
         Assert.IsType<double>(result);
@@ -55,7 +55,7 @@ public class BudgetProgressConverterTests
         decimal budgetAmount = 100000m; // Max budget
 
         // Act
-        var result = _converter.Convert(budgetAmount, typeof(double), null, CultureInfo.InvariantCulture);
+        var result = _converter.Convert(budgetAmount, typeof(double), null!, CultureInfo.InvariantCulture);
 
         // Assert
         Assert.IsType<double>(result);
@@ -69,7 +69,7 @@ public class BudgetProgressConverterTests
         decimal budgetAmount = 150000m; // Over max budget
 
         // Act
-        var result = _converter.Convert(budgetAmount, typeof(double), null, CultureInfo.InvariantCulture);
+        var result = _converter.Convert(budgetAmount, typeof(double), null!, CultureInfo.InvariantCulture);
 
         // Assert
         Assert.IsType<double>(result);
@@ -83,7 +83,7 @@ public class BudgetProgressConverterTests
         decimal budgetAmount = -5000m; // Negative budget
 
         // Act
-        var result = _converter.Convert(budgetAmount, typeof(double), null, CultureInfo.InvariantCulture);
+        var result = _converter.Convert(budgetAmount, typeof(double), null!, CultureInfo.InvariantCulture);
 
         // Assert
         Assert.IsType<double>(result);
@@ -98,7 +98,7 @@ public class BudgetProgressConverterTests
         const double expectedProgress = 1.0;
 
         // Act
-        var result = _converter.Convert(budgetAmount, typeof(double), null, CultureInfo.InvariantCulture);
+        var result = _converter.Convert(budgetAmount, typeof(double), null!, CultureInfo.InvariantCulture);
 
         // Assert
         Assert.IsType<double>(result);
@@ -112,7 +112,7 @@ public class BudgetProgressConverterTests
         decimal budgetAmount = 33333.33m; // Should be ~33.33%
 
         // Act
-        var result = _converter.Convert(budgetAmount, typeof(double), null, CultureInfo.InvariantCulture);
+        var result = _converter.Convert(budgetAmount, typeof(double), null!, CultureInfo.InvariantCulture);
 
         // Assert
         Assert.IsType<double>(result);
@@ -124,10 +124,10 @@ public class BudgetProgressConverterTests
     public void Convert_WithNullValue_ReturnsZero()
     {
         // Arrange
-        object nullValue = null;
+        object? nullValue = null;
 
         // Act
-        var result = _converter.Convert(nullValue, typeof(double), null, CultureInfo.InvariantCulture);
+        var result = _converter.Convert(nullValue!, typeof(double), null!, CultureInfo.InvariantCulture);
 
         // Assert
         Assert.IsType<double>(result);
@@ -141,7 +141,7 @@ public class BudgetProgressConverterTests
         string invalidValue = "invalid";
 
         // Act
-        var result = _converter.Convert(invalidValue, typeof(double), null, CultureInfo.InvariantCulture);
+        var result = _converter.Convert(invalidValue, typeof(double), null!, CultureInfo.InvariantCulture);
 
         // Assert
         Assert.IsType<double>(result);
@@ -155,7 +155,7 @@ public class BudgetProgressConverterTests
         int intValue = 50000;
 
         // Act
-        var result = _converter.Convert(intValue, typeof(double), null, CultureInfo.InvariantCulture);
+        var result = _converter.Convert(intValue, typeof(double), null!, CultureInfo.InvariantCulture);
 
         // Assert
         Assert.IsType<double>(result);
@@ -169,7 +169,7 @@ public class BudgetProgressConverterTests
         float floatValue = 50000.0f;
 
         // Act
-        var result = _converter.Convert(floatValue, typeof(double), null, CultureInfo.InvariantCulture);
+        var result = _converter.Convert(floatValue, typeof(double), null!, CultureInfo.InvariantCulture);
 
         // Assert
         Assert.IsType<double>(result);
@@ -184,7 +184,7 @@ public class BudgetProgressConverterTests
 
         // Act & Assert
         Assert.Throws<NotImplementedException>(() =>
-            _converter.ConvertBack(progressValue, typeof(decimal), null, CultureInfo.InvariantCulture));
+            _converter.ConvertBack(progressValue, typeof(decimal), null!, CultureInfo.InvariantCulture));
     }
 
     [Theory]
@@ -197,7 +197,7 @@ public class BudgetProgressConverterTests
     public void Convert_WithVariousAmounts_ReturnsExpectedProgress(double budgetAmount, double expectedProgress)
     {
         // Act
-        var result = _converter.Convert(budgetAmount, typeof(double), null, CultureInfo.InvariantCulture);
+        var result = _converter.Convert(budgetAmount, typeof(double), null!, CultureInfo.InvariantCulture);
 
         // Assert
         Assert.IsType<double>(result);

@@ -39,10 +39,15 @@ public class WidgetTests
     [InlineData(null, false)]        // Null name
     [InlineData("Valid Name", true)] // Valid name
     [InlineData("A", true)]          // Minimum valid name
-    public void Widget_Name_Validation(string name, bool shouldBeValid)
+    public void Widget_Name_Validation(string? name, bool shouldBeValid)
     {
         // Arrange
-        var widget = new Widget { Name = name, Price = 10.00m };
+        var widget = new Widget();
+        if (name != null)
+        {
+            widget.Name = name;
+        }
+        widget.Price = 10.00m;
 
         // Act
         var validationContext = new ValidationContext(widget);
@@ -157,7 +162,7 @@ public class WidgetTests
     [InlineData("Widget Name", "SKU-001", "Widget Name (SKU-001)")]
     [InlineData("Widget Name", null, "Widget Name")]
     [InlineData("Widget Name", "   ", "Widget Name")]
-    public void Widget_DisplayName_ReturnsCorrectFormat(string name, string sku, string expected)
+    public void Widget_DisplayName_ReturnsCorrectFormat(string name, string? sku, string expected)
     {
         // Arrange
         var widget = new Widget

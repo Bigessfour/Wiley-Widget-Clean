@@ -49,19 +49,19 @@ public class MunicipalAccountTests
     [InlineData("1010-100", true)]      // Valid account number
     [InlineData("12345678901234567890", true)] // Max length (20 chars)
     [InlineData("123456789012345678901", false)] // Too long (21 chars)
-    public void MunicipalAccount_AccountNumber_Validation(string accountNumber, bool shouldBeValid)
+    public void MunicipalAccount_AccountNumber_Validation(string? accountNumber, bool shouldBeValid)
     {
         // Arrange & Act & Assert
         if (shouldBeValid)
         {
             // Should not throw
-            var accountNumberObj = new AccountNumber(accountNumber);
+            var accountNumberObj = new AccountNumber(accountNumber!);
             Assert.NotNull(accountNumberObj);
         }
         else
         {
             // Should throw exception
-            Assert.Throws<ArgumentException>(() => new AccountNumber(accountNumber));
+            Assert.Throws<ArgumentException>(() => new AccountNumber(accountNumber!));
         }
     }
 
@@ -72,13 +72,12 @@ public class MunicipalAccountTests
     [InlineData("A", true)]             // Minimum valid name
     [InlineData("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", true)] // Max length (100 chars)
     [InlineData("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", false)] // Too long (101 chars)
-    public void MunicipalAccount_Name_Validation(string name, bool shouldBeValid)
+    public void MunicipalAccount_Name_Validation(string? name, bool shouldBeValid)
     {
         // Arrange
         var account = new MunicipalAccount
         {
             AccountNumber = new AccountNumber("1010-100"),
-            Name = name,
             Type = AccountType.Asset,
             Fund = MunicipalFundType.General,
             FundClass = FundClass.Governmental,
@@ -87,6 +86,11 @@ public class MunicipalAccountTests
             Balance = 1000.00m,
             BudgetAmount = 1000.00m
         };
+        
+        if (name != null)
+        {
+            account.Name = name;
+        }
 
         // Act
         var validationResults = new List<ValidationResult>();
@@ -96,7 +100,7 @@ public class MunicipalAccountTests
         Assert.Equal(shouldBeValid, isValid);
         if (!shouldBeValid)
         {
-            Assert.Contains(validationResults, vr => vr.ErrorMessage.Contains("Account name"));
+            Assert.Contains(validationResults, vr => vr.ErrorMessage?.Contains("Account name") == true);
         }
     }
 
@@ -196,7 +200,13 @@ public class MunicipalAccountTests
         };
 
         var propertyChangedEvents = new List<string>();
-        account.PropertyChanged += (sender, e) => propertyChangedEvents.Add(e.PropertyName);
+        account.PropertyChanged += (sender, e) => 
+        {
+            if (e.PropertyName != null)
+            {
+                propertyChangedEvents.Add(e.PropertyName);
+            }
+        };
 
         // Act
         account.AccountNumber = new AccountNumber("2020-200");

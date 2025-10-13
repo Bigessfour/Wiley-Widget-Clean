@@ -26,7 +26,7 @@ namespace WileyWidget.Data
         {
             using var context = await _contextFactory.CreateDbContextAsync();
             return await context.MunicipalAccounts
-                .OrderBy(ma => ma.AccountNumber)
+                .OrderBy(ma => ma.AccountNumber.Value)
                 .ToListAsync();
         }
 
@@ -35,7 +35,7 @@ namespace WileyWidget.Data
             using var context = await _contextFactory.CreateDbContextAsync();
             return await context.MunicipalAccounts
                 .Where(ma => ma.IsActive)
-                .OrderBy(ma => ma.AccountNumber)
+                .OrderBy(ma => ma.AccountNumber.Value)
                 .ToListAsync();
         }
 
@@ -44,7 +44,7 @@ namespace WileyWidget.Data
             using var context = await _contextFactory.CreateDbContextAsync();
             return await context.MunicipalAccounts
         .Where(ma => ma.Fund == fund && ma.IsActive)
-                .OrderBy(ma => ma.AccountNumber)
+                .OrderBy(ma => ma.AccountNumber.Value)
                 .ToListAsync();
         }
 
@@ -53,7 +53,7 @@ namespace WileyWidget.Data
             using var context = await _contextFactory.CreateDbContextAsync();
             return await context.MunicipalAccounts
         .Where(ma => ma.Type == type && ma.IsActive)
-                .OrderBy(ma => ma.AccountNumber)
+                .OrderBy(ma => ma.AccountNumber.Value)
                 .ToListAsync();
         }
 
@@ -120,7 +120,7 @@ namespace WileyWidget.Data
                 
             return await context.MunicipalAccounts
                 .Where(ma => ma.AccountNumber.Value.StartsWith(rootAccount.AccountNumber.Value) && ma.IsActive)
-                .OrderBy(ma => ma.AccountNumber)
+                .OrderBy(ma => ma.AccountNumber.Value)
                 .ToListAsync();
         }
 
@@ -129,7 +129,7 @@ namespace WileyWidget.Data
             using var context = await _contextFactory.CreateDbContextAsync();
             return await context.MunicipalAccounts
                 .Where(ma => ma.Name.Contains(searchTerm) && ma.IsActive)
-                .OrderBy(ma => ma.AccountNumber)
+                .OrderBy(ma => ma.AccountNumber.Value)
                 .ToListAsync();
         }
 
@@ -284,7 +284,7 @@ namespace WileyWidget.Data
             // Get accounts that have budget entries for this fiscal year
             var accounts = await context.MunicipalAccounts
                 .Where(ma => ma.IsActive && ma.BudgetAmount != 0)
-                .OrderBy(ma => ma.AccountNumber)
+                .OrderBy(ma => ma.AccountNumber.Value)
                 .ToListAsync();
             
             return accounts;
@@ -295,7 +295,7 @@ namespace WileyWidget.Data
             using var context = await _contextFactory.CreateDbContextAsync();
             var accounts = await context.MunicipalAccounts
                 .Where(ma => ma.IsActive && ma.BudgetAmount != 0)
-                .OrderBy(ma => ma.AccountNumber)
+                .OrderBy(ma => ma.AccountNumber.Value)
                 .ToListAsync();
             return accounts;
         }
@@ -305,7 +305,7 @@ namespace WileyWidget.Data
             using var context = await _contextFactory.CreateDbContextAsync();
             return await context.MunicipalAccounts
                 .Where(ma => ma.IsActive && ma.BudgetAmount != 0)
-                .OrderBy(ma => ma.AccountNumber)
+                .OrderBy(ma => ma.AccountNumber.Value)
                 .ToListAsync();
         }
 

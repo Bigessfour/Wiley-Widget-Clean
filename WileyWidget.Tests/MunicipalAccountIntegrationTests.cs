@@ -41,6 +41,7 @@ public class MunicipalAccountIntegrationTests : IDisposable
             Name = "General Fund - Cash",
             Type = AccountType.Asset,
             Fund = MunicipalFundType.General,
+            FundClass = FundClass.Governmental,
             Balance = 50000.00m,
             BudgetAmount = 55000.00m,
             IsActive = true
@@ -66,6 +67,7 @@ public class MunicipalAccountIntegrationTests : IDisposable
             Name = "General Fund - Cash",
             Type = AccountType.Asset,
             Fund = MunicipalFundType.General,
+            FundClass = FundClass.Governmental,
             Balance = 50000.00m,
             BudgetAmount = 55000.00m,
             IsActive = true
@@ -77,6 +79,7 @@ public class MunicipalAccountIntegrationTests : IDisposable
             Name = "General Fund - Salaries",
             Type = AccountType.Expense,
             Fund = MunicipalFundType.General,
+            FundClass = FundClass.Governmental,
             Balance = 0.00m,
             BudgetAmount = 45000.00m,
             IsActive = true
@@ -104,6 +107,7 @@ public class MunicipalAccountIntegrationTests : IDisposable
             Name = "General Fund - Cash",
             Type = AccountType.Asset,
             Fund = MunicipalFundType.General,
+            FundClass = FundClass.Governmental,
             Balance = 50000.00m,
             BudgetAmount = 55000.00m,
             IsActive = true
@@ -115,6 +119,7 @@ public class MunicipalAccountIntegrationTests : IDisposable
             Name = "Special Revenue Fund - Grants",
             Type = AccountType.Asset,
             Fund = MunicipalFundType.Enterprise,
+            FundClass = FundClass.Proprietary,
             Balance = 25000.00m,
             BudgetAmount = 30000.00m,
             IsActive = true
@@ -142,6 +147,7 @@ public class MunicipalAccountIntegrationTests : IDisposable
             Name = "General Fund - Cash",
             Type = AccountType.Asset,
             Fund = MunicipalFundType.General,
+            FundClass = FundClass.Governmental,
             Balance = 50000.00m,
             BudgetAmount = 55000.00m,
             IsActive = true

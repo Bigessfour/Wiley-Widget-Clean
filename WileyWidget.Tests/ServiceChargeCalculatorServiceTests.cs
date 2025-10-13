@@ -62,7 +62,7 @@ public class ServiceChargeCalculatorServiceTests
     public void Constructor_WithNullServiceProvider_ThrowsArgumentNullException()
     {
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new ServiceChargeCalculatorService(null));
+        Assert.Throws<ArgumentNullException>(() => new ServiceChargeCalculatorService(null!));
     }
 
     [Fact]
@@ -131,7 +131,7 @@ public class ServiceChargeCalculatorServiceTests
     {
         // Arrange
         var enterpriseId = 999;
-        _mockEnterpriseRepo.Setup(r => r.GetByIdAsync(enterpriseId)).ReturnsAsync((Enterprise)null);
+        _mockEnterpriseRepo.Setup(r => r.GetByIdAsync(enterpriseId)).Returns(Task.FromResult<Enterprise?>(null));
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentException>(
@@ -360,7 +360,7 @@ public class ServiceChargeCalculatorServiceTests
     {
         // Arrange
         var enterpriseId = 999;
-        _mockEnterpriseRepo.Setup(r => r.GetByIdAsync(enterpriseId)).ReturnsAsync((Enterprise)null);
+        _mockEnterpriseRepo.Setup(r => r.GetByIdAsync(enterpriseId)).Returns(Task.FromResult<Enterprise?>(null));
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentException>(

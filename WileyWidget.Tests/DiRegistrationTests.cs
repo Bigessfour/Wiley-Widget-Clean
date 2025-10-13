@@ -128,7 +128,7 @@ namespace WileyWidget.Tests
         {
             var services = new ServiceCollection();
             var config = new ConfigurationBuilder()
-                .AddInMemoryCollection(new Dictionary<string, string>
+                .AddInMemoryCollection((IEnumerable<KeyValuePair<string, string?>>)new Dictionary<string, string>
                 {
                     ["ConnectionStrings:DefaultConnection"] = "DataSource=:memory:"
                 })
@@ -155,7 +155,7 @@ namespace WileyWidget.Tests
         {
             var services = new ServiceCollection();
             var config = new ConfigurationBuilder()
-                .AddInMemoryCollection(new Dictionary<string, string>
+                .AddInMemoryCollection((IEnumerable<KeyValuePair<string, string?>>)new Dictionary<string, string>
                 {
                     ["ConnectionStrings:DefaultConnection"] = "DataSource=:memory:"
                 })
@@ -221,7 +221,7 @@ namespace WileyWidget.Tests
         {
             var services = new ServiceCollection();
             var config = new ConfigurationBuilder()
-                .AddInMemoryCollection(new Dictionary<string, string>
+                .AddInMemoryCollection((IEnumerable<KeyValuePair<string, string?>>)new Dictionary<string, string>
                 {
                     ["XAI:ApiKey"] = "",
                     ["XAI:RequireService"] = "false"
@@ -247,7 +247,7 @@ namespace WileyWidget.Tests
         {
             var services = new ServiceCollection();
             var config = new ConfigurationBuilder()
-                .AddInMemoryCollection(new Dictionary<string, string>
+                .AddInMemoryCollection((IEnumerable<KeyValuePair<string, string?>>)new Dictionary<string, string>
                 {
                     ["XAI:ApiKey"] = "",
                     ["XAI:RequireService"] = "true"
@@ -297,7 +297,7 @@ namespace WileyWidget.Tests
         {
             var services = new ServiceCollection();
             var config = new ConfigurationBuilder()
-                .AddInMemoryCollection(new Dictionary<string, string>
+                .AddInMemoryCollection((IEnumerable<KeyValuePair<string, string?>>)new Dictionary<string, string>
                 {
                     ["ConnectionStrings:DefaultConnection"] = "DataSource=:memory:"
                 })

@@ -115,7 +115,7 @@ namespace WileyWidget.Tests.AdvancedStaFactExamples
                 var selectedMaster = masterGrid.SelectedItem as MasterItem;
 
                 Assert.NotNull(selectedMaster);
-                Assert.NotEmpty(selectedMaster.Details);
+                Assert.NotEmpty(selectedMaster.Details!);
 
                 window.Close();
             });
@@ -206,7 +206,7 @@ namespace WileyWidget.Tests.AdvancedStaFactExamples
                 {
                     Assert.IsType<TextBlock>(customControl.Content);
                     var textBlock = customControl.Content as TextBlock;
-                    Assert.Equal("Custom Dashboard", textBlock.Text);
+                    Assert.Equal("Custom Dashboard", textBlock!.Text);
                 }
                 else
                 {
@@ -614,26 +614,26 @@ namespace WileyWidget.Tests.AdvancedStaFactExamples
         public class TestItem
         {
             public int Id { get; set; }
-            public string Name { get; set; }
+            public string? Name { get; set; }
             public int Value { get; set; }
         }
 
         public class MasterItem
         {
             public int Id { get; set; }
-            public string Name { get; set; }
-            public List<DetailItem> Details { get; set; }
+            public string? Name { get; set; }
+            public List<DetailItem>? Details { get; set; }
         }
 
         public class DetailItem
         {
             public int SubId { get; set; }
-            public string Description { get; set; }
+            public string? Description { get; set; }
         }
 
         public class ChartPoint
         {
-            public string X { get; set; }
+            public string? X { get; set; }
             public double Y { get; set; }
         }
 
@@ -648,7 +648,7 @@ namespace WileyWidget.Tests.AdvancedStaFactExamples
 
         public class CustomSfDataGrid : SfDataGrid
         {
-            public string CustomProperty { get; set; }
+            public string? CustomProperty { get; set; }
         }
 
         #endregion

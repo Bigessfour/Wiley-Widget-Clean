@@ -60,7 +60,7 @@ namespace WileyWidget.Tests.ViewModels
             GC.SuppressFinalize(this);
         }
 
-        private void SetupAppSettingsDbSet(AppSettings settings = null)
+        private void SetupAppSettingsDbSet(AppSettings? settings = null)
         {
             var mockDbSet = new Mock<DbSet<AppSettings>>();
             if (settings != null)
@@ -69,7 +69,7 @@ namespace WileyWidget.Tests.ViewModels
             }
             else
             {
-                mockDbSet.Setup(x => x.FindAsync(1)).ReturnsAsync((AppSettings)null);
+                mockDbSet.Setup(x => x.FindAsync(1)).ReturnsAsync((AppSettings?)null);
             }
             _mockDbContext.Setup(db => db.AppSettings).Returns(mockDbSet.Object);
         }
@@ -101,7 +101,7 @@ namespace WileyWidget.Tests.ViewModels
                 _mockLogger.Object,
                 _mockDbContext.Object,
                 _mockSecretVaultService.Object,
-                null, // null QuickBooks service
+                null!, // null QuickBooks service
                 _mockSyncfusionService.Object,
                 _mockAIService.Object));
         }

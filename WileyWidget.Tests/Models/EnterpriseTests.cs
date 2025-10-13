@@ -40,7 +40,10 @@ public class EnterpriseTests
 
         enterprise.PropertyChanged += (sender, args) =>
         {
-            propertyChangedEvents.Add(args.PropertyName);
+            if (args.PropertyName != null)
+            {
+                propertyChangedEvents.Add(args.PropertyName);
+            }
         };
 
         // Act
@@ -71,7 +74,10 @@ public class EnterpriseTests
 
         enterprise.PropertyChanged += (sender, args) =>
         {
-            propertyChangedEvents.Add(args.PropertyName);
+            if (args.PropertyName != null)
+            {
+                propertyChangedEvents.Add(args.PropertyName);
+            }
         };
 
         // Act

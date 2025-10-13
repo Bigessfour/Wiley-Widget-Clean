@@ -67,25 +67,14 @@ public class ComprehensiveDatabaseIntegrationTests : IDisposable
         // Create test departments
         var department1 = new Department
         {
-            Code = "FIN",
             Name = "Finance Department",
-            Fund = MunicipalFundType.General
+            DepartmentCode = "FIN"
         };
 
         _context.Departments.Add(department1);
         _context.SaveChanges();
 
-        // Create test budget period
-        var budgetPeriod1 = new BudgetPeriod
-        {
-            Year = 2025,
-            Name = "FY 2025 Budget",
-            CreatedDate = DateTime.UtcNow,
-            Status = BudgetStatus.Adopted
-        };
-
-        _context.BudgetPeriods.Add(budgetPeriod1);
-        _context.SaveChanges();
+        var departmentId = department1.Id; // Get the actual ID after save
 
         // Create seed municipal accounts for testing
         var seedAccount1 = new MunicipalAccount
@@ -95,8 +84,7 @@ public class ComprehensiveDatabaseIntegrationTests : IDisposable
             Type = AccountType.Cash,
             Fund = MunicipalFundType.General,
             FundClass = FundClass.Governmental,
-            DepartmentId = 1,
-            BudgetPeriodId = 1,
+            DepartmentId = departmentId,
             Balance = 300000.00m,
             BudgetAmount = 400000.00m,
             IsActive = true
@@ -109,8 +97,7 @@ public class ComprehensiveDatabaseIntegrationTests : IDisposable
             Type = AccountType.Payables,
             Fund = MunicipalFundType.General,
             FundClass = FundClass.Governmental,
-            DepartmentId = 1,
-            BudgetPeriodId = 1,
+            DepartmentId = departmentId,
             Balance = 200000.00m,
             BudgetAmount = 300000.00m,
             IsActive = true

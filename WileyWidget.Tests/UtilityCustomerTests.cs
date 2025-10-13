@@ -78,12 +78,11 @@ public class UtilityCustomerTests
     [InlineData(null, false)]        // Null account number
     [InlineData("ACC001", true)]     // Valid account number
     [InlineData("A", true)]          // Minimum valid length
-    public void UtilityCustomer_AccountNumber_Validation(string accountNumber, bool shouldBeValid)
+    public void UtilityCustomer_AccountNumber_Validation(string? accountNumber, bool shouldBeValid)
     {
         // Arrange
         var customer = new UtilityCustomer
         {
-            AccountNumber = accountNumber,
             FirstName = "John",
             LastName = "Doe",
             ServiceAddress = "123 Main St",
@@ -95,6 +94,11 @@ public class UtilityCustomerTests
             Status = CustomerStatus.Active,
             AccountOpenDate = DateTime.Now
         };
+        
+        if (accountNumber != null)
+        {
+            customer.AccountNumber = accountNumber;
+        }
 
         // Act
         var validationContext = new ValidationContext(customer);
@@ -119,13 +123,12 @@ public class UtilityCustomerTests
     [InlineData(null, false)]        // Null first name
     [InlineData("John", true)]       // Valid first name
     [InlineData("A", true)]          // Minimum valid length
-    public void UtilityCustomer_FirstName_Validation(string firstName, bool shouldBeValid)
+    public void UtilityCustomer_FirstName_Validation(string? firstName, bool shouldBeValid)
     {
         // Arrange
         var customer = new UtilityCustomer
         {
             AccountNumber = "ACC001",
-            FirstName = firstName,
             LastName = "Doe",
             ServiceAddress = "123 Main St",
             ServiceCity = "Anytown",
@@ -136,6 +139,11 @@ public class UtilityCustomerTests
             Status = CustomerStatus.Active,
             AccountOpenDate = DateTime.Now
         };
+        
+        if (firstName != null)
+        {
+            customer.FirstName = firstName;
+        }
 
         // Act
         var validationContext = new ValidationContext(customer);
@@ -160,14 +168,13 @@ public class UtilityCustomerTests
     [InlineData(null, false)]        // Null last name
     [InlineData("Doe", true)]        // Valid last name
     [InlineData("A", true)]          // Minimum valid length
-    public void UtilityCustomer_LastName_Validation(string lastName, bool shouldBeValid)
+    public void UtilityCustomer_LastName_Validation(string? lastName, bool shouldBeValid)
     {
         // Arrange
         var customer = new UtilityCustomer
         {
             AccountNumber = "ACC001",
             FirstName = "John",
-            LastName = lastName,
             ServiceAddress = "123 Main St",
             ServiceCity = "Anytown",
             ServiceState = "CA",
@@ -178,6 +185,11 @@ public class UtilityCustomerTests
             Status = CustomerStatus.Active,
             AccountOpenDate = DateTime.Now
         };
+        
+        if (lastName != null)
+        {
+            customer.LastName = lastName;
+        }
 
         // Act
         var validationContext = new ValidationContext(customer);
@@ -201,7 +213,7 @@ public class UtilityCustomerTests
     [InlineData("", false)]           // Empty service address
     [InlineData(null, false)]        // Null service address
     [InlineData("123 Main St", true)] // Valid service address
-    public void UtilityCustomer_ServiceAddress_Validation(string serviceAddress, bool shouldBeValid)
+    public void UtilityCustomer_ServiceAddress_Validation(string? serviceAddress, bool shouldBeValid)
     {
         // Arrange
         var customer = new UtilityCustomer
@@ -209,7 +221,6 @@ public class UtilityCustomerTests
             AccountNumber = "ACC001",
             FirstName = "John",
             LastName = "Doe",
-            ServiceAddress = serviceAddress,
             ServiceCity = "Anytown",
             ServiceState = "CA",
             ServiceZipCode = "12345",
@@ -218,6 +229,11 @@ public class UtilityCustomerTests
             Status = CustomerStatus.Active,
             AccountOpenDate = DateTime.Now
         };
+        
+        if (serviceAddress != null)
+        {
+            customer.ServiceAddress = serviceAddress;
+        }
 
         // Act
         var validationContext = new ValidationContext(customer);
@@ -243,7 +259,7 @@ public class UtilityCustomerTests
     [InlineData("C", false)]         // Too short
     [InlineData("CA", true)]         // Valid 2-character state
     [InlineData("CAL", false)]       // Too long
-    public void UtilityCustomer_ServiceState_Validation(string serviceState, bool shouldBeValid)
+    public void UtilityCustomer_ServiceState_Validation(string? serviceState, bool shouldBeValid)
     {
         // Arrange
         var customer = new UtilityCustomer
@@ -253,13 +269,17 @@ public class UtilityCustomerTests
             LastName = "Doe",
             ServiceAddress = "123 Main St",
             ServiceCity = "Anytown",
-            ServiceState = serviceState,
             ServiceZipCode = "12345",
             CustomerType = CustomerType.Residential,
             ServiceLocation = ServiceLocation.InsideCityLimits,
             Status = CustomerStatus.Active,
             AccountOpenDate = DateTime.Now
         };
+        
+        if (serviceState != null)
+        {
+            customer.ServiceState = serviceState;
+        }
 
         // Act
         var validationContext = new ValidationContext(customer);
@@ -284,7 +304,7 @@ public class UtilityCustomerTests
     [InlineData("invalid-email", false)]     // Invalid email
     [InlineData("", true)]                   // Empty email (optional)
     [InlineData(null, true)]                 // Null email (optional)
-    public void UtilityCustomer_EmailAddress_Validation(string emailAddress, bool shouldBeValid)
+    public void UtilityCustomer_EmailAddress_Validation(string? emailAddress, bool shouldBeValid)
     {
         // Arrange
         var customer = new UtilityCustomer
@@ -344,7 +364,10 @@ public class UtilityCustomerTests
 
         customer.PropertyChanged += (sender, args) =>
         {
-            propertyChangedEvents.Add(args.PropertyName);
+            if (args.PropertyName != null)
+            {
+                propertyChangedEvents.Add(args.PropertyName);
+            }
         };
 
         // Act

@@ -17,6 +17,10 @@ namespace WileyWidget.ViewModels
     {
         private readonly ILogger<DashboardViewModel> _logger;
         private readonly IEnterpriseRepository _enterpriseRepository;
+        private readonly IWhatIfScenarioEngine _whatIfScenarioEngine;
+        private readonly IUtilityCustomerRepository _utilityCustomerRepository;
+        private readonly IMunicipalAccountRepository _municipalAccountRepository;
+        private readonly FiscalYearSettings _fiscalYearSettings;
 
         // KPI Properties
         [ObservableProperty]
@@ -81,6 +85,9 @@ namespace WileyWidget.ViewModels
         private ObservableCollection<BudgetTrendItem> historicalData = new();
 
         [ObservableProperty]
+        private ObservableCollection<RateTrendItem> rateTrendData = new();
+
+        [ObservableProperty]
         private ObservableCollection<EnterpriseTypeItem> enterpriseTypeData = new();
 
         // Activity and alerts
@@ -101,14 +108,50 @@ namespace WileyWidget.ViewModels
         private int budgetUtilizationScore = 78;
 
         [ObservableProperty]
+        private decimal suggestedRate;
+
+        [ObservableProperty]
         private string statusMessage = "Ready";
+
+        // Growth scenario properties
+        [ObservableProperty]
+        private decimal payRaisePercentage;
+
+        [ObservableProperty]
+        private decimal benefitsIncreaseAmount;
+
+        [ObservableProperty]
+        private decimal equipmentPurchaseAmount;
+
+        [ObservableProperty]
+        private int equipmentFinancingYears = 5;
+
+        [ObservableProperty]
+        private decimal reservePercentage;
+
+        [ObservableProperty]
+        private ComprehensiveScenario currentScenario;
+
+        [ObservableProperty]
+        private bool isScenarioRunning;
+
+        [ObservableProperty]
+        private string scenarioStatus;
 
         public DashboardViewModel(
             ILogger<DashboardViewModel> logger,
-            IEnterpriseRepository enterpriseRepository)
+            IEnterpriseRepository enterpriseRepository,
+            IWhatIfScenarioEngine whatIfScenarioEngine,
+            IUtilityCustomerRepository utilityCustomerRepository,
+            IMunicipalAccountRepository municipalAccountRepository,
+            FiscalYearSettings fiscalYearSettings)
         {
             _logger = logger;
             _enterpriseRepository = enterpriseRepository;
+            _whatIfScenarioEngine = whatIfScenarioEngine;
+            _utilityCustomerRepository = utilityCustomerRepository;
+            _municipalAccountRepository = municipalAccountRepository;
+            _fiscalYearSettings = fiscalYearSettings;
         }
 
         public async Task LoadDashboardDataAsync()
@@ -122,7 +165,8 @@ namespace WileyWidget.ViewModels
                     LoadKPIsAsync(),
                     LoadChartDataAsync(),
                     LoadActivitiesAsync(),
-                    LoadAlertsAsync()
+                    LoadAlertsAsync(),
+                    LoadScenarioInputsAsync()
                 );
 
                 DashboardStatus = "Dashboard loaded successfully";
@@ -222,6 +266,7 @@ namespace WileyWidget.ViewModels
                 // Load budget trend data (last 6 months)
                 BudgetTrendData.Clear();
                 HistoricalData.Clear();
+                RateTrendData.Clear();
                 
                 for (int i = 5; i >= 0; i--)
                 {
@@ -234,6 +279,14 @@ namespace WileyWidget.ViewModels
                     
                     BudgetTrendData.Add(trendItem);
                     HistoricalData.Add(trendItem); // Also populate HistoricalData for binding
+
+                    // Add rate trend data using the suggested rate
+                    var rateItem = new RateTrendItem
+                    {
+                        Period = date.ToString("MMM yyyy"),
+                        Rate = SuggestedRate
+                    };
+                    RateTrendData.Add(rateItem);
                 }
 
                 // Load enterprise type distribution
@@ -443,6 +496,131 @@ namespace WileyWidget.ViewModels
                           "Feature Not Implemented", MessageBoxButton.OK);
         }
 
+        private async Task LoadScenarioInputsAsync()
+        {
+            try
+            {
+                // Initialize default values for growth scenario inputs
+                PayRaisePercentage = 3.0m;     // 3% default pay raise
+                BenefitsIncreaseAmount = 50m;  // $50/month benefits increase
+                EquipmentPurchaseAmount = 0m;  // No equipment by default
+                EquipmentFinancingYears = 5;   // 5-year financing
+                ReservePercentage = 5.0m;      // 5% reserve increase
+
+                // Calculate initial suggested rate
+                var enterpriseId = await GetCurrentEnterpriseIdAsync();
+                if (enterpriseId > 0)
+                {
+                    SuggestedRate = await CalculateSuggestedRateAsync(enterpriseId);
+                }
+
+                ScenarioStatus = "Scenario inputs loaded";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading scenario inputs");
+                ScenarioStatus = "Error loading scenario inputs";
+            }
+        }
+
+        private async Task<int> GetCurrentEnterpriseIdAsync()
+        {
+            try
+            {
+                // Get the first enterprise as current (you may want to implement proper selection logic)
+                var enterprises = await _enterpriseRepository.GetAllAsync();
+                return enterprises.FirstOrDefault()?.Id ?? 0;
+            }
+            catch
+            {
+                return 0;
+            }
+        }
+
+        private async Task<decimal> CalculateSuggestedRateAsync(int enterpriseId)
+        {
+            try
+            {
+                // Get customer count
+                var customerCount = await _utilityCustomerRepository.GetCountAsync();
+                if (customerCount == 0) return 0;
+
+                // Get enterprise to determine fund type
+                var enterprise = await _enterpriseRepository.GetByIdAsync(enterpriseId);
+                if (enterprise == null) return 0;
+
+                // Map enterprise type to fund type (same logic as WhatIfScenarioEngine)
+                var fundType = enterprise.Type switch
+                {
+                    "Water" => MunicipalFundType.Water,
+                    "Sewer" => MunicipalFundType.Sewer,
+                    "Trash" => MunicipalFundType.Trash,
+                    _ => MunicipalFundType.Enterprise
+                };
+
+                // Get expense accounts for this fund
+                var expenseAccounts = await _municipalAccountRepository.GetByFundAsync(fundType);
+
+                // Calculate aggregated expenses (sum of balances from expense accounts)
+                var aggregatedExpenses = expenseAccounts.Sum(account => account.Balance);
+
+                // Add growth buffer (10% of expenses)
+                var growthBuffer = aggregatedExpenses * 0.10m;
+
+                // Calculate suggested rate
+                var suggestedRate = (aggregatedExpenses + growthBuffer) / customerCount;
+
+                return Math.Round(suggestedRate, 2);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error calculating suggested rate");
+                return 0;
+            }
+        }
+
+        [RelayCommand]
+        private async Task RunGrowthScenarioAsync(int enterpriseId)
+        {
+            try
+            {
+                IsScenarioRunning = true;
+                ScenarioStatus = "Running growth scenario analysis...";
+
+                // Create scenario parameters from user inputs
+                var parameters = new ScenarioParameters
+                {
+                    PayRaisePercentage = PayRaisePercentage / 100m, // Convert percentage to decimal
+                    BenefitsIncreaseAmount = BenefitsIncreaseAmount,
+                    EquipmentPurchaseAmount = EquipmentPurchaseAmount,
+                    EquipmentFinancingYears = EquipmentFinancingYears,
+                    ReservePercentage = ReservePercentage / 100m // Convert percentage to decimal
+                };
+
+                // Generate comprehensive scenario
+                var scenario = await _whatIfScenarioEngine.GenerateComprehensiveScenarioAsync(enterpriseId, parameters);
+
+                // Store the scenario results
+                CurrentScenario = scenario;
+
+                // Recalculate suggested rate with new scenario data
+                SuggestedRate = await CalculateSuggestedRateAsync(enterpriseId);
+
+                ScenarioStatus = $"Scenario '{scenario.ScenarioName}' completed successfully";
+
+                _logger.LogInformation("Growth scenario completed for enterprise {EnterpriseId}", enterpriseId);
+            }
+            catch (Exception ex)
+            {
+                ScenarioStatus = $"Error running scenario: {ex.Message}";
+                _logger.LogError(ex, "Error running growth scenario for enterprise {EnterpriseId}", enterpriseId);
+            }
+            finally
+            {
+                IsScenarioRunning = false;
+            }
+        }
+
         partial void OnAutoRefreshEnabledChanged(bool value)
         {
             UpdateNextRefreshTime();
@@ -459,6 +637,12 @@ namespace WileyWidget.ViewModels
     {
         public string Period { get; set; }
         public decimal Amount { get; set; }
+    }
+
+    public class RateTrendItem
+    {
+        public string Period { get; set; }
+        public decimal Rate { get; set; }
     }
 
     public class EnterpriseTypeItem

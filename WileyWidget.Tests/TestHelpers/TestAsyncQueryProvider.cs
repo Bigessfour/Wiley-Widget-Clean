@@ -34,7 +34,7 @@ public class TestAsyncQueryProvider<TEntity> : IAsyncQueryProvider
 
     public object Execute(Expression expression)
     {
-        return _inner.Execute(expression);
+        return _inner.Execute(expression)!;
     }
 
     public TResult Execute<TResult>(Expression expression)
@@ -44,7 +44,7 @@ public class TestAsyncQueryProvider<TEntity> : IAsyncQueryProvider
 
     public TResult ExecuteAsync<TResult>(Expression expression, CancellationToken cancellationToken = default)
     {
-        return Execute<TResult>(expression);
+        return Execute<TResult>(expression)!;
     }
 
     public IAsyncEnumerable<TResult> ExecuteAsync<TResult>(Expression expression)

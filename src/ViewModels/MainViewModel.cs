@@ -90,7 +90,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     /// <summary>Currently selected enterprise in the grid (null when none selected).</summary>
     [ObservableProperty]
-    private WileyWidget.Models.Enterprise selectedEnterprise;
+    private WileyWidget.Models.Enterprise? selectedEnterprise;
 
     /// <summary>
     /// Loading state for async operations

@@ -285,8 +285,7 @@ public class Enterprise : INotifyPropertyChanged, ISoftDeletable
     /// <summary>
     /// Navigation property for budget interactions
     /// </summary>
-    // Removed: Ambiguous relationship - use BudgetInteraction.PrimaryEnterprise/SecondaryEnterprise instead
-    // public virtual ICollection<BudgetInteraction> BudgetInteractions { get; set; } = new List<BudgetInteraction>();
+    public virtual ICollection<BudgetInteraction> BudgetInteractions { get; set; } = new List<BudgetInteraction>();
 
     /// <summary>
     /// Calculated property: Monthly deficit/surplus (Revenue - Expenses)

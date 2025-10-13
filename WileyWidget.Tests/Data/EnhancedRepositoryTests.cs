@@ -9,6 +9,7 @@ using WileyWidget.Models;
 using WileyWidget.Models.DTOs;
 using Xunit;
 using FluentAssertions;
+using WileyWidget.Tests;
 
 namespace WileyWidget.Tests.Data;
 
@@ -30,13 +31,8 @@ public class EnhancedRepositoryTests : IDisposable
 
     public EnhancedRepositoryTests()
     {
-        var connectionString = $"Data Source=:memory:;Cache=Shared;Mode=Memory";
-        var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseSqlite(connectionString)
-            .Options;
-
-        _context = new AppDbContext(options);
-        _contextFactory = new TestDbContextFactory(options);
+        _contextFactory = WileyWidget.Tests.TestDbContextFactory.CreateSqliteInMemory("EnhancedRepositoryTests");
+        _context = _contextFactory.CreateDbContext();
         _repository = new EnterpriseRepository(_contextFactory);
         
         // Ensure database is created

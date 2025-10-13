@@ -11,7 +11,7 @@ namespace WileyWidget.Tests
     public class FakeAuthService : AuthenticationService
     {
         private bool _isAuthenticated;
-        private UserInfo _userInfo;
+        private UserInfo? _userInfo;
 
         public FakeAuthService(bool isAuthenticated)
         {
@@ -23,7 +23,7 @@ namespace WileyWidget.Tests
 
         public override UserInfo GetUserInfo()
         {
-            return _userInfo;
+            return _userInfo!;
         }
     }
 
@@ -50,7 +50,7 @@ namespace WileyWidget.Tests
                 window.DataContext = new MainViewModel();
 
                 // Call the method under test
-                window.GetType().GetMethod("UpdateAuthenticationUI", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).Invoke(window, null);
+                window.GetType().GetMethod("UpdateAuthenticationUI", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.Invoke(window, null);
             });
         }
 
@@ -72,7 +72,7 @@ namespace WileyWidget.Tests
 
                 window.DataContext = new MainViewModel();
 
-                window.GetType().GetMethod("UpdateAuthenticationUI", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).Invoke(window, null);
+                window.GetType().GetMethod("UpdateAuthenticationUI", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.Invoke(window, null);
             });
         }
     }

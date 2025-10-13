@@ -270,6 +270,8 @@ public static class DatabaseConfiguration
         services.AddScoped<WileyWidget.Business.Interfaces.IBudgetRepository, WileyWidget.Data.BudgetRepository>();
         services.AddScoped<WileyWidget.Business.Interfaces.IDepartmentRepository, WileyWidget.Data.DepartmentRepository>();
         services.AddScoped<WileyWidget.Business.Interfaces.IMunicipalAccountRepository, WileyWidget.Data.MunicipalAccountRepository>();
+        services.AddScoped<WileyWidget.Business.Interfaces.IEnterpriseRepository, WileyWidget.Data.EnterpriseRepository>();
+        services.AddScoped<WileyWidget.Business.Interfaces.IUtilityCustomerRepository, WileyWidget.Data.UtilityCustomerRepository>();
     }
 
     /// <summary>
@@ -335,6 +337,9 @@ public static class DatabaseConfiguration
 
         services.TryAddSingleton<IChargeCalculatorService, ServiceChargeCalculatorService>();
         services.TryAddSingleton<IWhatIfScenarioEngine, WhatIfScenarioEngine>();
+
+        // Register FiscalYearSettings as singleton (configuration data)
+        services.AddSingleton<FiscalYearSettings>();
 
         // Register Unit of Work (Clean Architecture - UI only depends on Business layer)
         services.AddScoped<IUnitOfWork, UnitOfWork>();

@@ -119,7 +119,10 @@ public class OverallBudgetTests
 
         budget.PropertyChanged += (sender, args) =>
         {
-            propertyChangedEvents.Add(args.PropertyName);
+            if (args.PropertyName != null)
+            {
+                propertyChangedEvents.Add(args.PropertyName);
+            }
         };
 
         // Act
@@ -267,7 +270,10 @@ public class OverallBudgetTests
 
         budget.PropertyChanged += (sender, args) =>
         {
-            propertyChangedEvents.Add(args.PropertyName);
+            if (args.PropertyName != null)
+            {
+                propertyChangedEvents.Add(args.PropertyName);
+            }
         };
 
         // Act - Set same values

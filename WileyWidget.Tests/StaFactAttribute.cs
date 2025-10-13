@@ -261,7 +261,7 @@ namespace WileyWidget.Tests
         /// <summary>
         /// Gets the Syncfusion license key for test execution.
         /// </summary>
-        private static string GetSyncfusionLicenseKeyForTests()
+        private static string? GetSyncfusionLicenseKeyForTests()
         {
             try
             {

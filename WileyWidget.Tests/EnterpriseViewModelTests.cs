@@ -31,7 +31,7 @@ public class EnterpriseViewModelTests : IDisposable
     public void Constructor_WithNullRepository_ThrowsArgumentNullException()
     {
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new EnterpriseViewModel(null));
+        Assert.Throws<ArgumentNullException>(() => new EnterpriseViewModel(null!));
     }
 
     [Fact]
@@ -246,7 +246,10 @@ public class EnterpriseViewModelTests : IDisposable
 
         _viewModel.PropertyChanged += (s, e) =>
         {
-            propertyChangedEvents.Add(e.PropertyName);
+            if (e.PropertyName != null)
+            {
+                propertyChangedEvents.Add(e.PropertyName);
+            }
         };
 
         // Act

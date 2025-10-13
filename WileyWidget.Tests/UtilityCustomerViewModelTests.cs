@@ -211,7 +211,8 @@ public class UtilityCustomerViewModelTests
         // Act
         var method = typeof(UtilityCustomerViewModel).GetMethod("GenerateNextAccountNumberAsync",
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        var task = (Task<string>)method?.Invoke(_viewModel, null);
+        Assert.NotNull(method);
+        var task = (Task<string>)method.Invoke(_viewModel, null)!;
         var result = await task;
 
         // Assert
