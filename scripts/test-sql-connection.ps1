@@ -10,10 +10,12 @@ try {
     $connection = [System.Data.SqlClient.SqlConnection]::new($ConnectionString)
     $connection.Open()
     Write-Output "✅ Connected to $( $connection.DataSource )/$( $connection.Database ) successfully"
-} catch {
+}
+catch {
     Write-Error $_
     exit 1
-} finally {
+}
+finally {
     if ($connection) {
         $connection.Dispose()
     }
