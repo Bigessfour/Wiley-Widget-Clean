@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Net.Http;
 using System.Windows;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -186,7 +187,28 @@ public static class WpfHostingExtensions
 
     private static void ConfigureCoreServices(IServiceCollection services, IConfiguration configuration)
     {
+        // Log connection string for diagnostics
+        var connectionString = configuration.GetConnectionString("DefaultConnection");
+        Log.Information("🔗 Connection string loaded from configuration: {HasConnection}, Length: {Length}", 
+            !string.IsNullOrEmpty(connectionString), 
+            connectionString?.Length ?? 0);
+        
+        if (string.IsNullOrEmpty(connectionString))
+        {
+            Log.Warning("⚠️ DefaultConnection string is missing or empty! Database operations will fail.");
+        }
+        else
+        {
+            // Log sanitized version (hide credentials)
+            var sanitized = connectionString.Contains("Password=") 
+                ? connectionString.Substring(0, Math.Min(50, connectionString.Length)) + "..." 
+                : connectionString.Substring(0, Math.Min(100, connectionString.Length));
+            Log.Debug("Connection string preview: {Preview}", sanitized);
+        }
+
         // Database services - must be first as other services depend on it
+        // NOTE: Database registration is fully handled by AddEnterpriseDatabaseServices
+        // Do NOT call AddDbContext here as it creates duplicate/conflicting registrations
         services.AddEnterpriseDatabaseServices(configuration);
 
         // Critical services - load immediately
@@ -210,6 +232,7 @@ public static class WpfHostingExtensions
         // Lazy-loaded services - defer heavy initialization
         services.AddTransient<IExcelReaderService, ExcelReaderService>();
         services.AddScoped<IGrokSupercomputer, GrokSupercomputer>();
+        services.AddScoped<IChargeCalculatorService, ServiceChargeCalculatorService>();
 
         // AI Service with lazy initialization
         services.AddSingleton<IAIService>(sp =>
@@ -247,6 +270,7 @@ public static class WpfHostingExtensions
     private static void ConfigureWpfServices(IServiceCollection services)
     {
         services.TryAddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddScoped<IMunicipalAccountRepository, MunicipalAccountRepository>();
         services.AddScoped<MainViewModel>();
         services.AddTransient<MainWindow>();
         services.AddSingleton<SplashScreenWindow>(sp => SplashScreenFactory.Create(sp));

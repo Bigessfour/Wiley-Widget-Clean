@@ -20,7 +20,8 @@
     TextOptions.TextFormattingMode="Ideal"
     TextOptions.TextRenderingMode="ClearType"
     Title="Wiley Widget" Height="600" Width="1000" WindowState="Maximized"
-    WindowStartupLocation="CenterScreen" MinWidth="1200" AllowsTransparency="False">
+    WindowStartupLocation="CenterScreen" MinWidth="1200" AllowsTransparency="False"
+    Loaded="MainWindow_Loaded">
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
         <local:ProfitLossTextConverter x:Key="ProfitLossTextConverter" />
@@ -40,6 +41,21 @@
         <local:InverseBooleanConverter x:Key="InverseBooleanConverter" />
         <local:BooleanToFontWeightConverter x:Key="BooleanToFontWeightConverter" />
         <converters:BudgetOverrunStyleSelector x:Key="BudgetOverrunStyleSelector" />
+
+        <!-- Loading Placeholder for DI resolution delays -->
+        <Grid x:Key="LoadingPlaceholder" Background="#1E1E1E">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                <notification:SfBusyIndicator Width="48" Height="48" 
+                                             AnimationType="DoubleCircle"
+                                             Foreground="#4F92E0"
+                                             IsBusy="True" />
+                <TextBlock Text="Initializing..." 
+                          Foreground="#AAAAAA"
+                          FontSize="14"
+                          Margin="0,15,0,0"
+                          HorizontalAlignment="Center" />
+            </StackPanel>
+        </Grid>
 
         <!-- Icon Templates for Ribbon -->
         <DataTemplate x:Key="NewIcon">
@@ -482,19 +498,9 @@
                      UseDocumentContainer="True"
                      ContainerMode="TDI"
                      PersistState="True"
-                     MaximizeButtonEnabled="True"
-                     MinimizeButtonEnabled="True"
-                     MaximizeMode="FullScreen"
-                     IsEnableHotTracking="True"
-                     CollapseDefaultContextMenuItemsInDock="False"
                      UseLayoutRounding="True"
-                     EnableScrollableSidePanel="True"
                      IsVS2010DraggingEnabled="True"
-                     DockWindowContextMenuItemStyle="{StaticResource DockWindowMenuItemSeparatorStyle}"
-                     syncfusionskin:SfSkinManager.VisualStyle="FluentDark">
-        <i:Interaction.Behaviors>
-            <!-- Custom behaviors for float window management -->
-        </i:Interaction.Behaviors>
+                     syncfusionskin:SfSkinManager.VisualStyle="{Binding CurrentTheme, FallbackValue=FluentDark}">
 
             <!-- Custom Context Menu Items -->
             <syncfusion:DockingManager.DockWindowContextMenuItems>
@@ -857,9 +863,10 @@
 
                 <!-- Dashboard Panel -->
                 <ContentControl x:Name="DashboardPanel"
-                              Content="{Binding DashboardViewModel}"
+                              Content="{Binding DashboardViewModel, FallbackValue={StaticResource LoadingPlaceholder}}"
+                              DataContext="{Binding}"
                               syncfusion:DockingManager.Header="Dashboard"
-                              syncfusion:DockingManager.State="Dock"
+                              syncfusion:DockingManager.State="Document"
                               syncfusion:DockingManager.TargetNameInDockedMode="QuickBooksPanel"
                               syncfusion:DockingManager.SideInDockedMode="Bottom"
                               syncfusion:DockingManager.DesiredWidthInDockedMode="500"
@@ -871,7 +878,8 @@
 
                 <!-- Tools & Utilities Panel -->
                 <ContentControl x:Name="ToolsPanel"
-                              Content="{Binding ToolsViewModel}"
+                              Content="{Binding ToolsViewModel, FallbackValue={StaticResource LoadingPlaceholder}}"
+                              DataContext="{Binding}"
                               syncfusion:DockingManager.Header="Tools &amp; Utilities"
                               syncfusion:DockingManager.State="Dock"
                               syncfusion:DockingManager.TargetNameInDockedMode="QuickBooksPanel"
@@ -905,9 +913,10 @@
 
                 <!-- Enterprise Panel -->
                 <ContentControl x:Name="EnterprisePanel"
-                              Content="{Binding EnterpriseViewModel}"
+                              Content="{Binding EnterpriseViewModel, FallbackValue={StaticResource LoadingPlaceholder}}"
+                              DataContext="{Binding}"
                               syncfusion:DockingManager.Header="Enterprise"
-                              syncfusion:DockingManager.State="Dock"
+                              syncfusion:DockingManager.State="Document"
                               syncfusion:DockingManager.TargetNameInDockedMode="WidgetsPanel"
                               syncfusion:DockingManager.SideInDockedMode="Bottom"
                               syncfusion:DockingManager.DesiredWidthInDockedMode="600"
@@ -919,9 +928,10 @@
 
                 <!-- Budget Panel -->
                 <ContentControl x:Name="BudgetPanel" 
-                              Content="{Binding BudgetViewModel}"
+                              Content="{Binding BudgetViewModel, FallbackValue={StaticResource LoadingPlaceholder}}"
+                              DataContext="{Binding}"
                               syncfusion:DockingManager.Header="Budget"
-                              syncfusion:DockingManager.State="Dock"
+                              syncfusion:DockingManager.State="Document"
                               syncfusion:DockingManager.TargetNameInDockedMode="EnterprisePanel"
                               syncfusion:DockingManager.SideInDockedMode="Right"
                               syncfusion:DockingManager.DesiredWidthInDockedMode="700"
@@ -932,9 +942,10 @@
 
                 <!-- Municipal Accounts Panel -->
                 <ContentControl x:Name="MunicipalAccountsPanel"
-                              Content="{Binding MunicipalAccountViewModel}"
+                              Content="{Binding MunicipalAccountViewModel, FallbackValue={StaticResource LoadingPlaceholder}}"
+                              DataContext="{Binding}"
                               syncfusion:DockingManager.Header="Municipal Accounts"
-                              syncfusion:DockingManager.State="Dock"
+                              syncfusion:DockingManager.State="Document"
                               syncfusion:DockingManager.TargetNameInDockedMode="BudgetPanel"
                               syncfusion:DockingManager.SideInDockedMode="Bottom"
                               syncfusion:DockingManager.DesiredWidthInDockedMode="700"
@@ -945,9 +956,10 @@
 
                 <!-- Utility Customers Panel -->
                 <ContentControl x:Name="UtilityCustomersPanel"
-                              Content="{Binding UtilityCustomerViewModel}"
+                              Content="{Binding UtilityCustomerViewModel, FallbackValue={StaticResource LoadingPlaceholder}}"
+                              DataContext="{Binding}"
                               syncfusion:DockingManager.Header="Utility Customers"
-                              syncfusion:DockingManager.State="Dock"
+                              syncfusion:DockingManager.State="Document"
                               syncfusion:DockingManager.TargetNameInDockedMode="MunicipalAccountsPanel"
                               syncfusion:DockingManager.SideInDockedMode="Right"
                               syncfusion:DockingManager.DesiredWidthInDockedMode="600"
@@ -958,7 +970,8 @@
 
                 <!-- AI Assistant Panel -->
                 <ContentControl x:Name="AIAssistPanel" 
-                              Content="{Binding AIAssistViewModel}"
+                              Content="{Binding AIAssistViewModel, FallbackValue={StaticResource LoadingPlaceholder}}"
+                              DataContext="{Binding}"
                               syncfusion:DockingManager.Header="AI Assistant"
                               syncfusion:DockingManager.State="Dock"
                               syncfusion:DockingManager.TargetNameInDockedMode="DashboardPanel"
@@ -971,9 +984,10 @@
 
                 <!-- Settings Panel -->
                 <ContentControl x:Name="SettingsPanel" 
-                              Content="{Binding SettingsViewModel}"
+                              Content="{Binding SettingsViewModel, FallbackValue={StaticResource LoadingPlaceholder}}"
+                              DataContext="{Binding}"
                               syncfusion:DockingManager.Header="Settings"
-                              syncfusion:DockingManager.State="Dock"
+                              syncfusion:DockingManager.State="Document"
                               syncfusion:DockingManager.TargetNameInDockedMode="WidgetsPanel"
                               syncfusion:DockingManager.SideInDockedMode="Left"
                               syncfusion:DockingManager.DesiredWidthInDockedMode="350"
@@ -982,6 +996,31 @@
                               syncfusion:DockingManager.CanMinimize="True"
                               syncfusion:DockingManager.CaptionToolTip="Application settings - configure preferences and system options" />
         </syncfusion:DockingManager>
+
+        <!-- Global Error Display (DI Failures) -->
+        <Border Background="#C41E3A"
+                Visibility="{Binding HasGlobalError, Converter={StaticResource BoolToVis}}"
+                Panel.ZIndex="10000"
+                Padding="20"
+                VerticalAlignment="Top"
+                Margin="20">
+            <StackPanel>
+                <TextBlock Text="⚠️ Application Initialization Error" 
+                          FontSize="18" 
+                          FontWeight="Bold"
+                          Foreground="White" 
+                          Margin="0,0,0,10"/>
+                <TextBlock Text="{Binding GlobalErrorMessage, FallbackValue='A critical error occurred during startup.'}" 
+                          TextWrapping="Wrap"
+                          Foreground="White"
+                          FontSize="14"
+                          Margin="0,0,0,10"/>
+                <TextBlock Text="Check logs for details. The application may not function correctly." 
+                          FontSize="12"
+                          Foreground="#FFE0E0E0"
+                          FontStyle="Italic"/>
+            </StackPanel>
+        </Border>
 
         <!-- Global Loading Overlay -->
         <Border Background="#80000000"

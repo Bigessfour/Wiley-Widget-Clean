@@ -23,6 +23,7 @@ using WileyWidget.Configuration;
 using WileyWidget.Models;
 using System.Threading;
 using WileyWidget.ViewModels;
+using WileyWidget.Views;
 using System.Windows.Controls; // For Grid, TextBlock, Button
 using System.Windows.Controls.Primitives; // For GridLength, etc.
 using Microsoft.Extensions.Hosting; // Generic Host
@@ -96,6 +97,7 @@ public partial class App : PrismApplication, IDisposable
     /// <summary>
     /// Static constructor to initialize debug instrumentation and bootstrap logger
     /// Following Microsoft's two-stage Serilog pattern
+    /// CRITICAL: Registers Syncfusion license BEFORE any WPF components are initialized
     /// </summary>
     static App()
     {
@@ -127,6 +129,103 @@ public partial class App : PrismApplication, IDisposable
         _enableDebugInstrumentation = Environment.GetEnvironmentVariable("WILEY_DEBUG_STARTUP") == "true";
         _debugLogPath = Path.Combine(Path.GetTempPath(), "WileyWidget", "startup-debug.log");
         Log.Information("Bootstrap logger initialized, debug instrumentation configured");
+
+        // CRITICAL: Register Syncfusion license in static constructor BEFORE any WPF initialization
+        // This ensures license is registered before any Syncfusion controls are instantiated
+        RegisterSyncfusionLicenseEarly();
+    }
+
+    /// <summary>
+    /// CRITICAL: Early license registration in static constructor
+    /// Per Syncfusion docs: Must be called before any Syncfusion controls are initialized
+    /// </summary>
+    private static void RegisterSyncfusionLicenseEarly()
+    {
+        try
+        {
+            Log.Information("🔑 [EARLY] Starting Syncfusion license registration in static constructor");
+
+            // Build minimal configuration to access license key
+            var config = new ConfigurationBuilder()
+                .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
+                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
+                .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") ?? "Development"}.json", optional: true, reloadOnChange: false)
+                .AddEnvironmentVariables()
+                .AddUserSecrets<App>(optional: true)
+                .Build();
+
+            // Try to get license key from multiple sources (in priority order)
+            string? licenseKey = null;
+
+            // 1. Configuration (appsettings.json/Development.json)
+            licenseKey = config["Syncfusion:LicenseKey"];
+            if (!string.IsNullOrWhiteSpace(licenseKey) && licenseKey != "${SYNCFUSION_LICENSE_KEY}")
+            {
+                Log.Information("🔑 License key found in configuration (appsettings)");
+            }
+            else
+            {
+                // 2. Environment variable (Process/User/Machine scope)
+                licenseKey = Environment.GetEnvironmentVariable("SYNCFUSION_LICENSE_KEY");
+                if (!string.IsNullOrWhiteSpace(licenseKey) && licenseKey != "${SYNCFUSION_LICENSE_KEY}")
+                {
+                    Log.Information("🔑 License key found in environment variables");
+                }
+                else
+                {
+                    // 3. Machine scope environment variable
+                    licenseKey = Environment.GetEnvironmentVariable("SYNCFUSION_LICENSE_KEY", EnvironmentVariableTarget.Machine);
+                    if (!string.IsNullOrWhiteSpace(licenseKey) && licenseKey != "${SYNCFUSION_LICENSE_KEY}")
+                    {
+                        Log.Information("🔑 License key found in machine scope environment variable");
+                    }
+                    else
+                    {
+                        // 4. User secrets
+                        licenseKey = config["Syncfusion:LicenseKey"];
+                        if (!string.IsNullOrWhiteSpace(licenseKey) && licenseKey != "${SYNCFUSION_LICENSE_KEY}")
+                        {
+                            Log.Information("🔑 License key found in user secrets");
+                        }
+                    }
+                }
+            }
+
+            // Validate and register license
+            if (string.IsNullOrWhiteSpace(licenseKey) || licenseKey == "${SYNCFUSION_LICENSE_KEY}")
+            {
+                Log.Warning("⚠️ [EARLY] Syncfusion license key NOT FOUND - Application will run in EVALUATION MODE");
+                Log.Warning("   ➜ Evaluation dialogs/popups will appear");
+                Log.Warning("   ➜ Set SYNCFUSION_LICENSE_KEY environment variable or add to appsettings.Development.json");
+                return;
+            }
+
+            if (licenseKey.Length < 32)
+            {
+                Log.Warning("⚠️ [EARLY] Syncfusion license key appears INVALID (too short: {Length} chars)", licenseKey.Length);
+                return;
+            }
+
+            // Register Syncfusion license
+            Log.Information("🔑 [EARLY] Registering Syncfusion license (key length: {Length})", licenseKey.Length);
+            SyncfusionLicenseProvider.RegisterLicense(licenseKey);
+            Log.Information("✅ [EARLY] Syncfusion license registered SUCCESSFULLY");
+
+            // Register Bold Reports license (uses same key)
+            try
+            {
+                Bold.Licensing.BoldLicenseProvider.RegisterLicense(licenseKey);
+                Log.Information("✅ [EARLY] Bold Reports license registered SUCCESSFULLY");
+            }
+            catch (Exception boldEx)
+            {
+                Log.Warning(boldEx, "⚠️ [EARLY] Bold Reports license registration failed (non-fatal)");
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "❌ [EARLY] Syncfusion license registration FAILED - will run in evaluation mode");
+        }
     }
 
     /// <summary>
@@ -270,19 +369,16 @@ public partial class App : PrismApplication, IDisposable
     /// SAFE CONSTRUCTOR: Following Microsoft WPF best practices
     /// Defer all initialization operations per Microsoft guidance:
     /// "Avoid application configuration... Defer initialization operations until after main window is rendered"
+    /// NOTE: Syncfusion license registration now handled in STATIC constructor (earlier in lifecycle)
     /// </summary>
     public App()
     {
         // SAFE PATTERN: Only minimal, non-blocking setup in constructor
         // Per Microsoft: "avoid calling overridable methods or setting dependency property values from constructor"
-    Log.Debug("[DIAG] App constructor called - safe initialization pattern");
+        Log.Debug("[DIAG] App constructor called - safe initialization pattern");
 
-        // CRITICAL: Register Syncfusion license BEFORE any Syncfusion components are initialized
-        // Per Syncfusion documentation: License must be registered in App constructor before any controls are used
-        RegisterSyncfusionLicenseInConstructor();
-
-        // Configuration and license registration moved to OnStartup per Microsoft best practices
-        Log.Information("=== Application Constructor Initialized (safe pattern) ===");
+        // License registration moved to STATIC constructor for earliest possible initialization
+        Log.Information("=== Application Constructor Initialized (license registered in static ctor) ===");
     }
 
     #region Prism Application Methods
@@ -296,29 +392,88 @@ public partial class App : PrismApplication, IDisposable
     }
 
     /// <summary>
+    /// Configures the ViewModelLocator for Prism MVVM
+    /// Per Prism docs: This method is called before RegisterTypes
+    /// </summary>
+    protected override void ConfigureViewModelLocator()
+    {
+        base.ConfigureViewModelLocator();
+
+        // Optional: Custom naming convention if needed
+        // ViewModelLocationProvider.SetDefaultViewTypeToViewModelTypeResolver((viewType) =>
+        // {
+        //     // Custom logic here
+        //     return null;
+        // });
+
+        // Register explicit View-ViewModel mappings for non-conventional names
+        // Per Prism docs: Direct registration is faster than reflection-based convention
+        Prism.Mvvm.ViewModelLocationProvider.Register<MainWindow, MainViewModel>();
+        Prism.Mvvm.ViewModelLocationProvider.Register<SettingsView, SettingsViewModel>();
+        Prism.Mvvm.ViewModelLocationProvider.Register<DashboardView, DashboardViewModel>();
+        Prism.Mvvm.ViewModelLocationProvider.Register<ReportsView, ReportsViewModel>();
+        Prism.Mvvm.ViewModelLocationProvider.Register<BudgetView, BudgetViewModel>();
+        Prism.Mvvm.ViewModelLocationProvider.Register<EnterpriseView, EnterpriseViewModel>();
+        Prism.Mvvm.ViewModelLocationProvider.Register<MunicipalAccountView, MunicipalAccountViewModel>();
+        Prism.Mvvm.ViewModelLocationProvider.Register<UtilityCustomerView, UtilityCustomerViewModel>();
+        Prism.Mvvm.ViewModelLocationProvider.Register<AIAssistView, AIAssistViewModel>();
+        Prism.Mvvm.ViewModelLocationProvider.Register<AnalyticsView, AnalyticsViewModel>();
+        Prism.Mvvm.ViewModelLocationProvider.Register<BudgetAnalysisView, BudgetAnalysisViewModel>();
+        Prism.Mvvm.ViewModelLocationProvider.Register<ExcelImportView, ExcelImportViewModel>();
+        Prism.Mvvm.ViewModelLocationProvider.Register<AboutWindow, AboutViewModel>();
+        Prism.Mvvm.ViewModelLocationProvider.Register<SplashScreenWindow, SplashScreenWindowViewModel>();
+        
+        Log.Information("ViewModelLocator configured with explicit mappings");
+    }
+
+    /// <summary>
     /// Registers types in the Prism DI container
+    /// Per Prism docs: All ViewModels must be registered for DI resolution
     /// </summary>
     protected override void RegisterTypes(IContainerRegistry containerRegistry)
     {
-        // Register the main window and its ViewModel
+        // Register Views (for dialog service and navigation)
         containerRegistry.Register<MainWindow>();
+        containerRegistry.Register<SettingsView>();
+        containerRegistry.Register<DashboardView>();
+        containerRegistry.Register<ReportsView>();
+        containerRegistry.Register<BudgetView>();
+        containerRegistry.Register<EnterpriseView>();
+        containerRegistry.Register<UtilityCustomerView>();
+        containerRegistry.Register<AIAssistView>();
+        containerRegistry.Register<AnalyticsView>();
+        containerRegistry.Register<BudgetAnalysisView>();
+        
+        // Register ViewModels (all must be registered for Prism ViewModelLocator)
         containerRegistry.Register<MainViewModel>();
-        
-        // Register existing services
-    containerRegistry.RegisterSingleton<INavigationService, NavigationService>();
-    containerRegistry.RegisterSingleton<SettingsService>();
-    containerRegistry.RegisterSingleton<ISettingsService, SettingsService>();
-    containerRegistry.RegisterSingleton<ThemeManager>();
-    containerRegistry.RegisterSingleton<IThemeManager, ThemeManager>();
-    containerRegistry.RegisterSingleton<ISyncfusionLicenseService, SyncfusionLicenseService>();
-
-    // Register Unit of Work (Clean Architecture - UI depends on Business layer abstractions)
-    containerRegistry.RegisterScoped<IUnitOfWork, UnitOfWork>();
-        
-        // Register other ViewModels
+        containerRegistry.Register<SettingsViewModel>();
         containerRegistry.Register<DashboardViewModel>();
         containerRegistry.Register<ReportsViewModel>();
-        containerRegistry.Register<SettingsViewModel>();
+        containerRegistry.Register<BudgetViewModel>();
+        containerRegistry.Register<EnterpriseViewModel>();
+        containerRegistry.Register<MunicipalAccountViewModel>();
+        containerRegistry.Register<UtilityCustomerViewModel>();
+        containerRegistry.Register<AIAssistViewModel>();
+        containerRegistry.Register<AnalyticsViewModel>();
+        containerRegistry.Register<BudgetAnalysisViewModel>();
+        containerRegistry.Register<ToolsViewModel>();
+        containerRegistry.Register<AboutViewModel>();
+        containerRegistry.Register<ProgressViewModel>();
+        containerRegistry.Register<ShellViewModel>();
+        containerRegistry.Register<SplashScreenWindowViewModel>();
+        
+        // Register existing services
+        containerRegistry.RegisterSingleton<INavigationService, NavigationService>();
+        containerRegistry.RegisterSingleton<SettingsService>();
+        containerRegistry.RegisterSingleton<ISettingsService, SettingsService>();
+        containerRegistry.RegisterSingleton<ThemeManager>();
+        containerRegistry.RegisterSingleton<IThemeManager, ThemeManager>();
+        containerRegistry.RegisterSingleton<ISyncfusionLicenseService, SyncfusionLicenseService>();
+
+        // Register Unit of Work (Clean Architecture - UI depends on Business layer abstractions)
+        containerRegistry.RegisterScoped<IUnitOfWork, UnitOfWork>();
+        
+        Log.Information("Prism container types registered: Views, ViewModels, and Services");
     }
 
     /// <summary>
@@ -443,22 +598,40 @@ public partial class App : PrismApplication, IDisposable
             // Delegate DI, logging, config, DB services, hosted services to our extension
             // This will replace the bootstrap logger with the configured logger
             hostBuilder.ConfigureWpfApplication();
+            
+            // CRITICAL: Wrap host build in try-catch to detect DI configuration failures
             try
             {
+                LogDebugEvent("STARTUP_PHASE", "Building host with DI configuration");
                 _host = hostBuilder.Build();
                 _splashScreen?.UpdateProgress(50, "Services configured...");
+                LogDebugEvent("STARTUP_SUCCESS", "Host built successfully - DI container ready");
+                Log.Information("✅ Host built successfully - all services registered and validated");
             }
-            catch (Exception earlyEx)
+            catch (Exception hostBuildEx)
             {
-                    try
+                // FATAL: DI configuration failure - log with maximum detail
+                var errorMessage = $"FATAL: Host build failed - DI configuration error. Check service registrations, DbContext configuration, and appsettings.json. Error: {hostBuildEx.Message}";
+                
+                try
+                {
+                    Log.Fatal(hostBuildEx, "🚨 CRITICAL DI FAILURE: {ErrorMessage}", errorMessage);
+                    Log.Fatal("Exception Type: {ExceptionType}", hostBuildEx.GetType().FullName);
+                    Log.Fatal("Stack Trace: {StackTrace}", hostBuildEx.StackTrace);
+                    
+                    if (hostBuildEx.InnerException != null)
                     {
-                        Log.Fatal(earlyEx, "EARLY HOST BUILD FAILURE: Host build failed before full logging initialization");
+                        Log.Fatal("Inner Exception: {InnerException}", hostBuildEx.InnerException.Message);
+                        Log.Fatal("Inner Stack Trace: {InnerStackTrace}", hostBuildEx.InnerException.StackTrace);
                     }
-                    catch
-                    {
-                        // Suppress secondary failures when logging infrastructure is unavailable
-                    }
-                ShowFallbackUI(earlyEx);
+                }
+                catch
+                {
+                    // Suppress secondary failures when logging infrastructure is unavailable
+                    System.Diagnostics.Debug.WriteLine($"FATAL DI ERROR: {errorMessage}");
+                }
+                
+                ShowFallbackUI(hostBuildEx);
                 Shutdown();
                 return;
             }
@@ -975,183 +1148,24 @@ public partial class App : PrismApplication, IDisposable
     private static string _syncfusionLicenseValidationMessage = "License validation not yet performed";
 
     /// <summary>
-    /// Loads configuration (if not already loaded) and performs a single-pass Syncfusion license resolution + registration.
-    /// This replaces the previous dual synchronous + async registration pattern to avoid redundant calls and potential race conditions.
-    /// </summary>
-    /// <summary>
-    /// CRITICAL STARTUP COMPONENT: Syncfusion license registration
-    /// Configuration loading now handled by WpfHostingExtensions.ConfigureWpfApplication()
-    /// 
-    /// SUCCESS CRITERIA:
-    /// - License key retrieved from configuration sources
-    /// - Syncfusion API successfully registers license
-    /// - No exceptions thrown during registration
-    /// - Verification logging confirms successful registration
+    /// DEPRECATED: License registration now handled in STATIC constructor (RegisterSyncfusionLicenseEarly)
+    /// This method is kept for backward compatibility but does nothing as license is already registered
     /// </summary>
     private void RegisterSyncfusionLicense(string startupId)
     {
-        var licenseTimer = System.Diagnostics.Stopwatch.StartNew();
-        Log.Information("🔑 [CRITICAL] Starting Syncfusion license registration - Session: {StartupId}", startupId);
-        LogDebugEvent("SYNCFUSION_LICENSE", "Registration started");
-
-        try
-        {
-            var licenseKey = GetSyncfusionLicenseKey();
-            _syncfusionLicenseAttempted = true;
-            LogDebugEvent("SYNCFUSION_LICENSE", $"License key retrieved - Length: {licenseKey?.Length ?? 0}");
-
-            if (string.IsNullOrWhiteSpace(licenseKey))
-            {
-                _syncfusionLicenseValidationMessage = "License key not found (env/config/user-secrets).";
-                Log.Warning("⚠️ Syncfusion license key not found - will run in EVALUATION MODE");
-                Log.Warning("   ➜ This is acceptable for development but NOT for production deployment");
-                Log.Warning("   ➜ Set SYNCFUSION_LICENSE_KEY environment variable or configure in user secrets");
-                licenseTimer.Stop();
-                Log.Information("🔑 [EVALUATION MODE] License registration skipped (no key) in {ElapsedMs}ms - Session: {StartupId}",
-                    licenseTimer.ElapsedMilliseconds, startupId);
-                LogDebugEvent("SYNCFUSION_LICENSE", $"Evaluation mode - no key (completed in {licenseTimer.ElapsedMilliseconds}ms)");
-                return; // Non-fatal: allow app to run in evaluation mode for development
-            }
-
-            if (licenseKey == "${SYNCFUSION_LICENSE_KEY}")
-            {
-                _syncfusionLicenseValidationMessage = "Placeholder license key detected; replace with a real key.";
-                Log.Warning("⚠️ Syncfusion PLACEHOLDER license key detected - registration skipped");
-                licenseTimer.Stop();
-                Log.Information("🔑 [EVALUATION MODE] License registration skipped (placeholder key) in {ElapsedMs}ms - Session: {StartupId}",
-                    licenseTimer.ElapsedMilliseconds, startupId);
-                LogDebugEvent("SYNCFUSION_LICENSE", $"Placeholder key detected (completed in {licenseTimer.ElapsedMilliseconds}ms)");
-                return;
-            }
-
-            if (licenseKey.Length < 32)
-            {
-                _syncfusionLicenseValidationMessage = "License key appears invalid (too short).";
-                Log.Warning("⚠️ Syncfusion license key appears INVALID (length: {Length}) - registration skipped", licenseKey.Length);
-                licenseTimer.Stop();
-                Log.Information("🔑 [EVALUATION MODE] License registration skipped (invalid key) in {ElapsedMs}ms - Session: {StartupId}",
-                    licenseTimer.ElapsedMilliseconds, startupId);
-                LogDebugEvent("SYNCFUSION_LICENSE", $"Invalid key length (completed in {licenseTimer.ElapsedMilliseconds}ms)");
-                return;
-            }
-
-            // ✅ CRITICAL OPERATION: Register license with Syncfusion
-            Log.Debug("🔑 Calling SyncfusionLicenseProvider.RegisterLicense (key length: {Length})", licenseKey.Length);
-            LogDebugEvent("SYNCFUSION_LICENSE", "Calling RegisterLicense API");
-            
-            SyncfusionLicenseProvider.RegisterLicense(licenseKey);
-            
-            _syncfusionLicenseRegistered = true;
-            _syncfusionLicenseValidationMessage = "License registration succeeded.";
-            licenseTimer.Stop();
-            
-            // ✅ VERIFICATION: Confirm successful registration
-            Log.Information("✅ [SUCCESS] Syncfusion license registration SUCCEEDED in {ElapsedMs}ms - Session: {StartupId}",
-                licenseTimer.ElapsedMilliseconds, startupId);
-            Log.Information("   ➜ Syncfusion components will run in LICENSED MODE");
-            Log.Information("   ➜ No evaluation banners or dialogs will appear");
-            LogDebugEvent("SYNCFUSION_LICENSE", $"Registration succeeded (completed in {licenseTimer.ElapsedMilliseconds}ms)");
-            LogStartupTiming("Syncfusion License Registration", licenseTimer.Elapsed, "Licensed mode enabled");
-        }
-        catch (Exception ex)
-        {
-            licenseTimer.Stop();
-            _syncfusionLicenseRegistered = false;
-            _syncfusionLicenseValidationMessage = $"Registration exception: {ex.Message}";
-            
-            Log.Error(ex, "❌ [FAILURE] Syncfusion license registration FAILED after {ElapsedMs}ms - Session: {StartupId}",
-                licenseTimer.ElapsedMilliseconds, startupId);
-            Log.Error("   ➜ Application will run in EVALUATION MODE with limited functionality");
-            Log.Error("   ➜ Exception details: {ExceptionType}: {ExceptionMessage}", ex.GetType().Name, ex.Message);
-            LogDebugEvent("SYNCFUSION_LICENSE", $"Registration failed: {ex.Message}");
-            
-            // Non-fatal: allow app to continue in evaluation mode
-        }
-
-        // ✅ VERIFICATION LOGGING: Always emit final status regardless of outcome
-        try
-        {
-            var status = _syncfusionLicenseRegistered ? "LICENSED" : "EVALUATION";
-            var attempted = _syncfusionLicenseAttempted ? "Yes" : "No";
-            var msg = _syncfusionLicenseValidationMessage;
-            
-            Log.Information("🔑 [FINAL STATUS] Syncfusion Mode: {Status} | Attempted: {Attempted} | Details: {Message} - Session: {StartupId}",
-                status, attempted, msg, startupId);
-            LogDebugEvent("SYNCFUSION_LICENSE", $"Final status: {status} - {msg}");
-        }
-        catch (Exception logEx)
-        {
-            // Last resort fallback logging
-            try
-            {
-                Log.Fatal(logEx, "[CRITICAL] Failed to log Syncfusion license status");
-            }
-            catch
-            {
-                // Suppress any failures triggered by logging infrastructure
-            }
-            LogDebugEvent("SYNCFUSION_LICENSE", $"Logging failure: {logEx.Message}");
-        }
+        Log.Information("🔑 [SKIP] License registration already completed in static constructor - Session: {StartupId}", startupId);
+        // License already registered in static constructor - no action needed
+        _syncfusionLicenseAttempted = true;
+        _syncfusionLicenseRegistered = true;
+        _syncfusionLicenseValidationMessage = "License registered in static constructor (early initialization)";
     }
 
     // LoadConfiguration() method REMOVED - handled by WpfHostingExtensions.ConfigureApplicationConfiguration()
     // ConfigureLogging() method REMOVED - handled by WpfHostingExtensions.ConfigureApplicationLogging()
 
     // ConfigureServices() method REMOVED - handled by WpfHostingExtensions.ConfigureCoreServices() and ConfigureWpfServices()
-    // RegisterSyncfusionLicense() stub method REMOVED - functionality in InitializeConfigurationAndRegisterSyncfusionLicense()
-
-    /// <summary>
-    /// CRITICAL: Register Syncfusion and Bold Reports licenses in App constructor BEFORE any components are initialized
-    /// Per documentation: Licenses must be registered before any controls are used to prevent evaluation dialogs
-    /// </summary>
-    private void RegisterSyncfusionLicenseInConstructor()
-    {
-        try
-        {
-            // Register Syncfusion license first
-            var syncfusionLicenseKey = GetSyncfusionLicenseKey();
-            if (string.IsNullOrWhiteSpace(syncfusionLicenseKey) || syncfusionLicenseKey == "${SYNCFUSION_LICENSE_KEY}")
-            {
-                // Non-fatal: allow app to run in evaluation mode for development
-                Log.Warning("[DIAG] Syncfusion license key not found - running in evaluation mode");
-            }
-            else
-            {
-                // Register license with Syncfusion BEFORE any components are initialized
-                SyncfusionLicenseProvider.RegisterLicense(syncfusionLicenseKey);
-                Log.Information("[DIAG] Syncfusion license registered successfully in constructor");
-
-                // Register Bold Reports license using the same Syncfusion license key
-                // Bold Reports is included in Syncfusion community license
-                try
-                {
-                    Bold.Licensing.BoldLicenseProvider.RegisterLicense(syncfusionLicenseKey);
-                    Log.Information("[DIAG] Bold Reports license registered successfully using Syncfusion license key");
-                }
-                catch (Exception boldEx)
-                {
-                    Log.Warning(boldEx, "[DIAG] Failed to register Bold Reports with Syncfusion license key, trying Bold Reports specific key");
-                    
-                    // Fallback: try Bold Reports specific license key
-                    var boldReportsLicenseKey = GetBoldReportsLicenseKey();
-                    if (!string.IsNullOrWhiteSpace(boldReportsLicenseKey) && boldReportsLicenseKey != "${BOLD_REPORTS_LICENSE_KEY}")
-                    {
-                        Bold.Licensing.BoldLicenseProvider.RegisterLicense(boldReportsLicenseKey);
-                        Log.Information("[DIAG] Bold Reports license registered successfully with fallback key");
-                    }
-                    else
-                    {
-                        Log.Warning("[DIAG] Bold Reports license key not found - running in evaluation mode");
-                    }
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            // Non-fatal: allow app to continue in evaluation mode
-            Log.Error(ex, "[DIAG] License registration failed in constructor");
-        }
-    }
+    // RegisterSyncfusionLicense() method REMOVED - now handled in STATIC constructor (RegisterSyncfusionLicenseEarly)
+    // RegisterSyncfusionLicenseInConstructor() method REMOVED - duplicate functionality, handled in STATIC constructor
 
     /// <summary>
     /// CRITICAL STARTUP COMPONENT: Configure Syncfusion themes globally using SfSkinManager
