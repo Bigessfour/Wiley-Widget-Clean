@@ -64,6 +64,61 @@ public class ComprehensiveDatabaseIntegrationTests : IDisposable
         _context.Enterprises.AddRange(enterprise1, enterprise2);
         _context.SaveChanges();
 
+        // Create test departments
+        var department1 = new Department
+        {
+            Code = "FIN",
+            Name = "Finance Department",
+            Fund = FundType.General
+        };
+
+        _context.Departments.Add(department1);
+        _context.SaveChanges();
+
+        // Create test budget period
+        var budgetPeriod1 = new BudgetPeriod
+        {
+            Year = 2025,
+            Name = "FY 2025 Budget",
+            CreatedDate = DateTime.UtcNow,
+            Status = BudgetStatus.Adopted
+        };
+
+        _context.BudgetPeriods.Add(budgetPeriod1);
+        _context.SaveChanges();
+
+        // Create seed municipal accounts for testing
+        var seedAccount1 = new MunicipalAccount
+        {
+            AccountNumber = new AccountNumber("101-1000"),
+            Name = "General Fund Cash",
+            Type = AccountType.Cash,
+            Fund = FundType.General,
+            FundClass = FundClass.Governmental,
+            DepartmentId = 1,
+            BudgetPeriodId = 1,
+            Balance = 300000.00m,
+            BudgetAmount = 400000.00m,
+            IsActive = true
+        };
+
+        var seedAccount2 = new MunicipalAccount
+        {
+            AccountNumber = new AccountNumber("201-2000"),
+            Name = "General Fund Payables",
+            Type = AccountType.Payables,
+            Fund = FundType.General,
+            FundClass = FundClass.Governmental,
+            DepartmentId = 1,
+            BudgetPeriodId = 1,
+            Balance = 200000.00m,
+            BudgetAmount = 300000.00m,
+            IsActive = true
+        };
+
+        _context.MunicipalAccounts.AddRange(seedAccount1, seedAccount2);
+        _context.SaveChanges();
+
         // Note: MunicipalAccounts are not seeded for this test as they are not required
         // for testing Enterprise error handling validation
 
@@ -184,8 +239,11 @@ public class ComprehensiveDatabaseIntegrationTests : IDisposable
         {
             AccountNumber = new AccountNumber("301-3000"),
             Name = "Capital Improvement Fund",
-            Type = AccountType.Asset,
+            Type = AccountType.FundBalance,
             Fund = FundType.General,
+            FundClass = FundClass.Governmental,
+            DepartmentId = 1, // Reference the seeded Finance department
+            BudgetPeriodId = 1, // Reference the seeded budget period
             Balance = 250000.00m,
             BudgetAmount = 300000.00m,
             IsActive = true
@@ -198,7 +256,7 @@ public class ComprehensiveDatabaseIntegrationTests : IDisposable
 
         // Act - Get accounts by fund
         var generalFundAccounts = await _municipalAccountRepository.GetByFundAsync(FundType.General);
-        Assert.Equal(2, generalFundAccounts.Count()); // Original + new
+        Assert.Equal(3, generalFundAccounts.Count()); // 2 seeded + 1 new
 
         // Act - Get budget analysis
         var budgetAnalysis = await _municipalAccountRepository.GetBudgetAnalysisAsync();

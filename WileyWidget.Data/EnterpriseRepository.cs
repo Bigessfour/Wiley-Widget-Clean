@@ -1,4 +1,6 @@
 #nullable enable
+using System;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using WileyWidget.Models;
 using WileyWidget.Models.DTOs;
@@ -36,11 +38,20 @@ public class EnterpriseRepository : IEnterpriseRepository
             // Simulate slow database query for testing timing
             await Task.Delay(1200);
 
-            using var context = await _contextFactory.CreateDbContextAsync();
-            return await context.Enterprises
-                .AsNoTracking()
-                .OrderBy(e => e.Name)
-                .ToListAsync();
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.Enterprises
+                    .AsNoTracking()
+                    .OrderBy(e => e.Name)
+                    .ToListAsync();
+            }
+            catch (SqlException ex) when (IsCertificateTrustFailure(ex))
+            {
+                throw new InvalidOperationException(
+                    "SQL Server SSL certificate validation failed. Enable TrustServerCertificate for local development or install a trusted certificate.",
+                    ex);
+            }
         });
     }
 
@@ -56,7 +67,7 @@ public class EnterpriseRepository : IEnterpriseRepository
     }
 
     /// <summary>
-    /// Gets an enterprise by name
+    /// Gets an enterprise by name (case-insensitive)
     /// </summary>
     public async Task<Enterprise?> GetByNameAsync(string name)
     {
@@ -67,9 +78,25 @@ public class EnterpriseRepository : IEnterpriseRepository
 
         var search = name.Trim();
         using var context = await _contextFactory.CreateDbContextAsync();
-        return await context.Enterprises
-            .AsNoTracking()
-            .FirstOrDefaultAsync(e => EF.Functions.Collate(e.Name, CaseInsensitiveCollation) == search);
+        
+        // Check if we're using SQLite (for tests) and use different logic
+        var isSqlite = context.Database.ProviderName?.Contains("Sqlite") == true;
+        
+        if (isSqlite)
+        {
+            // SQLite doesn't support collation, use case-insensitive comparison with client-side evaluation
+            return context.Enterprises
+                .AsNoTracking()
+                .AsEnumerable()
+                .FirstOrDefault(e => e.Name.ToLowerInvariant() == search.ToLowerInvariant());
+        }
+        else
+        {
+            // SQL Server supports collation
+            return await context.Enterprises
+                .AsNoTracking()
+                .FirstOrDefaultAsync(e => EF.Functions.Collate(e.Name, CaseInsensitiveCollation) == search);
+        }
     }
 
     /// <summary>
@@ -166,9 +193,32 @@ public class EnterpriseRepository : IEnterpriseRepository
 
         var normalized = name.Trim();
 
-        var query = context.Enterprises
-            .AsNoTracking()
-            .Where(e => EF.Functions.Collate(e.Name, CaseInsensitiveCollation) == normalized);
+        // Check if we're using SQLite (for tests) and use different logic
+        var isSqlite = context.Database.ProviderName?.Contains("Sqlite") == true;
+        
+        IQueryable<Enterprise> query;
+        if (isSqlite)
+        {
+            // SQLite doesn't support collation, use case-insensitive comparison with client-side evaluation
+            var result = context.Enterprises
+                .AsNoTracking()
+                .AsEnumerable()
+                .Where(e => e.Name.ToLowerInvariant() == normalized.ToLowerInvariant());
+
+            if (excludeId.HasValue)
+            {
+                result = result.Where(e => e.Id != excludeId.Value);
+            }
+
+            return result.Any();
+        }
+        else
+        {
+            // SQL Server supports collation
+            query = context.Enterprises
+                .AsNoTracking()
+                .Where(e => EF.Functions.Collate(e.Name, CaseInsensitiveCollation) == normalized);
+        }
 
         if (excludeId.HasValue)
         {
@@ -458,6 +508,13 @@ public class EnterpriseRepository : IEnterpriseRepository
                 .OrderBy(e => e.Name)
                 .ToListAsync();
         });
+    }
+
+    private static bool IsCertificateTrustFailure(SqlException exception)
+    {
+        return exception.Message.Contains(
+            "certificate chain was issued by an authority that is not trusted",
+            StringComparison.OrdinalIgnoreCase);
     }
 
     #endregion

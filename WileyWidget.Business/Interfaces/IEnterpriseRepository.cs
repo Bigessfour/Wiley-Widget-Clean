@@ -40,5 +40,10 @@ public interface IEnterpriseRepository
     /// Deletes an enterprise by ID.
     /// </summary>
     Task<bool> DeleteAsync(int id);
+
+    /// <summary>
+    /// Gets the total count of enterprises.
+    /// </summary>
+    Task<int> GetCountAsync();
 }
 

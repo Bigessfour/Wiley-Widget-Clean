@@ -9,6 +9,11 @@ namespace WileyWidget.Models;
 /// </summary>
 public class AppSettings
 {
+    /// <summary>
+    /// Primary key for the settings entity
+    /// </summary>
+    public int Id { get; set; }
+
     // Theme + window geometry
     public string Theme { get; set; } = "FluentDark";
     public double? WindowWidth { get; set; }
@@ -19,6 +24,13 @@ public class AppSettings
 
     // Grid column preferences
     public bool UseDynamicColumns { get; set; } = false;
+
+    // Advanced settings
+    public bool EnableDataCaching { get; set; } = true;
+    public int CacheExpirationMinutes { get; set; } = 30;
+    public string SelectedLogLevel { get; set; } = "Information";
+    public bool EnableFileLogging { get; set; } = true;
+    public string LogFilePath { get; set; } = "logs/wiley-widget.log";
 
     // Legacy QuickBooks token/property names (kept for one migration cycle)
     public string? QuickBooksAccessToken { get; set; }

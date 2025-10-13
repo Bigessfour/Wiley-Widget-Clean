@@ -19,6 +19,9 @@ public class MunicipalAccountTests
             Name = "Cash - General Fund",
             Type = AccountType.Asset,
             Fund = FundType.General,
+            FundClass = FundClass.Governmental,
+            DepartmentId = 1,
+            BudgetPeriodId = 1,
             Balance = 50000.00m,
             BudgetAmount = 60000.00m,
             IsActive = true
@@ -48,31 +51,17 @@ public class MunicipalAccountTests
     [InlineData("123456789012345678901", false)] // Too long (21 chars)
     public void MunicipalAccount_AccountNumber_Validation(string accountNumber, bool shouldBeValid)
     {
-        // Arrange
-        var account = new MunicipalAccount
+        // Arrange & Act & Assert
+        if (shouldBeValid)
         {
-            AccountNumber = new AccountNumber("9999-999"), // Default, will be overridden if accountNumber is not null
-            Name = "Test Account",
-            Type = AccountType.Asset,
-            Fund = FundType.General,
-            Balance = 1000.00m,
-            BudgetAmount = 1000.00m
-        };
-        
-        if (accountNumber != null)
-        {
-            account.AccountNumber = new AccountNumber(accountNumber);
+            // Should not throw
+            var accountNumberObj = new AccountNumber(accountNumber);
+            Assert.NotNull(accountNumberObj);
         }
-
-        // Act
-        var validationResults = new List<ValidationResult>();
-        var isValid = Validator.TryValidateObject(account, new ValidationContext(account), validationResults, true);
-
-        // Assert
-        Assert.Equal(shouldBeValid, isValid);
-        if (!shouldBeValid)
+        else
         {
-            Assert.Contains(validationResults, vr => vr.ErrorMessage.Contains("Account number"));
+            // Should throw exception
+            Assert.Throws<ArgumentException>(() => new AccountNumber(accountNumber));
         }
     }
 
@@ -92,6 +81,9 @@ public class MunicipalAccountTests
             Name = name,
             Type = AccountType.Asset,
             Fund = FundType.General,
+            FundClass = FundClass.Governmental,
+            DepartmentId = 1,
+            BudgetPeriodId = 1,
             Balance = 1000.00m,
             BudgetAmount = 1000.00m
         };
@@ -123,6 +115,9 @@ public class MunicipalAccountTests
             Name = "Test Account",
             Type = type,
             Fund = FundType.General,
+            FundClass = FundClass.Governmental,
+            DepartmentId = 1,
+            BudgetPeriodId = 1,
             Balance = 1000.00m,
             BudgetAmount = 1000.00m
         };
@@ -146,6 +141,9 @@ public class MunicipalAccountTests
             Name = "Test Account",
             Type = AccountType.Asset,
             Fund = fund,
+            FundClass = FundClass.Governmental,
+            DepartmentId = 1,
+            BudgetPeriodId = 1,
             Balance = 1000.00m,
             BudgetAmount = 1000.00m
         };
@@ -168,6 +166,9 @@ public class MunicipalAccountTests
             Name = "Test Account",
             Type = AccountType.Asset,
             Fund = FundType.General,
+            FundClass = FundClass.Governmental,
+            DepartmentId = 1,
+            BudgetPeriodId = 1,
             Balance = balance,
             BudgetAmount = budget
         };
@@ -187,6 +188,9 @@ public class MunicipalAccountTests
             Name = "Test Account",
             Type = AccountType.Asset,
             Fund = FundType.General,
+            FundClass = FundClass.Governmental,
+            DepartmentId = 1,
+            BudgetPeriodId = 1,
             Balance = 1000.00m,
             BudgetAmount = 1000.00m
         };
@@ -228,7 +232,10 @@ public class MunicipalAccountTests
             AccountNumber = new AccountNumber("1010-100"),
             Name = "Cash Account",
             Type = AccountType.Asset,
-            Fund = FundType.General
+            Fund = FundType.General,
+            FundClass = FundClass.Governmental,
+            DepartmentId = 1,
+            BudgetPeriodId = 1
         };
 
         // Act & Assert
@@ -252,6 +259,9 @@ public class MunicipalAccountTests
             Name = "Test Account",
             Type = AccountType.Asset,
             Fund = FundType.General,
+            FundClass = FundClass.Governmental,
+            DepartmentId = 1,
+            BudgetPeriodId = 1,
             Balance = 1234.56m
         };
 

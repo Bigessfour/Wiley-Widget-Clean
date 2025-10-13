@@ -305,13 +305,15 @@ public partial class App : PrismApplication, IDisposable
         containerRegistry.Register<MainViewModel>();
         
         // Register existing services
-        containerRegistry.RegisterSingleton<INavigationService, NavigationService>();
-        containerRegistry.RegisterSingleton<ISettingsService, SettingsService>();
-        containerRegistry.RegisterSingleton<IThemeManager, ThemeManager>();
-        containerRegistry.RegisterSingleton<ISyncfusionLicenseService, SyncfusionLicenseService>();
-        
-        // Register Unit of Work (Clean Architecture - UI only depends on Business layer)
-        containerRegistry.RegisterSingleton<IUnitOfWork, UnitOfWork>();
+    containerRegistry.RegisterSingleton<INavigationService, NavigationService>();
+    containerRegistry.RegisterSingleton<SettingsService>();
+    containerRegistry.RegisterSingleton<ISettingsService, SettingsService>();
+    containerRegistry.RegisterSingleton<ThemeManager>();
+    containerRegistry.RegisterSingleton<IThemeManager, ThemeManager>();
+    containerRegistry.RegisterSingleton<ISyncfusionLicenseService, SyncfusionLicenseService>();
+
+    // Register Unit of Work (Clean Architecture - UI depends on Business layer abstractions)
+    containerRegistry.RegisterScoped<IUnitOfWork, UnitOfWork>();
         
         // Register other ViewModels
         containerRegistry.Register<DashboardViewModel>();
@@ -376,10 +378,6 @@ public partial class App : PrismApplication, IDisposable
             // Clean up any orphaned .NET processes from previous crashes
             CleanupOrphanedProcesses();
             
-            SettingsService.Instance.Load();
-            // Apply dark default early if none persisted (normalization happens in MainWindow).
-            if (string.IsNullOrWhiteSpace(SettingsService.Instance.Current.Theme))
-                SettingsService.Instance.Current.Theme = "FluentDark";
             // Optional: in automated test scenarios we may want to auto-dismiss the Syncfusion trial dialog so processes exit cleanly.
             if (string.Equals(Environment.GetEnvironmentVariable("WILEYWIDGET_AUTOCLOSE_LICENSE"), "1", StringComparison.OrdinalIgnoreCase))
             {
@@ -471,6 +469,16 @@ public partial class App : PrismApplication, IDisposable
             // Expose ServiceProvider for legacy paths
             ServiceProvider = _host.Services;
             Application.Current.Properties["ServiceProvider"] = ServiceProvider;
+
+            {
+                var settings = ServiceProvider.GetRequiredService<ISettingsService>();
+                settings.LoadSettings();
+                if (string.IsNullOrWhiteSpace(settings.Current.Theme))
+                {
+                    settings.Current.Theme = "FluentDark";
+                    settings.Save();
+                }
+            }
 
             // Ensure the splash screen shown before DI was ready is tracked by the view manager
             if (SplashScreenInstance is { } splash && ServiceProvider.GetService<IViewManager>() is { } viewManager)
@@ -637,7 +645,7 @@ public partial class App : PrismApplication, IDisposable
                 // Verify critical services are available
                 var configService = ServiceProvider?.GetService<IConfiguration>();
                 var healthCheckService = ServiceProvider?.GetService<WileyWidget.Services.HealthCheckService>();
-                var settingsService = SettingsService.Instance;
+                var settingsService = ServiceProvider?.GetService<ISettingsService>();
 
                 Log.Information("✓ Service availability check - Configuration: {ConfigAvailable}, HealthCheck: {HealthAvailable}, Settings: {SettingsAvailable}",
                     configService != null, healthCheckService != null, settingsService != null);

@@ -1,8 +1,11 @@
 using System;
+using System.Linq;
 using System.Windows;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Syncfusion.SfSkinManager;
-using Serilog;
-using WileyWidget.Services;
+using WileyWidget;
 
 namespace WileyWidget.Services;
 
@@ -12,10 +15,43 @@ namespace WileyWidget.Services;
 /// </summary>
 public class ThemeManager : IThemeManager
 {
-    private static readonly Lazy<ThemeManager> _instance = new(() => new ThemeManager());
-    public static ThemeManager Instance => _instance.Value;
+    private static readonly Lazy<ThemeManager> _fallbackInstance = new(() => new ThemeManager(SettingsService.Instance, NullLogger<ThemeManager>.Instance));
 
-    private readonly SettingsService _settingsService;
+    /// <summary>
+    /// Provides backwards-compatible access to a singleton ThemeManager resolved from the application's DI container when available.
+    /// Falls back to an internally managed instance if the container is unavailable (e.g., early startup or unit tests).
+    /// </summary>
+    public static ThemeManager Instance
+    {
+        get
+        {
+            var provider = App.ServiceProvider;
+            if (provider != null)
+            {
+                try
+                {
+                    var resolved = provider.GetService<ThemeManager>();
+                    if (resolved != null)
+                    {
+                        return resolved;
+                    }
+                }
+                catch (ObjectDisposedException)
+                {
+                    // Container disposed during shutdown
+                }
+                catch (InvalidOperationException)
+                {
+                    // Container not ready yet
+                }
+            }
+
+            return _fallbackInstance.Value;
+        }
+    }
+
+    private readonly ISettingsService _settingsService;
+    private readonly ILogger<ThemeManager> _logger;
 
     /// <summary>
     /// Available Syncfusion themes
@@ -42,9 +78,15 @@ public class ThemeManager : IThemeManager
     /// </summary>
     public event EventHandler<ThemeChangedEventArgs>? ThemeChanged;
 
-    private ThemeManager()
+    public ThemeManager()
+        : this(SettingsService.Instance, NullLogger<ThemeManager>.Instance)
     {
-        _settingsService = SettingsService.Instance;
+    }
+
+    public ThemeManager(ISettingsService settingsService, ILogger<ThemeManager>? logger)
+    {
+        _settingsService = settingsService ?? throw new ArgumentNullException(nameof(settingsService));
+        _logger = logger ?? NullLogger<ThemeManager>.Instance;
     }
 
     /// <summary>
@@ -54,7 +96,7 @@ public class ThemeManager : IThemeManager
     {
         if (string.IsNullOrEmpty(themeName) || !AvailableThemes.Contains(themeName))
         {
-            Log.Warning("Invalid theme name: {ThemeName}", themeName);
+            _logger.LogWarning("Invalid theme name: {ThemeName}", themeName);
             return;
         }
 
@@ -77,11 +119,11 @@ public class ThemeManager : IThemeManager
             // Raise theme changed event
             ThemeChanged?.Invoke(this, new ThemeChangedEventArgs(oldTheme, themeName));
 
-            Log.Information("🎨 Theme changed from {OldTheme} to {NewTheme}", oldTheme, themeName);
+            _logger.LogInformation("🎨 Theme changed from {OldTheme} to {NewTheme}", oldTheme, themeName);
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Failed to apply theme: {ThemeName}", themeName);
+            _logger.LogError(ex, "Failed to apply theme: {ThemeName}", themeName);
         }
     }
 
@@ -99,7 +141,7 @@ public class ThemeManager : IThemeManager
         }
         catch (Exception ex)
         {
-            Log.Warning(ex, "Failed to apply theme {ThemeName} to control {ControlType}",
+            _logger.LogWarning(ex, "Failed to apply theme {ThemeName} to control {ControlType}",
                 themeName, control.GetType().Name);
         }
     }

@@ -18,6 +18,11 @@ public interface ISettingsService
     void Load();
 
     /// <summary>
+    /// Convenience helper that loads persisted settings and returns the current instance.
+    /// </summary>
+    AppSettings LoadSettings();
+
+    /// <summary>
     /// Saves current settings to disk
     /// </summary>
     void Save();

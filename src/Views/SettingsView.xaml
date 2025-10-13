@@ -11,6 +11,10 @@
         prism:ViewModelLocator.AutoWireViewModel="True"
         Title="Application Settings" Height="600" Width="800"
         WindowStartupLocation="CenterScreen">
+    <Window.InputBindings>
+        <KeyBinding Key="S" Modifiers="Control" Command="{Binding SaveSettingsCommand}" />
+        <KeyBinding Key="R" Modifiers="Control" Command="{Binding ResetSettingsCommand}" />
+    </Window.InputBindings>
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
     </Window.Resources>
@@ -20,33 +24,67 @@
         <syncfusion:Ribbon DockPanel.Dock="Top" x:Name="SettingsRibbon">
             <syncfusion:RibbonTab Caption="Settings">
                 <syncfusion:RibbonBar Header="Actions">
-                    <syncfusion:RibbonButton Label="Save" SizeForm="Large" Command="{Binding SaveSettingsCommand}" />
-                    <syncfusion:RibbonButton Label="Reset" Command="{Binding ResetSettingsCommand}" />
-                    <syncfusion:RibbonButton Label="Test Connection" Command="{Binding TestConnectionCommand}" />
+                    <syncfusion:RibbonButton Label="Save" SizeForm="Large" Command="{Binding SaveSettingsCommand}" 
+                                           ToolTip="Save all settings (Ctrl+S)" />
+                    <syncfusion:RibbonButton Label="Reset" Command="{Binding ResetSettingsCommand}"
+                                           ToolTip="Reset all settings to defaults (Ctrl+R)" />
+                    <syncfusion:RibbonButton Label="Test Connection" Command="{Binding TestConnectionCommand}"
+                                           ToolTip="Test database connection" />
+                </syncfusion:RibbonBar>
+                <syncfusion:RibbonBar Header="Search">
+                    <TextBox Width="200" 
+                           Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                           Margin="5"
+                           ToolTip="Search settings by name or description" />
                 </syncfusion:RibbonBar>
             </syncfusion:RibbonTab>
         </syncfusion:Ribbon>
 
         <!-- Main Content Area -->
-        <TabControl Margin="8">
+        <TabControl x:Name="SettingsTabControl" Margin="8">
+            <!-- Help Text -->
+            <TabControl.Resources>
+                <TextBlock x:Key="HelpText" 
+                         Text="* Required fields"
+                         FontStyle="Italic"
+                         Foreground="Gray"
+                         Margin="0,0,0,8"
+                         HorizontalAlignment="Right" />
+            </TabControl.Resources>
             <!-- General Settings -->
             <TabItem Header="General">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="8">
+                        <StaticResource ResourceKey="HelpText" />
                         <GroupBox Header="Application Settings" Margin="0,0,0,8">
                             <StackPanel>
                                 <Label Content="Theme:" />
                                 <ComboBox ItemsSource="{Binding AvailableThemes}"
                                          SelectedItem="{Binding SelectedTheme, Mode=TwoWay}"
-                                         Margin="0,0,0,8" />
+                                         Margin="0,0,0,8"
+                                         ToolTip="Choose the visual theme for the application interface" />
 
                                 <Label Content="Window Width:" />
                                 <syncfusion:IntegerTextBox Value="{Binding WindowWidth, Mode=TwoWay}"
-                                                         Margin="0,0,0,8" />
+                                                         MinValue="800"
+                                                         MaxValue="3840"
+                                                         Margin="0,0,0,2"
+                                                         ToolTip="Set the default window width in pixels (800-3840)" />
+                                <TextBlock Text="{Binding WindowWidthValidation}"
+                                         Foreground="Red"
+                                         FontSize="10"
+                                         Margin="0,0,0,6" />
 
                                 <Label Content="Window Height:" />
                                 <syncfusion:IntegerTextBox Value="{Binding WindowHeight, Mode=TwoWay}"
-                                                         Margin="0,0,0,8" />
+                                                         MinValue="600"
+                                                         MaxValue="2160"
+                                                         Margin="0,0,0,2"
+                                                         ToolTip="Set the default window height in pixels (600-2160)" />
+                                <TextBlock Text="{Binding WindowHeightValidation}"
+                                         Foreground="Red"
+                                         FontSize="10"
+                                         Margin="0,0,0,8" />
 
                                 <CheckBox Content="Maximize window on startup"
                                          IsChecked="{Binding MaximizeOnStartup, Mode=TwoWay}"
@@ -154,23 +192,95 @@
                     <StackPanel Margin="8">
                         <GroupBox Header="XAI Configuration" Margin="0,0,0,8">
                             <StackPanel>
-                                <Label Content="API Key:" />
+                                <Label Content="API Key:*" />
                                 <TextBox Text="{Binding XaiApiKey, Mode=TwoWay}"
-                                       Margin="0,0,0,8" />
+                                       Margin="0,0,0,2"
+                                       ToolTip="Enter your XAI API key for AI functionality. Stored securely." />
+                                <TextBlock Text="{Binding XaiApiKeyValidation}"
+                                         Foreground="Red"
+                                         FontSize="10"
+                                         Margin="0,0,0,8" />
 
                                 <Label Content="Base URL:" />
                                 <TextBox Text="{Binding XaiBaseUrl, Mode=TwoWay}"
-                                       Margin="0,0,0,8" />
+                                       Margin="0,0,0,8"
+                                       ToolTip="XAI API base URL (usually https://api.x.ai/v1/)" />
 
                                 <Label Content="Model:" />
-                                <TextBox Text="{Binding XaiModel, Mode=TwoWay}"
-                                       Margin="0,0,0,8" />
+                                <ComboBox ItemsSource="{Binding AvailableModels}"
+                                         SelectedItem="{Binding XaiModel, Mode=TwoWay}"
+                                         Margin="0,0,0,8"
+                                         ToolTip="Select the AI model to use for responses" />
 
                                 <Label Content="Timeout (seconds):" />
                                 <syncfusion:IntegerTextBox Value="{Binding XaiTimeoutSeconds, Mode=TwoWay}"
                                                          MinValue="5"
                                                          MaxValue="300"
-                                                         Margin="0,0,0,8" />
+                                                         Margin="0,0,0,2"
+                                                         ToolTip="Maximum time to wait for AI responses (5-300 seconds)" />
+                                <TextBlock Text="{Binding XaiTimeoutValidation}"
+                                         Foreground="Red"
+                                         FontSize="10"
+                                         Margin="0,0,0,8" />
+                            </StackPanel>
+                        </GroupBox>
+
+                        <GroupBox Header="AI Settings" Margin="0,0,0,8">
+                            <StackPanel>
+                                <Label Content="Response Style:" />
+                                <ComboBox ItemsSource="{Binding AvailableResponseStyles}"
+                                         SelectedItem="{Binding ResponseStyle, Mode=TwoWay}"
+                                         Margin="0,0,0,8"
+                                         ToolTip="Choose how detailed and structured AI responses should be" />
+
+                                <Label Content="Personality:" />
+                                <ComboBox ItemsSource="{Binding AvailablePersonalities}"
+                                         SelectedItem="{Binding Personality, Mode=TwoWay}"
+                                         Margin="0,0,0,8"
+                                         ToolTip="Select the communication style for AI responses" />
+
+                                <Label Content="Context Window Size:" />
+                                <syncfusion:IntegerTextBox Value="{Binding ContextWindowSize, Mode=TwoWay}"
+                                                         MinValue="1024"
+                                                         MaxValue="32768"
+                                                         Margin="0,0,0,2"
+                                                         ToolTip="Maximum tokens the AI can process (1024-32768, multiple of 1024)" />
+                                <TextBlock Text="{Binding ContextWindowValidation}"
+                                         Foreground="Red"
+                                         FontSize="10"
+                                         Margin="0,0,0,8" />
+
+                                <CheckBox Content="Enable Safety Filters"
+                                         IsChecked="{Binding EnableSafetyFilters, Mode=TwoWay}"
+                                         Margin="0,0,0,8"
+                                         ToolTip="Filter potentially harmful or inappropriate content" />
+
+                                <Label Content="Temperature:" />
+                                <syncfusion:DoubleTextBox Value="{Binding Temperature, Mode=TwoWay}"
+                                                        MinValue="0.0"
+                                                        MaxValue="2.0"
+                                                        Margin="0,0,0,2"
+                                                        ToolTip="Controls randomness in responses (0.0 = deterministic, 2.0 = very random)" />
+                                <TextBlock Text="{Binding TemperatureValidation}"
+                                         Foreground="Red"
+                                         FontSize="10"
+                                         Margin="0,0,0,8" />
+
+                                <Label Content="Max Tokens:" />
+                                <syncfusion:IntegerTextBox Value="{Binding MaxTokens, Mode=TwoWay}"
+                                                         MinValue="1"
+                                                         MaxValue="32768"
+                                                         Margin="0,0,0,2"
+                                                         ToolTip="Maximum tokens to generate in responses" />
+                                <TextBlock Text="{Binding MaxTokensValidation}"
+                                         Foreground="Red"
+                                         FontSize="10"
+                                         Margin="0,0,0,8" />
+
+                                <CheckBox Content="Enable Streaming Responses"
+                                         IsChecked="{Binding EnableStreaming, Mode=TwoWay}"
+                                         Margin="0,0,0,8"
+                                         ToolTip="Stream responses as they are generated (real-time)" />
                             </StackPanel>
                         </GroupBox>
 
@@ -217,7 +327,11 @@
                                 <syncfusion:IntegerTextBox Value="{Binding FiscalYearStartDay, Mode=TwoWay}"
                                                          MinValue="1"
                                                          MaxValue="31"
-                                                         Margin="0,0,0,8" />
+                                                         Margin="0,0,0,2" />
+                                <TextBlock Text="{Binding FiscalYearDayValidation}"
+                                         Foreground="Red"
+                                         FontSize="10"
+                                         Margin="0,0,0,8" />
 
                                 <Separator Margin="0,8" />
 
@@ -299,7 +413,13 @@
 
                                 <Label Content="Cache expiration (minutes):" />
                                 <syncfusion:IntegerTextBox Value="{Binding CacheExpirationMinutes, Mode=TwoWay}"
-                                                         Margin="0,0,0,8" />
+                                                         MinValue="1"
+                                                         MaxValue="1440"
+                                                         Margin="0,0,0,2" />
+                                <TextBlock Text="{Binding CacheExpirationValidation}"
+                                         Foreground="Red"
+                                         FontSize="10"
+                                         Margin="0,0,0,8" />
                             </StackPanel>
                         </GroupBox>
 
@@ -343,8 +463,8 @@
                 </TextBlock>
             </StatusBarItem>
             <StatusBarItem>
-                <notification:SfBusyIndicator IsBusy="{Binding IsLoading}" 
-                                           Header="{Binding StatusMessage, FallbackValue='Loading...'}"
+                <notification:SfBusyIndicator IsBusy="{Binding IsBusy}"
+                                           Header="{Binding BusyMessage, FallbackValue='Loading...'}"
                                            AnimationType="Windmill" />
             </StatusBarItem>
         </StatusBar>

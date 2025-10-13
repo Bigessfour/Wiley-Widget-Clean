@@ -55,6 +55,7 @@ namespace WileyWidget.ViewModels
             public Task<EnterpriseModel> AddAsync(EnterpriseModel enterprise) => Task.FromResult(enterprise);
             public Task<EnterpriseModel> UpdateAsync(EnterpriseModel enterprise) => Task.FromResult(enterprise);
             public Task<bool> DeleteAsync(int id) => Task.FromResult(true);
+            public Task<int> GetCountAsync() => Task.FromResult(0);
         }
 
         private class TestMunicipalAccountRepository : BusinessInterfaces.IMunicipalAccountRepository

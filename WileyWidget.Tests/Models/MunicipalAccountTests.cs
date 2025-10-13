@@ -17,7 +17,10 @@ public class MunicipalAccountTests
         // Arrange & Act
         var account = new MunicipalAccount
         {
-            AccountNumber = new AccountNumber("100")
+            AccountNumber = new AccountNumber("100"),
+            FundClass = FundClass.Governmental,
+            DepartmentId = 1,
+            BudgetPeriodId = 1
         };
 
         // Assert

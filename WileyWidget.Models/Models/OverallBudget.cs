@@ -147,7 +147,7 @@ public class OverallBudget : INotifyPropertyChanged, IValidatableObject
         }
     }
 
-    private string? _notes;
+    private string? _notes = string.Empty;
 
     /// <summary>
     /// Notes about this budget snapshot

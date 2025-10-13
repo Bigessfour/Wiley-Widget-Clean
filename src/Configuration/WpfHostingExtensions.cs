@@ -4,11 +4,13 @@ using System.Net.Http;
 using System.Windows;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Serilog;
 using Serilog.Debugging;
+using WileyWidget.Business.Interfaces;
 using WileyWidget.Data;
 using WileyWidget.Models;
 using WileyWidget.Services;
@@ -180,16 +182,18 @@ public static class WpfHostingExtensions
     private static void ConfigureCoreServices(IServiceCollection services, IConfiguration configuration)
     {
         // Critical services - load immediately
-        services.AddSingleton<AuthenticationService>();
-        services.AddSingleton<ISyncfusionLicenseService, SyncfusionLicenseService>();
-        services.AddSingleton<ApplicationMetricsService>();
-        services.AddSingleton(SettingsService.Instance);
+    services.AddSingleton<AuthenticationService>();
+    services.AddSingleton<ISyncfusionLicenseService, SyncfusionLicenseService>();
+    services.AddSingleton<ApplicationMetricsService>();
+    services.AddSingleton<SettingsService>();
+    services.AddSingleton<ISettingsService>(sp => sp.GetRequiredService<SettingsService>());
         services.AddSingleton(ErrorReportingService.Instance);
         services.AddSingleton<LocalizationService>();
         services.AddSingleton<SyncfusionLicenseState>();
         services.AddSingleton<IStartupProgressReporter>(_ => App.StartupProgress);
         services.AddSingleton<IViewManager, ViewManager>();
-        services.AddSingleton<IThemeManager>(_ => ThemeManager.Instance);
+    services.AddSingleton<ThemeManager>();
+    services.AddSingleton<IThemeManager>(sp => sp.GetRequiredService<ThemeManager>());
         services.AddSingleton<ISecretVaultService, LocalSecretVaultService>();
         services.AddMemoryCache();
         services.AddSingleton<IDispatcherHelper, DispatcherHelper>();
@@ -234,11 +238,12 @@ public static class WpfHostingExtensions
 
     private static void ConfigureWpfServices(IServiceCollection services)
     {
+        services.TryAddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddScoped<MainViewModel>();
         services.AddTransient<MainWindow>();
         services.AddSingleton<SplashScreenWindow>(sp => SplashScreenFactory.Create(sp));
         services.AddTransient<AboutWindow>();
 
-        services.AddTransient<MainViewModel>(sp => ActivatorUtilities.CreateInstance<MainViewModel>(sp, false));
         services.AddTransient<AboutViewModel>();
         services.AddTransient<ReportsViewModel>();
         services.AddTransient<DashboardViewModel>();

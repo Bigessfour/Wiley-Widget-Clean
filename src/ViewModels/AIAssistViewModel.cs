@@ -246,30 +246,16 @@ public partial class AIAssistViewModel : ObservableObject
     {
         try
         {
-            // For now, show a simple message. In a full implementation, this would open a settings dialog
-            var result = System.Windows.MessageBox.Show(
-                "AI Configuration\n\nThis feature allows you to configure AI settings such as:\n" +
-                "- Response style and personality\n" +
-                "- Context window size\n" +
-                "- Model selection\n" +
-                "- Safety filters\n\n" +
-                "Would you like to open the settings dialog?",
-                "AI Configuration",
-                System.Windows.MessageBoxButton.YesNo,
-                System.Windows.MessageBoxImage.Question);
-
-            if (result == System.Windows.MessageBoxResult.Yes)
+            // Open the settings dialog with XAI tab selected
+            var settingsWindow = new WileyWidget.SettingsView();
+            // Select the XAI Integration tab (index 3)
+            if (settingsWindow.FindName("SettingsTabControl") is System.Windows.Controls.TabControl tabControl)
             {
-                // TODO: Open actual settings dialog
-                System.Windows.MessageBox.Show(
-                    "Settings dialog not yet implemented.\n\n" +
-                    "This would allow configuration of AI parameters.",
-                    "Coming Soon",
-                    System.Windows.MessageBoxButton.OK,
-                    System.Windows.MessageBoxImage.Information);
+                tabControl.SelectedIndex = 3; // XAI Integration tab
             }
+            settingsWindow.ShowDialog();
 
-            Log.Information("AI configuration dialog requested");
+            Log.Information("AI configuration dialog opened");
         }
         catch (Exception ex)
         {

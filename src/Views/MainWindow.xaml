@@ -316,7 +316,7 @@
     <syncfusion:DockingManager x:Name="MainDockingManager"
                      UseDocumentContainer="True"
                      ContainerMode="TDI"
-                     PersistState="True"
+                     PersistState="False"
                      MaximizeButtonEnabled="True"
                      MinimizeButtonEnabled="True"
                      MaximizeMode="FullScreen"

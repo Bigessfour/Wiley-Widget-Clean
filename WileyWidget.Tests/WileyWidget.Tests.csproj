@@ -36,6 +36,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\WileyWidget.csproj" />
+    <ProjectReference Include="..\WileyWidget.Models\WileyWidget.Models.csproj" />
   </ItemGroup>
 
 </Project>

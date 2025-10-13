@@ -311,7 +311,7 @@ public class EnhancedRepositoryTests : IDisposable
     #region Domain Behavior Tests
 
     [Fact]
-    public async Task DomainBehavior_IsProfitable_ReturnsCorrectValue()
+    public void DomainBehavior_IsProfitable_ReturnsCorrectValue()
     {
         // Arrange
         var profitableEnterprise = new Enterprise
@@ -706,7 +706,16 @@ public class EnhancedRepositoryTests : IDisposable
 
     public void Dispose()
     {
-        _context?.Dispose();
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _context?.Dispose();
+        }
     }
 
     private class TestDbContextFactory : IDbContextFactory<AppDbContext>

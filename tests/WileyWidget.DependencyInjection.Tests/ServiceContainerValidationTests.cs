@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using WileyWidget.Configuration;
 using WileyWidget.DependencyInjection.Tests.TestFixtures;
+using WileyWidget.Business.Interfaces;
 using Xunit;
 
 namespace WileyWidget.DependencyInjection.Tests;
@@ -220,5 +221,17 @@ public sealed class ServiceContainerValidationTests : IDisposable
         // Assert
         duplicates.Should().BeEmpty(
             $"critical singleton services should have exactly one registration:{Environment.NewLine}{string.Join(Environment.NewLine, duplicates)}");
+    }
+
+    [Fact]
+    public void Scoped_Services_Should_Resolve_UnitOfWork_And_MainViewModel()
+    {
+        using var scope = _serviceProvider.CreateScope();
+
+        var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+        unitOfWork.Should().NotBeNull("UnitOfWork must be registered for view models");
+
+        var mainViewModel = scope.ServiceProvider.GetRequiredService<WileyWidget.ViewModels.MainViewModel>();
+        mainViewModel.Should().NotBeNull("MainViewModel should resolve once UnitOfWork is available");
     }
 }

@@ -30,10 +30,44 @@ namespace WileyWidget.ViewModels
         [ObservableProperty]
         private string selectedTheme = "FluentDark";
 
-        partial void OnSelectedThemeChanged(string value)
+        partial void OnWindowWidthChanged(int value)
         {
-            // Apply the theme change immediately when selected in settings
-            ApplyThemeToAllWindows(value);
+            ValidateWindowWidth(value);
+        }
+
+        partial void OnWindowHeightChanged(int value)
+        {
+            ValidateWindowHeight(value);
+        }
+
+        partial void OnXaiTimeoutSecondsChanged(int value)
+        {
+            ValidateXaiTimeout(value);
+        }
+
+        partial void OnContextWindowSizeChanged(int value)
+        {
+            ValidateContextWindowSize(value);
+        }
+
+        partial void OnCacheExpirationMinutesChanged(int value)
+        {
+            ValidateCacheExpiration(value);
+        }
+
+        partial void OnFiscalYearStartDayChanged(int value)
+        {
+            ValidateFiscalYearDay(value);
+        }
+
+        partial void OnTemperatureChanged(double value)
+        {
+            ValidateTemperature(value);
+        }
+
+        partial void OnMaxTokensChanged(int value)
+        {
+            ValidateMaxTokens(value);
         }
 
         [ObservableProperty]
@@ -101,7 +135,43 @@ namespace WileyWidget.ViewModels
         private int xaiTimeoutSeconds = 15;
 
         [ObservableProperty]
+        private ObservableCollection<string> availableModels = new() { "grok-4-0709", "grok-beta", "grok-1" };
+
+        [ObservableProperty]
+        private ObservableCollection<string> availableResponseStyles = new() { "Balanced", "Creative", "Precise", "Concise" };
+
+        [ObservableProperty]
+        private ObservableCollection<string> availablePersonalities = new() { "Professional", "Friendly", "Technical", "Casual" };
+
+        [ObservableProperty]
         private string xaiModel = "grok-4-0709";
+
+        [ObservableProperty]
+        private string responseStyle = "Balanced";
+
+        [ObservableProperty]
+        private string personality = "Professional";
+
+        [ObservableProperty]
+        private int contextWindowSize = 4096;
+
+        [ObservableProperty]
+        private bool enableSafetyFilters = true;
+
+        [ObservableProperty]
+        private double temperature = 0.7;
+
+        [ObservableProperty]
+        private int maxTokens = 2048;
+
+        [ObservableProperty]
+        private bool enableStreaming = false;
+
+        [ObservableProperty]
+        private string temperatureValidation = string.Empty;
+
+        [ObservableProperty]
+        private string maxTokensValidation = string.Empty;
 
         [ObservableProperty]
         private string xaiConnectionStatus = "Not Configured";
@@ -177,6 +247,42 @@ namespace WileyWidget.ViewModels
         [ObservableProperty]
         private string systemInfo;
 
+        // Validation Properties
+        [ObservableProperty]
+        private string windowWidthValidation = string.Empty;
+
+        [ObservableProperty]
+        private string windowHeightValidation = string.Empty;
+
+        [ObservableProperty]
+        private string xaiApiKeyValidation = string.Empty;
+
+        [ObservableProperty]
+        private string xaiTimeoutValidation = string.Empty;
+
+        [ObservableProperty]
+        private string contextWindowValidation = string.Empty;
+
+        [ObservableProperty]
+        private string cacheExpirationValidation = string.Empty;
+
+        [ObservableProperty]
+        private string fiscalYearDayValidation = string.Empty;
+
+        // UI State
+        [ObservableProperty]
+        private bool isBusy;
+
+        [ObservableProperty]
+        private string busyMessage;
+
+        // Search and Filter
+        [ObservableProperty]
+        private string searchText = string.Empty;
+
+        [ObservableProperty]
+        private bool showAdvancedSettings = true;
+
         public bool HasUnsavedChanges { get; private set; }
 
         public SettingsViewModel(
@@ -247,14 +353,39 @@ namespace WileyWidget.ViewModels
 
         private async Task LoadGeneralSettingsAsync()
         {
-            // Load from appsettings.json or database
-            // For now, use default values
-            SelectedTheme = "FluentDark";
-            WindowWidth = 1200;
-            WindowHeight = 800;
-            MaximizeOnStartup = false;
-            ShowSplashScreen = true;
-            await Task.CompletedTask; // Suppress async warning for future async operations
+            try
+            {
+                // Load from database
+                var settings = await _dbContext.AppSettings.FindAsync(1);
+                if (settings != null)
+                {
+                    SelectedTheme = settings.Theme ?? "FluentDark";
+                    WindowWidth = (int)(settings.WindowWidth ?? 1200);
+                    WindowHeight = (int)(settings.WindowHeight ?? 800);
+                    MaximizeOnStartup = settings.WindowMaximized ?? false;
+                    // Note: ShowSplashScreen is not in AppSettings yet, keeping as default
+                    ShowSplashScreen = true;
+                }
+                else
+                {
+                    // Use default values if no settings exist
+                    SelectedTheme = "FluentDark";
+                    WindowWidth = 1200;
+                    WindowHeight = 800;
+                    MaximizeOnStartup = false;
+                    ShowSplashScreen = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to load general settings from database");
+                // Fall back to defaults
+                SelectedTheme = "FluentDark";
+                WindowWidth = 1200;
+                WindowHeight = 800;
+                MaximizeOnStartup = false;
+                ShowSplashScreen = true;
+            }
         }
 
         private async Task LoadDatabaseSettingsAsync()
@@ -359,6 +490,55 @@ namespace WileyWidget.ViewModels
                     XaiTimeoutSeconds = 15;
                 }
 
+                // Load additional AI settings
+                ResponseStyle = Environment.GetEnvironmentVariable("XAI_RESPONSE_STYLE") ?? "Balanced";
+                Personality = Environment.GetEnvironmentVariable("XAI_PERSONALITY") ?? "Professional";
+
+                if (int.TryParse(Environment.GetEnvironmentVariable("XAI_CONTEXT_WINDOW_SIZE"), out var contextSize))
+                {
+                    ContextWindowSize = contextSize;
+                }
+                else
+                {
+                    ContextWindowSize = 4096;
+                }
+
+                if (bool.TryParse(Environment.GetEnvironmentVariable("XAI_ENABLE_SAFETY_FILTERS"), out var safetyFilters))
+                {
+                    EnableSafetyFilters = safetyFilters;
+                }
+                else
+                {
+                    EnableSafetyFilters = true;
+                }
+
+                if (double.TryParse(Environment.GetEnvironmentVariable("XAI_TEMPERATURE"), out var temp))
+                {
+                    Temperature = temp;
+                }
+                else
+                {
+                    Temperature = 0.7;
+                }
+
+                if (int.TryParse(Environment.GetEnvironmentVariable("XAI_MAX_TOKENS"), out var maxTok))
+                {
+                    MaxTokens = maxTok;
+                }
+                else
+                {
+                    MaxTokens = 2048;
+                }
+
+                if (bool.TryParse(Environment.GetEnvironmentVariable("XAI_ENABLE_STREAMING"), out var streaming))
+                {
+                    EnableStreaming = streaming;
+                }
+                else
+                {
+                    EnableStreaming = false;
+                }
+
                 // Test connection if API key is configured
                 if (!string.IsNullOrEmpty(XaiApiKey))
                 {
@@ -381,14 +561,41 @@ namespace WileyWidget.ViewModels
 
         private async Task LoadAdvancedSettingsAsync()
         {
-            // Load advanced settings from configuration
-            EnableDynamicColumns = true;
-            EnableDataCaching = true;
-            CacheExpirationMinutes = 30;
-            SelectedLogLevel = "Information";
-            EnableFileLogging = true;
-            LogFilePath = "logs/wiley-widget.log";
-            await Task.CompletedTask; // Suppress async warning for future async operations
+            try
+            {
+                // Load advanced settings from database
+                var settings = await _dbContext.AppSettings.FindAsync(1);
+                if (settings != null)
+                {
+                    EnableDynamicColumns = settings.UseDynamicColumns;
+                    EnableDataCaching = settings.EnableDataCaching;
+                    CacheExpirationMinutes = settings.CacheExpirationMinutes;
+                    SelectedLogLevel = settings.SelectedLogLevel ?? "Information";
+                    EnableFileLogging = settings.EnableFileLogging;
+                    LogFilePath = settings.LogFilePath ?? "logs/wiley-widget.log";
+                }
+                else
+                {
+                    // Use default values if no settings exist
+                    EnableDynamicColumns = true;
+                    EnableDataCaching = true;
+                    CacheExpirationMinutes = 30;
+                    SelectedLogLevel = "Information";
+                    EnableFileLogging = true;
+                    LogFilePath = "logs/wiley-widget.log";
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to load advanced settings from database");
+                // Fall back to defaults
+                EnableDynamicColumns = true;
+                EnableDataCaching = true;
+                CacheExpirationMinutes = 30;
+                SelectedLogLevel = "Information";
+                EnableFileLogging = true;
+                LogFilePath = "logs/wiley-widget.log";
+            }
         }
 
         [RelayCommand]
@@ -396,7 +603,8 @@ namespace WileyWidget.ViewModels
         {
             try
             {
-                SettingsStatus = "Saving settings...";
+                IsBusy = true;
+                BusyMessage = "Saving settings...";
 
                 // Save to secure storage and configuration
                 await SaveGeneralSettingsAsync();
@@ -418,13 +626,47 @@ namespace WileyWidget.ViewModels
                 MessageBox.Show($"Error saving settings: {ex.Message}", "Settings Error",
                               MessageBoxButton.OK);
             }
+            finally
+            {
+                IsBusy = false;
+                BusyMessage = string.Empty;
+            }
         }
 
         private async Task SaveGeneralSettingsAsync()
         {
-            // Save general settings to configuration
-            // Implementation would save to appsettings.json or database
-            await Task.CompletedTask; // Suppress async warning for future async operations
+            try
+            {
+                // Save general settings to database
+                var settings = await _dbContext.AppSettings.FindAsync(1);
+
+                if (settings == null)
+                {
+                    settings = new Models.AppSettings
+                    {
+                        Id = 1,
+                        Theme = SelectedTheme,
+                        WindowWidth = WindowWidth,
+                        WindowHeight = WindowHeight,
+                        WindowMaximized = MaximizeOnStartup
+                    };
+                    _dbContext.AppSettings.Add(settings);
+                }
+                else
+                {
+                    settings.Theme = SelectedTheme;
+                    settings.WindowWidth = WindowWidth;
+                    settings.WindowHeight = WindowHeight;
+                    settings.WindowMaximized = MaximizeOnStartup;
+                }
+
+                await _dbContext.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to save general settings to database");
+                throw; // Re-throw to be handled by the calling method
+            }
         }
 
         private async Task SaveQuickBooksSettingsAsync()
@@ -455,20 +697,70 @@ namespace WileyWidget.ViewModels
             await _secretVaultService.SetSecretAsync("XAI-BaseUrl", XaiBaseUrl);
             await _secretVaultService.SetSecretAsync("XAI-Model", XaiModel);
             await _secretVaultService.SetSecretAsync("XAI-TimeoutSeconds", XaiTimeoutSeconds.ToString());
+            await _secretVaultService.SetSecretAsync("XAI-ResponseStyle", ResponseStyle);
+            await _secretVaultService.SetSecretAsync("XAI-Personality", Personality);
+            await _secretVaultService.SetSecretAsync("XAI-ContextWindowSize", ContextWindowSize.ToString());
+            await _secretVaultService.SetSecretAsync("XAI-EnableSafetyFilters", EnableSafetyFilters.ToString());
+            await _secretVaultService.SetSecretAsync("XAI-Temperature", Temperature.ToString());
+            await _secretVaultService.SetSecretAsync("XAI-MaxTokens", MaxTokens.ToString());
+            await _secretVaultService.SetSecretAsync("XAI-EnableStreaming", EnableStreaming.ToString());
         }
 
         private async Task SaveAdvancedSettingsAsync()
         {
-            // Save advanced settings to configuration
-            // Implementation would save to appsettings.json
-            await Task.CompletedTask; // Suppress async warning for future async operations
+            try
+            {
+                // Save advanced settings to database
+                var settings = await _dbContext.AppSettings.FindAsync(1);
+
+                if (settings == null)
+                {
+                    settings = new Models.AppSettings
+                    {
+                        Id = 1,
+                        UseDynamicColumns = EnableDynamicColumns,
+                        EnableDataCaching = EnableDataCaching,
+                        CacheExpirationMinutes = CacheExpirationMinutes,
+                        SelectedLogLevel = SelectedLogLevel,
+                        EnableFileLogging = EnableFileLogging,
+                        LogFilePath = LogFilePath
+                    };
+                    _dbContext.AppSettings.Add(settings);
+                }
+                else
+                {
+                    settings.UseDynamicColumns = EnableDynamicColumns;
+                    settings.EnableDataCaching = EnableDataCaching;
+                    settings.CacheExpirationMinutes = CacheExpirationMinutes;
+                    settings.SelectedLogLevel = SelectedLogLevel;
+                    settings.EnableFileLogging = EnableFileLogging;
+                    settings.LogFilePath = LogFilePath;
+                }
+
+                await _dbContext.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to save advanced settings to database");
+                throw; // Re-throw to be handled by the calling method
+            }
         }
 
         [RelayCommand]
         private async Task ResetSettingsAsync()
         {
-            var result = MessageBox.Show("Are you sure you want to reset all settings to default values?",
-                                       "Reset Settings", MessageBoxButton.YesNo);
+            var result = MessageBox.Show(
+                "Are you sure you want to reset ALL settings to their default values?\n\n" +
+                "This action cannot be undone and will:\n" +
+                "• Reset all application preferences\n" +
+                "• Clear API keys and connection settings\n" +
+                "• Restore default themes and window sizes\n" +
+                "• Reset fiscal year and advanced configurations\n\n" +
+                "Continue with reset?",
+                "Reset All Settings",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning,
+                MessageBoxResult.No);
 
             if (result == MessageBoxResult.Yes)
             {
@@ -690,6 +982,159 @@ namespace WileyWidget.ViewModels
                 _logger.LogError(ex, "Failed to load fiscal year display");
                 CurrentFiscalYearDisplay = "Error loading";
                 FiscalYearPeriodDisplay = "Error loading";
+            }
+        }
+
+        // Validation Methods
+        private void ValidateWindowWidth(int value)
+        {
+            if (value < 800)
+            {
+                WindowWidthValidation = "Minimum width is 800 pixels";
+            }
+            else if (value > 3840)
+            {
+                WindowWidthValidation = "Maximum width is 3840 pixels";
+            }
+            else
+            {
+                WindowWidthValidation = string.Empty;
+            }
+        }
+
+        private void ValidateWindowHeight(int value)
+        {
+            if (value < 600)
+            {
+                WindowHeightValidation = "Minimum height is 600 pixels";
+            }
+            else if (value > 2160)
+            {
+                WindowHeightValidation = "Maximum height is 2160 pixels";
+            }
+            else
+            {
+                WindowHeightValidation = string.Empty;
+            }
+        }
+
+        private void ValidateXaiApiKey(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                XaiApiKeyValidation = string.Empty; // API key is optional
+            }
+            else if (value.Length < 20)
+            {
+                XaiApiKeyValidation = "API key appears to be too short";
+            }
+            else if (!value.StartsWith("xai-"))
+            {
+                XaiApiKeyValidation = "API key should start with 'xai-'";
+            }
+            else
+            {
+                XaiApiKeyValidation = string.Empty;
+            }
+        }
+
+        private void ValidateXaiTimeout(int value)
+        {
+            if (value < 5)
+            {
+                XaiTimeoutValidation = "Minimum timeout is 5 seconds";
+            }
+            else if (value > 300)
+            {
+                XaiTimeoutValidation = "Maximum timeout is 300 seconds";
+            }
+            else
+            {
+                XaiTimeoutValidation = string.Empty;
+            }
+        }
+
+        private void ValidateContextWindowSize(int value)
+        {
+            if (value < 1024)
+            {
+                ContextWindowValidation = "Minimum context window is 1024 tokens";
+            }
+            else if (value > 32768)
+            {
+                ContextWindowValidation = "Maximum context window is 32768 tokens";
+            }
+            else if (value % 1024 != 0)
+            {
+                ContextWindowValidation = "Context window should be a multiple of 1024";
+            }
+            else
+            {
+                ContextWindowValidation = string.Empty;
+            }
+        }
+
+        private void ValidateCacheExpiration(int value)
+        {
+            if (value < 1)
+            {
+                CacheExpirationValidation = "Minimum cache expiration is 1 minute";
+            }
+            else if (value > 1440)
+            {
+                CacheExpirationValidation = "Maximum cache expiration is 1440 minutes (24 hours)";
+            }
+            else
+            {
+                CacheExpirationValidation = string.Empty;
+            }
+        }
+
+        private void ValidateFiscalYearDay(int value)
+        {
+            if (value < 1)
+            {
+                FiscalYearDayValidation = "Day must be between 1 and 31";
+            }
+            else if (value > 31)
+            {
+                FiscalYearDayValidation = "Day must be between 1 and 31";
+            }
+            else
+            {
+                FiscalYearDayValidation = string.Empty;
+            }
+        }
+
+        private void ValidateTemperature(double value)
+        {
+            if (value < 0.0)
+            {
+                TemperatureValidation = "Temperature must be between 0.0 and 2.0";
+            }
+            else if (value > 2.0)
+            {
+                TemperatureValidation = "Temperature must be between 0.0 and 2.0";
+            }
+            else
+            {
+                TemperatureValidation = string.Empty;
+            }
+        }
+
+        private void ValidateMaxTokens(int value)
+        {
+            if (value < 1)
+            {
+                MaxTokensValidation = "Max tokens must be at least 1";
+            }
+            else if (value > ContextWindowSize)
+            {
+                MaxTokensValidation = $"Max tokens cannot exceed context window size ({ContextWindowSize})";
+            }
+            else
+            {
+                MaxTokensValidation = string.Empty;
             }
         }
     }

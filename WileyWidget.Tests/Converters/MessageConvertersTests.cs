@@ -52,12 +52,12 @@ public class MessageConvertersTests
     }
 
     [Fact]
-#pragma warning disable CS8600
+#pragma warning disable CS8604, CS8625
     public void UserMessageBackgroundConverter_WithNullValue_ReturnsGrayBrush()
     {
         // Arrange
         var converter = new UserMessageBackgroundConverter();
-        object nullValue = null;
+        object? nullValue = null;
         var expectedColor = Color.FromRgb(224, 224, 224); // Gray (default for non-user)
 
         // Act
@@ -68,7 +68,7 @@ public class MessageConvertersTests
         var brush = (SolidColorBrush)result;
         Assert.Equal(expectedColor, brush.Color);
     }
-#pragma warning restore CS8600
+#pragma warning restore CS8604, CS8625
 
     [Fact]
     public void UserMessageBackgroundConverter_WithNonBoolValue_ReturnsGrayBrush()
@@ -134,12 +134,12 @@ public class MessageConvertersTests
     }
 
     [Fact]
-#pragma warning disable CS8600
+#pragma warning disable CS8604, CS8625
     public void MessageAlignmentConverter_WithNullValue_ReturnsLeftAlignment()
     {
         // Arrange
         var converter = new MessageAlignmentConverter();
-        object nullValue = null;
+        object? nullValue = null;
 
         // Act
         var result = converter.Convert(nullValue, typeof(HorizontalAlignment), null!, CultureInfo.InvariantCulture);
@@ -148,7 +148,7 @@ public class MessageConvertersTests
         Assert.IsType<HorizontalAlignment>(result);
         Assert.Equal(HorizontalAlignment.Left, (HorizontalAlignment)result);
     }
-#pragma warning restore CS8600
+#pragma warning restore CS8604, CS8625
 
     [Fact]
     public void MessageAlignmentConverter_WithNonBoolValue_ReturnsLeftAlignment()
@@ -214,12 +214,12 @@ public class MessageConvertersTests
     }
 
     [Fact]
-#pragma warning disable CS8600
+#pragma warning disable CS8604, CS8625
     public void MessageForegroundConverter_WithNullValue_ReturnsBlackBrush()
     {
         // Arrange
         var converter = new MessageForegroundConverter();
-        object nullValue = null;
+        object? nullValue = null;
 
         // Act
         var result = converter.Convert(nullValue, typeof(SolidColorBrush), null!, CultureInfo.InvariantCulture);
@@ -229,7 +229,7 @@ public class MessageConvertersTests
         var brush = (SolidColorBrush)result;
         Assert.Equal(Brushes.Black.Color, ((SolidColorBrush)result).Color);
     }
-#pragma warning restore CS8600
+#pragma warning restore CS8604, CS8625
 
     [Fact]
     public void MessageForegroundConverter_WithNonBoolValue_ReturnsBlackBrush()

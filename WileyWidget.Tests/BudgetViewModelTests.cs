@@ -13,7 +13,7 @@ namespace WileyWidget.Tests;
 /// <summary>
 /// Tests for the BudgetViewModel functionality
 /// </summary>
-public class BudgetViewModelTests
+public class BudgetViewModelTests : IDisposable
 {
     private readonly Mock<EnterpriseRepo> _mockRepository;
     private readonly BudgetViewModel _viewModel;
@@ -22,6 +22,20 @@ public class BudgetViewModelTests
     {
         _mockRepository = new Mock<EnterpriseRepo>();
         _viewModel = new BudgetViewModel(_mockRepository.Object);
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _viewModel?.Dispose();
+        }
     }
 
     [Fact]

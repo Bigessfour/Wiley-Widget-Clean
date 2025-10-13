@@ -113,7 +113,7 @@ public class UtilityCustomer : INotifyPropertyChanged, IValidatableObject
         }
     }
 
-    private string? _companyName;
+    private string? _companyName = string.Empty;
 
     /// <summary>
     /// Company/business name (for commercial accounts)
@@ -259,7 +259,7 @@ public class UtilityCustomer : INotifyPropertyChanged, IValidatableObject
         }
     }
 
-    private string? _mailingAddress;
+    private string? _mailingAddress = string.Empty;
 
     /// <summary>
     /// Mailing address (if different from service address)
@@ -279,7 +279,7 @@ public class UtilityCustomer : INotifyPropertyChanged, IValidatableObject
         }
     }
 
-    private string? _mailingCity;
+    private string? _mailingCity = string.Empty;
 
     /// <summary>
     /// Mailing address city
@@ -299,7 +299,7 @@ public class UtilityCustomer : INotifyPropertyChanged, IValidatableObject
         }
     }
 
-    private string? _mailingState;
+    private string? _mailingState = string.Empty;
 
     /// <summary>
     /// Mailing address state/province
@@ -319,7 +319,7 @@ public class UtilityCustomer : INotifyPropertyChanged, IValidatableObject
         }
     }
 
-    private string? _mailingZipCode;
+    private string? _mailingZipCode = string.Empty;
 
     /// <summary>
     /// Mailing address ZIP/postal code
@@ -339,7 +339,7 @@ public class UtilityCustomer : INotifyPropertyChanged, IValidatableObject
         }
     }
 
-    private string? _phoneNumber;
+    private string? _phoneNumber = string.Empty;
 
     /// <summary>
     /// Primary phone number

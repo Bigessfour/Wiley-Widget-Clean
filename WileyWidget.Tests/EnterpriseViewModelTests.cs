@@ -8,7 +8,7 @@ using WileyWidget.Models;
 using WileyWidget.ViewModels;
 using WileyWidget.Business.Interfaces;
 using EnterpriseRepo = WileyWidget.Business.Interfaces.IEnterpriseRepository;
-using Enterprise = WileyWidget.Models.Enterprise;
+using EnterpriseModel = WileyWidget.Models.Enterprise;
 
 namespace WileyWidget.Tests;
 
@@ -39,7 +39,7 @@ public class EnterpriseViewModelTests : IDisposable
     {
         // Assert
         Assert.NotNull(_viewModel.Enterprises);
-        Assert.IsType<ObservableCollection<Enterprise>>(_viewModel.Enterprises);
+        Assert.IsType<ObservableCollection<EnterpriseModel>>(_viewModel.Enterprises);
         Assert.Null(_viewModel.SelectedEnterprise);
         Assert.False(_viewModel.IsLoading);
         Assert.Equal("No budget data available", _viewModel.BudgetSummaryText);
@@ -51,7 +51,7 @@ public class EnterpriseViewModelTests : IDisposable
         // Arrange
         var enterprises = new List<Enterprise>
         {
-            new Models.Enterprise
+            new EnterpriseModel
             {
                 Id = 1,
                 Name = "Water Department",
@@ -60,7 +60,7 @@ public class EnterpriseViewModelTests : IDisposable
                 MonthlyExpenses = 15000.00m,
                 CitizenCount = 50000
             },
-            new Models.Enterprise
+            new EnterpriseModel
             {
                 Id = 2,
                 Name = "Sewer Department",
@@ -126,7 +126,7 @@ public class EnterpriseViewModelTests : IDisposable
     public void GetBudgetSummary_WithMultipleEnterprises_CalculatesCorrectly()
     {
         // Arrange
-        var enterprise1 = new Models.Enterprise
+        var enterprise1 = new EnterpriseModel
         {
             Id = 1,
             Name = "Water",
@@ -134,7 +134,7 @@ public class EnterpriseViewModelTests : IDisposable
             MonthlyExpenses = 15000.00m,
             CitizenCount = 50000
         };
-        var enterprise2 = new Models.Enterprise
+        var enterprise2 = new EnterpriseModel
         {
             Id = 2,
             Name = "Sewer",
@@ -171,7 +171,7 @@ public class EnterpriseViewModelTests : IDisposable
     public void GetBudgetSummary_WithDeficit_ShowsDeficitStatus()
     {
         // Arrange
-        var enterprise = new Models.Enterprise
+        var enterprise = new EnterpriseModel
         {
             Id = 1,
             Name = "Water",
@@ -196,7 +196,7 @@ public class EnterpriseViewModelTests : IDisposable
     public void GetBudgetSummary_WithBreakEven_ShowsSurplusStatus()
     {
         // Arrange
-        var enterprise = new Models.Enterprise
+        var enterprise = new EnterpriseModel
         {
             Id = 1,
             Name = "Water",
@@ -221,7 +221,7 @@ public class EnterpriseViewModelTests : IDisposable
     public void SelectedEnterprise_PropertyChanged_NotifiesCorrectly()
     {
         // Arrange
-        var enterprise = new Models.Enterprise { Id = 1, Name = "Test" };
+        var enterprise = new EnterpriseModel { Id = 1, Name = "Test" };
         var propertyChangedCalled = false;
         _viewModel.PropertyChanged += (s, e) =>
         {
@@ -241,7 +241,7 @@ public class EnterpriseViewModelTests : IDisposable
     public void Enterprises_CollectionChanged_TriggersPropertyNotifications()
     {
         // Arrange
-        var enterprise = new Models.Enterprise { Id = 1, Name = "Test" };
+        var enterprise = new EnterpriseModel { Id = 1, Name = "Test" };
         var propertyChangedEvents = new List<string>();
 
         _viewModel.PropertyChanged += (s, e) =>

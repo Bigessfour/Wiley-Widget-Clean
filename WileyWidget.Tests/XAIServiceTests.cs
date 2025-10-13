@@ -191,6 +191,16 @@ public class XAIServiceTests : IDisposable
 
     public void Dispose()
     {
-        _mockHttpClient?.Dispose();
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _mockHttpClient?.Dispose();
+            _mockHttpHandler?.Dispose();
+        }
     }
 }

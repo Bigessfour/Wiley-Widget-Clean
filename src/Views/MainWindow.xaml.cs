@@ -606,6 +606,16 @@ public partial class MainWindow : RibbonWindow
             {
                 Log.Information("Found DockingManager, subscribing to ActiveWindowChanged - ID: {WindowLoadId}", windowLoadId);
                 dockingManager.ActiveWindowChanged += OnDockingActiveWindowChanged;
+                try
+                {
+                    dockingManager.ResetState();
+                    dockingManager.UpdateLayout();
+                    Log.Information("DockingManager layout reset to default XAML configuration - ID: {WindowLoadId}", windowLoadId);
+                }
+                catch (Exception layoutEx)
+                {
+                    Log.Warning(layoutEx, "Failed to reset DockingManager layout on startup - ID: {WindowLoadId}", windowLoadId);
+                }
                 Log.Information("DockingManager configured successfully - ID: {WindowLoadId}", windowLoadId);
             }
             else

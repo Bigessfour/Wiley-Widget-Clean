@@ -44,7 +44,7 @@ public class MainViewModelTests : TestApplication
         _mockQuickBooksService.Setup(qb => qb.GetCustomersAsync())
             .ReturnsAsync(new List<Customer>());
         _mockQuickBooksService.Setup(qb => qb.GetInvoicesAsync(It.IsAny<string>()))
-            .ReturnsAsync(new List<Invoice>());
+            .ReturnsAsync(new List<Intuit.Ipp.Data.Invoice>());
 
         _viewModel = new MainViewModel(
             _mockUnitOfWork.Object,
@@ -114,7 +114,7 @@ public class MainViewModelTests : TestApplication
         Assert.NotNull(_viewModel.QuickBooksCustomers);
         Assert.IsType<ObservableCollection<Customer>>(_viewModel.QuickBooksCustomers);
         Assert.NotNull(_viewModel.QuickBooksInvoices);
-        Assert.IsType<ObservableCollection<Invoice>>(_viewModel.QuickBooksInvoices);
+        Assert.IsType<ObservableCollection<Intuit.Ipp.Data.Invoice>>(_viewModel.QuickBooksInvoices);
         Assert.NotNull(_viewModel.MunicipalAccountViewModel);
         Assert.Null(_viewModel.SelectedEnterprise);
         Assert.False(_viewModel.QuickBooksBusy);
@@ -302,10 +302,10 @@ public class MainViewModelTests : TestApplication
     public async System.Threading.Tasks.Task LoadQuickBooksInvoicesAsync_SuccessfulLoad_UpdatesCollections()
     {
         // Arrange
-        var invoices = new List<Invoice>
+        var invoices = new List<Intuit.Ipp.Data.Invoice>
         {
-            new Invoice { Id = "1", DocNumber = "INV-001" },
-            new Invoice { Id = "2", DocNumber = "INV-002" }
+            new Intuit.Ipp.Data.Invoice { Id = "1", DocNumber = "INV-001" },
+            new Intuit.Ipp.Data.Invoice { Id = "2", DocNumber = "INV-002" }
         };
         _mockQuickBooksService.Setup(qb => qb.GetInvoicesAsync(It.IsAny<string>()))
             .ReturnsAsync(invoices);

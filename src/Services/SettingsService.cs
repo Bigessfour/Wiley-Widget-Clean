@@ -1,6 +1,11 @@
 using System;
 using System.IO;
 using System.Text.Json;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using WileyWidget;
 using WileyWidget.Models;
 
 namespace WileyWidget.Services;
@@ -17,32 +22,87 @@ namespace WileyWidget.Services;
 /// </summary>
 public sealed class SettingsService : ISettingsService
 {
-    private static readonly Lazy<SettingsService> _lazy = new(() => new SettingsService());
-    public static SettingsService Instance => _lazy.Value;
+    private static readonly Lazy<SettingsService> _fallbackInstance = new(() => new SettingsService());
 
-    private string _root;
-    private string _file;
+    /// <summary>
+    /// Provides backwards-compatible access to a singleton instance sourced from the Prism/Microsoft DI container when available.
+    /// Falls back to an internal lazy instance for early-startup or test scenarios where the container has not yet been established.
+    /// </summary>
+    public static SettingsService Instance
+    {
+        get
+        {
+            var provider = App.ServiceProvider;
+            if (provider != null)
+            {
+                try
+                {
+                    var resolved = provider.GetService<SettingsService>();
+                    if (resolved != null)
+                    {
+                        return resolved;
+                    }
+                }
+                catch (ObjectDisposedException)
+                {
+                    // Container disposed during shutdown; fall back to lazy instance
+                }
+                catch (InvalidOperationException)
+                {
+                    // Container not fully built yet; fall back to lazy instance
+                }
+            }
+
+            return _fallbackInstance.Value;
+        }
+    }
+
+    private readonly IConfiguration? _configuration;
+    private readonly ILogger<SettingsService> _logger;
+
+    private string _root = string.Empty;
+    private string _file = string.Empty;
 
     public AppSettings Current { get; private set; } = new();
 
-    private SettingsService()
+    public SettingsService()
+        : this(null, NullLogger<SettingsService>.Instance)
     {
+    }
+
+    public SettingsService(IConfiguration? configuration, ILogger<SettingsService>? logger)
+    {
+        _configuration = configuration;
+        _logger = logger ?? NullLogger<SettingsService>.Instance;
         InitializePaths();
     }
 
     private void InitializePaths()
     {
-        var overrideDir = Environment.GetEnvironmentVariable("WILEYWIDGET_SETTINGS_DIR");
+        var overrideDir = _configuration?["Settings:Directory"]
+                          ?? Environment.GetEnvironmentVariable("WILEYWIDGET_SETTINGS_DIR");
+
         _root = string.IsNullOrWhiteSpace(overrideDir)
             ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "WileyWidget")
             : overrideDir;
         _file = Path.Combine(_root, "settings.json");
+
+        _logger.LogDebug("Settings directory resolved to {SettingsDirectory}.", _root);
     }
 
     public void ResetForTests()
     {
         // Don't call InitializePaths() as it would overwrite the test directory set via reflection
         Current = new AppSettings();
+    }
+
+    /// <summary>
+    /// Loads the persisted application settings and returns the in-memory instance for fluent usage.
+    /// </summary>
+    public AppSettings LoadSettings()
+    {
+        Load();
+        return Current;
     }
 
     /// <summary>
@@ -57,6 +117,7 @@ public sealed class SettingsService : ISettingsService
             {
                 Directory.CreateDirectory(_root);
                 Save();
+                _logger.LogInformation("Settings file not found. Created default settings at {SettingsFile}.", _file);
                 return;
             }
             var json = File.ReadAllText(_file);
@@ -71,8 +132,9 @@ public sealed class SettingsService : ISettingsService
                 if (Current.QuickBooksTokenExpiresUtc.HasValue)
                     Current.QboTokenExpiry = Current.QuickBooksTokenExpiresUtc.Value;
             }
+            _logger.LogDebug("Settings loaded successfully from {SettingsFile}.", _file);
         }
-        catch
+        catch (Exception ex)
         {
             // rename corrupted file and recreate
             try
@@ -81,6 +143,7 @@ public sealed class SettingsService : ISettingsService
                 {
                     var bad = _file + ".bad_" + DateTime.UtcNow.ToString("yyyyMMddHHmmss");
                     File.Move(_file, bad);
+                    _logger.LogWarning(ex, "Settings file corrupt; moved to {BackupFile} and regenerating defaults.", bad);
                 }
             }
             catch { }
@@ -101,6 +164,9 @@ public sealed class SettingsService : ISettingsService
             var json = JsonSerializer.Serialize(Current, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(_file, json);
         }
-        catch { }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to persist settings to {SettingsFile}.", _file);
+        }
     }
 }

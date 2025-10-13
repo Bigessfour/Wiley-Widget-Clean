@@ -64,6 +64,13 @@ public static class DatabaseConfiguration
             ConfigureAppDbContext(sp, options);
         });
 
+        // Provide scoped DbContext instances for services that require direct context injection
+        services.AddScoped<AppDbContext>(sp =>
+        {
+            var factory = sp.GetRequiredService<IDbContextFactory<AppDbContext>>();
+            return factory.CreateDbContext();
+        });
+
         // Add enterprise health checks
         ConfigureEnterpriseHealthChecks(services, configuration);
 
@@ -346,6 +353,9 @@ public static class DatabaseConfiguration
 
         services.TryAddSingleton<IChargeCalculatorService, ServiceChargeCalculatorService>();
         services.TryAddSingleton<IWhatIfScenarioEngine, WhatIfScenarioEngine>();
+
+        // Register Unit of Work (Clean Architecture - UI only depends on Business layer)
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         // Register health check configuration (service lifetime singleton)
         services.AddSingleton<Models.HealthCheckConfiguration>();

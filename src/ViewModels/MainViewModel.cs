@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using Serilog;
 using System;
 using System.Threading;
+using Microsoft.Extensions.DependencyInjection;
 using WileyWidget.Business.Interfaces;
 using System.Diagnostics;
 using System.Windows;
@@ -311,6 +312,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         throw new NotSupportedException("The current enterprise repository implementation does not support header mapping.");
     }
 
+    [ActivatorUtilitiesConstructor]
     public MainViewModel(
     IUnitOfWork unitOfWork,
 #pragma warning disable CS8632 // Nullable annotation is legitimate for optional QuickBooks service
