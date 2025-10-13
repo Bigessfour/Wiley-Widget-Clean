@@ -726,6 +726,9 @@ public enum CustomerType
     [Description("Industrial")]
     Industrial,
 
+    [Description("Agricultural")]
+    Agricultural,
+
     [Description("Institutional")]
     Institutional,
 

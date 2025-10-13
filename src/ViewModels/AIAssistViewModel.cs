@@ -25,7 +25,7 @@ public partial class AIAssistViewModel : ObservableObject
     public ObservableCollection<ChatMessage> ChatMessages { get; } = new();
 
     [ObservableProperty]
-    private string currentMessage = string.Empty;
+    private string messageText = string.Empty;
 
     [ObservableProperty]
     private bool isTyping = false;
@@ -35,10 +35,9 @@ public partial class AIAssistViewModel : ObservableObject
     /// </summary>
     public List<ConversationMode> AvailableModes { get; } = new()
     {
-        new ConversationMode { Name = "General Assistant", Description = "General questions and analysis", Icon = "🤖" },
-        new ConversationMode { Name = "Service Charge Calculator", Description = "Calculate recommended service charges", Icon = "💰" },
-        new ConversationMode { Name = "What-If Planner", Description = "Plan financial scenarios and upgrades", Icon = "🔮" },
-        new ConversationMode { Name = "Proactive Advisor", Description = "Anticipate needs and provide insights", Icon = "🎯" }
+        new ConversationMode { Name = "General", Description = "General questions and analysis", Icon = "🤖" },
+        new ConversationMode { Name = "WhatIf", Description = "Plan financial scenarios and upgrades", Icon = "🔮" },
+        new ConversationMode { Name = "Advisory", Description = "Anticipate needs and provide insights", Icon = "🎯" }
     };
 
     /// <summary>
@@ -90,6 +89,12 @@ public partial class AIAssistViewModel : ObservableObject
     private bool isLoading;
 
     /// <summary>
+    /// Processing state for busy indicator
+    /// </summary>
+    [ObservableProperty]
+    private bool isProcessing;
+
+    /// <summary>
     /// Status message for user feedback
     /// </summary>
     [ObservableProperty]
@@ -104,6 +109,11 @@ public partial class AIAssistViewModel : ObservableObject
     /// Messages collection for SfAIAssistView binding (alias for ChatMessages)
     /// </summary>
     public ObservableCollection<ChatMessage> Messages => ChatMessages;
+
+    /// <summary>
+    /// Conversation history for combo box
+    /// </summary>
+    public ObservableCollection<string> ConversationHistory { get; } = new() { "Budget Analysis - Q1", "Rate Increase Scenario", "Reserve Fund Planning" };
 
     /// <summary>
     /// Service charge calculator service
@@ -131,17 +141,17 @@ public partial class AIAssistViewModel : ObservableObject
     /// <summary>
     /// Send message command
     /// </summary>
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanSendMessage))]
     private async Task SendMessage()
     {
-        if (string.IsNullOrWhiteSpace(CurrentMessage))
+        if (string.IsNullOrWhiteSpace(MessageText))
         {
-            CurrentMessage = string.Empty;
+            MessageText = string.Empty;
             return;
         }
 
-        var userMessage = CurrentMessage.Trim();
-        CurrentMessage = string.Empty;
+        var userMessage = MessageText.Trim();
+        MessageText = string.Empty;
 
         // Add user message
         ChatMessages.Add(new ChatMessage
@@ -151,8 +161,9 @@ public partial class AIAssistViewModel : ObservableObject
             Timestamp = DateTime.Now
         });
 
-        // Show typing indicator
+        // Show typing indicator and processing
         IsTyping = true;
+        IsProcessing = true;
 
         try
         {
@@ -184,8 +195,11 @@ public partial class AIAssistViewModel : ObservableObject
         finally
         {
             IsTyping = false;
+            IsProcessing = false;
         }
     }
+
+    private bool CanSendMessage() => !string.IsNullOrWhiteSpace(MessageText);
 
     /// <summary>
     /// Clear chat command
@@ -333,7 +347,7 @@ public partial class AIAssistViewModel : ObservableObject
         if (SelectedMode?.Name != "What-If Planner")
             return;
 
-        if (string.IsNullOrWhiteSpace(CurrentMessage))
+        if (string.IsNullOrWhiteSpace(MessageText))
         {
             ChatMessages.Add(new ChatMessage
             {
@@ -344,8 +358,8 @@ public partial class AIAssistViewModel : ObservableObject
             return;
         }
 
-        var scenario = CurrentMessage.Trim();
-        CurrentMessage = string.Empty;
+        var scenario = MessageText.Trim();
+        MessageText = string.Empty;
 
         // Add user scenario
         ChatMessages.Add(new ChatMessage
@@ -426,8 +440,6 @@ public partial class AIAssistViewModel : ObservableObject
             var recentActivity = GetRecentActivitySummary();
             var userProfile = GetUserProfileSummary();
 
-            // Temporarily disabled due to GrokAIService compilation issues
-            // var insights = await (_aiService as dynamic)?.GenerateAnticipatoryInsightsAsync(recentActivity, userProfile);
             var insights = new LocalAnticipatoryInsights
             {
                 RecentActivity = recentActivity,

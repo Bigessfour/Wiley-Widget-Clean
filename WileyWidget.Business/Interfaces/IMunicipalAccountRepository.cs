@@ -60,7 +60,7 @@ public interface IMunicipalAccountRepository
     /// <summary>
     /// Gets accounts filtered by fund type.
     /// </summary>
-    System.Threading.Tasks.Task<IEnumerable<MunicipalAccount>> GetByFundAsync(FundType fund);
+    System.Threading.Tasks.Task<IEnumerable<MunicipalAccount>> GetByFundAsync(MunicipalFundType fund);
 
     /// <summary>
     /// Gets accounts filtered by account type.

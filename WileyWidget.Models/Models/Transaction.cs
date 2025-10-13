@@ -2,13 +2,14 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using WileyWidget.Models.Entities;
 
 namespace WileyWidget.Models;
 
 /// <summary>
-/// Represents a financial transaction against a municipal account
+/// Represents a financial transaction against a budget entry
 /// </summary>
-public class Transaction
+public class Transaction : IAuditable
 {
     /// <summary>
     /// Unique identifier for the transaction
@@ -17,11 +18,12 @@ public class Transaction
     public int Id { get; set; }
 
     /// <summary>
-    /// The municipal account this transaction belongs to
+    /// The budget entry this transaction belongs to
     /// </summary>
     [Required]
-    public int MunicipalAccountId { get; set; }
-    public MunicipalAccount? MunicipalAccount { get; set; }
+    public int BudgetEntryId { get; set; }
+    [ForeignKey("BudgetEntryId")]
+    public BudgetEntry BudgetEntry { get; set; } = null!;
 
     /// <summary>
     /// Transaction amount
@@ -47,7 +49,12 @@ public class Transaction
     /// Transaction type
     /// </summary>
     [Required]
-    public TransactionType Type { get; set; } = TransactionType.Debit;
+    [StringLength(50)]
+    public string Type { get; set; } = string.Empty; // e.g., "Payment", "Adjustment"
+
+    // Auditing
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? UpdatedAt { get; set; }
 }
 
 /// <summary>

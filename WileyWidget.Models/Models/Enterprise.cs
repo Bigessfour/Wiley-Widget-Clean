@@ -20,7 +20,7 @@ public enum EnterpriseStatus
 /// Represents a municipal enterprise (Water, Sewer, Trash, Apartments)
 /// Implements audit tracking and soft delete for compliance
 /// </summary>
-public class Enterprise : INotifyPropertyChanged, IAuditable, ISoftDeletable
+public class Enterprise : INotifyPropertyChanged, ISoftDeletable
 {
     /// <summary>
     /// Property changed event for data binding
@@ -285,7 +285,8 @@ public class Enterprise : INotifyPropertyChanged, IAuditable, ISoftDeletable
     /// <summary>
     /// Navigation property for budget interactions
     /// </summary>
-    public virtual ICollection<BudgetInteraction> BudgetInteractions { get; set; } = new List<BudgetInteraction>();
+    // Removed: Ambiguous relationship - use BudgetInteraction.PrimaryEnterprise/SecondaryEnterprise instead
+    // public virtual ICollection<BudgetInteraction> BudgetInteractions { get; set; } = new List<BudgetInteraction>();
 
     /// <summary>
     /// Calculated property: Monthly deficit/surplus (Revenue - Expenses)

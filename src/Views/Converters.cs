@@ -134,3 +134,71 @@ public class StatusToColorConverter : IValueConverter
         return DependencyProperty.UnsetValue;
     }
 }
+
+/// <summary>
+/// Converts balance values to appropriate colors based on positive/negative values.
+/// </summary>
+public class BalanceColorConverter : IValueConverter
+{
+    /// <summary>
+    /// Converts a numeric balance to a color brush.
+    /// </summary>
+    /// <param name="value">The balance value (decimal or double).</param>
+    /// <param name="targetType">The target type.</param>
+    /// <param name="parameter">Optional parameter: "Light" for background, "Negative" for negative check.</param>
+    /// <param name="culture">The culture.</param>
+    /// <returns>Color brush based on balance value.</returns>
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value == null)
+            return new SolidColorBrush(Color.FromRgb(185, 200, 236)); // Neutral gray-blue
+
+        decimal balance = 0;
+        if (value is decimal dec)
+            balance = dec;
+        else if (value is double dbl)
+            balance = (decimal)dbl;
+        else if (value is int intVal)
+            balance = intVal;
+        else if (decimal.TryParse(value.ToString(), out var parsed))
+            balance = parsed;
+
+        var param = parameter?.ToString() ?? string.Empty;
+
+        // Handle special parameters
+        if (param == "PositiveVisibility")
+            return balance > 0 ? Visibility.Visible : Visibility.Collapsed;
+        
+        if (param == "NegativeVisibility")
+            return balance < 0 ? Visibility.Visible : Visibility.Collapsed;
+        
+        if (param == "Negative")
+            return balance < 0 ? "Negative" : "Positive";
+
+        // Light background colors for cells
+        if (param == "Light")
+        {
+            if (balance > 0)
+                return new SolidColorBrush(Color.FromArgb(26, 74, 222, 128)); // Light green
+            if (balance < 0)
+                return new SolidColorBrush(Color.FromArgb(26, 248, 113, 113)); // Light red
+            return new SolidColorBrush(Color.FromArgb(26, 59, 130, 246)); // Light blue
+        }
+
+        // Standard foreground colors
+        if (balance > 0)
+            return new SolidColorBrush(Color.FromRgb(74, 222, 128)); // Green
+        if (balance < 0)
+            return new SolidColorBrush(Color.FromRgb(248, 113, 113)); // Red
+        
+        return new SolidColorBrush(Color.FromRgb(185, 200, 236)); // Neutral gray-blue
+    }
+
+    /// <summary>
+    /// ConvertBack is not supported for this converter.
+    /// </summary>
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        return DependencyProperty.UnsetValue;
+    }
+}

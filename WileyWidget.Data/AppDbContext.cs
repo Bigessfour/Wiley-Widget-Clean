@@ -1,867 +1,163 @@
 #nullable enable
 
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
-using System;
-using System.Diagnostics;
-using System.Security.Cryptography;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 using WileyWidget.Models;
-using WileyWidget.Models.Validators;
+using WileyWidget.Models.Entities;
 
-namespace WileyWidget.Data;
-
-/// <summary>
-/// Application database context for Entity Framework Core
-/// Configures database schema and provides access to entity sets
-/// </summary>
-public class AppDbContext : DbContext, IAppDbContext
+public class AppDbContext : DbContext
 {
-    /// <summary>
-    /// DbSet for Enterprise entities (Water, Sewer, Trash, Apartments)
-    /// </summary>
-    public virtual DbSet<Enterprise> Enterprises { get; set; }
+    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
-    /// <summary>
-    /// DbSet for BudgetInteraction entities (shared costs between enterprises)
-    /// </summary>
-    public virtual DbSet<BudgetInteraction> BudgetInteractions { get; set; }
-
-    /// <summary>
-    /// DbSet for OverallBudget entities (municipal budget snapshots)
-    /// </summary>
-    public virtual DbSet<OverallBudget> OverallBudgets { get; set; }
-
-    /// <summary>
-    /// DbSet for MunicipalAccount entities (governmental accounting accounts)
-    /// </summary>
-    public virtual DbSet<MunicipalAccount> MunicipalAccounts { get; set; }
-
-    /// <summary>
-    /// DbSet for Department entities (municipal departments)
-    /// </summary>
-    public virtual DbSet<Department> Departments { get; set; }
-
-    /// <summary>
-    /// DbSet for BudgetPeriod entities (multi-year budget tracking)
-    /// </summary>
-    public virtual DbSet<BudgetPeriod> BudgetPeriods { get; set; }
-
-    /// <summary>
-    /// DbSet for BudgetEntry entities (individual budget line items)
-    /// </summary>
-    public virtual DbSet<BudgetEntry> BudgetEntries { get; set; }
-
-    /// <summary>
-    /// DbSet for UtilityCustomer entities (municipal utility customers)
-    /// </summary>
-    public virtual DbSet<UtilityCustomer> UtilityCustomers { get; set; }
-
-    /// <summary>
-    /// DbSet for Widget entities
-    /// </summary>
-    public virtual DbSet<Widget> Widgets { get; set; }
-
-    /// <summary>
-    /// DbSet for FiscalYearSettings entities (global fiscal year configuration)
-    /// </summary>
-    public virtual DbSet<FiscalYearSettings> FiscalYearSettings { get; set; }
-
-    /// <summary>
-    /// DbSet for AppSettings entities (user application settings)
-    /// </summary>
-    public virtual DbSet<AppSettings> AppSettings { get; set; }
-
-    /// <summary>
-    /// DbSet for Transaction entities (financial transactions)
-    /// </summary>
-    public virtual DbSet<Transaction> Transactions { get; set; }
-
-    /// <summary>
-    /// DbSet for Vendor entities (suppliers/vendors)
-    /// </summary>
-    public virtual DbSet<Vendor> Vendors { get; set; }
-
-    /// <summary>
-    /// DbSet for Invoice entities (vendor invoices)
-    /// </summary>
-    public virtual DbSet<Invoice> Invoices { get; set; }
-
-    private readonly ILogger<AppDbContext>? _logger;
-    private readonly AccountTypeValidator? _accountTypeValidator;
-
-    /// <summary>
-    /// Constructor for dependency injection
-    /// </summary>
-    public AppDbContext(DbContextOptions<AppDbContext> options, ILogger<AppDbContext>? logger = null)
-        : base(options)
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        _logger = logger;
-        _accountTypeValidator = new AccountTypeValidator();
+        if (!optionsBuilder.IsConfigured)
+        {
+            // Only configure if not already configured
+            optionsBuilder.ConfigureWarnings(warnings =>
+                warnings.Ignore(RelationalEventId.PendingModelChangesWarning));
+        }
+        base.OnConfiguring(optionsBuilder);
     }
 
-    /// <summary>
-    /// Parameterless constructor for testing/mocking
-    /// </summary>
-    protected AppDbContext()
-    {
-    }
+    public DbSet<MunicipalAccount> MunicipalAccounts { get; set; }
+    public DbSet<Department> Departments { get; set; }
+    public DbSet<BudgetEntry> BudgetEntries { get; set; }
+    public DbSet<Fund> Funds { get; set; }
+    public DbSet<Transaction> Transactions { get; set; } // New
+    public DbSet<Enterprise> Enterprises { get; set; } // New
+    public DbSet<AppSettings> AppSettings { get; set; } // New
+    public DbSet<FiscalYearSettings> FiscalYearSettings { get; set; } // New
+    public DbSet<UtilityCustomer> UtilityCustomers { get; set; } // New
 
-    /// <summary>
-    /// Configures the model and relationships
-    /// </summary>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
-        // Configure RowVersion for all database providers
-        ConfigureRowVersion(modelBuilder, Database.IsSqlite());
-
-        // Configure value converter for AccountNumber value object
-        modelBuilder.Entity<MunicipalAccount>()
-            .Property(ma => ma.AccountNumber)
-            .HasConversion(
-                accountNumber => accountNumber.Value,
-                value => new AccountNumber(value)
-            )
-            .IsRequired()
-            .HasMaxLength(20);
-
-        // Configure Enterprise entity
-        modelBuilder.Entity<Enterprise>(entity =>
+        // BudgetEntry (updated)
+        modelBuilder.Entity<BudgetEntry>(entity =>
         {
-            // Table name
-            entity.ToTable("Enterprises");
-
-            // Primary key
-            entity.HasKey(e => e.Id);
-
-            // Property configurations
-            entity.Property(e => e.Name)
-                .IsRequired()
-                .HasMaxLength(100);
-
-            entity.Property(e => e.CurrentRate)
-                .HasColumnType("decimal(18,2)")
-                .IsRequired();
-
-            entity.Property(e => e.MonthlyExpenses)
-                .HasColumnType("decimal(18,2)")
-                .IsRequired();
-
-            entity.Property(e => e.CitizenCount)
-                .IsRequired();
-
-            entity.Property(e => e.Notes)
-                .HasMaxLength(500);
-
-            // Concurrency token - configured by ConfigureRowVersion for all providers
-            entity.Property(e => e.RowVersion)
-                .IsConcurrencyToken();
-
-            // Indexes for performance
-            entity.HasIndex(e => e.Name).IsUnique();
+            entity.HasOne(e => e.Parent)
+                  .WithMany(e => e.Children)
+                  .HasForeignKey(e => e.ParentId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(e => e.ParentId);
+            entity.HasIndex(e => new { e.AccountNumber, e.FiscalYear }).IsUnique();
+            entity.HasIndex(e => e.SourceRowNumber); // New: Excel import queries
+            entity.HasIndex(e => e.ActivityCode); // New: GASB reporting
+            entity.Property(e => e.BudgetedAmount).HasColumnType("decimal(18,2)").HasDefaultValue(0);
+            entity.Property(e => e.ActualAmount).HasColumnType("decimal(18,2)");
+            entity.Property(e => e.EncumbranceAmount).HasColumnType("decimal(18,2)");
+            entity.Property(e => e.SourceFilePath).HasMaxLength(500);
+            entity.Property(e => e.ActivityCode).HasMaxLength(10);
+            entity.ToTable(t => t.HasCheckConstraint("CK_Budget_Positive", "[BudgetedAmount] > 0"));
         });
 
-        // Configure relationships to avoid convention ambiguity
-        modelBuilder.Entity<Enterprise>()
-            .HasMany(e => e.BudgetInteractions)
-            .WithOne(bi => bi.PrimaryEnterprise)
-            .HasForeignKey(bi => bi.PrimaryEnterpriseId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        // Configure BudgetInteraction entity
-        modelBuilder.Entity<BudgetInteraction>(entity =>
-        {
-            // Table name
-            entity.ToTable("BudgetInteractions");
-
-            // Primary key
-            entity.HasKey(bi => bi.Id);
-
-            // Secondary enterprise relationship (no inverse navigation)
-            entity.HasOne(bi => bi.SecondaryEnterprise)
-                .WithMany()  // Explicitly no inverse relationship
-                .HasForeignKey(bi => bi.SecondaryEnterpriseId)
-                .OnDelete(DeleteBehavior.Restrict)
-                .IsRequired(false);
-
-            // Property configurations
-            entity.Property(bi => bi.InteractionType)
-                .IsRequired()
-                .HasMaxLength(50);
-
-            entity.Property(bi => bi.Description)
-                .IsRequired()
-                .HasMaxLength(200);
-
-            entity.Property(bi => bi.MonthlyAmount)
-                .HasColumnType("decimal(18,2)")
-                .IsRequired();
-
-            entity.Property(bi => bi.IsCost)
-                .IsRequired()
-                .HasDefaultValue(true);
-
-            entity.Property(bi => bi.Notes)
-                .HasMaxLength(300);
-
-            // Indexes for performance
-            entity.HasIndex(bi => bi.PrimaryEnterpriseId);
-            entity.HasIndex(bi => bi.SecondaryEnterpriseId);
-            entity.HasIndex(bi => bi.InteractionType);
-        });
-
-        // Configure OverallBudget entity
-        modelBuilder.Entity<OverallBudget>(entity =>
-        {
-            // Table name
-            entity.ToTable("OverallBudgets");
-
-            // Primary key
-            entity.HasKey(ob => ob.Id);
-
-            // Property configurations
-            entity.Property(ob => ob.SnapshotDate)
-                .IsRequired()
-                .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-            entity.Property(ob => ob.TotalMonthlyRevenue)
-                .HasColumnType("decimal(18,2)")
-                .IsRequired();
-
-            entity.Property(ob => ob.TotalMonthlyExpenses)
-                .HasColumnType("decimal(18,2)")
-                .IsRequired();
-
-            entity.Property(ob => ob.TotalMonthlyBalance)
-                .HasColumnType("decimal(18,2)");
-
-            entity.Property(ob => ob.TotalCitizensServed)
-                .IsRequired();
-
-            entity.Property(ob => ob.AverageRatePerCitizen)
-                .HasColumnType("decimal(18,2)");
-
-            entity.Property(ob => ob.Notes)
-                .HasMaxLength(500);
-
-            entity.Property(ob => ob.IsCurrent)
-                .IsRequired()
-                .HasDefaultValue(false);
-
-            // Ensure only one current budget snapshot
-            entity.HasIndex(ob => ob.IsCurrent)
-                .IsUnique()
-                .HasFilter("IsCurrent = 1");
-
-            // Indexes for performance
-            entity.HasIndex(ob => ob.SnapshotDate);
-        });
-
-        // Configure MunicipalAccount entity
-        modelBuilder.Entity<MunicipalAccount>(entity =>
-        {
-            // Table name
-            entity.ToTable("MunicipalAccounts");
-
-            // Primary key
-            entity.HasKey(ma => ma.Id);
-
-            // Property configurations
-            entity.Property(ma => ma.Name)
-                .IsRequired()
-                .HasMaxLength(100);
-
-            entity.Property(ma => ma.Type)
-                .IsRequired()
-                .HasConversion<string>();
-
-            entity.Property(ma => ma.Fund)
-                .IsRequired()
-                .HasConversion<string>();
-
-            entity.Property(ma => ma.FundClass)
-                .IsRequired()
-                .HasConversion<string>();
-
-            entity.Property(ma => ma.Balance)
-                .HasColumnType("decimal(18,2)")
-                .HasDefaultValue(0);
-
-            entity.Property(ma => ma.BudgetAmount)
-                .HasColumnType("decimal(18,2)")
-                .HasDefaultValue(0);
-
-            entity.Property(ma => ma.IsActive)
-                .IsRequired()
-                .HasDefaultValue(true);
-
-            entity.Property(ma => ma.QuickBooksId)
-                .HasMaxLength(50);
-
-            entity.Property(ma => ma.Notes)
-                .HasMaxLength(200);
-
-            // Indexes for performance
-            entity.HasIndex("AccountNumber").IsUnique();
-            entity.HasIndex(ma => ma.Type);
-            entity.HasIndex(ma => ma.Fund);
-            entity.HasIndex(ma => ma.IsActive);
-            entity.HasIndex(ma => ma.QuickBooksId);
-        });
-
-        // Configure Department entity
+        // Department hierarchy
         modelBuilder.Entity<Department>(entity =>
         {
-            // Table name
-            entity.ToTable("Departments");
-
-            // Primary key
-            entity.HasKey(d => d.Id);
-
-            // Property configurations
-            entity.Property(d => d.Code)
-                .IsRequired()
-                .HasMaxLength(20);
-
-            entity.Property(d => d.Name)
-                .IsRequired()
-                .HasMaxLength(100);
-
-            entity.Property(d => d.Fund)
-                .IsRequired()
-                .HasConversion<string>();
-
-            // Self-referencing relationship for parent-child hierarchy
-            entity.HasOne(d => d.ParentDepartment)
-                .WithMany(d => d.ChildDepartments)
-                .HasForeignKey(d => d.ParentDepartmentId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            // Indexes for performance
-            entity.HasIndex(d => d.Code).IsUnique();
-            entity.HasIndex(d => d.Name);
-            entity.HasIndex(d => d.Fund);
-            entity.HasIndex(d => d.ParentDepartmentId);
+            entity.HasOne(e => e.Parent)
+                  .WithMany(e => e.Children)
+                  .HasForeignKey(e => e.ParentId)
+                  .OnDelete(DeleteBehavior.Restrict);
+            entity.HasIndex(e => e.DepartmentCode).IsUnique(); // New: Unique code
         });
 
-        // Configure BudgetPeriod entity
-        modelBuilder.Entity<BudgetPeriod>(entity =>
+        // Fund relations
+        modelBuilder.Entity<Fund>(entity =>
         {
-            // Table name
-            entity.ToTable("BudgetPeriods");
-
-            // Primary key
-            entity.HasKey(bp => bp.Id);
-
-            // Property configurations
-            entity.Property(bp => bp.Year)
-                .IsRequired();
-
-            entity.Property(bp => bp.Name)
-                .IsRequired()
-                .HasMaxLength(100);
-
-            entity.Property(bp => bp.CreatedDate)
-                .IsRequired();
-
-            entity.Property(bp => bp.Status)
-                .IsRequired()
-                .HasConversion<string>();
-
-            // Indexes for performance
-            entity.HasIndex(bp => bp.Year);
-            entity.HasIndex(bp => bp.Status);
-            entity.HasIndex(bp => new { bp.Year, bp.Status });
+            entity.HasMany(f => f.BudgetEntries)
+                  .WithOne(be => be.Fund)
+                  .HasForeignKey(be => be.FundId)
+                  .OnDelete(DeleteBehavior.SetNull);
         });
 
-        // Configure relationships for MunicipalAccount
-        modelBuilder.Entity<MunicipalAccount>()
-            .HasOne(ma => ma.Department)
-            .WithMany(d => d.Accounts)
-            .HasForeignKey(ma => ma.DepartmentId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        modelBuilder.Entity<MunicipalAccount>()
-            .HasOne(ma => ma.ParentAccount)
-            .WithMany(ma => ma.ChildAccounts)
-            .HasForeignKey(ma => ma.ParentAccountId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        modelBuilder.Entity<MunicipalAccount>()
-            .HasOne(ma => ma.BudgetPeriod)
-            .WithMany(bp => bp.Accounts)
-            .HasForeignKey(ma => ma.BudgetPeriodId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        // Configure UtilityCustomer entity
-        modelBuilder.Entity<UtilityCustomer>(entity =>
+        // New: Transaction
+        modelBuilder.Entity<Transaction>(entity =>
         {
-            entity.ToTable("UtilityCustomers");
-
-            entity.Property(uc => uc.AccountNumber)
-                .IsRequired()
-                .HasMaxLength(20);
-
-            entity.Property(uc => uc.FirstName)
-                .IsRequired()
-                .HasMaxLength(50);
-
-            entity.Property(uc => uc.LastName)
-                .IsRequired()
-                .HasMaxLength(50);
-
-            entity.Property(uc => uc.CompanyName)
-                .HasMaxLength(100);
-
-            entity.Property(uc => uc.ServiceAddress)
-                .IsRequired()
-                .HasMaxLength(200);
-
-            entity.Property(uc => uc.ServiceCity)
-                .IsRequired()
-                .HasMaxLength(50);
-
-            entity.Property(uc => uc.ServiceState)
-                .IsRequired()
-                .HasMaxLength(2);
-
-            entity.Property(uc => uc.ServiceZipCode)
-                .IsRequired()
-                .HasMaxLength(10);
-
-            entity.Property(uc => uc.MailingAddress)
-                .HasMaxLength(200);
-
-            entity.Property(uc => uc.MailingCity)
-                .HasMaxLength(50);
-
-            entity.Property(uc => uc.MailingState)
-                .HasMaxLength(2);
-
-            entity.Property(uc => uc.MailingZipCode)
-                .HasMaxLength(10);
-
-            entity.Property(uc => uc.PhoneNumber)
-                .HasMaxLength(15);
-
-            entity.Property(uc => uc.EmailAddress)
-                .HasMaxLength(100);
-
-            entity.Property(uc => uc.MeterNumber)
-                .HasMaxLength(20);
-
-            entity.Property(uc => uc.CustomerType)
-                .IsRequired()
-                .HasConversion<string>();
-
-            entity.Property(uc => uc.ServiceLocation)
-                .IsRequired()
-                .HasConversion<string>();
-
-            entity.Property(uc => uc.Status)
-                .IsRequired()
-                .HasConversion<string>()
-                .HasDefaultValue(CustomerStatus.Active);
-
-            entity.Property(uc => uc.AccountOpenDate)
-                .IsRequired()
-                .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-            entity.Property(uc => uc.CurrentBalance)
-                .HasColumnType("decimal(18,2)")
-                .HasDefaultValue(0);
-
-            entity.Property(uc => uc.TaxId)
-                .HasMaxLength(20);
-
-            entity.Property(uc => uc.BusinessLicenseNumber)
-                .HasMaxLength(20);
-
-            entity.Property(uc => uc.Notes)
-                .HasMaxLength(500);
-
-            entity.Property(uc => uc.CreatedDate)
-                .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-            entity.Property(uc => uc.LastModifiedDate)
-                .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-            // Indexes for performance
-            entity.HasIndex(uc => uc.AccountNumber).IsUnique();
-            entity.HasIndex(uc => uc.CustomerType);
-            entity.HasIndex(uc => uc.ServiceLocation);
-            entity.HasIndex(uc => uc.Status);
-            entity.HasIndex(uc => uc.MeterNumber);
-            entity.HasIndex(uc => uc.EmailAddress);
-
-            // Concurrency token
-            entity.Property(uc => uc.RowVersion)
-                .IsRowVersion()
-                .IsConcurrencyToken();
+            entity.HasOne(t => t.BudgetEntry)
+                  .WithMany(be => be.Transactions)
+                  .HasForeignKey(t => t.BudgetEntryId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(t => t.TransactionDate);
+            entity.Property(t => t.Amount).HasColumnType("decimal(18,2)");
+            entity.Property(t => t.Type).HasMaxLength(50);
+            entity.Property(t => t.Description).HasMaxLength(200);
+            entity.ToTable(t => t.HasCheckConstraint("CK_Transaction_NonZero", "[Amount] != 0"));
         });
 
-        // Configure Widget entity
-        modelBuilder.Entity<Widget>(entity =>
+        // New: BudgetInteraction relationships
+        modelBuilder.Entity<BudgetInteraction>(entity =>
         {
-            // Table name
-            entity.ToTable("Widgets");
-
-            // Primary key
-            entity.HasKey(w => w.Id);
-
-            // Property configurations
-            entity.Property(w => w.Name)
-                .IsRequired()
-                .HasMaxLength(100);
-
-            entity.Property(w => w.Description)
-                .HasMaxLength(500);
-
-            entity.Property(w => w.Price)
-                .HasColumnType("decimal(18,2)")
-                .IsRequired();
-
-            entity.Property(w => w.Quantity)
-                .IsRequired()
-                .HasDefaultValue(0);
-
-            entity.Property(w => w.IsActive)
-                .IsRequired()
-                .HasDefaultValue(true);
-
-            entity.Property(w => w.CreatedDate)
-                .IsRequired()
-                .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-            entity.Property(w => w.ModifiedDate)
-                .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-            entity.Property(w => w.Category)
-                .HasMaxLength(50);
-
-            entity.Property(w => w.SKU)
-                .HasMaxLength(20);
-
-            // Concurrency token
-            entity.Property(w => w.RowVersion)
-                .IsRowVersion()
-                .IsConcurrencyToken();
-
-            // Indexes for performance
-            entity.HasIndex(w => w.Name);
-            entity.HasIndex(w => w.Category);
-            entity.HasIndex(w => w.CreatedDate);
-            entity.HasIndex(w => w.IsActive);
-            entity.HasIndex(w => w.SKU)
-                .IsUnique()
-                .HasFilter("[SKU] IS NOT NULL");
+            entity.HasOne(bi => bi.PrimaryEnterprise)
+                  .WithMany() // No inverse navigation
+                  .HasForeignKey(bi => bi.PrimaryEnterpriseId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(bi => bi.SecondaryEnterprise)
+                  .WithMany() // No inverse navigation
+                  .HasForeignKey(bi => bi.SecondaryEnterpriseId)
+                  .OnDelete(DeleteBehavior.SetNull);
+            entity.HasIndex(bi => bi.PrimaryEnterpriseId);
+            entity.HasIndex(bi => bi.SecondaryEnterpriseId);
+            entity.Property(bi => bi.MonthlyAmount).HasColumnType("decimal(18,2)");
+            entity.Property(bi => bi.InteractionType).HasMaxLength(50);
+            entity.Property(bi => bi.Description).HasMaxLength(200);
+            entity.Property(bi => bi.Notes).HasMaxLength(300);
         });
 
-        // Seed data - moved to DatabaseSeeder for runtime seeding
-        // modelBuilder.Entity<Enterprise>().HasData(
-        //     new Enterprise
-        //     {
-        //         Id = 1,
-        //         Name = "Water Utility",
-        //         Type = "Utility",
-        //         CurrentRate = 25.00M,
-        //         MonthlyExpenses = 15000.00M,
-        //         CitizenCount = 2500,
-        //         TotalBudget = 180000.00M,
-        //         Notes = "Municipal water service",
-        //         RowVersion = new byte[] { 0, 0, 0, 0, 0, 0, 0, 1 }
-        //     },
-        //     new Enterprise
-        //     {
-        //         Id = 2,
-        //         Name = "Sewer Service",
-        //         Type = "Utility",
-        //         CurrentRate = 35.00M,
-        //         MonthlyExpenses = 22000.00M,
-        //         CitizenCount = 2500,
-        //         TotalBudget = 264000.00M,
-        //         Notes = "Wastewater treatment and sewer service",
-        //         RowVersion = new byte[] { 0, 0, 0, 0, 0, 0, 0, 2 }
-        //     },
-        //     new Enterprise
-        //     {
-        //         Id = 3,
-        //         Name = "Trash Collection",
-        //         Type = "Service",
-        //         CurrentRate = 15.00M,
-        //         MonthlyExpenses = 8000.00M,
-        //         CitizenCount = 2500,
-        //         TotalBudget = 96000.00M,
-        //         Notes = "Residential and commercial waste collection",
-        //         RowVersion = new byte[] { 0, 0, 0, 0, 0, 0, 0, 3 }
-        //     },
-        //     new Enterprise
-        //     {
-        //         Id = 4,
-        //         Name = "Municipal Apartments",
-        //         Type = "Housing",
-        //         CurrentRate = 450.00M,
-        //         MonthlyExpenses = 12000.00M,
-        //         CitizenCount = 150,
-        //         TotalBudget = 144000.00M,
-        //         Notes = "Low-income housing units",
-        //         RowVersion = new byte[] { 0, 0, 0, 0, 0, 0, 0, 4 }
-        //     }
+        // Auditing
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes()
+            .Where(e => typeof(WileyWidget.Models.Entities.IAuditable).IsAssignableFrom(e.ClrType)))
+        {
+            modelBuilder.Entity(entityType.ClrType).Property("CreatedAt").HasDefaultValueSql("GETUTCDATE()");
+            modelBuilder.Entity(entityType.ClrType).Property("UpdatedAt").ValueGeneratedOnAddOrUpdate();
+        }
+
+        // Seed sample data (from TOW/WSD Excel structure) - MOVED TO UseSeeding
+        // modelBuilder.Entity<Fund>().HasData(
+        //     new Fund { Id = 1, FundCode = "100", Name = "General Fund", Type = FundType.GeneralFund },
+        //     new Fund { Id = 2, FundCode = "200", Name = "Utility Fund", Type = FundType.EnterpriseFund }
         // );
-
-        // Seed data - moved to DatabaseSeeder for runtime seeding
-        // modelBuilder.Entity<Widget>().HasData(
-        //     new Widget
-        //     {
-        //         Id = 1,
-        //         Name = "Rate Calculator",
-        //         Description = "Calculate utility rates based on usage and budget",
-        //         Category = "Calculator",
-        //         SKU = "WW-RATE-CALC",
-        //         Price = 0.00M,
-        //         IsActive = true,
-        //         CreatedDate = new DateTime(2025, 9, 27, 0, 0, 0, DateTimeKind.Utc),
-        //         ModifiedDate = new DateTime(2025, 9, 27, 0, 0, 0, DateTimeKind.Utc),
-        //         RowVersion = new byte[] { 0, 0, 0, 0, 0, 0, 0, 5 }
-        //     },
-        //     new Widget
-        //     {
-        //         Id = 2,
-        //         Name = "Budget Analyzer",
-        //         Description = "Analyze municipal budget allocations and expenses",
-        //         Category = "Analyzer",
-        //         SKU = "WW-BUDGET-ANALYZER",
-        //         Price = 0.00M,
-        //         IsActive = true,
-        //         CreatedDate = new DateTime(2025, 9, 27, 0, 0, 0, DateTimeKind.Utc),
-        //         ModifiedDate = new DateTime(2025, 9, 27, 0, 0, 0, DateTimeKind.Utc),
-        //         RowVersion = new byte[] { 0, 0, 0, 0, 0, 0, 0, 6 }
-        //     },
-        //     new Widget
-        //     {
-        //         Id = 3,
-        //         Name = "Configuration Manager",
-        //         Description = "Manage application settings and configurations",
-        //         Category = "Management",
-        //         SKU = "WW-CONFIG-MGR",
-        //         Price = 0.00M,
-        //         IsActive = true,
-        //         CreatedDate = new DateTime(2025, 9, 27, 0, 0, 0, DateTimeKind.Utc),
-        //         ModifiedDate = new DateTime(2025, 9, 27, 0, 0, 0, DateTimeKind.Utc),
-        //         RowVersion = new byte[] { 0, 0, 0, 0, 0, 0, 0, 7 }
-        //     }
+        // modelBuilder.Entity<Department>().HasData(
+        //     new Department { Id = 1, Name = "Public Works", DepartmentCode = "DPW" },
+        //     new Department { Id = 2, Name = "Sanitation", DepartmentCode = "SAN", ParentId = 1 }
+        // );
+        // modelBuilder.Entity<BudgetEntry>().HasData(
+        //     new BudgetEntry { Id = 1, AccountNumber = "405", Description = "Road Maintenance", BudgetedAmount = 50000, FiscalYear = 2026, DepartmentId = 1, FundId = 1, ActivityCode = "GOV" },
+        //     new BudgetEntry { Id = 2, AccountNumber = "405.1", Description = "Paving", BudgetedAmount = 20000, FiscalYear = 2026, ParentId = 1, DepartmentId = 1, FundId = 1, ActivityCode = "GOV" }
+        // );
+        // modelBuilder.Entity<Transaction>().HasData(
+        //     new Transaction { Id = 1, BudgetEntryId = 1, Amount = 10000, Type = "Payment", TransactionDate = new DateTime(2025, 10, 13, 12, 0, 0, DateTimeKind.Utc), Description = "Initial payment for road work" }
         // );
     }
 
-    /// <summary>
-    /// Configures database context options
-    /// </summary>
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    // Hierarchy query for UI (e.g., BudgetView SfTreeGrid)
+    public IQueryable<BudgetEntry> GetBudgetHierarchy(int fiscalYear)
     {
-        base.OnConfiguring(optionsBuilder);
-
-    EnsureDevelopmentSqlServerTrust();
-
-        // Enable sensitive data logging in development only
-        if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development")
-        {
-            optionsBuilder.EnableSensitiveDataLogging();
-        }
-
-        // Add detailed EF Core query logging
-        optionsBuilder.LogTo(message => _logger?.LogInformation("EF Core: {Message}", message),
-            new[] { Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.CommandExecuted });
-
-        // Configure query tracking and other behaviors
-        optionsBuilder.ConfigureWarnings(warnings =>
-        {
-            // Suppress common warnings that are expected
-            warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.MultipleCollectionIncludeWarning);
-            // Suppress pending model changes warning for seeding data
-            warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning);
-        });
+        return BudgetEntries
+            .Include(be => be.Parent)
+            .Include(be => be.Children)
+            .Include(be => be.Department)
+            .Include(be => be.Fund)
+            .Where(be => be.FiscalYear == fiscalYear)
+            .AsNoTracking();
     }
 
-    private void EnsureDevelopmentSqlServerTrust()
+    // New: Transaction query for UI (e.g., MunicipalAccountView)
+    public IQueryable<Transaction> GetTransactionsForBudget(int budgetEntryId)
     {
-        var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
-        if (!string.Equals(environment, "Development", StringComparison.OrdinalIgnoreCase))
-        {
-            return;
-        }
-
-        try
-        {
-            var connection = Database.GetDbConnection();
-            if (connection is not SqlConnection sqlConnection)
-            {
-                return;
-            }
-
-            var builder = new SqlConnectionStringBuilder(sqlConnection.ConnectionString);
-            if (!builder.ContainsKey("TrustServerCertificate") || !builder.TrustServerCertificate)
-            {
-                builder.TrustServerCertificate = true;
-                // Preserve existing Encrypt setting when present; default to true for secure local dev traffic
-                if (!builder.ContainsKey("Encrypt"))
-                {
-                    builder.Encrypt = true;
-                }
-
-                sqlConnection.ConnectionString = builder.ConnectionString;
-            }
-        }
-        catch (InvalidOperationException)
-        {
-            // Non-relational provider; no action required
-        }
+        return Transactions
+            .Include(t => t.BudgetEntry)
+            .Where(t => t.BudgetEntryId == budgetEntryId)
+            .OrderByDescending(t => t.TransactionDate)
+            .AsNoTracking();
     }
 
-    /// <summary>
-    /// Validates GASB compliance for MunicipalAccount changes before saving.
-    /// </summary>
-    private void ValidateGASBCompliance()
+    // New: Excel import validation query
+    public IQueryable<BudgetEntry> GetBudgetEntriesBySource(string sourceFilePath, int? rowNumber = null)
     {
-        if (_accountTypeValidator == null)
-            return;
-
-        // Get all MunicipalAccount entries that are being added or modified
-        var municipalAccountEntries = ChangeTracker.Entries<MunicipalAccount>()
-            .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified)
-            .Select(e => e.Entity)
-            .ToList();
-
-        if (!municipalAccountEntries.Any())
-            return;
-
-        // Validate only the changed accounts - no need to load all accounts from database
-        var validationResult = _accountTypeValidator.ValidateAccountTypeCompliance(municipalAccountEntries);
-
-        if (!validationResult.IsValid)
-        {
-            var errorMessage = $"GASB compliance validation failed: {string.Join("; ", validationResult.Errors)}";
-            _logger?.LogError("GASB validation failed: {Errors}", string.Join("; ", validationResult.Errors));
-            throw new InvalidOperationException(errorMessage);
-        }
-
-        if (validationResult.Warnings.Any())
-        {
-            _logger?.LogWarning("GASB validation warnings: {Warnings}", string.Join("; ", validationResult.Warnings));
-        }
-    }
-
-    /// <summary>
-    /// Saves changes to the database asynchronously
-    /// </summary>
-    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
-    {
-        if (Database.IsSqlite())
-        {
-            ApplySqliteRowVersionBehavior();
-        }
-        // Temporarily disabled GASB validation for testing
-        // ValidateGASBCompliance();
-        return await base.SaveChangesAsync(cancellationToken);
-    }
-
-    /// <summary>
-    /// Saves changes to the database
-    /// </summary>
-    public override int SaveChanges()
-    {
-        if (Database.IsSqlite())
-        {
-            ApplySqliteRowVersionBehavior();
-        }
-        // Temporarily disabled GASB validation for testing
-        // ValidateGASBCompliance();
-        return base.SaveChanges();
-    }
-
-    /// <summary>
-    /// Configures RowVersion properties for all database providers
-    /// </summary>
-    private static void ConfigureRowVersion(ModelBuilder modelBuilder, bool isSqlite)
-    {
-        ConfigureRowVersion<Enterprise>(modelBuilder.Entity<Enterprise>(), isSqlite);
-        ConfigureRowVersion<UtilityCustomer>(modelBuilder.Entity<UtilityCustomer>(), isSqlite);
-        ConfigureRowVersion<Widget>(modelBuilder.Entity<Widget>(), isSqlite);
-        ConfigureRowVersion<MunicipalAccount>(modelBuilder.Entity<MunicipalAccount>(), isSqlite);
-    }
-
-    /// <summary>
-    /// Configures RowVersion for a specific entity type
-    /// </summary>
-    private static void ConfigureRowVersion<T>(EntityTypeBuilder<T> entity, bool isSqlite) where T : class
-    {
-        const string propertyName = nameof(Enterprise.RowVersion);
-        var propertyBuilder = entity.Property<byte[]>(propertyName)
-            .IsConcurrencyToken();
-
-        if (isSqlite)
-        {
-            propertyBuilder
-                .HasDefaultValueSql("randomblob(8)")
-                .ValueGeneratedNever();
-
-            propertyBuilder.Metadata.SetBeforeSaveBehavior(PropertySaveBehavior.Save);
-            propertyBuilder.Metadata.SetAfterSaveBehavior(PropertySaveBehavior.Save);
-        }
-        else
-        {
-            propertyBuilder.IsRowVersion();
-        }
-    }
-
-    /// <summary>
-    /// Applies SQLite-specific RowVersion behavior before saving
-    /// </summary>
-    private void ApplySqliteRowVersionBehavior()
-    {
-        UpdateRowVersion<Enterprise>(ChangeTracker.Entries<Enterprise>());
-        UpdateRowVersion<UtilityCustomer>(ChangeTracker.Entries<UtilityCustomer>());
-        UpdateRowVersion<Widget>(ChangeTracker.Entries<Widget>());
-    }
-
-    /// <summary>
-    /// Updates RowVersion values for tracked entities
-    /// </summary>
-    private static void UpdateRowVersion<TEntity>(IEnumerable<EntityEntry<TEntity>> entries) where TEntity : class
-    {
-        foreach (var entry in entries)
-        {
-            var property = entry.Property(nameof(Enterprise.RowVersion));
-
-            if (entry.State == EntityState.Added)
-            {
-                if (property.CurrentValue is not byte[] bytes || bytes.Length == 0)
-                {
-                    property.CurrentValue = CreateRowVersion();
-                }
-            }
-            else if (entry.State == EntityState.Modified)
-            {
-                property.CurrentValue = CreateRowVersion();
-            }
-        }
-    }
-
-    /// <summary>
-    /// Creates a new RowVersion value
-    /// </summary>
-    private static byte[] CreateRowVersion()
-    {
-        var buffer = new byte[8];
-        System.Security.Cryptography.RandomNumberGenerator.Fill(buffer);
-        return buffer;
+        return BudgetEntries
+            .Where(be => be.SourceFilePath == sourceFilePath && (rowNumber == null || be.SourceRowNumber == rowNumber))
+            .AsNoTracking();
     }
 }

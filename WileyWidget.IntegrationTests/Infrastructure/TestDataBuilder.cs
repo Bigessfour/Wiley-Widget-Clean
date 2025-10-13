@@ -29,7 +29,7 @@ public static class TestDataBuilder
             Name = accountName,
             Balance = budgetAmount,
             Type = type,
-            Fund = FundType.General,
+            Fund = MunicipalFundType.General,
             FundClass = FundClass.Governmental,
             DepartmentId = departmentId ?? 1,
             BudgetPeriodId = budgetPeriodId ?? 1,

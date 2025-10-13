@@ -28,7 +28,7 @@ public class MunicipalAccountTests
         Assert.Equal("100", account.AccountNumber.ToString());
         Assert.Equal(string.Empty, account.Name);
         Assert.Equal(AccountType.Asset, account.Type); // Default enum value
-        Assert.Equal(FundType.General, account.Fund); // Default enum value
+        Assert.Equal(MunicipalFundType.General, account.Fund); // Default enum value
         Assert.Equal(0m, account.Balance);
         Assert.Equal(0m, account.BudgetAmount);
         Assert.True(account.IsActive);
@@ -56,7 +56,7 @@ public class MunicipalAccountTests
         account.AccountNumber = new AccountNumber("1010-100");
         account.Name = "Cash Account";
         account.Type = AccountType.Revenue;
-        account.Fund = FundType.Water;
+        account.Fund = MunicipalFundType.Water;
         account.Balance = 50000.00m;
         account.BudgetAmount = 60000.00m;
         account.IsActive = false;
@@ -254,12 +254,12 @@ public class MunicipalAccountTests
     }
 
     [Theory]
-    [InlineData(FundType.General, "General Fund")]
-    [InlineData(FundType.Water, "Water Fund")]
-    [InlineData(FundType.Sewer, "Sewer Fund")]
-    [InlineData(FundType.Trash, "Trash Fund")]
-    [InlineData(FundType.Enterprise, "Enterprise Fund")]
-    public void MunicipalAccount_FundDescription_ReturnsCorrectDescription(FundType fund, string expectedDescription)
+    [InlineData(MunicipalFundType.General, "General Fund")]
+    [InlineData(MunicipalFundType.Water, "Water Fund")]
+    [InlineData(MunicipalFundType.Sewer, "Sewer Fund")]
+    [InlineData(MunicipalFundType.Trash, "Trash Fund")]
+    [InlineData(MunicipalFundType.Enterprise, "Enterprise Fund")]
+    public void MunicipalAccount_FundDescription_ReturnsCorrectDescription(MunicipalFundType fund, string expectedDescription)
     {
         // Arrange
         var account = new MunicipalAccount
@@ -299,7 +299,7 @@ public class MunicipalAccountTests
             AccountNumber = new AccountNumber("1010-100"),
             Name = "Cash Account",
             Type = AccountType.Asset,
-            Fund = FundType.General,
+            Fund = MunicipalFundType.General,
             Balance = 50000.00m,
             BudgetAmount = 60000.00m,
             IsActive = true
@@ -324,7 +324,7 @@ public class MunicipalAccountTests
             AccountNumber = new AccountNumber("1010-100"),
             Name = "Cash Account",
             Type = AccountType.Asset,
-            Fund = FundType.General
+            Fund = MunicipalFundType.General
         };
 
         // Act
@@ -345,7 +345,7 @@ public class MunicipalAccountTests
         {
             AccountNumber = new AccountNumber("1010-100"),
             Type = AccountType.Asset,
-            Fund = FundType.General
+            Fund = MunicipalFundType.General
         };
 
         // Act
@@ -367,7 +367,7 @@ public class MunicipalAccountTests
             AccountNumber = new AccountNumber(new string('1', 21)), // 21 characters, exceeds max of 20
             Name = "Cash Account",
             Type = AccountType.Asset,
-            Fund = FundType.General
+            Fund = MunicipalFundType.General
         };
 
         // Act
@@ -389,7 +389,7 @@ public class MunicipalAccountTests
             AccountNumber = new AccountNumber("1010-100"),
             Name = new string('A', 101), // 101 characters, exceeds max of 100
             Type = AccountType.Asset,
-            Fund = FundType.General
+            Fund = MunicipalFundType.General
         };
 
         // Act
@@ -411,7 +411,7 @@ public class MunicipalAccountTests
             AccountNumber = new AccountNumber("1010-100"),
             Name = "Cash Account",
             Type = AccountType.Asset,
-            Fund = FundType.General,
+            Fund = MunicipalFundType.General,
             QuickBooksId = new string('Q', 51) // 51 characters, exceeds max of 50
         };
 
@@ -434,7 +434,7 @@ public class MunicipalAccountTests
             AccountNumber = new AccountNumber("1010-100"),
             Name = "Cash Account",
             Type = AccountType.Asset,
-            Fund = FundType.General,
+            Fund = MunicipalFundType.General,
             Notes = new string('N', 201) // 201 characters, exceeds max of 200
         };
 
@@ -457,7 +457,7 @@ public class MunicipalAccountTests
             AccountNumber = new AccountNumber(new string('1', 20)), // Exactly 20 characters
             Name = "Cash Account",
             Type = AccountType.Asset,
-            Fund = FundType.General
+            Fund = MunicipalFundType.General
         };
 
         // Act
@@ -479,7 +479,7 @@ public class MunicipalAccountTests
             AccountNumber = new AccountNumber("1010-100"),
             Name = new string('A', 100), // Exactly 100 characters
             Type = AccountType.Asset,
-            Fund = FundType.General
+            Fund = MunicipalFundType.General
         };
 
         // Act
@@ -493,10 +493,10 @@ public class MunicipalAccountTests
     }
 
     [Theory]
-    [InlineData(AccountType.Asset, FundType.General, "1010-100", "Cash Account")]
-    [InlineData(AccountType.Revenue, FundType.Water, "4000-200", "Water Revenue")]
-    [InlineData(AccountType.Expense, FundType.Sewer, "5000-300", "Sewer Maintenance")]
-    public void MunicipalAccount_Validation_ValidCombinations_Pass(AccountType type, FundType fund, string accountNumber, string name)
+    [InlineData(AccountType.Asset, MunicipalFundType.General, "1010-100", "Cash Account")]
+    [InlineData(AccountType.Revenue, MunicipalFundType.Water, "4000-200", "Water Revenue")]
+    [InlineData(AccountType.Expense, MunicipalFundType.Sewer, "5000-300", "Sewer Maintenance")]
+    public void MunicipalAccount_Validation_ValidCombinations_Pass(AccountType type, MunicipalFundType fund, string accountNumber, string name)
     {
         // Arrange
         var account = new MunicipalAccount

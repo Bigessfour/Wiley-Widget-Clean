@@ -254,30 +254,12 @@ public static class DatabaseConfiguration
 
     /// <summary>
     /// Configures EF 9 database seeding using UseSeeding and UseAsyncSeeding methods
+    /// Note: Seeding disabled for simplified budget schema
     /// </summary>
     private static void ConfigureDatabaseSeeding(DbContextOptionsBuilder options, ILogger logger)
     {
-        // Configure synchronous seeding for EnsureCreated()
-        options.UseSeeding((context, hasStoreManagement) =>
-        {
-            logger.LogInformation("EF Core seeding: Executing synchronous seeding (hasStoreManagement: {HasStoreManagement})", hasStoreManagement);
-
-            var appContext = (AppDbContext)context;
-            var seeder = new DatabaseSeeder(appContext);
-            seeder.SeedAsync().GetAwaiter().GetResult(); // Synchronous execution for UseSeeding
-        });
-
-        // Configure asynchronous seeding for EnsureCreatedAsync()
-        options.UseAsyncSeeding(async (context, hasStoreManagement, cancellationToken) =>
-        {
-            logger.LogInformation("EF Core seeding: Executing asynchronous seeding (hasStoreManagement: {HasStoreManagement})", hasStoreManagement);
-
-            var appContext = (AppDbContext)context;
-            var seeder = new DatabaseSeeder(appContext);
-            await seeder.SeedAsync();
-        });
-
-        logger.LogInformation("EF 9 database seeding configured using UseSeeding/UseAsyncSeeding methods");
+        // Seeding disabled - use manual seeding or migration scripts for simplified schema
+        logger.LogInformation("Database seeding disabled for simplified budget schema");
     }
 
     /// <summary>
@@ -285,9 +267,9 @@ public static class DatabaseConfiguration
     /// </summary>
     private static void RegisterEnterpriseRepositories(IServiceCollection services)
     {
-        services.AddScoped<WileyWidget.Business.Interfaces.IEnterpriseRepository, WileyWidget.Data.EnterpriseRepository>();
+        services.AddScoped<WileyWidget.Business.Interfaces.IBudgetRepository, WileyWidget.Data.BudgetRepository>();
+        services.AddScoped<WileyWidget.Business.Interfaces.IDepartmentRepository, WileyWidget.Data.DepartmentRepository>();
         services.AddScoped<WileyWidget.Business.Interfaces.IMunicipalAccountRepository, WileyWidget.Data.MunicipalAccountRepository>();
-        services.AddScoped<WileyWidget.Business.Interfaces.IUtilityCustomerRepository, WileyWidget.Data.UtilityCustomerRepository>();
     }
 
     /// <summary>

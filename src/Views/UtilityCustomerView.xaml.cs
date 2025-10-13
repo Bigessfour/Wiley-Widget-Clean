@@ -108,6 +108,8 @@ public partial class UtilityCustomerView : Window
 
         public BusinessInterfaces.IEnterpriseRepository Enterprises => throw new NotSupportedException("Fallback unit of work does not provide enterprise repository support.");
         public BusinessInterfaces.IMunicipalAccountRepository MunicipalAccounts => throw new NotSupportedException("Fallback unit of work does not provide municipal account repository support.");
+        public BusinessInterfaces.IBudgetRepository Budgets => throw new NotSupportedException("Fallback unit of work does not provide budget repository support.");
+        public BusinessInterfaces.IDepartmentRepository Departments => throw new NotSupportedException("Fallback unit of work does not provide department repository support.");
         public IUtilityCustomerRepository UtilityCustomers { get; }
 
         public Task<FiscalYearSettings?> GetFiscalYearSettingsAsync() => Task.FromResult<FiscalYearSettings?>(null);

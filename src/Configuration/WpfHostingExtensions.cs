@@ -61,7 +61,6 @@ public static class WpfHostingExtensions
         ConfigureHostedServices(builder.Services);
 
         // Database integration
-        builder.Services.AddEnterpriseDatabaseServices(builder.Configuration);
 
         // Startup pipeline helpers
         RegisterStartupPipeline(builder.Services);

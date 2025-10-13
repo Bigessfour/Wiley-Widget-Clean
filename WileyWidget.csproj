@@ -3,8 +3,8 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net9.0-windows</TargetFramework>
-    <!-- Nullable disabled to avoid nullable reference type warnings -->
-    <Nullable>disable</Nullable>
+    <!-- Nullable enabled for better null safety and code quality -->
+    <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <LangVersion>latest</LangVersion>
@@ -77,12 +77,15 @@
     <PackageReference Include="Syncfusion.SfBusyIndicator.WPF" />
     <PackageReference Include="Syncfusion.SfChart.WPF" />
     <PackageReference Include="Syncfusion.SfChat.WPF" />
+    <PackageReference Include="Syncfusion.SfGauge.WPF" />
     <PackageReference Include="Syncfusion.SfGrid.WPF" />
     <PackageReference Include="Syncfusion.SfInput.WPF" />
     <PackageReference Include="Syncfusion.SfProgressBar.WPF" />
     <PackageReference Include="Syncfusion.SfRichTextBoxAdv.WPF" />
     <PackageReference Include="Syncfusion.SfSkinManager.WPF" />
     <PackageReference Include="Syncfusion.SfSpreadsheet.WPF" />
+    <PackageReference Include="Syncfusion.SfTreeView.WPF" />
+    <PackageReference Include="Syncfusion.SfGridCommon.WPF" />
     <PackageReference Include="Syncfusion.Shared.WPF" />
     <PackageReference Include="Syncfusion.Themes.FluentDark.WPF" />
     <PackageReference Include="Syncfusion.Themes.FluentLight.WPF" />

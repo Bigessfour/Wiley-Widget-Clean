@@ -42,6 +42,7 @@ public partial class MainWindow : RibbonWindow
     // Cache Enterprise property metadata to avoid repeated reflection when building dynamic columns
     private static readonly ConcurrentDictionary<Type, (PropertyInfo Prop, WileyWidget.Attributes.GridDisplayAttribute? Attr)[]> _columnPropertyCache = new();
     private readonly DateTime _startTime = DateTime.Now;
+    private DockingManager? _mainDockingManager; // Cache the DockingManager reference once located
 
     private Syncfusion.UI.Xaml.Grid.SfDataGrid? GetDataGrid()
     {
@@ -431,19 +432,23 @@ public partial class MainWindow : RibbonWindow
     // Keep a parameterless constructor for XAML/designer and legacy call sites
     public MainWindow()
     {
+        _serviceProvider = (Application.Current?.Properties["ServiceProvider"] as IServiceProvider) ?? App.ServiceProvider;
+        if (_serviceProvider == null)
+        {
+            Log.Warning("Service provider was not available during MainWindow construction; falling back to limited mode");
+            _authService = null;
+        }
+        else
+        {
+            _authService = _serviceProvider.GetService<AuthenticationService>();
+        }
+
         var constructorTimer = Stopwatch.StartNew();
         App.LogDebugEvent("VIEW_INIT", "MainWindow constructor started");
 
         Log.Information("🏠 MainWindow constructor called - initializing main application window");
-        Console.WriteLine("[MAINWINDOW] Constructor called");
-
-        // CRITICAL: Set dummy DataContext BEFORE InitializeComponent to prevent binding failures
-        // This prevents NullReferenceException during XAML loading when bindings try to access ViewModel properties
-        DataContext = new object(); // Temporary dummy DataContext
-        Log.Information("🔧 Set temporary DataContext to prevent XAML binding failures");
 
         // CRITICAL: Apply theme BEFORE InitializeComponent() to ensure XAML static resources resolve correctly
-        // This prevents StaticResourceExtension failures and unthemed UI components
         try
         {
             var currentTheme = SettingsService.Instance.Current.Theme;
@@ -461,85 +466,16 @@ public partial class MainWindow : RibbonWindow
 
         Log.Information("�🏠 MainWindow InitializeComponent completed in {ElapsedMs}ms", constructorTimer.ElapsedMilliseconds);
 
-        // Try to resolve services from the global provider when available. If not available
-        // we'll continue and let UpdateAuthenticationUI be defensive.
-        Log.Debug("Attempting to resolve services from global provider");
-        try
-        {
-            var provider = App.ServiceProvider;
-            if (provider == null && Application.Current?.Properties?.Contains("ServiceProvider") == true)
-            {
-                provider = Application.Current.Properties["ServiceProvider"] as System.IServiceProvider;
-                Log.Debug("Resolved service provider from Application.Current.Properties");
-            }
-            else if (provider != null)
-            {
-                Log.Debug("Resolved service provider from App.ServiceProvider");
-            }
-
-            _serviceProvider = provider;
-
-            if (_serviceProvider != null)
-            {
-                Log.Debug("Service provider available, resolving AuthenticationService");
-                try
-                {
-                    _authService = _serviceProvider.GetService<AuthenticationService>();
-                    if (_authService != null)
-                    {
-                        Log.Debug("AuthenticationService resolved successfully, subscribing to events");
-                        _authService.AuthenticationStateChanged += OnAuthenticationStateChanged;
-                    }
-                    else
-                    {
-                        Log.Warning("AuthenticationService not found in DI container");
-                    }
-                }
-                catch (Exception innerEx)
-                {
-                    Log.Warning(innerEx, "Failed to resolve AuthenticationService from DI container during MainWindow construction");
-                }
-            }
-            else
-            {
-                Log.Warning("No service provider available during MainWindow construction");
-            }
-
-            App.LogDebugEvent("VIEW_INIT", $"MainWindow services initialized in {constructorTimer.ElapsedMilliseconds}ms");
-        }
-        catch (Exception ex)
-        {
-            // Keep the constructor from crashing - log and continue; UpdateAuthenticationUI will be defensive
-            Log.Error(ex, "Unexpected error during MainWindow construction service resolution");
-        }
-        // Dynamic columns will be built when DataContext is set in OnWindowLoaded
+        // Basic event handlers setup
         RestoreWindowState();
         Loaded += OnWindowLoaded;
         ContentRendered += OnWindowContentRendered;
         Closing += OnWindowClosing;
         KeyDown += OnKeyDown;
-        UpdateThemeToggleVisuals();
 
         // Ensure window is visible
         Visibility = Visibility.Visible;
         ShowInTaskbar = true;
-
-        // Enhanced logging for view rendering diagnostics
-        Log.Information("🎨 WINDOW VISIBILITY: Visibility={Visibility}, ShowInTaskbar={ShowInTaskbar}, WindowState={WindowState}",
-            Visibility, ShowInTaskbar, WindowState);
-        Log.Information("📐 WINDOW DIMENSIONS: Width={Width}, Height={Height}, ActualWidth={ActualWidth}, ActualHeight={ActualHeight}",
-            Width, Height, ActualWidth, ActualHeight);
-
-        // Verify WPF visual tree is accessible
-        try
-        {
-            var visualTreeRoot = this as System.Windows.Media.Visual;
-            Log.Information("🎨 VISUAL TREE: Root visual accessible, type={VisualType}", visualTreeRoot.GetType().Name);
-        }
-        catch (Exception visualEx)
-        {
-            Log.Error(visualEx, "🎨 VISUAL TREE ERROR: Failed to access WPF visual tree");
-        }
 
         constructorTimer.Stop();
         App.LogDebugEvent("VIEW_INIT", $"MainWindow constructor completed in {constructorTimer.ElapsedMilliseconds}ms");
@@ -606,6 +542,7 @@ public partial class MainWindow : RibbonWindow
             {
                 Log.Information("Found DockingManager, subscribing to ActiveWindowChanged - ID: {WindowLoadId}", windowLoadId);
                 dockingManager.ActiveWindowChanged += OnDockingActiveWindowChanged;
+                _mainDockingManager = dockingManager; // Assign to the field for use in other methods
                 try
                 {
                     dockingManager.ResetState();
@@ -866,6 +803,8 @@ public partial class MainWindow : RibbonWindow
             await InitializeViewPanel("DashboardPanel", viewModel.DashboardViewModel, correlationId);
             await InitializeViewPanel("EnterprisePanel", viewModel.EnterpriseViewModel, correlationId);
             await InitializeViewPanel("BudgetPanel", viewModel.BudgetViewModel, correlationId);
+            await InitializeViewPanel("MunicipalAccountsPanel", viewModel.MunicipalAccountViewModel, correlationId);
+            await InitializeViewPanel("UtilityCustomersPanel", viewModel.UtilityCustomerViewModel, correlationId);
             await InitializeViewPanel("AIAssistPanel", viewModel.AIAssistViewModel, correlationId);
             await InitializeViewPanel("SettingsPanel", viewModel.SettingsViewModel, correlationId);
             await InitializeViewPanel("ToolsPanel", viewModel.ToolsViewModel, correlationId);
@@ -1596,47 +1535,6 @@ public partial class MainWindow : RibbonWindow
 
 
 
-    /// <summary>Switch to Fluent Dark theme and persist choice.</summary>
-    private void OnFluentDark(object sender, RoutedEventArgs e)
-    {
-    TryApplyTheme("FluentDark");
-    SettingsService.Instance.Current.Theme = "FluentDark";
-        SettingsService.Instance.Save();
-    Log.Information("Theme changed to {Theme}", "Fluent Dark");
-    UpdateThemeToggleVisuals();
-        // transient status
-        var statusText = this.FindName("StatusTextBlock") as System.Windows.Controls.TextBlock;
-        if (statusText != null) statusText.Text = "Theme: Fluent Dark";
-    }
-    /// <summary>Switch to Fluent Light theme and persist choice.</summary>
-    private void OnFluentLight(object sender, RoutedEventArgs e)
-    {
-    TryApplyTheme("FluentLight");
-    SettingsService.Instance.Current.Theme = "FluentLight";
-        SettingsService.Instance.Save();
-    Log.Information("Theme changed to {Theme}", "Fluent Light");
-        UpdateThemeToggleVisuals();
-        // transient status
-        var statusText = this.FindName("StatusTextBlock") as System.Windows.Controls.TextBlock;
-        if (statusText != null) statusText.Text = "Theme: Fluent Light";
-    }
-
-    private void UpdateThemeToggleVisuals()
-    {
-        var current = Services.ThemeUtility.NormalizeTheme(SettingsService.Instance.Current.Theme);
-        RibbonButton? btnDark = FindName("BtnFluentDark") as RibbonButton;
-        if (btnDark != null)
-        {
-            btnDark.IsEnabled = current != "FluentDark";
-            btnDark.Label = current == "FluentDark" ? "✔ Fluent Dark" : "Fluent Dark";
-        }
-        RibbonButton? btnLight = FindName("BtnFluentLight") as RibbonButton;
-        if (btnLight != null)
-        {
-            btnLight.IsEnabled = current != "FluentLight";
-            btnLight.Label = current == "FluentLight" ? "✔ Fluent Light" : "Fluent Light";
-        }
-    }
     /// <summary>Display modal About dialog with version information.</summary>
     private void OnAbout(object? sender, RoutedEventArgs? e)
     {
@@ -2170,8 +2068,15 @@ public partial class MainWindow : RibbonWindow
             // Ensure panel is in docked state
             DockingManager.SetState(contentControl, DockState.Dock);
 
-            // Set as active window
-            MainDockingManager.ActiveWindow = contentControl;
+            if (_mainDockingManager != null)
+            {
+                // Set as active window
+                _mainDockingManager.ActiveWindow = contentControl;
+            }
+            else
+            {
+                Log.Warning("DockingManager reference missing when activating panel {PanelName}", panelName);
+            }
 
             // Force focus and bring into view
             contentControl.BringIntoView();
@@ -2195,6 +2100,8 @@ public partial class MainWindow : RibbonWindow
             "WidgetsPanel" => "Municipal Enterprises",
             "EnterprisePanel" => "Enterprise",
             "BudgetPanel" => "Budget",
+            "MunicipalAccountsPanel" => "Municipal Accounts",
+            "UtilityCustomersPanel" => "Utility Customers",
             "AIAssistPanel" => "AI Assistant",
             "SettingsPanel" => "Settings",
             "DashboardPanel" => "Dashboard",
@@ -2217,17 +2124,17 @@ public partial class MainWindow : RibbonWindow
     {
         try
         {
-            if (MainDockingManager != null)
+            if (_mainDockingManager != null)
             {
                 // Use Syncfusion's built-in ResetState method which properly clears persisted state
                 // and restores the layout to the initial XAML-defined configuration
-                MainDockingManager.ResetState();
+                _mainDockingManager.ResetState();
                 
                 Log.Information("Docking layout reset to defaults using ResetState()");
             }
             else
             {
-                Log.Warning("MainDockingManager is null, cannot reset layout");
+                Log.Warning("DockingManager reference is null, cannot reset layout");
             }
         }
         catch (Exception ex)
@@ -2243,7 +2150,7 @@ public partial class MainWindow : RibbonWindow
     {
         try
         {
-            if (MainDockingManager != null)
+            if (_mainDockingManager != null)
             {
                 // Save to application data directory
                 var appDataPath = System.IO.Path.Combine(
@@ -2259,13 +2166,13 @@ public partial class MainWindow : RibbonWindow
                 var layoutFilePath = System.IO.Path.Combine(appDataPath, "docking_layout.xml");
                 
                 // Use Syncfusion's SaveDockState for .NET 6+
-                MainDockingManager.SaveDockState(layoutFilePath);
+                _mainDockingManager.SaveDockState(layoutFilePath);
                 
                 Log.Information("Docking layout saved to {FilePath}", layoutFilePath);
             }
             else
             {
-                Log.Warning("MainDockingManager is null, cannot save layout");
+                Log.Warning("DockingManager reference is null, cannot save layout");
             }
         }
         catch (Exception ex)
@@ -2281,7 +2188,7 @@ public partial class MainWindow : RibbonWindow
     {
         try
         {
-            if (MainDockingManager != null)
+            if (_mainDockingManager != null)
             {
                 var appDataPath = System.IO.Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
@@ -2293,7 +2200,7 @@ public partial class MainWindow : RibbonWindow
                 if (System.IO.File.Exists(layoutFilePath))
                 {
                     // Use Syncfusion's LoadDockState for .NET 6+
-                    MainDockingManager.LoadDockState(layoutFilePath);
+                    _mainDockingManager.LoadDockState(layoutFilePath);
                     
                     Log.Information("Docking layout loaded from {FilePath}", layoutFilePath);
                 }
@@ -2304,7 +2211,7 @@ public partial class MainWindow : RibbonWindow
             }
             else
             {
-                Log.Warning("MainDockingManager is null, cannot load layout");
+                Log.Warning("DockingManager reference is null, cannot load layout");
             }
         }
         catch (Exception ex)
@@ -2552,7 +2459,6 @@ public partial class MainWindow : RibbonWindow
     }
 
     /// <summary>
-    /// <summary>
     /// Handles keyboard input for AI message text box - sends message on Enter key
     /// </summary>
     private void OnAIMessageKeyDown(object sender, KeyEventArgs e)
@@ -2581,7 +2487,7 @@ public partial class MainWindow : RibbonWindow
                 fullMessage += $"\n\nTechnical Details:\n{details}";
             }
 
-            var result = MessageBox.Show(
+            MessageBox.Show(
                 fullMessage,
                 title,
                 MessageBoxButton.OK,
@@ -2597,14 +2503,15 @@ public partial class MainWindow : RibbonWindow
 
     private void OnWindowClosing(object sender, System.ComponentModel.CancelEventArgs e)
     {
-        // Prevent the window from closing for the first 30 seconds to allow debugging
+        // Prevent the window from closing briefly to keep the app alive during startup diagnostics
         if ((DateTime.Now - _startTime).TotalSeconds < 30)
         {
             Console.WriteLine("[MAINWINDOW] Preventing close for debugging");
             e.Cancel = true;
             return;
         }
-        
+
         PersistWindowState();
     }
 }
+

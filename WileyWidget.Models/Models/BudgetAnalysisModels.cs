@@ -13,7 +13,7 @@ public class FundSummary
     /// <summary>
     /// Gets or sets the fund type
     /// </summary>
-    public FundType Fund { get; set; }
+    public BudgetFundType Fund { get; set; } = new() { Code = "GF", Name = "General Fund" };
 
     /// <summary>
     /// Gets or sets the fund name

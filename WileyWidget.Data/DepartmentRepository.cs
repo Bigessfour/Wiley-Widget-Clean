@@ -30,7 +30,7 @@ public class DepartmentRepository : IDepartmentRepository
         await using var context = await _contextFactory.CreateDbContextAsync();
         return await context.Departments
             .AsNoTracking()
-            .OrderBy(d => d.Code)
+            .OrderBy(d => d.Name)
             .ToListAsync();
     }
 
@@ -46,17 +46,17 @@ public class DepartmentRepository : IDepartmentRepository
     }
 
     /// <summary>
-    /// Gets a department by code
+    /// Gets a department by name
     /// </summary>
     public async Task<Department?> GetByCodeAsync(string code)
     {
         if (string.IsNullOrWhiteSpace(code))
-            throw new ArgumentException("Department code cannot be null or empty", nameof(code));
+            throw new ArgumentException("Department name cannot be null or empty", nameof(code));
 
         await using var context = await _contextFactory.CreateDbContextAsync();
         return await context.Departments
             .AsNoTracking()
-            .FirstOrDefaultAsync(d => d.Code == code);
+            .FirstOrDefaultAsync(d => d.Name == code);
     }
 
     /// <summary>

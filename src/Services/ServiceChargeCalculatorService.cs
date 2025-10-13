@@ -49,11 +49,11 @@ public class ServiceChargeCalculatorService : IChargeCalculatorService
             // Get related expense accounts
             var fundType = enterprise.Type switch
             {
-                "Water" => FundType.Water,
-                "Sewer" => FundType.Sewer,
-                "Trash" => FundType.Trash,
-                "General" => FundType.General,
-                _ => FundType.Enterprise
+                "Water" => MunicipalFundType.Water,
+                "Sewer" => MunicipalFundType.Sewer,
+                "Trash" => MunicipalFundType.Trash,
+                "General" => MunicipalFundType.General,
+                _ => MunicipalFundType.Enterprise
             };
 
             var expenseAccounts = await accountRepo.GetByFundAsync(fundType);

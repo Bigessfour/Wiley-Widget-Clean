@@ -52,6 +52,7 @@ public static class ThemeUtility
 #pragma warning disable CA2000 // Dispose objects before losing scope - Theme objects are managed by SfSkinManager
             SfSkinManager.SetTheme(window, new Theme(canonical));
 #pragma warning restore CA2000 // Dispose objects before losing scope
+            SfSkinManager.SetVisualStyle(window, ToVisualStyle(canonical));
             Log.Information("Successfully applied theme: {Theme} to window {WindowType}",
                            canonical, window.GetType().Name);
         }
@@ -67,6 +68,7 @@ public static class ThemeUtility
 #pragma warning disable CA2000 // Dispose objects before losing scope - Theme objects are managed by SfSkinManager
                     SfSkinManager.SetTheme(window, new Theme("FluentLight"));
 #pragma warning restore CA2000 // Dispose objects before losing scope
+                    SfSkinManager.SetVisualStyle(window, VisualStyles.FluentLight);
                     Log.Warning("Applied fallback theme 'FluentLight' after failing to apply '{ThemeName}' to window {WindowType}",
                                themeName, window.GetType().Name);
                 }

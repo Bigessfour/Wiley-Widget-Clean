@@ -88,7 +88,7 @@ public class WhatIfScenarioEngineTests
             new MunicipalAccount
             {
                 Id = 1,
-                Fund = FundType.Water,
+                Fund = MunicipalFundType.Water,
                 AccountNumber = new AccountNumber("1000"),
                 Name = "Water Revenue",
                 Balance = 125000.00m,
@@ -97,7 +97,7 @@ public class WhatIfScenarioEngineTests
             new MunicipalAccount
             {
                 Id = 2,
-                Fund = FundType.Water,
+                Fund = MunicipalFundType.Water,
                 AccountNumber = new AccountNumber("2000"),
                 Name = "Water Expenses",
                 Balance = -15000.00m,
@@ -128,7 +128,7 @@ public class WhatIfScenarioEngineTests
         };
 
         _mockEnterpriseRepo.Setup(r => r.GetByIdAsync(enterpriseId)).ReturnsAsync(enterprise);
-        _mockAccountRepo.Setup(r => r.GetByFundAsync(FundType.Water)).ReturnsAsync(accounts);
+        _mockAccountRepo.Setup(r => r.GetByFundAsync(MunicipalFundType.Water)).ReturnsAsync(accounts);
         _mockChargeCalculator.Setup(c => c.CalculateRecommendedChargeAsync(enterpriseId))
             .ReturnsAsync(baselineRecommendation);
 
@@ -185,7 +185,7 @@ public class WhatIfScenarioEngineTests
         };
 
         _mockEnterpriseRepo.Setup(r => r.GetByIdAsync(enterpriseId)).ReturnsAsync(enterprise);
-        _mockAccountRepo.Setup(r => r.GetByFundAsync(FundType.Water)).ReturnsAsync(accounts);
+        _mockAccountRepo.Setup(r => r.GetByFundAsync(MunicipalFundType.Water)).ReturnsAsync(accounts);
         _mockChargeCalculator.Setup(c => c.CalculateRecommendedChargeAsync(enterpriseId))
             .ReturnsAsync(baselineRecommendation);
 
@@ -195,7 +195,7 @@ public class WhatIfScenarioEngineTests
         await _engine.GenerateComprehensiveScenarioAsync(enterpriseId, parameters);
 
         // Assert
-        _mockAccountRepo.Verify(r => r.GetByFundAsync(FundType.Water), Times.Once);
+        _mockAccountRepo.Verify(r => r.GetByFundAsync(MunicipalFundType.Water), Times.Once);
     }
 
     [Fact]
@@ -221,7 +221,7 @@ public class WhatIfScenarioEngineTests
         };
 
         _mockEnterpriseRepo.Setup(r => r.GetByIdAsync(enterpriseId)).ReturnsAsync(enterprise);
-        _mockAccountRepo.Setup(r => r.GetByFundAsync(FundType.Sewer)).ReturnsAsync(accounts);
+        _mockAccountRepo.Setup(r => r.GetByFundAsync(MunicipalFundType.Sewer)).ReturnsAsync(accounts);
         _mockChargeCalculator.Setup(c => c.CalculateRecommendedChargeAsync(enterpriseId))
             .ReturnsAsync(baselineRecommendation);
 
@@ -231,7 +231,7 @@ public class WhatIfScenarioEngineTests
         await _engine.GenerateComprehensiveScenarioAsync(enterpriseId, parameters);
 
         // Assert
-        _mockAccountRepo.Verify(r => r.GetByFundAsync(FundType.Sewer), Times.Once);
+        _mockAccountRepo.Verify(r => r.GetByFundAsync(MunicipalFundType.Sewer), Times.Once);
     }
 
     [Fact]
@@ -257,7 +257,7 @@ public class WhatIfScenarioEngineTests
         };
 
         _mockEnterpriseRepo.Setup(r => r.GetByIdAsync(enterpriseId)).ReturnsAsync(enterprise);
-        _mockAccountRepo.Setup(r => r.GetByFundAsync(FundType.Trash)).ReturnsAsync(accounts);
+        _mockAccountRepo.Setup(r => r.GetByFundAsync(MunicipalFundType.Trash)).ReturnsAsync(accounts);
         _mockChargeCalculator.Setup(c => c.CalculateRecommendedChargeAsync(enterpriseId))
             .ReturnsAsync(baselineRecommendation);
 
@@ -267,7 +267,7 @@ public class WhatIfScenarioEngineTests
         await _engine.GenerateComprehensiveScenarioAsync(enterpriseId, parameters);
 
         // Assert
-        _mockAccountRepo.Verify(r => r.GetByFundAsync(FundType.Trash), Times.Once);
+        _mockAccountRepo.Verify(r => r.GetByFundAsync(MunicipalFundType.Trash), Times.Once);
     }
 
     [Fact]
@@ -293,7 +293,7 @@ public class WhatIfScenarioEngineTests
         };
 
         _mockEnterpriseRepo.Setup(r => r.GetByIdAsync(enterpriseId)).ReturnsAsync(enterprise);
-        _mockAccountRepo.Setup(r => r.GetByFundAsync(FundType.Enterprise)).ReturnsAsync(accounts);
+        _mockAccountRepo.Setup(r => r.GetByFundAsync(MunicipalFundType.Enterprise)).ReturnsAsync(accounts);
         _mockChargeCalculator.Setup(c => c.CalculateRecommendedChargeAsync(enterpriseId))
             .ReturnsAsync(baselineRecommendation);
 
@@ -303,7 +303,7 @@ public class WhatIfScenarioEngineTests
         await _engine.GenerateComprehensiveScenarioAsync(enterpriseId, parameters);
 
         // Assert
-        _mockAccountRepo.Verify(r => r.GetByFundAsync(FundType.Enterprise), Times.Once);
+        _mockAccountRepo.Verify(r => r.GetByFundAsync(MunicipalFundType.Enterprise), Times.Once);
     }
 
     [Fact]
@@ -332,7 +332,7 @@ public class WhatIfScenarioEngineTests
         };
 
         _mockEnterpriseRepo.Setup(r => r.GetByIdAsync(enterpriseId)).ReturnsAsync(enterprise);
-        _mockAccountRepo.Setup(r => r.GetByFundAsync(FundType.Water)).ReturnsAsync(accounts);
+        _mockAccountRepo.Setup(r => r.GetByFundAsync(MunicipalFundType.Water)).ReturnsAsync(accounts);
         _mockChargeCalculator.Setup(c => c.CalculateRecommendedChargeAsync(enterpriseId))
             .ReturnsAsync(baselineRecommendation);
 
@@ -386,7 +386,7 @@ public class WhatIfScenarioEngineTests
         };
 
         _mockEnterpriseRepo.Setup(r => r.GetByIdAsync(enterpriseId)).ReturnsAsync(enterprise);
-        _mockAccountRepo.Setup(r => r.GetByFundAsync(FundType.Water)).ReturnsAsync(accounts);
+        _mockAccountRepo.Setup(r => r.GetByFundAsync(MunicipalFundType.Water)).ReturnsAsync(accounts);
         _mockChargeCalculator.Setup(c => c.CalculateRecommendedChargeAsync(enterpriseId))
             .ReturnsAsync(baselineRecommendation);
 
@@ -430,7 +430,7 @@ public class WhatIfScenarioEngineTests
         };
 
         _mockEnterpriseRepo.Setup(r => r.GetByIdAsync(enterpriseId)).ReturnsAsync(enterprise);
-        _mockAccountRepo.Setup(r => r.GetByFundAsync(FundType.Water)).ReturnsAsync(accounts);
+        _mockAccountRepo.Setup(r => r.GetByFundAsync(MunicipalFundType.Water)).ReturnsAsync(accounts);
         _mockChargeCalculator.Setup(c => c.CalculateRecommendedChargeAsync(enterpriseId))
             .ReturnsAsync(baselineRecommendation);
 
@@ -474,7 +474,7 @@ public class WhatIfScenarioEngineTests
         };
 
         _mockEnterpriseRepo.Setup(r => r.GetByIdAsync(enterpriseId)).ReturnsAsync(enterprise);
-        _mockAccountRepo.Setup(r => r.GetByFundAsync(FundType.Water)).ReturnsAsync(accounts);
+        _mockAccountRepo.Setup(r => r.GetByFundAsync(MunicipalFundType.Water)).ReturnsAsync(accounts);
         _mockChargeCalculator.Setup(c => c.CalculateRecommendedChargeAsync(enterpriseId))
             .ReturnsAsync(baselineRecommendation);
 
@@ -518,7 +518,7 @@ public class WhatIfScenarioEngineTests
         };
 
         _mockEnterpriseRepo.Setup(r => r.GetByIdAsync(enterpriseId)).ReturnsAsync(enterprise);
-        _mockAccountRepo.Setup(r => r.GetByFundAsync(FundType.Water)).ReturnsAsync(accounts);
+        _mockAccountRepo.Setup(r => r.GetByFundAsync(MunicipalFundType.Water)).ReturnsAsync(accounts);
         _mockChargeCalculator.Setup(c => c.CalculateRecommendedChargeAsync(enterpriseId))
             .ReturnsAsync(baselineRecommendation);
 

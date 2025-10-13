@@ -40,7 +40,7 @@ public class MunicipalAccountIntegrationTests : IDisposable
             AccountNumber = new AccountNumber("101-1000"),
             Name = "General Fund - Cash",
             Type = AccountType.Asset,
-            Fund = FundType.General,
+            Fund = MunicipalFundType.General,
             Balance = 50000.00m,
             BudgetAmount = 55000.00m,
             IsActive = true
@@ -53,7 +53,7 @@ public class MunicipalAccountIntegrationTests : IDisposable
         Assert.NotNull(result);
         Assert.Equal("101-1000", result.AccountNumber.ToString());
         Assert.Equal(AccountType.Asset, result.Type);
-        Assert.Equal(FundType.General, result.Fund);
+        Assert.Equal(MunicipalFundType.General, result.Fund);
     }
 
     [Fact]
@@ -65,7 +65,7 @@ public class MunicipalAccountIntegrationTests : IDisposable
             AccountNumber = new AccountNumber("101-1000"),
             Name = "General Fund - Cash",
             Type = AccountType.Asset,
-            Fund = FundType.General,
+            Fund = MunicipalFundType.General,
             Balance = 50000.00m,
             BudgetAmount = 55000.00m,
             IsActive = true
@@ -76,7 +76,7 @@ public class MunicipalAccountIntegrationTests : IDisposable
             AccountNumber = new AccountNumber("201-2000"),
             Name = "General Fund - Salaries",
             Type = AccountType.Expense,
-            Fund = FundType.General,
+            Fund = MunicipalFundType.General,
             Balance = 0.00m,
             BudgetAmount = 45000.00m,
             IsActive = true
@@ -103,7 +103,7 @@ public class MunicipalAccountIntegrationTests : IDisposable
             AccountNumber = new AccountNumber("101-1000"),
             Name = "General Fund - Cash",
             Type = AccountType.Asset,
-            Fund = FundType.General,
+            Fund = MunicipalFundType.General,
             Balance = 50000.00m,
             BudgetAmount = 55000.00m,
             IsActive = true
@@ -114,7 +114,7 @@ public class MunicipalAccountIntegrationTests : IDisposable
             AccountNumber = new AccountNumber("102-1000"),
             Name = "Special Revenue Fund - Grants",
             Type = AccountType.Asset,
-            Fund = FundType.Enterprise,
+            Fund = MunicipalFundType.Enterprise,
             Balance = 25000.00m,
             BudgetAmount = 30000.00m,
             IsActive = true
@@ -124,12 +124,12 @@ public class MunicipalAccountIntegrationTests : IDisposable
         await _repository.AddAsync(EnterpriseAccount);
 
         // Act
-        var generalFundAccounts = await _repository.GetByFundAsync(FundType.General);
+        var generalFundAccounts = await _repository.GetByFundAsync(MunicipalFundType.General);
 
         // Assert
         Assert.Single(generalFundAccounts);
         Assert.Equal("101-1000", generalFundAccounts.First().AccountNumber.ToString());
-        Assert.Equal(FundType.General, generalFundAccounts.First().Fund);
+        Assert.Equal(MunicipalFundType.General, generalFundAccounts.First().Fund);
     }
 
     [Fact]
@@ -141,7 +141,7 @@ public class MunicipalAccountIntegrationTests : IDisposable
             AccountNumber = new AccountNumber("101-1000"),
             Name = "General Fund - Cash",
             Type = AccountType.Asset,
-            Fund = FundType.General,
+            Fund = MunicipalFundType.General,
             Balance = 50000.00m,
             BudgetAmount = 55000.00m,
             IsActive = true

@@ -60,8 +60,7 @@ namespace DbConnTest
 
             var services = new ServiceCollection()
                 .AddLogging(config => config.AddConsole())
-                .AddSingleton<IConfiguration>(configuration)
-                .AddEnterpriseDatabaseServices(configuration);
+                .AddSingleton<IConfiguration>(configuration);
 
             using var serviceProvider = services.BuildServiceProvider();
 
@@ -97,8 +96,10 @@ namespace DbConnTest
                     {
                         var conn = ctx.Database.GetDbConnection();
                         Console.WriteLine($"Connected to: {conn.DataSource} / {conn.Database}");
-                        var count = await ctx.Enterprises.CountAsync();
-                        Console.WriteLine($"Enterprise count: {count}");
+                        // Temporarily disabled - Enterprises removed
+                        // var count = await ctx.Enterprises.CountAsync();
+                        // Console.WriteLine($"Enterprise count: {count}");
+                        Console.WriteLine("Database connection successful");
                     }
                 }
                 finally

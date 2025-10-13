@@ -5,6 +5,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:local="clr-namespace:WileyWidget"
     xmlns:helpers="clr-namespace:WileyWidget.Helpers"
+    xmlns:converters="clr-namespace:WileyWidget.Converters"
     xmlns:viewmodels="clr-namespace:WileyWidget.ViewModels"
     xmlns:views="clr-namespace:WileyWidget.Views"
     xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
@@ -12,10 +13,13 @@
     xmlns:notification="clr-namespace:Syncfusion.Windows.Controls.Notification;assembly=Syncfusion.SfBusyIndicator.WPF"
     xmlns:prism="http://prismlibrary.com/"
     mc:Ignorable="d"
+    DataContext="{Binding MainViewModel}"
     prism:ViewModelLocator.AutoWireViewModel="True"
+    syncfusionskin:SfSkinManager.VisualStyle="{Binding CurrentTheme, FallbackValue=FluentDark}"
     TextOptions.TextFormattingMode="Ideal"
     TextOptions.TextRenderingMode="ClearType"
-    Title="Wiley Widget" Height="600" Width="1000" WindowState="Maximized">
+    Title="Wiley Widget" Height="600" Width="1000" WindowState="Maximized"
+    WindowStartupLocation="CenterScreen" MinWidth="1200" AllowsTransparency="False">
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
         <local:ProfitLossTextConverter x:Key="ProfitLossTextConverter" />
@@ -34,6 +38,7 @@
         <local:MessageForegroundConverter x:Key="MessageForegroundConverter" />
         <local:InverseBooleanConverter x:Key="InverseBooleanConverter" />
         <local:BooleanToFontWeightConverter x:Key="BooleanToFontWeightConverter" />
+        <converters:BudgetOverrunStyleSelector x:Key="BudgetOverrunStyleSelector" />
 
         <!-- Icon Templates for Ribbon -->
         <DataTemplate x:Key="NewIcon">
@@ -98,6 +103,12 @@
         <DataTemplate DataType="{x:Type viewmodels:ToolsViewModel}">
             <views:ToolsPanelView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type viewmodels:MunicipalAccountViewModel}">
+            <views:MunicipalAccountPanelView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type viewmodels:UtilityCustomerViewModel}">
+            <views:UtilityCustomerPanelView />
+        </DataTemplate>
     </Window.Resources>
 
     <!-- Keyboard Shortcuts -->
@@ -115,6 +126,103 @@
         <KeyBinding Key="T" Modifiers="Control" Command="{Binding OpenToolsCommand}" />
     </Window.InputBindings>
     <DockPanel>
+        <StatusBar DockPanel.Dock="Bottom" x:Name="MainStatusBar" Height="32">
+            <StatusBarItem>
+                <StackPanel Orientation="Horizontal" Margin="4,0">
+                    <TextBlock Text="View:" FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding CurrentViewName}" Margin="6,0,0,0"/>
+                </StackPanel>
+            </StatusBarItem>
+            <Separator />
+            <StatusBarItem>
+                <TextBlock x:Name="StatusTextBlock"
+                           Text="{Binding QuickBooksStatusMessage, FallbackValue=Ready}"
+                           TextTrimming="CharacterEllipsis"
+                           Margin="4,0"/>
+            </StatusBarItem>
+            <Separator />
+            <StatusBarItem HorizontalAlignment="Right">
+                <StackPanel Orientation="Horizontal" Margin="4,0">
+                    <TextBlock Text="User:" FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding CurrentUserName}" Margin="6,0,0,0"/>
+                </StackPanel>
+            </StatusBarItem>
+        </StatusBar>
+
+        <!-- Header Section with Search -->
+        <Border DockPanel.Dock="Top" Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"
+                BorderBrush="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}"
+                BorderThickness="0,0,0,1" Padding="20,10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Search TextBox -->
+                <TextBox Grid.Column="0" 
+                        Text="{Binding SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        Margin="0,0,20,0"
+                        VerticalAlignment="Center"
+                        TabIndex="1"
+                        ToolTip="Search across all municipal data including enterprises, budgets, and accounts"
+                        AutomationProperties.Name="Global Search"
+                        AutomationProperties.HelpText="Enter text to search enterprises, budgets, and accounts">
+                    <TextBox.Style>
+                        <Style TargetType="TextBox">
+                            <Setter Property="Validation.ErrorTemplate">
+                                <Setter.Value>
+                                    <ControlTemplate>
+                                        <StackPanel Orientation="Horizontal">
+                                            <AdornedElementPlaceholder x:Name="textBox"/>
+                                            <TextBlock Foreground="Red" FontSize="12" 
+                                                     Text="{Binding ElementName=textBox, Path=AdornedElement.(Validation.Errors)[0].ErrorContent}"
+                                                     VerticalAlignment="Center" Margin="5,0,0,0"/>
+                                        </StackPanel>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="TextBox">
+                                        <Border Background="{TemplateBinding Background}"
+                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                BorderThickness="1" CornerRadius="4">
+                                            <Grid>
+                                                <ScrollViewer x:Name="PART_ContentHost" Margin="10,0,30,0" VerticalAlignment="Center" />
+                                                <TextBlock Text="🔍 Search enterprises, budgets, accounts..."
+                                                         Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                                                         Margin="10,0,0,0" VerticalAlignment="Center"
+                                                         Visibility="{TemplateBinding Text, Converter={StaticResource EmptyStringToVisibilityConverter}}" />
+                                            </Grid>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </TextBox.Style>
+                </TextBox>
+
+                <!-- Quick Action Buttons -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <syncfusion:ButtonAdv Label="Municipal Budgets" 
+                                        Command="{Binding OpenBudgetCommand}"
+                                        SizeMode="Normal" 
+                                        Margin="0,0,10,0"
+                                        ToolTip="Click to view municipal budgets (GASB-compliant hierarchy support)" />
+                    <syncfusion:ButtonAdv Label="Enterprise Dashboard" 
+                                        Command="{Binding OpenDashboardCommand}"
+                                        SizeMode="Normal" 
+                                        Margin="0,0,10,0"
+                                        ToolTip="View enterprise performance dashboard with key metrics" />
+                    <syncfusion:ButtonAdv Label="QuickBooks Sync" 
+                                        Command="{Binding LoadQuickBooksCustomersAsyncCommand}"
+                                        SizeMode="Normal"
+                                        ToolTip="Synchronize data with QuickBooks for real-time financial updates" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
         <!-- Ribbon rebuilt to match Syncfusion documented structure -->
         <syncfusion:Ribbon DockPanel.Dock="Top" x:Name="MainRibbon"
                            syncfusionskin:SfSkinManager.VisualStyle="FluentDark">
@@ -130,22 +238,42 @@
                 <syncfusion:RibbonBar Header="Navigation">
                     <syncfusion:RibbonButton Label="Dashboard"
                                               Command="{Binding OpenDashboardCommand}"
-                                              SizeForm="Large" />
+                                              SizeForm="Large"
+                                              ToolTip="Access the main dashboard with enterprise performance metrics and KPIs" />
                     <syncfusion:RibbonButton Label="Enterprise"
                                               Command="{Binding OpenEnterpriseCommand}"
-                                              SizeForm="Large" />
-                    <syncfusion:RibbonButton Label="Customers"
+                                              SizeForm="Large"
+                                              ToolTip="Manage municipal enterprises including water, sewer, and utility operations" />
+                    <syncfusion:RibbonButton Label="Municipal Accounts"
+                                              Command="{Binding OpenMunicipalAccountsCommand}"
+                                              SizeForm="Large"
+                                              ToolTip="View and manage the municipal chart of accounts with GASB compliance" />
+                    <syncfusion:RibbonButton Label="Utility Customers"
                                               Command="{Binding OpenCustomerManagementCommand}"
-                                              SizeForm="Large" />
+                                              SizeForm="Large"
+                                              ToolTip="Manage utility customer accounts, billing, and service requests" />
                     <syncfusion:RibbonButton Label="Budget"
                                               Command="{Binding OpenBudgetCommand}"
-                                              SizeForm="Large" />
+                                              SizeForm="Large"
+                                              ToolTip="Click to view municipal budgets (GASB-compliant hierarchy support)" />
                     <syncfusion:RibbonButton Label="AI Assistant"
                                               Command="{Binding OpenAIAssistCommand}"
-                                              SizeForm="Large" />
+                                              SizeForm="Large"
+                                              ToolTip="Access AI-powered assistance for municipal management and analysis" />
                     <syncfusion:RibbonButton Label="Settings"
                                               Command="{Binding OpenSettingsCommand}"
-                                              SizeForm="Large" />
+                                              SizeForm="Large"
+                                              ToolTip="Configure application settings and user preferences" />
+                </syncfusion:RibbonBar>
+                <syncfusion:RibbonBar Header="Appearance">
+                    <syncfusion:RibbonButton x:Name="BtnFluentDark"
+                                              Label="Fluent Dark"
+                                              SizeForm="Small"
+                                              Command="{Binding SwitchToFluentDarkCommand}" />
+                    <syncfusion:RibbonButton x:Name="BtnFluentLight"
+                                              Label="Fluent Light"
+                                              SizeForm="Small"
+                                              Command="{Binding SwitchToFluentLightCommand}" />
                 </syncfusion:RibbonBar>
                 <syncfusion:RibbonBar Header="Help">
                     <syncfusion:RibbonButton Label="AI Assistant"
@@ -316,7 +444,7 @@
     <syncfusion:DockingManager x:Name="MainDockingManager"
                      UseDocumentContainer="True"
                      ContainerMode="TDI"
-                     PersistState="False"
+                     PersistState="True"
                      MaximizeButtonEnabled="True"
                      MinimizeButtonEnabled="True"
                      MaximizeMode="FullScreen"
@@ -340,6 +468,46 @@
                 </syncfusion:CustomMenuItemCollection>
             </syncfusion:DockingManager.DockWindowContextMenuItems>
                 
+                <!-- Navigation Sidebar -->
+                <ContentControl x:Name="NavigationSidebar"
+                              syncfusion:DockingManager.Header="Navigation"
+                              syncfusion:DockingManager.State="Dock"
+                              syncfusion:DockingManager.SideInDockedMode="Left"
+                              syncfusion:DockingManager.DesiredWidthInDockedMode="250"
+                              syncfusion:DockingManager.DesiredHeightInDockedMode="600"
+                              syncfusion:DockingManager.CanMaximize="False"
+                              syncfusion:DockingManager.CanMinimize="True"
+                              syncfusion:DockingManager.CaptionToolTip="Hierarchical navigation of accounts and departments">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Text="📂 Accounts &amp; Departments" 
+                                 FontSize="14" FontWeight="SemiBold" 
+                                 Margin="10,10,10,5" />
+
+                        <syncfusion:SfTreeView Grid.Row="1" 
+                                             ItemsSource="{Binding NavigationItems}"
+                                             SelectedItem="{Binding SelectedNavigationItem, Mode=TwoWay}"
+                                             Margin="5"
+                                             TabIndex="2"
+                                             AutomationProperties.Name="Navigation Tree"
+                                             AutomationProperties.HelpText="Navigate through municipal accounts and departments">
+                            <syncfusion:SfTreeView.ItemTemplate>
+                                <HierarchicalDataTemplate ItemsSource="{Binding Children}">
+                                    <StackPanel Orientation="Horizontal" Margin="2">
+                                        <TextBlock Text="{Binding DisplayText}" 
+                                                 FontWeight="{Binding IsSelected, Converter={StaticResource BooleanToFontWeightConverter}}"
+                                                 ToolTip="{Binding Description}" />
+                                    </StackPanel>
+                                </HierarchicalDataTemplate>
+                            </syncfusion:SfTreeView.ItemTemplate>
+                        </syncfusion:SfTreeView>
+                    </Grid>
+                </ContentControl>
+
                 <!-- Main Enterprises Panel -->
                 <ContentControl x:Name="WidgetsPanel"
                               syncfusion:DockingManager.Header="Municipal Enterprises"
@@ -410,11 +578,24 @@
                                 <!-- Search Box -->
                                 <TextBox Grid.Column="0" Text="{Binding EnterpriseSearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                        Margin="0,0,15,0" Padding="10,8"
+                                       TabIndex="4"
                                        ToolTip="Search enterprises by name, type, or notes"
                                        Background="{DynamicResource {x:Static SystemColors.WindowBrushKey}}"
                                        BorderBrush="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}">
                                     <TextBox.Style>
                                         <Style TargetType="TextBox">
+                                            <Setter Property="Validation.ErrorTemplate">
+                                                <Setter.Value>
+                                                    <ControlTemplate>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <AdornedElementPlaceholder x:Name="textBox"/>
+                                                            <TextBlock Foreground="Red" FontSize="12" 
+                                                                     Text="{Binding ElementName=textBox, Path=AdornedElement.(Validation.Errors)[0].ErrorContent}"
+                                                                     VerticalAlignment="Center" Margin="5,0,0,0"/>
+                                                        </StackPanel>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
                                             <Setter Property="Template">
                                                 <Setter.Value>
                                                     <ControlTemplate TargetType="TextBox">
@@ -482,10 +663,14 @@
                                              AutoGenerateColumns="False"
                                              AllowSorting="True"
                                              AllowFiltering="True"
+                                             AllowEditing="True"
                                              FilterRowPosition="Top"
                                              ColumnSizer="AutoWithLastColumnFill"
                                              ShowGroupDropArea="True"
                                              GroupDropAreaText="Drag a column header here to group enterprises"
+                                             TabIndex="3"
+                                             AutomationProperties.Name="Municipal Enterprises Data Grid"
+                                             AutomationProperties.HelpText="View and edit municipal enterprise data including budgets, rates, and citizen counts"
                                              AllowGrouping="True"
                                              AllowResizingColumns="True"
                                              RowHeight="35"
@@ -495,7 +680,8 @@
                                              EnableDataVirtualization="True"
                                              UsePLINQ="True"
                                              Background="{DynamicResource {x:Static SystemColors.WindowBrushKey}}"
-                                             BorderBrush="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}">
+                                             BorderBrush="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}"
+                                             ShowToolTip="True">
 
                             <syncfusion:SfDataGrid.GroupColumnDescriptions>
                                 <syncfusion:GroupColumnDescription ColumnName="Type" />
@@ -528,7 +714,17 @@
                                 <syncfusion:GridNumericColumn HeaderText="Rate ($)" MappingName="CurrentRate" NumberDecimalDigits="2" Width="100" />
                                 <syncfusion:GridNumericColumn HeaderText="Citizens" MappingName="CitizenCount" NumberDecimalDigits="0" Width="90" />
                                 <syncfusion:GridNumericColumn HeaderText="Monthly Expenses" MappingName="MonthlyExpenses" NumberDecimalDigits="0" Width="130" />
-                                <syncfusion:GridNumericColumn HeaderText="Annual Budget" MappingName="TotalBudget" NumberDecimalDigits="0" Width="130" />
+                                <syncfusion:GridNumericColumn HeaderText="Annual Budget" MappingName="TotalBudget" NumberDecimalDigits="0" Width="130">
+                                    <syncfusion:GridNumericColumn.CellStyle>
+                                        <Style TargetType="syncfusion:GridCell">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding TotalBudget}" Value="0">
+                                                    <Setter Property="Background" Value="LightGray" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </syncfusion:GridNumericColumn.CellStyle>
+                                </syncfusion:GridNumericColumn>
                                 <syncfusion:GridTextColumn HeaderText="Notes" MappingName="Notes" Width="200" />
                             </syncfusion:SfDataGrid.Columns>
                         </syncfusion:SfDataGrid>
@@ -539,10 +735,11 @@
                                 Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}"
                                 Panel.ZIndex="100">
                             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                                <ProgressBar IsIndeterminate="True"
-                                           Width="200" Height="20"
-                                           Foreground="White"
-                                           Background="Transparent" />
+                                <notification:SfBusyIndicator Width="72"
+                                                             Height="72"
+                                                             AnimationType="DoubleCircle"
+                                                             Foreground="White"
+                                                             IsBusy="{Binding IsLoading}" />
                                 <TextBlock Text="Loading enterprises..."
                                          Foreground="White"
                                          FontSize="14"
@@ -692,6 +889,32 @@
                               syncfusion:DockingManager.CanMaximize="True"
                               syncfusion:DockingManager.CanMinimize="True"
                               syncfusion:DockingManager.CaptionToolTip="Budget management - plan and track financial budgets" />
+
+                <!-- Municipal Accounts Panel -->
+                <ContentControl x:Name="MunicipalAccountsPanel"
+                              Content="{Binding MunicipalAccountViewModel}"
+                              syncfusion:DockingManager.Header="Municipal Accounts"
+                              syncfusion:DockingManager.State="Dock"
+                              syncfusion:DockingManager.TargetNameInDockedMode="BudgetPanel"
+                              syncfusion:DockingManager.SideInDockedMode="Bottom"
+                              syncfusion:DockingManager.DesiredWidthInDockedMode="700"
+                              syncfusion:DockingManager.DesiredHeightInDockedMode="400"
+                              syncfusion:DockingManager.CanMaximize="True"
+                              syncfusion:DockingManager.CanMinimize="True"
+                              syncfusion:DockingManager.CaptionToolTip="Municipal chart of accounts and QuickBooks synchronization" />
+
+                <!-- Utility Customers Panel -->
+                <ContentControl x:Name="UtilityCustomersPanel"
+                              Content="{Binding UtilityCustomerViewModel}"
+                              syncfusion:DockingManager.Header="Utility Customers"
+                              syncfusion:DockingManager.State="Dock"
+                              syncfusion:DockingManager.TargetNameInDockedMode="MunicipalAccountsPanel"
+                              syncfusion:DockingManager.SideInDockedMode="Right"
+                              syncfusion:DockingManager.DesiredWidthInDockedMode="600"
+                              syncfusion:DockingManager.DesiredHeightInDockedMode="450"
+                              syncfusion:DockingManager.CanMaximize="True"
+                              syncfusion:DockingManager.CanMinimize="True"
+                              syncfusion:DockingManager.CaptionToolTip="Utility customer management - accounts, status, and contact tracking" />
 
                 <!-- AI Assistant Panel -->
                 <ContentControl x:Name="AIAssistPanel" 

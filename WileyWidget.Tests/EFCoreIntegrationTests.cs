@@ -134,7 +134,7 @@ public sealed class EFCoreIntegrationTests : IDisposable
         {
             Code = "ADMIN",
             Name = "Administration",
-            Fund = FundType.General
+            Fund = MunicipalFundType.General
         };
         await _context.Departments.AddAsync(department);
 
@@ -153,7 +153,7 @@ public sealed class EFCoreIntegrationTests : IDisposable
             Name = "Admin Salaries",
             AccountNumber = new AccountNumber("100-1000-5100"),
             Type = AccountType.Expense,
-            Fund = FundType.General,
+            Fund = MunicipalFundType.General,
             FundClass = FundClass.Governmental,
             DepartmentId = department.Id,
             BudgetPeriodId = period.Id,
@@ -294,7 +294,7 @@ public sealed class EFCoreIntegrationTests : IDisposable
                     Name = $"Account-{period.Year}-{i}",
                     AccountNumber = new AccountNumber($"{period.Year}-{i:D4}-100"),
                     Type = AccountType.Expense,
-                    Fund = FundType.General,
+                    Fund = MunicipalFundType.General,
                     FundClass = FundClass.Governmental,
                     BudgetPeriodId = period.Id,
                     Balance = i * 1000,

@@ -14,9 +14,14 @@ namespace WileyWidget.Business.Interfaces;
 public interface IUnitOfWork : IDisposable, IAsyncDisposable
 {
     /// <summary>
-    /// Enterprise repository access
+    /// Budget repository access
     /// </summary>
-    IEnterpriseRepository Enterprises { get; }
+    IBudgetRepository Budgets { get; }
+
+    /// <summary>
+    /// Department repository access
+    /// </summary>
+    IDepartmentRepository Departments { get; }
 
     /// <summary>
     /// Municipal account repository access
@@ -29,14 +34,9 @@ public interface IUnitOfWork : IDisposable, IAsyncDisposable
     IUtilityCustomerRepository UtilityCustomers { get; }
 
     /// <summary>
-    /// Gets fiscal year settings (singleton pattern - Id = 1)
+    /// Enterprise repository access
     /// </summary>
-    Task<FiscalYearSettings?> GetFiscalYearSettingsAsync();
-
-    /// <summary>
-    /// Saves fiscal year settings
-    /// </summary>
-    Task SaveFiscalYearSettingsAsync(FiscalYearSettings settings);
+    IEnterpriseRepository Enterprises { get; }
 
     /// <summary>
     /// Saves all pending changes to the database

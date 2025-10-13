@@ -36,6 +36,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private readonly IEnterpriseRepository _enterpriseRepository;
     private readonly IAIService _aiService;
     private readonly MunicipalAccountViewModel _municipalAccountViewModel;
+    private readonly UtilityCustomerViewModel _utilityCustomerViewModel;
+    private SettingsViewModel? _settingsViewModel;
 
     /// <summary>
     /// Semaphore to prevent concurrent loading operations
@@ -80,6 +82,11 @@ public partial class MainViewModel : ObservableObject, IDisposable
     /// Municipal account view model for Chart of Accounts and Budget Analysis
     /// </summary>
     public MunicipalAccountViewModel MunicipalAccountViewModel => _municipalAccountViewModel;
+
+    /// <summary>
+    /// Utility customer management view model surfaced in the docking layout
+    /// </summary>
+    public UtilityCustomerViewModel UtilityCustomerViewModel => _utilityCustomerViewModel;
 
     /// <summary>Currently selected enterprise in the grid (null when none selected).</summary>
     [ObservableProperty]
@@ -128,6 +135,12 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private bool useDynamicColumns = true;
 
     /// <summary>
+    /// Search query for filtering enterprises and other data
+    /// </summary>
+    [ObservableProperty]
+    private string searchQuery = string.Empty;
+
+    /// <summary>
     /// Collection of ribbon items for the main window
     /// </summary>
     public ObservableCollection<object> RibbonItems { get; set; } = new();
@@ -143,10 +156,33 @@ public partial class MainViewModel : ObservableObject, IDisposable
     public ObservableCollection<object> Widgets { get; set; } = new();
 
     /// <summary>
+    /// Collection of navigation items for hierarchical tree view
+    /// </summary>
+    public ObservableCollection<NavigationItem> NavigationItems { get; set; } = new();
+
+    /// <summary>
+    /// Currently selected navigation item in the tree view
+    /// </summary>
+    [ObservableProperty]
+    private NavigationItem selectedNavigationItem;
+
+    /// <summary>
     /// Current view name for navigation tracking
     /// </summary>
     [ObservableProperty]
     private string currentViewName = "Dashboard";
+
+    /// <summary>
+    /// Current view object for content control binding in TDI container
+    /// </summary>
+    [ObservableProperty]
+    private object currentView;
+
+    /// <summary>
+    /// Current Syncfusion theme applied to the shell window.
+    /// </summary>
+    [ObservableProperty]
+    private string currentTheme = ThemeUtility.NormalizeTheme(SettingsService.Instance.Current.Theme);
 
     /// <summary>
     /// Dashboard view model instance
@@ -169,9 +205,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
     public object? AIAssistViewModel { get; set; }
 
     /// <summary>
-    /// Settings view model instance
+    /// Settings view model instance used for theme synchronization.
     /// </summary>
-    public object? SettingsViewModel { get; set; }
+    public SettingsViewModel? SettingsViewModel => _settingsViewModel;
 
     /// <summary>
     /// Tools view model instance
@@ -188,6 +224,88 @@ public partial class MainViewModel : ObservableObject, IDisposable
         NavigationRequested?.Invoke(this, new NavigationRequestEventArgs(value));
     }
 
+    partial void OnCurrentThemeChanged(string value)
+    {
+        var normalized = ThemeUtility.NormalizeTheme(value);
+
+        if (!string.Equals(SettingsService.Instance.Current.Theme, normalized, StringComparison.Ordinal))
+        {
+            SettingsService.Instance.Current.Theme = normalized;
+            SettingsService.Instance.Save();
+        }
+
+        EnsureSettingsViewModelAttached();
+
+        if (_settingsViewModel != null && !string.Equals(_settingsViewModel.SelectedTheme, normalized, StringComparison.Ordinal))
+        {
+            _settingsViewModel.SelectedTheme = normalized;
+        }
+    }
+
+    private void EnsureSettingsViewModelAttached()
+    {
+        if (_settingsViewModel != null)
+        {
+            return;
+        }
+
+        try
+        {
+            var provider = App.ServiceProvider;
+            if (provider != null)
+            {
+                var resolved = provider.GetService<SettingsViewModel>();
+                if (resolved != null)
+                {
+                    AttachSettingsViewModel(resolved);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Debug(ex, "Failed to resolve SettingsViewModel for theme synchronization");
+        }
+    }
+
+    private void AttachSettingsViewModel(SettingsViewModel settingsViewModel)
+    {
+        if (_settingsViewModel == settingsViewModel)
+        {
+            return;
+        }
+
+        if (_settingsViewModel != null)
+        {
+            _settingsViewModel.PropertyChanged -= SettingsViewModel_PropertyChanged;
+        }
+
+        _settingsViewModel = settingsViewModel;
+        _settingsViewModel.PropertyChanged += SettingsViewModel_PropertyChanged;
+
+        var normalized = ThemeUtility.NormalizeTheme(_settingsViewModel.SelectedTheme);
+        if (!string.Equals(_settingsViewModel.SelectedTheme, normalized, StringComparison.Ordinal))
+        {
+            _settingsViewModel.SelectedTheme = normalized;
+        }
+
+        if (!string.Equals(CurrentTheme, normalized, StringComparison.Ordinal))
+        {
+            CurrentTheme = normalized;
+        }
+    }
+
+    private void SettingsViewModel_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(SettingsViewModel.SelectedTheme) && _settingsViewModel != null)
+        {
+            var normalized = ThemeUtility.NormalizeTheme(_settingsViewModel.SelectedTheme);
+            if (!string.Equals(CurrentTheme, normalized, StringComparison.Ordinal))
+            {
+                CurrentTheme = normalized;
+            }
+        }
+    }
+
     /// <summary>
     /// Initializes the view model asynchronously
     /// </summary>
@@ -199,6 +317,13 @@ public partial class MainViewModel : ObservableObject, IDisposable
             ErrorMessage = string.Empty; // Clear any previous errors
             await LoadEnterprisesAsync();
             await _municipalAccountViewModel.InitializeAsync();
+            if (_utilityCustomerViewModel.Customers.Count == 0)
+            {
+                await _utilityCustomerViewModel.LoadCustomersAsync();
+            }
+
+            // Initialize navigation items
+            InitializeNavigationItems();
         }
         catch (Exception ex)
         {
@@ -212,13 +337,117 @@ public partial class MainViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>
+    /// Initializes the navigation items for the hierarchical tree view
+    /// </summary>
+    private void InitializeNavigationItems()
+    {
+        NavigationItems.Clear();
+
+        // Municipal Accounts section
+        var municipalAccounts = new NavigationItem
+        {
+            Name = "Municipal Accounts",
+            Icon = "🏛️",
+            Description = "Chart of accounts and GASB-compliant financial structure",
+            Children = new ObservableCollection<NavigationItem>
+            {
+                new NavigationItem { Name = "Assets", AccountNumber = "100", Description = "Fixed and current assets" },
+                new NavigationItem { Name = "Liabilities", AccountNumber = "200", Description = "Current and long-term liabilities" },
+                new NavigationItem { Name = "Equity", AccountNumber = "300", Description = "Owner's equity and retained earnings" },
+                new NavigationItem { Name = "Revenues", AccountNumber = "400", Description = "Operating and non-operating revenues" },
+                new NavigationItem { Name = "Expenses", AccountNumber = "500", Description = "Operating expenses and expenditures" }
+            }
+        };
+
+        // Departments section
+        var departments = new NavigationItem
+        {
+            Name = "Departments",
+            Icon = "🏢",
+            Description = "Municipal departments and organizational units",
+            Children = new ObservableCollection<NavigationItem>
+            {
+                new NavigationItem { Name = "Administration", AccountNumber = "101", Description = "City administration and management" },
+                new NavigationItem { Name = "Public Works", AccountNumber = "102", Description = "Infrastructure and maintenance" },
+                new NavigationItem { Name = "Public Safety", AccountNumber = "103", Description = "Police and fire services" },
+                new NavigationItem { Name = "Utilities", AccountNumber = "104", Description = "Water, sewer, and utility services" }
+            }
+        };
+
+        // Budget Categories
+        var budgetCategories = new NavigationItem
+        {
+            Name = "Budget Categories",
+            Icon = "💰",
+            Description = "Budget classification and spending categories",
+            Children = new ObservableCollection<NavigationItem>
+            {
+                new NavigationItem { Name = "Personnel", AccountNumber = "405.1", Description = "Salaries and benefits" },
+                new NavigationItem { Name = "Operations", AccountNumber = "405.2", Description = "Day-to-day operational expenses" },
+                new NavigationItem { Name = "Capital", AccountNumber = "405.3", Description = "Capital improvements and equipment" },
+                new NavigationItem { Name = "Debt Service", AccountNumber = "405.4", Description = "Principal and interest payments" }
+            }
+        };
+
+        NavigationItems.Add(municipalAccounts);
+        NavigationItems.Add(departments);
+        NavigationItems.Add(budgetCategories);
+    }
+
+    /// <summary>
+    /// Command to save budget data with validation
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanSaveBudget))]
+    private async Task SaveBudgetAsync()
+    {
+        try
+        {
+            IsLoading = true;
+            // TODO: Implement budget saving logic
+            await Task.Delay(1000); // Simulate save operation
+            Log.Information("Budget data saved successfully");
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to save budget data");
+            ErrorMessage = "Failed to save budget data. Please try again.";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    /// <summary>
+    /// Determines if the budget can be saved
+    /// </summary>
+    private bool CanSaveBudget()
+    {
+        // TODO: Add validation logic (e.g., check if there are unsaved changes)
+        return !IsLoading;
+    }
+
+    /// <summary>
     /// Command to open customer management
     /// </summary>
     [RelayCommand]
-    private void OpenCustomerManagement()
+    private async System.Threading.Tasks.Task OpenCustomerManagement()
     {
-        // Stub implementation - can be expanded when needed
-        Log.Information("OpenCustomerManagement command invoked");
+        Log.Information("Utility customer navigation requested");
+
+        try
+        {
+            if (!_utilityCustomerViewModel.IsLoading && _utilityCustomerViewModel.Customers.Count == 0)
+            {
+                await _utilityCustomerViewModel.LoadCustomersAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Failed to preload utility customers prior to docking navigation");
+        }
+
+        NavigationRequested?.Invoke(this, new NavigationRequestEventArgs("UtilityCustomersPanel"));
     }
 
     [RelayCommand]
@@ -332,6 +561,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
         // Initialize Municipal Account View Model
         _municipalAccountViewModel = new MunicipalAccountViewModel(unitOfWork.MunicipalAccounts, quickBooksService);
+        _utilityCustomerViewModel = new UtilityCustomerViewModel(unitOfWork);
+
+        EnsureSettingsViewModelAttached();
 
         App.LogDebugEvent("VIEWMODEL_INIT", "Starting background data loading tasks");
 
@@ -923,6 +1155,13 @@ The AI has access to your enterprise data including:
     }
 
     [RelayCommand]
+    private void OpenMunicipalAccounts()
+    {
+        Log.Information("Municipal accounts navigation triggered");
+        NavigationRequested?.Invoke(this, new NavigationRequestEventArgs("MunicipalAccountsPanel"));
+    }
+
+    [RelayCommand]
     private void OpenBudget()
     {
         // This will be handled by the MainWindow event handler
@@ -993,6 +1232,20 @@ The AI has access to your enterprise data including:
     {
         // Open budget analysis focused on profit/loss
         BudgetView.ShowBudgetWindow();
+    }
+
+    [RelayCommand]
+    private void SwitchToFluentDark()
+    {
+        Log.Information("Switching to Fluent Dark theme");
+        CurrentTheme = "FluentDark";
+    }
+
+    [RelayCommand]
+    private void SwitchToFluentLight()
+    {
+        Log.Information("Switching to Fluent Light theme");
+        CurrentTheme = "FluentLight";
     }
 
     /// <summary>
@@ -1968,6 +2221,10 @@ The AI has access to your enterprise data including:
     {
         if (disposing)
         {
+            if (_settingsViewModel != null)
+            {
+                _settingsViewModel.PropertyChanged -= SettingsViewModel_PropertyChanged;
+            }
             _loadSemaphore?.Dispose();
         }
     }

@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 class Program {
-    static async Task Main(string[] args) {
+    static void Main(string[] args) {
         try {
             Console.WriteLine("Testing QuickBooks service instantiation...");
 

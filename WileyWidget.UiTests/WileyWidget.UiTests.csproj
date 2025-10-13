@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net9.0-windows</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>disable</Nullable>
+    <Nullable>enable</Nullable>
     <ShadowCopy>true</ShadowCopy>
     <NoWarn>$(NoWarn);NU1605;MSB3026;MSB3027;MSB3021</NoWarn>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>

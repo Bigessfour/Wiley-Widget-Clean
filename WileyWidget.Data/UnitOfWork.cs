@@ -22,9 +22,11 @@ public class UnitOfWork : IUnitOfWork
     private bool _disposed;
 
     // Lazy-initialized repositories
-    private IEnterpriseRepository? _enterprises;
+    private IBudgetRepository? _budgets;
+    private IDepartmentRepository? _departments;
     private IMunicipalAccountRepository? _municipalAccounts;
     private IUtilityCustomerRepository? _utilityCustomers;
+    private IEnterpriseRepository? _enterprises;
 
     /// <summary>
     /// Constructor with DbContext injection
@@ -35,19 +37,34 @@ public class UnitOfWork : IUnitOfWork
     }
 
     /// <summary>
-    /// Enterprise repository (lazy-loaded)
+    /// Budget repository (lazy-loaded)
     /// </summary>
-    public IEnterpriseRepository Enterprises
+    public IBudgetRepository Budgets
     {
         get
         {
-            if (_enterprises == null)
+            if (_budgets == null)
             {
-                // Create factory that returns our existing context
                 var factory = new SingleContextFactory(_context);
-                _enterprises = new EnterpriseRepository(factory);
+                _budgets = new BudgetRepository(factory);
             }
-            return _enterprises;
+            return _budgets;
+        }
+    }
+
+    /// <summary>
+    /// Department repository (lazy-loaded)
+    /// </summary>
+    public IDepartmentRepository Departments
+    {
+        get
+        {
+            if (_departments == null)
+            {
+                var factory = new SingleContextFactory(_context);
+                _departments = new DepartmentRepository(factory);
+            }
+            return _departments;
         }
     }
 
@@ -80,6 +97,22 @@ public class UnitOfWork : IUnitOfWork
                 _utilityCustomers = new UtilityCustomerRepository(factory);
             }
             return _utilityCustomers;
+        }
+    }
+
+    /// <summary>
+    /// Enterprise repository (lazy-loaded)
+    /// </summary>
+    public IEnterpriseRepository Enterprises
+    {
+        get
+        {
+            if (_enterprises == null)
+            {
+                var factory = new SingleContextFactory(_context);
+                _enterprises = new EnterpriseRepository(factory);
+            }
+            return _enterprises;
         }
     }
 
@@ -230,32 +263,6 @@ public class UnitOfWork : IUnitOfWork
             await RollbackTransactionAsync(cancellationToken);
             throw;
         }
-    }
-
-    /// <summary>
-    /// Gets fiscal year settings (singleton pattern - Id = 1)
-    /// </summary>
-    public async Task<FiscalYearSettings?> GetFiscalYearSettingsAsync()
-    {
-        return await _context.FiscalYearSettings
-            .AsNoTracking()
-            .FirstOrDefaultAsync(s => s.Id == 1);
-    }
-
-    /// <summary>
-    /// Saves fiscal year settings
-    /// </summary>
-    public async Task SaveFiscalYearSettingsAsync(FiscalYearSettings settings)
-    {
-        if (settings.Id == 0)
-        {
-            _context.FiscalYearSettings.Add(settings);
-        }
-        else
-        {
-            _context.FiscalYearSettings.Update(settings);
-        }
-        await _context.SaveChangesAsync();
     }
 
     /// <summary>

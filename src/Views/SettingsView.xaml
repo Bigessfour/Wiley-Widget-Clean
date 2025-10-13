@@ -62,7 +62,8 @@
                                 <ComboBox ItemsSource="{Binding AvailableThemes}"
                                          SelectedItem="{Binding SelectedTheme, Mode=TwoWay}"
                                          Margin="0,0,0,8"
-                                         ToolTip="Choose the visual theme for the application interface" />
+                                         IsEditable="False"
+                                         ToolTip="Choose the visual theme for the application interface. Changes apply immediately to toggle between FluentDark and FluentLight themes." />
 
                                 <Label Content="Window Width:" />
                                 <syncfusion:IntegerTextBox Value="{Binding WindowWidth, Mode=TwoWay}"
@@ -120,22 +121,42 @@
                     <StackPanel Margin="8">
                         <GroupBox Header="OAuth2 Configuration" Margin="0,0,0,8">
                             <StackPanel>
-                                <Label Content="Client ID:" />
-                                <TextBox Text="{Binding QuickBooksClientId, Mode=TwoWay}"
-                                       Margin="0,0,0,8" />
+                                <Label Content="Client ID:*" />
+                                <syncfusion:SfMaskedEdit Mask="[A-Za-z0-9]*"
+                                                       Value="{Binding QuickBooksClientId, Mode=TwoWay}"
+                                                       Margin="0,0,0,2"
+                                                       PromptChar=" "
+                                                       ToolTip="Enter your QuickBooks OAuth2 Client ID from the Intuit Developer Portal. Required for API authentication." />
+                                <TextBlock Text="{Binding QuickBooksClientIdValidation}"
+                                         Foreground="Red"
+                                         FontSize="10"
+                                         Margin="0,0,0,8" />
 
-                                <Label Content="Client Secret:" />
-                                <TextBox Text="{Binding QuickBooksClientSecret, Mode=TwoWay}"
-                                       Margin="0,0,0,8" />
+                                <Label Content="Client Secret:*" />
+                                <syncfusion:SfMaskedEdit Mask="[A-Za-z0-9]*"
+                                                       Value="{Binding QuickBooksClientSecret, Mode=TwoWay}"
+                                                       Margin="0,0,0,2"
+                                                       PromptChar=" "
+                                                       ToolTip="Enter your QuickBooks OAuth2 Client Secret. This is securely stored in the local vault." />
+                                <TextBlock Text="{Binding QuickBooksClientSecretValidation}"
+                                         Foreground="Red"
+                                         FontSize="10"
+                                         Margin="0,0,0,8" />
 
-                                <Label Content="Redirect URI:" />
+                                <Label Content="Redirect URI:*" />
                                 <TextBox Text="{Binding QuickBooksRedirectUri, Mode=TwoWay}"
-                                       Margin="0,0,0,8" />
+                                       Margin="0,0,0,2"
+                                       ToolTip="OAuth2 redirect URI configured in Intuit Developer Portal (e.g., https://localhost:5001/callback)" />
+                                <TextBlock Text="{Binding QuickBooksRedirectUriValidation}"
+                                         Foreground="Red"
+                                         FontSize="10"
+                                         Margin="0,0,0,8" />
 
                                 <Label Content="Environment:" />
-                                <ComboBox ItemsSource="{Binding QuickBooksEnvironments}"
-                                         SelectedItem="{Binding SelectedQuickBooksEnvironment, Mode=TwoWay}"
-                                         Margin="0,0,0,8" />
+                                <syncfusion:ComboBoxAdv ItemsSource="{Binding QuickBooksEnvironments}"
+                                                     SelectedItem="{Binding SelectedQuickBooksEnvironment, Mode=TwoWay}"
+                                                     Margin="0,0,0,8"
+                                                     ToolTip="Select Sandbox for testing or Production for live data operations" />
                             </StackPanel>
                         </GroupBox>
 
@@ -161,11 +182,16 @@
                         <GroupBox Header="License Information" Margin="0,0,0,8">
                             <StackPanel>
                                 <Label Content="License Key:" />
-                                <TextBox Text="{Binding SyncfusionLicenseKey, Mode=TwoWay}"
-                                       Margin="0,0,0,8"
-                                       TextWrapping="Wrap"
-                                       Height="60"
-                                       AcceptsReturn="True" />
+                                <syncfusion:SfMaskedEdit Mask="[A-Za-z0-9\-=]*"
+                                                       Value="{Binding SyncfusionLicenseKey, Mode=TwoWay}"
+                                                       Margin="0,0,0,2"
+                                                       Height="60"
+                                                       PromptChar=" "
+                                                       ToolTip="Enter your Syncfusion license key. Get your license from https://www.syncfusion.com/account/downloads" />
+                                <TextBlock Text="{Binding SyncfusionLicenseKeyValidation}"
+                                         Foreground="Red"
+                                         FontSize="10"
+                                         Margin="0,0,0,8" />
 
                                 <Label Content="License Status:" />
                                 <TextBlock Text="{Binding SyncfusionLicenseStatus}"
@@ -193,9 +219,11 @@
                         <GroupBox Header="XAI Configuration" Margin="0,0,0,8">
                             <StackPanel>
                                 <Label Content="API Key:*" />
-                                <TextBox Text="{Binding XaiApiKey, Mode=TwoWay}"
-                                       Margin="0,0,0,2"
-                                       ToolTip="Enter your XAI API key for AI functionality. Stored securely." />
+                                <syncfusion:SfMaskedEdit Mask="xai-[A-Za-z0-9]*"
+                                                       Value="{Binding XaiApiKey, Mode=TwoWay}"
+                                                       Margin="0,0,0,2"
+                                                       PromptChar=" "
+                                                       ToolTip="Enter your XAI API key for AI functionality. Format: xai-xxxxxxxx. Stored securely in local vault." />
                                 <TextBlock Text="{Binding XaiApiKeyValidation}"
                                          Foreground="Red"
                                          FontSize="10"
@@ -204,13 +232,14 @@
                                 <Label Content="Base URL:" />
                                 <TextBox Text="{Binding XaiBaseUrl, Mode=TwoWay}"
                                        Margin="0,0,0,8"
-                                       ToolTip="XAI API base URL (usually https://api.x.ai/v1/)" />
+                                       ToolTip="XAI API base URL (usually https://api.x.ai/v1/). Change only if using a custom endpoint." />
 
                                 <Label Content="Model:" />
-                                <ComboBox ItemsSource="{Binding AvailableModels}"
-                                         SelectedItem="{Binding XaiModel, Mode=TwoWay}"
-                                         Margin="0,0,0,8"
-                                         ToolTip="Select the AI model to use for responses" />
+                                <syncfusion:ComboBoxAdv ItemsSource="{Binding AvailableModels}"
+                                                     SelectedItem="{Binding XaiModel, Mode=TwoWay}"
+                                                     Margin="0,0,0,8"
+
+                                                     ToolTip="Select the AI model to use for responses. grok-4-0709 recommended for latest features." />
 
                                 <Label Content="Timeout (seconds):" />
                                 <syncfusion:IntegerTextBox Value="{Binding XaiTimeoutSeconds, Mode=TwoWay}"
@@ -228,16 +257,18 @@
                         <GroupBox Header="AI Settings" Margin="0,0,0,8">
                             <StackPanel>
                                 <Label Content="Response Style:" />
-                                <ComboBox ItemsSource="{Binding AvailableResponseStyles}"
-                                         SelectedItem="{Binding ResponseStyle, Mode=TwoWay}"
-                                         Margin="0,0,0,8"
-                                         ToolTip="Choose how detailed and structured AI responses should be" />
+                                <syncfusion:ComboBoxAdv ItemsSource="{Binding AvailableResponseStyles}"
+                                                     SelectedItem="{Binding ResponseStyle, Mode=TwoWay}"
+                                                     Margin="0,0,0,8"
+
+                                                     ToolTip="Choose how detailed and structured AI responses should be (Balanced recommended for general use)" />
 
                                 <Label Content="Personality:" />
-                                <ComboBox ItemsSource="{Binding AvailablePersonalities}"
-                                         SelectedItem="{Binding Personality, Mode=TwoWay}"
-                                         Margin="0,0,0,8"
-                                         ToolTip="Select the communication style for AI responses" />
+                                <syncfusion:ComboBoxAdv ItemsSource="{Binding AvailablePersonalities}"
+                                                     SelectedItem="{Binding Personality, Mode=TwoWay}"
+                                                     Margin="0,0,0,8"
+
+                                                     ToolTip="Select the communication style for AI responses (Professional recommended for business use)" />
 
                                 <Label Content="Context Window Size:" />
                                 <syncfusion:IntegerTextBox Value="{Binding ContextWindowSize, Mode=TwoWay}"
@@ -317,11 +348,13 @@
                                          TextWrapping="Wrap" />
 
                                 <Label Content="Fiscal Year Start Month:" />
-                                <ComboBox ItemsSource="{Binding FiscalYearMonths}"
-                                         SelectedValue="{Binding FiscalYearStartMonth, Mode=TwoWay}"
-                                         DisplayMemberPath="Name"
-                                         SelectedValuePath="Value"
-                                         Margin="0,0,0,8" />
+                                <syncfusion:ComboBoxAdv ItemsSource="{Binding FiscalYearMonths}"
+                                                     SelectedValue="{Binding FiscalYearStartMonth, Mode=TwoWay}"
+                                                     DisplayMemberPath="Name"
+                                                     SelectedValuePath="Value"
+                                                     Margin="0,0,0,8"
+
+                                                     ToolTip="Select the month when your organization's fiscal year begins (July is common for municipalities)" />
 
                                 <Label Content="Fiscal Year Start Day:" />
                                 <syncfusion:IntegerTextBox Value="{Binding FiscalYearStartDay, Mode=TwoWay}"
@@ -426,9 +459,11 @@
                         <GroupBox Header="Logging Settings" Margin="0,0,0,8">
                             <StackPanel>
                                 <Label Content="Log Level:" />
-                                <ComboBox ItemsSource="{Binding LogLevels}"
-                                         SelectedItem="{Binding SelectedLogLevel, Mode=TwoWay}"
-                                         Margin="0,0,0,8" />
+                                <syncfusion:ComboBoxAdv ItemsSource="{Binding LogLevels}"
+                                                     SelectedItem="{Binding SelectedLogLevel, Mode=TwoWay}"
+                                                     Margin="0,0,0,8"
+
+                                                     ToolTip="Set minimum log level (Debug for development, Information for production)" />
 
                                 <CheckBox Content="Enable file logging"
                                          IsChecked="{Binding EnableFileLogging, Mode=TwoWay}"

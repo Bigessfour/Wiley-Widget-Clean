@@ -7,75 +7,283 @@
         xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
         xmlns:syncfusionskin="clr-namespace:Syncfusion.SfSkinManager;assembly=Syncfusion.SfSkinManager.WPF"
         mc:Ignorable="d"
-        Title="Customer Management" Height="800" Width="1400"
-        WindowStartupLocation="CenterScreen">
+        Title="Utility Customer Billing Management" Height="900" Width="1600"
+        WindowStartupLocation="CenterScreen"
+        syncfusionskin:SfSkinManager.VisualStyle="FluentDark">
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
+        
+        <!-- Style for overdue bill rows -->
+        <Style x:Key="OverdueCellStyle" TargetType="syncfusion:GridCell">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsOverdue}" Value="True">
+                    <Setter Property="Foreground" Value="#FFF87171" />
+                    <Setter Property="FontWeight" Value="SemiBold" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
     </Window.Resources>
 
-    <Grid>
-
+    <Grid Background="#FF0F1724">
     <DockPanel>
         <!-- Ribbon Toolbar -->
         <syncfusion:Ribbon DockPanel.Dock="Top" x:Name="CustomerRibbon">
             <syncfusion:RibbonTab Caption="Customers">
                 <syncfusion:RibbonBar Header="Actions">
-                    <syncfusion:RibbonButton Label="Load All" SizeForm="Large" Command="{Binding LoadCustomersAsyncCommand}" />
-                    <syncfusion:RibbonButton Label="Active Only" Command="{Binding LoadActiveCustomersAsyncCommand}" />
-                    <syncfusion:RibbonButton Label="Outside City" Command="{Binding LoadCustomersOutsideCityLimitsAsyncCommand}" />
-                    <syncfusion:RibbonButton Label="Add New" SizeForm="Large" Command="{Binding AddCustomerAsyncCommand}" />
-                    <syncfusion:RibbonButton Label="Save" Command="{Binding SaveCustomerAsyncCommand}" />
-                    <syncfusion:RibbonButton Label="Delete" Command="{Binding DeleteCustomerAsyncCommand}" />
+                    <syncfusion:RibbonButton Label="Load All" SizeForm="Large" 
+                                            Command="{Binding LoadCustomersAsyncCommand}"
+                                            ToolTip="Load all utility customers" />
+                    <syncfusion:RibbonButton Label="Active Only" 
+                                            Command="{Binding LoadActiveCustomersAsyncCommand}"
+                                            ToolTip="Load active customers only" />
+                    <syncfusion:RibbonButton Label="Outside City" 
+                                            Command="{Binding LoadCustomersOutsideCityLimitsAsyncCommand}"
+                                            ToolTip="Load customers outside city limits" />
+                    <syncfusion:RibbonButton Label="Add New" SizeForm="Large" 
+                                            Command="{Binding AddCustomerAsyncCommand}"
+                                            ToolTip="Add a new customer account" />
+                    <syncfusion:RibbonButton Label="Save" 
+                                            Command="{Binding SaveCustomerAsyncCommand}"
+                                            ToolTip="Save changes to selected customer" />
+                    <syncfusion:RibbonButton Label="Delete" 
+                                            Command="{Binding DeleteCustomerAsyncCommand}"
+                                            ToolTip="Delete selected customer" />
                 </syncfusion:RibbonBar>
                 <syncfusion:RibbonBar Header="Search">
                     <TextBox Text="{Binding SearchTerm, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                           Width="200" Margin="0,0,4,0" />
+                           Width="200" Margin="0,0,4,0"
+                           ToolTip="Enter search term (name, account#, address)" />
                     <syncfusion:RibbonButton Label="Search" Command="{Binding SearchCustomersAsyncCommand}" />
                     <syncfusion:RibbonButton Label="Clear" Command="{Binding ClearSearchAsyncCommand}" />
+                </syncfusion:RibbonBar>
+                <syncfusion:RibbonBar Header="Bills">
+                    <syncfusion:RibbonButton Label="Load Bills" 
+                                            Command="{Binding LoadCustomerBillsAsyncCommand}"
+                                            ToolTip="Load billing history for selected customer" />
+                    <syncfusion:RibbonButton Label="Pay Bill" 
+                                            Command="{Binding PayBillAsyncCommand}"
+                                            ToolTip="Process payment for selected bill" />
                 </syncfusion:RibbonBar>
             </syncfusion:RibbonTab>
         </syncfusion:Ribbon>
 
         <!-- Main Content Area -->
-        <Grid>
+        <Grid Margin="8">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" MinHeight="280" />
+            </Grid.RowDefinitions>
+            
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="2*" />
                 <ColumnDefinition Width="450" />
             </Grid.ColumnDefinitions>
 
-            <!-- Customer List -->
-            <DockPanel Grid.Column="0">
-                <TextBlock DockPanel.Dock="Top" Text="Utility Customers" FontSize="16" FontWeight="Bold" Margin="8" />
+            <!-- Customer List Section -->
+            <Border Grid.Row="0" Grid.Column="0" 
+                    Background="#1A2C41" 
+                    BorderBrush="#2A4A6A" 
+                    BorderThickness="1" 
+                    CornerRadius="6" 
+                    Margin="0,0,4,4">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" 
+                              Text="Utility Customers" 
+                              FontSize="16" 
+                              FontWeight="Bold" 
+                              Margin="12,12,12,8"
+                              Foreground="#FFE0E6F0" />
 
-                <syncfusion:SfDataGrid
-                    x:Name="CustomerGrid"
-                    ItemsSource="{Binding Customers}"
-                    SelectedItem="{Binding SelectedCustomer, Mode=TwoWay}"
-                    AutoGenerateColumns="False"
-                    AllowSorting="True"
-                    AllowGrouping="True"
-                    AllowFiltering="True"
-                    AllowResizingColumns="True"
-                    RowHeight="32"
-                    AlternationCount="2"
-                    ShowGroupDropArea="True"
-                    GroupDropAreaText="Drag a column header here to group customers"
-                    Margin="8,0,8,8">
+                    <syncfusion:SfDataGrid
+                        x:Name="CustomerGrid"
+                        ItemsSource="{Binding Customers}"
+                        SelectedItem="{Binding SelectedCustomer, Mode=TwoWay}"
+                        AutoGenerateColumns="False"
+                        AllowSorting="True"
+                        AllowGrouping="True"
+                        AllowFiltering="True"
+                        AllowResizingColumns="True"
+                        AllowEditing="False"
+                        RowHeight="32"
+                        AlternationCount="2"
+                        ShowGroupDropArea="True"
+                        GroupDropAreaText="Drag a column header here to group customers"
+                        ColumnSizer="AutoWithLastColumnFill"
+                        Margin="12,0,12,12"
+                        SelectionMode="Single">
 
-                    <syncfusion:SfDataGrid.Columns>
-                        <syncfusion:GridTextColumn HeaderText="Account #" MappingName="AccountNumber" Width="100" />
-                        <syncfusion:GridTextColumn HeaderText="Name" MappingName="DisplayName" Width="180" />
-                        <syncfusion:GridTextColumn HeaderText="Type" MappingName="CustomerTypeDescription" Width="100" />
-                        <syncfusion:GridTextColumn HeaderText="Location" MappingName="ServiceLocationDescription" Width="120" />
-                        <syncfusion:GridTextColumn HeaderText="Address" MappingName="ServiceAddress" Width="200" />
-                        <syncfusion:GridTextColumn HeaderText="Phone" MappingName="PhoneNumber" Width="120" />
-                        <syncfusion:GridTextColumn HeaderText="Meter #" MappingName="MeterNumber" Width="100" />
-                        <syncfusion:GridTextColumn HeaderText="Status" MappingName="StatusDescription" Width="80" />
-                        <syncfusion:GridNumericColumn HeaderText="Balance" MappingName="CurrentBalance" Width="100" />
-                    </syncfusion:SfDataGrid.Columns>
-                </syncfusion:SfDataGrid>
-            </DockPanel>
+                        <syncfusion:SfDataGrid.Columns>
+                            <syncfusion:GridTextColumn HeaderText="Account #" 
+                                                      MappingName="AccountNumber" 
+                                                      Width="110" />
+                            <syncfusion:GridTextColumn HeaderText="Name" 
+                                                      MappingName="DisplayName" 
+                                                      Width="200" />
+                            <syncfusion:GridTextColumn HeaderText="Type" 
+                                                      MappingName="CustomerTypeDescription" 
+                                                      Width="110" />
+                            <syncfusion:GridTextColumn HeaderText="Location" 
+                                                      MappingName="ServiceLocationDescription" 
+                                                      Width="130" />
+                            <syncfusion:GridTextColumn HeaderText="Address" 
+                                                      MappingName="ServiceAddress" 
+                                                      Width="220" />
+                            <syncfusion:GridTextColumn HeaderText="Phone" 
+                                                      MappingName="PhoneNumber" 
+                                                      Width="120" />
+                            <syncfusion:GridTextColumn HeaderText="Meter #" 
+                                                      MappingName="MeterNumber" 
+                                                      Width="110" />
+                            <syncfusion:GridTextColumn HeaderText="Status" 
+                                                      MappingName="StatusDescription" 
+                                                      Width="90" />
+                            <syncfusion:GridNumericColumn HeaderText="Balance" 
+                                                         MappingName="CurrentBalance"
+                                                         NumberDecimalDigits="2"
+                                                         Width="110" />
+                        </syncfusion:SfDataGrid.Columns>
 
+                        <syncfusion:SfDataGrid.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="Load Bills" Command="{Binding LoadCustomerBillsAsyncCommand}" />
+                                <MenuItem Header="Edit Customer" />
+                                <Separator />
+                                <MenuItem Header="Export to Excel" />
+                            </ContextMenu>
+                        </syncfusion:SfDataGrid.ContextMenu>
+                    </syncfusion:SfDataGrid>
+                </DockPanel>
+            </Border>
+
+            <!-- Bill History Section -->
+            <Border Grid.Row="1" Grid.Column="0" 
+                    Background="#1A2C41" 
+                    BorderBrush="#2A4A6A" 
+                    BorderThickness="1" 
+                    CornerRadius="6" 
+                    Margin="0,4,4,0">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="12,12,12,8">
+                        <TextBlock Text="Billing History" 
+                                  FontSize="16" 
+                                  FontWeight="Bold"
+                                  Foreground="#FFE0E6F0" />
+                        <TextBlock Text="{Binding SelectedCustomer.DisplayName, StringFormat=' - {0}'}"
+                                  FontSize="14"
+                                  Margin="8,2,0,0"
+                                  Foreground="#FFB9C8EC"
+                                  Visibility="{Binding SelectedCustomer, Converter={StaticResource BoolToVis}}" />
+                    </StackPanel>
+
+                    <syncfusion:SfDataGrid
+                        x:Name="BillHistoryGrid"
+                        ItemsSource="{Binding CustomerBills}"
+                        SelectedItem="{Binding SelectedBill, Mode=TwoWay}"
+                        AutoGenerateColumns="False"
+                        AllowSorting="True"
+                        AllowFiltering="True"
+                        AllowResizingColumns="True"
+                        AllowEditing="False"
+                        RowHeight="32"
+                        ColumnSizer="Star"
+                        Margin="12,0,12,12"
+                        SelectionMode="Single">
+
+                        <syncfusion:SfDataGrid.Columns>
+                            <syncfusion:GridTextColumn HeaderText="Bill #" 
+                                                      MappingName="BillNumber" 
+                                                      Width="150"
+                                                      ToolTipService.ToolTip="Bill number" />
+                            <syncfusion:GridDateTimeColumn HeaderText="Bill Date" 
+                                                          MappingName="BillDate"
+                                                          Pattern="ShortDate"
+                                                          Width="120"
+                                                          ToolTipService.ToolTip="Date bill was generated" />
+                            <syncfusion:GridDateTimeColumn HeaderText="Due Date" 
+                                                          MappingName="DueDate"
+                                                          Pattern="ShortDate"
+                                                          Width="120"
+                                                          CellStyle="{StaticResource OverdueCellStyle}"
+                                                          ToolTipService.ToolTip="Payment due date (red if overdue)" />
+                            <syncfusion:GridCurrencyColumn HeaderText="Amount"
+                                                         MappingName="WaterCharges"
+                                                         CurrencyDecimalDigits="2"
+                                                         Width="100"
+                                                         ToolTipService.ToolTip="Water service charges" />
+                            <syncfusion:GridNumericColumn HeaderText="Sewer" 
+                                                         MappingName="SewerCharges"
+                                                         NumberDecimalDigits="2"
+                                                         Width="100"
+                                                         ToolTipService.ToolTip="Sewer service charges" />
+                            <syncfusion:GridNumericColumn HeaderText="Garbage" 
+                                                         MappingName="GarbageCharges"
+                                                         NumberDecimalDigits="2"
+                                                         Width="100"
+                                                         ShowToolTip="True">
+                                <syncfusion:GridNumericColumn.ToolTipTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="Garbage service charges" />
+                                    </DataTemplate>
+                                </syncfusion:GridNumericColumn.ToolTipTemplate>
+                            </syncfusion:GridNumericColumn>
+                            <syncfusion:GridNumericColumn HeaderText="Total" 
+                                                         MappingName="TotalAmount"
+                                                         NumberDecimalDigits="2"
+                                                         Width="110"
+                                                         ShowToolTip="True">
+                                <syncfusion:GridNumericColumn.ToolTipTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="Total bill amount" />
+                                    </DataTemplate>
+                                </syncfusion:GridNumericColumn.ToolTipTemplate>
+                            </syncfusion:GridNumericColumn>
+                            <syncfusion:GridNumericColumn HeaderText="Paid" 
+                                                         MappingName="AmountPaid"
+                                                         NumberDecimalDigits="2"
+                                                         Width="110"
+                                                         ShowToolTip="True">
+                                <syncfusion:GridNumericColumn.ToolTipTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="Amount paid" />
+                                    </DataTemplate>
+                                </syncfusion:GridNumericColumn.ToolTipTemplate>
+                            </syncfusion:GridNumericColumn>
+                            <syncfusion:GridNumericColumn HeaderText="Due" 
+                                                         MappingName="AmountDue"
+                                                         NumberDecimalDigits="2"
+                                                         Width="110"
+                                                         CellStyle="{StaticResource OverdueCellStyle}"
+                                                         ShowToolTip="True">
+                                <syncfusion:GridNumericColumn.ToolTipTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="Amount still due" />
+                                    </DataTemplate>
+                                </syncfusion:GridNumericColumn.ToolTipTemplate>
+                            </syncfusion:GridNumericColumn>
+                            <syncfusion:GridTextColumn HeaderText="Status" 
+                                                      MappingName="StatusDescription" 
+                                                      Width="120"
+                                                      ShowToolTip="True">
+                                <syncfusion:GridTextColumn.ToolTipTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="Bill payment status" />
+                                    </DataTemplate>
+                                </syncfusion:GridTextColumn.ToolTipTemplate>
+                            </syncfusion:GridTextColumn>
+                        </syncfusion:SfDataGrid.Columns>
+
+                        <syncfusion:SfDataGrid.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="View Bill Details" ToolTip="View detailed bill breakdown" />
+                                <MenuItem Header="Pay Bill" Command="{Binding PayBillAsyncCommand}" />
+                                <Separator />
+                                <MenuItem Header="Export Bills to Excel" />
+                                <MenuItem Header="Print Bill" />
+                            </ContextMenu>
+                        </syncfusion:SfDataGrid.ContextMenu>
+                    </syncfusion:SfDataGrid>
+                </DockPanel>
+            </Border>
             <!-- Customer Details Panel -->
             <Border Grid.Column="1" BorderBrush="LightGray" BorderThickness="1" Margin="0,8,8,8" CornerRadius="4">
                 <DockPanel>

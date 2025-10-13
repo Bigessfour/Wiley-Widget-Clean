@@ -25,6 +25,11 @@ public partial class UtilityCustomerViewModel : ObservableObject
     public ObservableCollection<UtilityCustomer> Customers { get; } = new();
 
     /// <summary>
+    /// Collection of bills for the selected customer
+    /// </summary>
+    public ObservableCollection<UtilityBill> CustomerBills { get; } = new();
+
+    /// <summary>
     /// Collection of customer types for UI binding
     /// </summary>
     public IEnumerable<CustomerType> CustomerTypes { get; } = Enum.GetValues(typeof(CustomerType)).Cast<CustomerType>();
@@ -412,4 +417,175 @@ public partial class UtilityCustomerViewModel : ObservableObject
         StatusMessage = "Ready";
         Log.Information("Error cleared by user");
     }
+
+    #region Bill Management
+
+    /// <summary>
+    /// Selected bill in the bill history grid
+    /// </summary>
+    [ObservableProperty]
+    private UtilityBill selectedBill;
+
+    /// <summary>
+    /// Loads bills for the currently selected customer
+    /// </summary>
+    [RelayCommand]
+    public Task LoadCustomerBillsAsync()
+    {
+        if (SelectedCustomer == null) return Task.CompletedTask;
+
+        try
+        {
+            IsLoading = true;
+            StatusMessage = $"Loading bills for {SelectedCustomer.DisplayName}...";
+
+            // In a real implementation, you would fetch from a bill repository
+            // For now, we'll generate sample data
+            CustomerBills.Clear();
+            
+            // Generate sample bills (replace with actual repository call)
+            var sampleBills = GenerateSampleBills(SelectedCustomer.Id);
+            foreach (var bill in sampleBills)
+            {
+                CustomerBills.Add(bill);
+            }
+
+            StatusMessage = $"Loaded {CustomerBills.Count} bills for {SelectedCustomer.DisplayName}.";
+            Log.Information("Successfully loaded {Count} bills for customer {CustomerId}", CustomerBills.Count, SelectedCustomer.Id);
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Failed to load customer bills: {ex.Message}";
+            HasError = true;
+            StatusMessage = ErrorMessage;
+            Log.Error(ex, "Failed to load bills for customer {CustomerId}", SelectedCustomer?.Id);
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Calculates charges for a new bill
+    /// </summary>
+    public decimal CalculateWaterCharges(int gallonsUsed, ServiceLocation location)
+    {
+        // Rate structure: Base + tiered usage
+        decimal baseCharge = location == ServiceLocation.InsideCityLimits ? 15.00m : 22.50m;
+        decimal rate = location == ServiceLocation.InsideCityLimits ? 0.003m : 0.0045m;
+
+        return baseCharge + (gallonsUsed * rate);
+    }
+
+    /// <summary>
+    /// Calculates sewer charges based on water usage
+    /// </summary>
+    public decimal CalculateSewerCharges(int gallonsUsed, ServiceLocation location)
+    {
+        // Typically 80% of water usage
+        decimal baseCharge = location == ServiceLocation.InsideCityLimits ? 12.00m : 18.00m;
+        decimal rate = location == ServiceLocation.InsideCityLimits ? 0.0024m : 0.0036m;
+
+        return baseCharge + (gallonsUsed * 0.8m * rate);
+    }
+
+    /// <summary>
+    /// Calculates garbage service charges
+    /// </summary>
+    public decimal CalculateGarbageCharges(CustomerType customerType)
+    {
+        return customerType switch
+        {
+            CustomerType.Residential => 18.50m,
+            CustomerType.Commercial => 45.00m,
+            CustomerType.Industrial => 75.00m,
+            CustomerType.Agricultural => 25.00m,
+            _ => 18.50m
+        };
+    }
+
+    /// <summary>
+    /// Pays a selected bill
+    /// </summary>
+    [RelayCommand]
+    private Task PayBillAsync()
+    {
+        if (SelectedBill == null) return Task.CompletedTask;
+
+        try
+        {
+            StatusMessage = $"Processing payment for bill {SelectedBill.BillNumber}...";
+
+            // In real implementation, integrate with payment gateway
+            SelectedBill.AmountPaid = SelectedBill.TotalAmount;
+            SelectedBill.Status = BillStatus.Paid;
+            SelectedBill.PaidDate = DateTime.Now;
+
+            // Update in repository
+            // await _billRepository.UpdateAsync(SelectedBill);
+
+            StatusMessage = $"Payment processed for bill {SelectedBill.BillNumber}.";
+            Log.Information("Payment processed for bill {BillNumber}", SelectedBill.BillNumber);
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Failed to process payment: {ex.Message}";
+            HasError = true;
+            StatusMessage = ErrorMessage;
+            Log.Error(ex, "Failed to process payment for bill {BillNumber}", SelectedBill?.BillNumber);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Generates sample bills for demonstration (replace with actual repository)
+    /// </summary>
+    private List<UtilityBill> GenerateSampleBills(int customerId)
+    {
+        var bills = new List<UtilityBill>();
+        var random = new Random();
+
+        for (int i = 0; i < 6; i++)
+        {
+            var billDate = DateTime.Now.AddMonths(-i);
+            var dueDate = billDate.AddDays(30);
+            var waterUsage = random.Next(2000, 8000);
+
+            var bill = new UtilityBill
+            {
+                Id = i + 1,
+                CustomerId = customerId,
+                BillNumber = $"BILL{DateTime.Now.Year}{(DateTime.Now.Month - i):D2}{customerId:D4}",
+                BillDate = billDate,
+                DueDate = dueDate,
+                PeriodStartDate = billDate.AddDays(-30),
+                PeriodEndDate = billDate,
+                WaterUsageGallons = waterUsage,
+                WaterCharges = 45.00m + (waterUsage * 0.003m),
+                SewerCharges = 35.00m + (waterUsage * 0.8m * 0.0024m),
+                GarbageCharges = 18.50m,
+                StormwaterCharges = 5.00m,
+                LateFees = i == 0 ? 0 : (i % 3 == 0 ? 10.00m : 0),
+                Status = i > 2 ? BillStatus.Paid : (i == 0 ? BillStatus.Sent : BillStatus.Overdue),
+                AmountPaid = i > 2 ? 0 : 0,
+                Notes = i == 0 ? "Current bill" : $"Bill for period ending {billDate:MMM yyyy}"
+            };
+
+            if (bill.Status == BillStatus.Paid)
+            {
+                bill.AmountPaid = bill.TotalAmount;
+                bill.PaidDate = dueDate.AddDays(-5);
+            }
+
+            bills.Add(bill);
+        }
+
+        return bills;
+    }
+
+    #endregion
 }

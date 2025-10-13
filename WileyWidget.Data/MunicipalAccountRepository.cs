@@ -24,7 +24,7 @@ namespace WileyWidget.Data
 
         public async Task<IEnumerable<MunicipalAccount>> GetAllAsync()
         {
-            using IAppDbContext context = await _contextFactory.CreateDbContextAsync();
+            using var context = await _contextFactory.CreateDbContextAsync();
             return await context.MunicipalAccounts
                 .OrderBy(ma => ma.AccountNumber)
                 .ToListAsync();
@@ -39,7 +39,7 @@ namespace WileyWidget.Data
                 .ToListAsync();
         }
 
-    public async Task<IEnumerable<MunicipalAccount>> GetByFundAsync(FundType fund)
+    public async Task<IEnumerable<MunicipalAccount>> GetByFundAsync(MunicipalFundType fund)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
             return await context.MunicipalAccounts
@@ -150,15 +150,17 @@ namespace WileyWidget.Data
             return await context.MunicipalAccounts.CountAsync();
         }
 
-        public async Task<IEnumerable<MunicipalAccount>> GetAccountsWithBudgetEntriesAsync(int budgetPeriodId)
-        {
-            using var context = await _contextFactory.CreateDbContextAsync();
-            return await context.MunicipalAccounts
-                .Where(ma => ma.IsActive && 
-                           context.BudgetEntries.Any(be => be.MunicipalAccountId == ma.Id && be.BudgetPeriodId == budgetPeriodId))
-                .OrderBy(ma => ma.AccountNumber)
-                .ToListAsync();
-        }
+        // Note: This method is not applicable with the simplified budget schema
+        // BudgetEntry no longer has MunicipalAccountId or BudgetPeriodId
+        // public async Task<IEnumerable<MunicipalAccount>> GetAccountsWithBudgetEntriesAsync(int budgetPeriodId)
+        // {
+        //     using var context = await _contextFactory.CreateDbContextAsync();
+        //     return await context.MunicipalAccounts
+        //         .Where(ma => ma.IsActive &&
+        //                    context.BudgetEntries.Any(be => be.MunicipalAccountId == ma.Id && be.BudgetPeriodId == budgetPeriodId))
+        //         .OrderBy(ma => ma.AccountNumber)
+        //         .ToListAsync();
+        // }
 
         public async Task<MunicipalAccount> AddAsync(MunicipalAccount account)
         {
@@ -324,7 +326,7 @@ namespace WileyWidget.Data
             };
         }
 
-        private FundType DetermineFundFromAccount(Intuit.Ipp.Data.Account qbAccount)
+        private MunicipalFundType DetermineFundFromAccount(Intuit.Ipp.Data.Account qbAccount)
         {
             // Simple logic to determine fund based on account number or name
             // This can be enhanced based on specific municipal accounting practices
@@ -332,18 +334,18 @@ namespace WileyWidget.Data
             var accountName = qbAccount.Name?.ToLower(System.Globalization.CultureInfo.InvariantCulture) ?? "";
 
             if (accountNumber.Contains("water") || accountName.Contains("water"))
-                return FundType.Utility;
+                return MunicipalFundType.Utility;
             if (accountNumber.Contains("sewer") || accountName.Contains("sewer"))
-                return FundType.Utility;
+                return MunicipalFundType.Utility;
             if (accountNumber.Contains("trash") || accountName.Contains("trash") || accountName.Contains("garbage"))
-                return FundType.Utility;
+                return MunicipalFundType.Utility;
 
             // Check for enterprise fund indicators
             if (accountNumber.StartsWith("4") || accountNumber.StartsWith("5") ||
                 accountName.Contains("enterprise") || accountName.Contains("utility"))
-                return FundType.Enterprise;
+                return MunicipalFundType.Enterprise;
 
-            return FundType.General;
+            return MunicipalFundType.General;
         }
     }
 }

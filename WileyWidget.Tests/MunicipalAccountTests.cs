@@ -18,7 +18,7 @@ public class MunicipalAccountTests
             AccountNumber = new AccountNumber("1010-100"),
             Name = "Cash - General Fund",
             Type = AccountType.Asset,
-            Fund = FundType.General,
+            Fund = MunicipalFundType.General,
             FundClass = FundClass.Governmental,
             DepartmentId = 1,
             BudgetPeriodId = 1,
@@ -31,7 +31,7 @@ public class MunicipalAccountTests
         Assert.Equal("1010-100", account.AccountNumber.Value);
         Assert.Equal("Cash - General Fund", account.Name);
         Assert.Equal(AccountType.Asset, account.Type);
-        Assert.Equal(FundType.General, account.Fund);
+        Assert.Equal(MunicipalFundType.General, account.Fund);
         Assert.Equal(50000.00m, account.Balance);
         Assert.Equal(60000.00m, account.BudgetAmount);
         Assert.True(account.IsActive);
@@ -80,7 +80,7 @@ public class MunicipalAccountTests
             AccountNumber = new AccountNumber("1010-100"),
             Name = name,
             Type = AccountType.Asset,
-            Fund = FundType.General,
+            Fund = MunicipalFundType.General,
             FundClass = FundClass.Governmental,
             DepartmentId = 1,
             BudgetPeriodId = 1,
@@ -114,7 +114,7 @@ public class MunicipalAccountTests
             AccountNumber = new AccountNumber("1010-100"),
             Name = "Test Account",
             Type = type,
-            Fund = FundType.General,
+            Fund = MunicipalFundType.General,
             FundClass = FundClass.Governmental,
             DepartmentId = 1,
             BudgetPeriodId = 1,
@@ -127,12 +127,12 @@ public class MunicipalAccountTests
     }
 
     [Theory]
-    [InlineData(FundType.General, "General Fund")]
-    [InlineData(FundType.Water, "Water Fund")]
-    [InlineData(FundType.Sewer, "Sewer Fund")]
-    [InlineData(FundType.Trash, "Trash Fund")]
-    [InlineData(FundType.Enterprise, "Enterprise Fund")]
-    public void MunicipalAccount_FundDescription_ReturnsCorrectValue(FundType fund, string expectedDescription)
+    [InlineData(MunicipalFundType.General, "General Fund")]
+    [InlineData(MunicipalFundType.Water, "Water Fund")]
+    [InlineData(MunicipalFundType.Sewer, "Sewer Fund")]
+    [InlineData(MunicipalFundType.Trash, "Trash Fund")]
+    [InlineData(MunicipalFundType.Enterprise, "Enterprise Fund")]
+    public void MunicipalAccount_FundDescription_ReturnsCorrectValue(MunicipalFundType fund, string expectedDescription)
     {
         // Arrange
         var account = new MunicipalAccount
@@ -165,7 +165,7 @@ public class MunicipalAccountTests
             AccountNumber = new AccountNumber("1010-100"),
             Name = "Test Account",
             Type = AccountType.Asset,
-            Fund = FundType.General,
+            Fund = MunicipalFundType.General,
             FundClass = FundClass.Governmental,
             DepartmentId = 1,
             BudgetPeriodId = 1,
@@ -187,7 +187,7 @@ public class MunicipalAccountTests
             AccountNumber = new AccountNumber("1010-100"),
             Name = "Test Account",
             Type = AccountType.Asset,
-            Fund = FundType.General,
+            Fund = MunicipalFundType.General,
             FundClass = FundClass.Governmental,
             DepartmentId = 1,
             BudgetPeriodId = 1,
@@ -202,7 +202,7 @@ public class MunicipalAccountTests
         account.AccountNumber = new AccountNumber("2020-200");
         account.Name = "Updated Account";
         account.Type = AccountType.Payables;
-        account.Fund = FundType.Water;
+        account.Fund = MunicipalFundType.Water;
         account.Balance = 2000.00m;
         account.BudgetAmount = 1500.00m;
         account.IsActive = false;
@@ -232,7 +232,7 @@ public class MunicipalAccountTests
             AccountNumber = new AccountNumber("1010-100"),
             Name = "Cash Account",
             Type = AccountType.Asset,
-            Fund = FundType.General,
+            Fund = MunicipalFundType.General,
             FundClass = FundClass.Governmental,
             DepartmentId = 1,
             BudgetPeriodId = 1
@@ -258,7 +258,7 @@ public class MunicipalAccountTests
             AccountNumber = new AccountNumber("1010-100"),
             Name = "Test Account",
             Type = AccountType.Asset,
-            Fund = FundType.General,
+            Fund = MunicipalFundType.General,
             FundClass = FundClass.Governmental,
             DepartmentId = 1,
             BudgetPeriodId = 1,

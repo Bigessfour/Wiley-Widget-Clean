@@ -160,6 +160,7 @@ WileyWidgetDev.db*
 startup-performance-results.json
 test-error.txt
 test-output.txt
+build-diag.txt
 
 # Windows system files
 %APPDATA%/

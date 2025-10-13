@@ -226,13 +226,13 @@ public class MunicipalAccount : INotifyPropertyChanged
         }
     }
 
-    private FundType _fund;
+    private MunicipalFundType _fund;
 
     /// <summary>
     /// Fund type for governmental fund accounting
     /// </summary>
     [Required]
-    public FundType Fund
+    public MunicipalFundType Fund
     {
         get => _fund;
         set
@@ -390,20 +390,20 @@ public class MunicipalAccount : INotifyPropertyChanged
     [NotMapped]
     public string FundDescription => Fund switch
     {
-        FundType.General => "General Fund",
-        FundType.SpecialRevenue => "Special Revenue Fund",
-        FundType.CapitalProjects => "Capital Projects Fund",
-        FundType.DebtService => "Debt Service Fund",
-        FundType.Enterprise => "Enterprise Fund",
-        FundType.InternalService => "Internal Service Fund",
-        FundType.Trust => "Trust Fund",
-        FundType.Agency => "Agency Fund",
-        FundType.ConservationTrust => "Conservation Trust Fund",
-        FundType.Recreation => "Recreation Fund",
-        FundType.Utility => "Utility Fund",
-        FundType.Water => "Water Fund",
-        FundType.Sewer => "Sewer Fund",
-        FundType.Trash => "Trash Fund",
+        MunicipalFundType.General => "General Fund",
+        MunicipalFundType.SpecialRevenue => "Special Revenue Fund",
+        MunicipalFundType.CapitalProjects => "Capital Projects Fund",
+        MunicipalFundType.DebtService => "Debt Service Fund",
+        MunicipalFundType.Enterprise => "Enterprise Fund",
+        MunicipalFundType.InternalService => "Internal Service Fund",
+        MunicipalFundType.Trust => "Trust Fund",
+        MunicipalFundType.Agency => "Agency Fund",
+        MunicipalFundType.ConservationTrust => "Conservation Trust Fund",
+        MunicipalFundType.Recreation => "Recreation Fund",
+        MunicipalFundType.Utility => "Utility Fund",
+        MunicipalFundType.Water => "Water Fund",
+        MunicipalFundType.Sewer => "Sewer Fund",
+        MunicipalFundType.Trash => "Trash Fund",
         _ => "Unknown"
     };
 }
@@ -472,7 +472,7 @@ public enum FundClass
 /// <summary>
 /// Fund types for governmental fund accounting
 /// </summary>
-public enum FundType
+public enum MunicipalFundType
 {
     // Governmental Funds
     General,

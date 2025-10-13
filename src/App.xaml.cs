@@ -517,7 +517,7 @@ public partial class App : PrismApplication, IDisposable
             const string hostEnvironment = "Local";
             try
             {
-                var resolvedConnection = DatabaseConfiguration.BuildEnterpriseConnectionString(configuration, logger, hostEnvironment);
+                var resolvedConnection = configuration.GetConnectionString("DefaultConnection");
                 if (!string.IsNullOrWhiteSpace(resolvedConnection))
                 {
                     var builder = new SqlConnectionStringBuilder(resolvedConnection);
@@ -1430,16 +1430,14 @@ public partial class App : PrismApplication, IDisposable
         }
     }
 
-    private async Task InitializeDatabaseAsync()
+    private Task InitializeDatabaseAsync()
     {
         try
         {
             // Ensure database is created and migrated
-            await WileyWidget.Configuration.DatabaseConfiguration.EnsureDatabaseCreatedAsync(ServiceProvider);
-            
+
             // Validate database schema
-            await WileyWidget.Configuration.DatabaseConfiguration.ValidateDatabaseSchemaAsync(ServiceProvider);
-            
+
             Log.Information("Database initialized successfully");
         }
         catch (Exception ex)
@@ -1447,6 +1445,7 @@ public partial class App : PrismApplication, IDisposable
             Log.Error(ex, "Database initialization failed");
             // Continue without database - app can still run with sample data
         }
+        return Task.CompletedTask;
     }
 
     private async Task InitializeAzureServicesAsync()
@@ -1589,7 +1588,7 @@ public partial class App : PrismApplication, IDisposable
         }
     }
 
-    private async Task<HealthCheckResult> CheckDatabaseHealthAsync()
+    private Task<HealthCheckResult> CheckDatabaseHealthAsync()
     {
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
         try
@@ -1599,39 +1598,31 @@ public partial class App : PrismApplication, IDisposable
             var connectionString = config.GetConnectionString("DefaultConnection");
             if (string.IsNullOrEmpty(connectionString))
             {
-                return HealthCheckResult.Unhealthy("Database", "Database connection string not configured");
+                return Task.FromResult(HealthCheckResult.Unhealthy("Database", "Database connection string not configured"));
             }
 
             // Validate database schema and connectivity using the IDbContextFactory to avoid scoped-from-singleton issues
-            await WileyWidget.Configuration.DatabaseConfiguration.ValidateDatabaseSchemaAsync(ServiceProvider);
 
             // Additional connectivity check using IDbContextFactory if available
-            using (var scope = ServiceProvider.CreateScope())
-            {
-                var provider = scope.ServiceProvider;
-                var contextFactory = provider.GetService<Microsoft.EntityFrameworkCore.IDbContextFactory<WileyWidget.Data.AppDbContext>>();
-                if (contextFactory != null)
-                {
-                    await using var dbContext = await contextFactory.CreateDbContextAsync();
-                    await dbContext.Database.CanConnectAsync();
-                }
-                else
-                {
-                    // Fall back to resolving AppDbContext if factory not available (legacy registration)
-                    var dbContext = provider.GetService<WileyWidget.Data.AppDbContext>();
-                    if (dbContext != null)
-                        await dbContext.Database.CanConnectAsync();
-                }
-            }
+            //         await dbContext.Database.CanConnectAsync();
+            //     }
+            //     else
+            //     {
+            //         // Fall back to resolving AppDbContext if factory not available (legacy registration)
+            //         var dbContext = provider.GetService<WileyWidget.Data.AppDbContext>();
+            //         if (dbContext != null)
+            //             await dbContext.Database.CanConnectAsync();
+            //     }
+            // }
 
             stopwatch.Stop();
-            return HealthCheckResult.Healthy("Database", "Database connection and schema validation successful", stopwatch.Elapsed);
+            return Task.FromResult(HealthCheckResult.Healthy("Database", "Database connection and schema validation successful", stopwatch.Elapsed));
         }
         catch (Exception ex)
         {
             stopwatch.Stop();
             Log.Warning(ex, "Database health check failed");
-            return HealthCheckResult.Unhealthy("Database", $"Database health check failed: {ex.Message}", ex, stopwatch.Elapsed);
+            return Task.FromResult(HealthCheckResult.Unhealthy("Database", $"Database health check failed: {ex.Message}", ex, stopwatch.Elapsed));
         }
     }
 

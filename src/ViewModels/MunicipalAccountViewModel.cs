@@ -1,10 +1,11 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Serilog;
-    using WileyWidget.Business.Interfaces;
+using WileyWidget.Business.Interfaces;
 using WileyWidget.Models;
 using WileyWidget.Services;
 
@@ -81,7 +82,7 @@ public partial class MunicipalAccountViewModel : ObservableObject
     /// Selected fund type filter
     /// </summary>
     [ObservableProperty]
-    private FundType selectedFundFilter = FundType.General;
+    private MunicipalFundType selectedFundFilter = MunicipalFundType.General;
 
     /// <summary>
     /// Selected account type filter
@@ -276,6 +277,71 @@ public partial class MunicipalAccountViewModel : ObservableObject
         HasError = false;
         ErrorMessage = string.Empty;
         StatusMessage = "Ready";
+    }
+
+    /// <summary>
+    /// Navigate back to the main dashboard or parent view
+    /// </summary>
+    [RelayCommand]
+    private void NavigateBack()
+    {
+        try
+        {
+            // Find the MunicipalAccountView window and close it
+            var currentWindow = Application.Current.Windows
+                .OfType<Window>()
+                .FirstOrDefault(w => w.DataContext == this);
+
+            if (currentWindow != null)
+            {
+                currentWindow.Close();
+                Log.Information("MunicipalAccountView closed via NavigateBack command");
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to navigate back from MunicipalAccountView");
+            ErrorMessage = $"Navigation error: {ex.Message}";
+            HasError = true;
+        }
+    }
+
+    /// <summary>
+    /// Export accounts to Excel
+    /// </summary>
+    [RelayCommand]
+    private void ExportToExcel()
+    {
+        try
+        {
+            StatusMessage = "Export to Excel feature coming soon...";
+            Log.Information("Export to Excel requested");
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to export accounts");
+            ErrorMessage = $"Export failed: {ex.Message}";
+            HasError = true;
+        }
+    }
+
+    /// <summary>
+    /// Print account report
+    /// </summary>
+    [RelayCommand]
+    private void PrintReport()
+    {
+        try
+        {
+            StatusMessage = "Print report feature coming soon...";
+            Log.Information("Print report requested");
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to print report");
+            ErrorMessage = $"Print failed: {ex.Message}";
+            HasError = true;
+        }
     }
 
     /// <summary>

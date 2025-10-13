@@ -1,7 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using WileyWidget.Models;
-using System.Globalization;
-// Clean Architecture: Interfaces defined in Business layer, implemented in Data layer
 using WileyWidget.Business.Interfaces;
 
 namespace WileyWidget.Data;
@@ -26,14 +24,9 @@ public class UtilityCustomerRepository : IUtilityCustomerRepository
     /// </summary>
     public async Task<IEnumerable<UtilityCustomer>> GetAllAsync()
     {
-        // Simulate slow database query for testing timing
-        await Task.Delay(1000);
-
-        using var context = await _contextFactory.CreateDbContextAsync();
+        await using var context = await _contextFactory.CreateDbContextAsync();
         return await context.UtilityCustomers
             .AsNoTracking()
-            .OrderBy(c => c.LastName)
-            .ThenBy(c => c.FirstName)
             .ToListAsync();
     }
 
@@ -42,7 +35,7 @@ public class UtilityCustomerRepository : IUtilityCustomerRepository
     /// </summary>
     public async Task<UtilityCustomer?> GetByIdAsync(int id)
     {
-        using var context = await _contextFactory.CreateDbContextAsync();
+        await using var context = await _contextFactory.CreateDbContextAsync();
         return await context.UtilityCustomers
             .AsNoTracking()
             .FirstOrDefaultAsync(c => c.Id == id);
@@ -53,7 +46,7 @@ public class UtilityCustomerRepository : IUtilityCustomerRepository
     /// </summary>
     public async Task<UtilityCustomer?> GetByAccountNumberAsync(string accountNumber)
     {
-        using var context = await _contextFactory.CreateDbContextAsync();
+        await using var context = await _contextFactory.CreateDbContextAsync();
         return await context.UtilityCustomers
             .AsNoTracking()
             .FirstOrDefaultAsync(c => c.AccountNumber == accountNumber);
@@ -64,12 +57,10 @@ public class UtilityCustomerRepository : IUtilityCustomerRepository
     /// </summary>
     public async Task<IEnumerable<UtilityCustomer>> GetByCustomerTypeAsync(CustomerType customerType)
     {
-        using var context = await _contextFactory.CreateDbContextAsync();
+        await using var context = await _contextFactory.CreateDbContextAsync();
         return await context.UtilityCustomers
-            .AsNoTracking()
             .Where(c => c.CustomerType == customerType)
-            .OrderBy(c => c.LastName)
-            .ThenBy(c => c.FirstName)
+            .AsNoTracking()
             .ToListAsync();
     }
 
@@ -78,12 +69,10 @@ public class UtilityCustomerRepository : IUtilityCustomerRepository
     /// </summary>
     public async Task<IEnumerable<UtilityCustomer>> GetByServiceLocationAsync(ServiceLocation serviceLocation)
     {
-        using var context = await _contextFactory.CreateDbContextAsync();
+        await using var context = await _contextFactory.CreateDbContextAsync();
         return await context.UtilityCustomers
-            .AsNoTracking()
             .Where(c => c.ServiceLocation == serviceLocation)
-            .OrderBy(c => c.LastName)
-            .ThenBy(c => c.FirstName)
+            .AsNoTracking()
             .ToListAsync();
     }
 
@@ -92,12 +81,10 @@ public class UtilityCustomerRepository : IUtilityCustomerRepository
     /// </summary>
     public async Task<IEnumerable<UtilityCustomer>> GetActiveCustomersAsync()
     {
-        using var context = await _contextFactory.CreateDbContextAsync();
+        await using var context = await _contextFactory.CreateDbContextAsync();
         return await context.UtilityCustomers
+            .Where(c => c.IsActive)
             .AsNoTracking()
-            .Where(c => c.Status == CustomerStatus.Active)
-            .OrderBy(c => c.LastName)
-            .ThenBy(c => c.FirstName)
             .ToListAsync();
     }
 
@@ -106,17 +93,11 @@ public class UtilityCustomerRepository : IUtilityCustomerRepository
     /// </summary>
     public async Task<IEnumerable<UtilityCustomer>> GetCustomersWithBalanceAsync()
     {
-        using var context = await _contextFactory.CreateDbContextAsync();
-
-        var customers = await context.UtilityCustomers
-            .AsNoTracking()
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        return await context.UtilityCustomers
             .Where(c => c.CurrentBalance > 0)
+            .AsNoTracking()
             .ToListAsync();
-
-        return customers
-            .OrderByDescending(c => c.CurrentBalance)
-            .ThenBy(c => c.LastName)
-            .ToList();
     }
 
     /// <summary>
@@ -124,24 +105,10 @@ public class UtilityCustomerRepository : IUtilityCustomerRepository
     /// </summary>
     public async Task<IEnumerable<UtilityCustomer>> SearchAsync(string searchTerm)
     {
-        if (string.IsNullOrWhiteSpace(searchTerm))
-        {
-            return await GetAllAsync();
-        }
-
-        using var context = await _contextFactory.CreateDbContextAsync();
-
-        var term = $"%{searchTerm}%";
+        await using var context = await _contextFactory.CreateDbContextAsync();
         return await context.UtilityCustomers
+            .Where(c => c.DisplayName.Contains(searchTerm) || c.AccountNumber.Contains(searchTerm))
             .AsNoTracking()
-            .Where(c =>
-                EF.Functions.Like(c.FirstName, term) ||
-                EF.Functions.Like(c.LastName, term) ||
-                (c.CompanyName != null && EF.Functions.Like(c.CompanyName, term)) ||
-                EF.Functions.Like(c.AccountNumber, term) ||
-                (c.MeterNumber != null && EF.Functions.Like(c.MeterNumber, term)))
-            .OrderBy(c => c.LastName)
-            .ThenBy(c => c.FirstName)
             .ToListAsync();
     }
 
@@ -150,10 +117,7 @@ public class UtilityCustomerRepository : IUtilityCustomerRepository
     /// </summary>
     public async Task<UtilityCustomer> AddAsync(UtilityCustomer customer)
     {
-        using var context = await _contextFactory.CreateDbContextAsync();
-        customer.CreatedDate = DateTime.Now;
-        customer.LastModifiedDate = DateTime.Now;
-
+        await using var context = await _contextFactory.CreateDbContextAsync();
         context.UtilityCustomers.Add(customer);
         await context.SaveChangesAsync();
         return customer;
@@ -164,9 +128,7 @@ public class UtilityCustomerRepository : IUtilityCustomerRepository
     /// </summary>
     public async Task<UtilityCustomer> UpdateAsync(UtilityCustomer customer)
     {
-        using var context = await _contextFactory.CreateDbContextAsync();
-        customer.LastModifiedDate = DateTime.Now;
-
+        await using var context = await _contextFactory.CreateDbContextAsync();
         context.UtilityCustomers.Update(customer);
         await context.SaveChangesAsync();
         return customer;
@@ -177,22 +139,12 @@ public class UtilityCustomerRepository : IUtilityCustomerRepository
     /// </summary>
     public async Task<bool> DeleteAsync(int id)
     {
-        using var context = await _contextFactory.CreateDbContextAsync();
-        // Fetch from database first; if not found, return false
-        var entity = await context.UtilityCustomers.FindAsync(id);
-        if (entity == null)
-        {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        var customer = await context.UtilityCustomers.FindAsync(id);
+        if (customer == null)
             return false;
-        }
 
-        // If a different instance is tracked locally, detach it to avoid conflicts
-        var local = context.UtilityCustomers.Local.FirstOrDefault(e => e.Id == id);
-        if (local != null && !ReferenceEquals(local, entity))
-        {
-            context.Entry(local).State = EntityState.Detached;
-        }
-
-        context.UtilityCustomers.Remove(entity);
+        context.UtilityCustomers.Remove(customer);
         await context.SaveChangesAsync();
         return true;
     }
@@ -202,13 +154,10 @@ public class UtilityCustomerRepository : IUtilityCustomerRepository
     /// </summary>
     public async Task<bool> ExistsByAccountNumberAsync(string accountNumber, int? excludeId = null)
     {
-        using var context = await _contextFactory.CreateDbContextAsync();
+        await using var context = await _contextFactory.CreateDbContextAsync();
         var query = context.UtilityCustomers.Where(c => c.AccountNumber == accountNumber);
-
         if (excludeId.HasValue)
-        {
             query = query.Where(c => c.Id != excludeId.Value);
-        }
 
         return await query.AnyAsync();
     }
@@ -218,8 +167,8 @@ public class UtilityCustomerRepository : IUtilityCustomerRepository
     /// </summary>
     public async Task<int> GetCountAsync()
     {
-        using var context = await _contextFactory.CreateDbContextAsync();
-        return await context.UtilityCustomers.AsNoTracking().CountAsync();
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        return await context.UtilityCustomers.CountAsync();
     }
 
     /// <summary>
@@ -227,12 +176,10 @@ public class UtilityCustomerRepository : IUtilityCustomerRepository
     /// </summary>
     public async Task<IEnumerable<UtilityCustomer>> GetCustomersOutsideCityLimitsAsync()
     {
-        using var context = await _contextFactory.CreateDbContextAsync();
+        await using var context = await _contextFactory.CreateDbContextAsync();
         return await context.UtilityCustomers
-            .AsNoTracking()
             .Where(c => c.ServiceLocation == ServiceLocation.OutsideCityLimits)
-            .OrderBy(c => c.LastName)
-            .ThenBy(c => c.FirstName)
+            .AsNoTracking()
             .ToListAsync();
     }
 }

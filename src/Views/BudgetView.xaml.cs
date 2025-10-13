@@ -1,42 +1,25 @@
 using System;
-using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
-using System.Windows.Markup;
-using WileyWidget.Services;
+using Microsoft.Extensions.DependencyInjection;
 using WileyWidget.ViewModels;
-using WileyWidget.Data;
 using Syncfusion.SfSkinManager;
+using Syncfusion.UI.Xaml.TreeGrid;
 using Syncfusion.UI.Xaml.Grid;
-using Syncfusion.UI.Xaml.Grid.Helpers;
-using Syncfusion.Windows.Shared;
 using Serilog;
 
 namespace WileyWidget;
 
-
 /// <summary>
-/// Budget Analysis and Reporting Window
-/// Provides comprehensive financial analysis and reporting capabilities
+/// GASB-Compliant Municipal Budget Management UserControl
+/// Provides hierarchical budget account management with Excel import/export
 /// </summary>
-public partial class BudgetView : Window
+public partial class BudgetView : UserControl
 {
     public BudgetView()
     {
-        InitializeComponent();
-
-        EnsureNamedElementsAreDiscoverable();
-        ConfigureDataGridEnhancements();
-
-        // DataContext setup moved to Loaded event to avoid XAML load issues
-        Loaded += async (s, e) =>
-        {
-            if (DataContext is BudgetViewModel vm && vm.BudgetDetails.Count == 0)
-            {
-                await vm.RefreshBudgetDataAsync();
-            }
-        };
+        InitializeBudgetView();
+        ApplyTheme();
     }
 
     /// <summary>
@@ -47,143 +30,126 @@ public partial class BudgetView : Window
     {
         ArgumentNullException.ThrowIfNull(viewModel);
 
-        InitializeComponent();
-
-        EnsureNamedElementsAreDiscoverable();
-
+        InitializeBudgetView();
         DataContext = viewModel;
-
-        ConfigureDataGridEnhancements();
-
-        Loaded += async (s, e) =>
-        {
-            if (DataContext is BudgetViewModel vm && !vm.BudgetDetails.Any())
-            {
-                await vm.RefreshBudgetDataAsync();
-            }
-        };
+        ApplyTheme();
     }
 
-    private void ConfigureDataGridEnhancements()
+    /// <summary>
+    /// Ensures the XAML content loads even when analyzers cannot discover the generated InitializeComponent.
+    /// </summary>
+    private void InitializeBudgetView()
     {
-        if (BudgetDetailsGrid is null)
+        try
         {
-            return;
+            var resourceLocator = new Uri("/WileyWidget;component/src/Views/BudgetView.xaml", UriKind.Relative);
+            Application.LoadComponent(this, resourceLocator);
         }
-
-        BudgetDetailsGrid.ShowRowHeader = true;
-        BudgetDetailsGrid.AllowRowHoverHighlighting = true;
-    }
-
-    private void EnsureNamedElementsAreDiscoverable()
-    {
-        EnsureNameRegistered(BudgetDetailsGrid, nameof(BudgetDetailsGrid));
-        EnsureNameRegistered(BudgetRibbon, nameof(BudgetRibbon));
-        EnsureNameRegistered(BudgetSpreadsheet, nameof(BudgetSpreadsheet));
-    }
-
-    private void EnsureNameRegistered(FrameworkElement? element, string name)
-    {
-        if (element is null)
+        catch (Exception ex)
         {
-            return;
-        }
-
-        var scope = NameScope.GetNameScope(this);
-        if (scope is null)
-        {
-            scope = new NameScope();
-            NameScope.SetNameScope(this, scope);
-        }
-
-        if (scope.FindName(name) is null)
-        {
-            scope.RegisterName(name, element);
-        }
-    }
-
-    private void BudgetDetailsGrid_CellToolTipOpening(object sender, GridCellToolTipOpeningEventArgs e)
-    {
-        if (e.Record is not BudgetDetailItem detail || e.Column is null)
-        {
-            return;
-        }
-
-        string? message = null;
-
-        switch (e.Column.MappingName)
-        {
-            case nameof(BudgetDetailItem.MonthlyBalance):
-                if (detail.MonthlyBalance < 0)
-                {
-                    message = "Deficit alert: Expenses are outpacing revenue for this enterprise.";
-                }
-                else if (detail.MonthlyBalance > 0)
-                {
-                    message = "Surplus: Revenue currently exceeds expenses.";
-                }
-                break;
-            case nameof(BudgetDetailItem.BreakEvenRate):
-                var delta = detail.BreakEvenRate - detail.CurrentRate;
-                if (delta > 0)
-                {
-                    message = $"Needs a rate increase of {delta:C2} to reach break-even.";
-                }
-                else if (delta < 0)
-                {
-                    message = $"Current rate is {Math.Abs(delta):C2} above break-even.";
-                }
-                break;
-            case nameof(BudgetDetailItem.Status):
-                if (detail.Status.Equals("Deficit", StringComparison.OrdinalIgnoreCase))
-                {
-                    message = "Flagged for remediation: consider expense controls or rate adjustments.";
-                }
-                else if (detail.Status.Equals("Surplus", StringComparison.OrdinalIgnoreCase))
-                {
-                    message = "Healthy performance: monitor for reinvestment opportunities.";
-                }
-                break;
-        }
-
-        if (message is not null)
-        {
-            e.ToolTip.Content = message;
+            Log.Error(ex, "Failed to load BudgetView XAML content");
+            throw;
         }
     }
 
     /// <summary>
-    /// Show the Budget Analysis window
+    /// Apply FluentDark theme with FluentLight fallback
+    /// </summary>
+    private void ApplyTheme()
+    {
+        try
+        {
+            using var darkTheme = new Theme("FluentDark");
+            SfSkinManager.SetTheme(this, darkTheme);
+            Log.Information("Applied FluentDark theme to BudgetView");
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Failed to apply FluentDark theme, falling back to FluentLight");
+            try
+            {
+                using var lightTheme = new Theme("FluentLight");
+                SfSkinManager.SetTheme(this, lightTheme);
+            }
+            catch (Exception fallbackEx)
+            {
+                Log.Error(fallbackEx, "Failed to apply FluentLight fallback theme");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Handles the Loaded event to refresh budget data
+    /// </summary>
+    private async void BudgetView_Loaded(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is BudgetViewModel vm)
+        {
+            await vm.RefreshBudgetDataAsync();
+        }
+    }
+
+    /// <summary>
+    /// Handles cell tooltip opening to provide contextual GASB guidance
+    /// </summary>
+    private void BudgetTreeGrid_CellToolTipOpening(object sender, TreeGridCellToolTipOpeningEventArgs e)
+    {
+        // Syncfusion TreeGrid tooltips are handled via ToolTip property on columns
+        // Additional custom tooltip logic can be added here if needed
+        Log.Debug($"Cell tooltip opening for column: {e.Column?.MappingName}");
+    }
+
+    /// <summary>
+    /// Handles cell edit completion to trigger ViewModel calculations
+    /// </summary>
+    private void BudgetTreeGrid_CurrentCellEndEdit(object sender, CurrentCellEndEditEventArgs e)
+    {
+        if (DataContext is BudgetViewModel vm)
+        {
+            // Recalculate totals when any cell is edited
+            vm.RefreshBudgetDataCommand?.Execute(null);
+        }
+
+        Log.Information("Cell edit completed in BudgetTreeGrid");
+    }
+
+    /// <summary>
+    /// Creates a standalone window hosting the budget view.
     /// </summary>
     public static void ShowBudgetWindow()
     {
-        var window = new BudgetView();
-        window.Show();
-    }
+        var provider = App.ServiceProvider ?? Application.Current?.Properties["ServiceProvider"] as IServiceProvider;
+        BudgetViewModel? viewModel = null;
 
-    /// <summary>
-    /// Show the Budget Analysis window as dialog
-    /// </summary>
-    public static bool? ShowBudgetDialog()
-    {
-        var window = new BudgetView();
-        return window.ShowDialog();
-    }
-
-    public new object? FindName(string name)
-    {
-        var result = base.FindName(name);
-        if (result is not null)
+        if (provider != null)
         {
-            return result;
+            try
+            {
+                viewModel = provider.GetService<BudgetViewModel>();
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Failed to resolve BudgetViewModel from DI container");
+            }
         }
 
-        return name switch
+        if (viewModel == null)
         {
-            nameof(BudgetDetailsGrid) => BudgetDetailsGrid,
-            nameof(BudgetRibbon) => BudgetRibbon,
-            nameof(BudgetSpreadsheet) => BudgetSpreadsheet,
-            _ => null
+            Log.Information("Falling back to default BudgetView without DI-bound ViewModel");
+        }
+
+        var view = viewModel != null ? new BudgetView(viewModel) : new BudgetView();
+
+        var window = new Window
+        {
+            Title = "Municipal Budget Analysis",
+            Content = view,
+            Owner = Application.Current?.MainWindow,
+            Width = 1280,
+            Height = 900,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner
         };
+
+        window.Show();
     }
 }

@@ -138,7 +138,10 @@
 
                     <!-- Budget Trend Chart -->
                     <GroupBox Header="Budget Trends" Margin="0,0,10,0" Padding="10">
-                        <syncfusion:SfChart Height="200">
+                        <syncfusion:SfChart Height="200"
+                                          syncfusionskin:SfSkinManager.VisualStyle="{Binding CurrentTheme, FallbackValue=FluentDark}"
+                                          AutomationProperties.Name="Budget Trends Chart"
+                                          AutomationProperties.HelpText="Line chart showing budget trends over time">
                             <syncfusion:SfChart.PrimaryAxis>
                                 <syncfusion:CategoryAxis />
                             </syncfusion:SfChart.PrimaryAxis>
@@ -148,13 +151,18 @@
                             <syncfusion:LineSeries ItemsSource="{Binding BudgetTrendData}"
                                                  XBindingPath="Period"
                                                  YBindingPath="Amount"
-                                                 Interior="#2196F3" />
+                                                 Interior="#2196F3"
+                                                 EnableAnimation="True"
+                                                 AnimationDuration="1500" />
                         </syncfusion:SfChart>
                     </GroupBox>
 
                     <!-- Enterprise Distribution -->
                     <GroupBox Header="Enterprise Distribution" Margin="10,0,0,0" Padding="10">
-                        <syncfusion:SfChart Height="200">
+                        <syncfusion:SfChart Height="200"
+                                          syncfusionskin:SfSkinManager.VisualStyle="{Binding CurrentTheme, FallbackValue=FluentDark}"
+                                          AutomationProperties.Name="Enterprise Distribution Chart"
+                                          AutomationProperties.HelpText="Pie chart showing distribution of enterprise types">
                             <syncfusion:SfChart.Legend>
                                 <syncfusion:ChartLegend />
                             </syncfusion:SfChart.Legend>
@@ -163,7 +171,9 @@
                                                  YBindingPath="Count"
                                                  Label="Type"
                                                  ExplodeAll="True"
-                                                 ExplodeRadius="10" />
+                                                 ExplodeRadius="10"
+                                                 EnableAnimation="True"
+                                                 AnimationDuration="1500" />
                         </syncfusion:SfChart>
                     </GroupBox>
                 </Grid>

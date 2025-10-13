@@ -17,7 +17,7 @@ public class LocalizationService : INotifyPropertyChanged, IDisposable
     private CultureInfo _currentCulture;
     private CultureInfo _currentUICulture;
 
-    public event PropertyChangedEventHandler PropertyChanged;
+    public event PropertyChangedEventHandler? PropertyChanged;
 
     /// <summary>
     /// Current culture for data formatting

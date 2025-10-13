@@ -4,7 +4,7 @@
     <TargetFramework>net9.0-windows</TargetFramework>
     <LangVersion>latest</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>disable</Nullable>
+    <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
     <NoWarn>$(NoWarn);NU1605;NETSDK1206</NoWarn>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>

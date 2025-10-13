@@ -1,5 +1,6 @@
-using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows;
 using Syncfusion.SfSkinManager;
 using WileyWidget.Services;
 using WileyWidget.Data;
@@ -10,9 +11,9 @@ using BusinessInterfaces = WileyWidget.Business.Interfaces;
 namespace WileyWidget;
 
 /// <summary>
-/// AI Assistant window providing xAI integration through custom chat interface
+/// AI Assistant UserControl providing xAI integration through custom chat interface
 /// </summary>
-public partial class AIAssistView : Window
+public partial class AIAssistView : UserControl
 {
     private readonly IServiceScope _viewScope;
     public AIAssistView()
@@ -42,14 +43,10 @@ public partial class AIAssistView : Window
         Log.Information("AI Assist View initialized");
     }
 
-    protected override void OnClosed(System.EventArgs e)
+    private void AIAssistView_Loaded(object sender, RoutedEventArgs e)
     {
-        try
-        {
-            _viewScope?.Dispose();
-        }
-        catch { /* ignore */ }
-        base.OnClosed(e);
+        // Focus input on load
+        MessageInput?.Focus();
     }
 
     private ViewModels.AIAssistViewModel? ViewModel
@@ -82,27 +79,7 @@ public partial class AIAssistView : Window
     /// </summary>
     private void TryApplyTheme(string themeName)
     {
-        Services.ThemeUtility.TryApplyTheme(this, themeName);
-    }
-
-    /// <summary>
-    /// Static method to show the AI Assist window (following existing pattern)
-    /// </summary>
-    public static void ShowAIAssistWindow()
-    {
-        try
-        {
-            var aiWindow = new AIAssistView();
-            aiWindow.Show();
-            Log.Information("AI Assist window opened successfully");
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show($"Failed to open AI Assistant: {ex.Message}",
-                          "Error",
-                          MessageBoxButton.OK,
-                          MessageBoxImage.Error);
-            Log.Error(ex, "Failed to open AI Assist window");
-        }
+        // For UserControl, theme is applied at application level or parent level
+        // SfSkinManager can be used on the parent Window
     }
 }

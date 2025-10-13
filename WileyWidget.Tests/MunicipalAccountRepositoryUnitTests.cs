@@ -83,9 +83,9 @@ public sealed class MunicipalAccountRepositoryUnitTests : IDisposable
         // Arrange - GASB compliant: 100-199=Assets, 300-399=Equity, 500-699=Expenses
         var accounts = new List<MunicipalAccount>
         {
-            CreateTestAccount("501.2000", "Salaries Expense", AccountType.Salaries, FundType.General),
-            CreateTestAccount("101.1000", "Cash Account", AccountType.Cash, FundType.General),
-            CreateTestAccount("301.3000", "Fund Balance", AccountType.FundBalance, FundType.General)
+            CreateTestAccount("501.2000", "Salaries Expense", AccountType.Salaries, MunicipalFundType.General),
+            CreateTestAccount("101.1000", "Cash Account", AccountType.Cash, MunicipalFundType.General),
+            CreateTestAccount("301.3000", "Fund Balance", AccountType.FundBalance, MunicipalFundType.General)
         };
         SeedDatabase(accounts);
 
@@ -106,9 +106,9 @@ public sealed class MunicipalAccountRepositoryUnitTests : IDisposable
         // Arrange - GASB compliant: 100-199=Assets
         var accounts = new List<MunicipalAccount>
         {
-            CreateTestAccount("101.1000", "Cash Account", AccountType.Cash, FundType.General, isActive: true),
-            CreateTestAccount("102.1000", "Investments", AccountType.Investments, FundType.General, isActive: true),
-            CreateTestAccount("103.1000", "Closed Account", AccountType.Cash, FundType.General, isActive: false)
+            CreateTestAccount("101.1000", "Cash Account", AccountType.Cash, MunicipalFundType.General, isActive: true),
+            CreateTestAccount("102.1000", "Investments", AccountType.Investments, MunicipalFundType.General, isActive: true),
+            CreateTestAccount("103.1000", "Closed Account", AccountType.Cash, MunicipalFundType.General, isActive: false)
         };
         SeedDatabase(accounts);
 
@@ -128,18 +128,18 @@ public sealed class MunicipalAccountRepositoryUnitTests : IDisposable
         // Arrange - GASB compliant: 100-199=Assets, 500-699=Expenses
         var accounts = new List<MunicipalAccount>
         {
-            CreateTestAccount("101.1000", "General Fund Cash", AccountType.Cash, FundType.General, isActive: true),
-            CreateTestAccount("501.2000", "General Fund Salaries", AccountType.Salaries, FundType.General, isActive: true),
-            CreateTestAccount("102.1000", "Water Fund Cash", AccountType.Cash, FundType.Water, isActive: true)
+            CreateTestAccount("101.1000", "General Fund Cash", AccountType.Cash, MunicipalFundType.General, isActive: true),
+            CreateTestAccount("501.2000", "General Fund Salaries", AccountType.Salaries, MunicipalFundType.General, isActive: true),
+            CreateTestAccount("102.1000", "Water Fund Cash", AccountType.Cash, MunicipalFundType.Water, isActive: true)
         };
         SeedDatabase(accounts);
 
         // Act
-        var result = await _repository.GetByFundAsync(FundType.General);
+        var result = await _repository.GetByFundAsync(MunicipalFundType.General);
 
         // Assert
         Assert.Equal(2, result.Count());
-        Assert.All(result, a => Assert.Equal(FundType.General, a.Fund));
+        Assert.All(result, a => Assert.Equal(MunicipalFundType.General, a.Fund));
         Assert.All(result, a => Assert.True(a.IsActive));
     }
 
@@ -149,13 +149,13 @@ public sealed class MunicipalAccountRepositoryUnitTests : IDisposable
         // Arrange - GASB compliant: 100-199=Assets
         var accounts = new List<MunicipalAccount>
         {
-            CreateTestAccount("101.1000", "Active General Fund", AccountType.Cash, FundType.General, isActive: true),
-            CreateTestAccount("102.1000", "Inactive General Fund", AccountType.Investments, FundType.General, isActive: false)
+            CreateTestAccount("101.1000", "Active General Fund", AccountType.Cash, MunicipalFundType.General, isActive: true),
+            CreateTestAccount("102.1000", "Inactive General Fund", AccountType.Investments, MunicipalFundType.General, isActive: false)
         };
         SeedDatabase(accounts);
 
         // Act
-        var result = await _repository.GetByFundAsync(FundType.General);
+        var result = await _repository.GetByFundAsync(MunicipalFundType.General);
 
         // Assert
         Assert.Single(result);
@@ -168,9 +168,9 @@ public sealed class MunicipalAccountRepositoryUnitTests : IDisposable
         // Arrange - GASB compliant: 100-199=Assets, 500-699=Expenses
         var accounts = new List<MunicipalAccount>
         {
-            CreateTestAccount("101.1000", "Cash", AccountType.Cash, FundType.General, isActive: true),
-            CreateTestAccount("102.1000", "Investments", AccountType.Investments, FundType.General, isActive: true),
-            CreateTestAccount("501.2000", "Salaries", AccountType.Salaries, FundType.General, isActive: true)
+            CreateTestAccount("101.1000", "Cash", AccountType.Cash, MunicipalFundType.General, isActive: true),
+            CreateTestAccount("102.1000", "Investments", AccountType.Investments, MunicipalFundType.General, isActive: true),
+            CreateTestAccount("501.2000", "Salaries", AccountType.Salaries, MunicipalFundType.General, isActive: true)
         };
         SeedDatabase(accounts);
 
@@ -187,7 +187,7 @@ public sealed class MunicipalAccountRepositoryUnitTests : IDisposable
     public async Task GetByIdAsync_ExistingId_ReturnsAccount()
     {
         // Arrange - GASB compliant: 100-199=Assets
-        var account = CreateTestAccount("101.1000", "Cash Account", AccountType.Cash, FundType.General, isActive: true);
+        var account = CreateTestAccount("101.1000", "Cash Account", AccountType.Cash, MunicipalFundType.General, isActive: true);
         var accounts = new List<MunicipalAccount> { account };
         SeedDatabase(accounts);
 
@@ -222,7 +222,7 @@ public sealed class MunicipalAccountRepositoryUnitTests : IDisposable
         // Arrange - GASB compliant: 100-199=Assets
         var accounts = new List<MunicipalAccount>
         {
-            CreateTestAccount("101.1000", "Cash Account", AccountType.Cash, FundType.General, isActive: true)
+            CreateTestAccount("101.1000", "Cash Account", AccountType.Cash, MunicipalFundType.General, isActive: true)
         };
         SeedDatabase(accounts);
 
@@ -255,7 +255,7 @@ public sealed class MunicipalAccountRepositoryUnitTests : IDisposable
         // Arrange - GASB compliant: 100-199=Assets
         var accounts = new List<MunicipalAccount>();
         SeedDatabase(accounts);
-        var account = CreateTestAccount("101.1000", "Cash Account", AccountType.Cash, FundType.General, 
+        var account = CreateTestAccount("101.1000", "Cash Account", AccountType.Cash, MunicipalFundType.General, 
             isActive: true, balance: 50000.00m, budget: 55000.00m);
 
         // Act
@@ -266,7 +266,7 @@ public sealed class MunicipalAccountRepositoryUnitTests : IDisposable
         Assert.Equal("101.1000", result.AccountNumber.ToString());
         Assert.Equal("Cash Account", result.Name);
         Assert.Equal(AccountType.Cash, result.Type);
-        Assert.Equal(FundType.General, result.Fund);
+        Assert.Equal(MunicipalFundType.General, result.Fund);
 
         // Verify it was added to database
         var savedAccount = await _repository.GetByIdAsync(result.Id);
@@ -278,7 +278,7 @@ public sealed class MunicipalAccountRepositoryUnitTests : IDisposable
     public async Task UpdateAsync_ExistingAccount_UpdatesAndReturnsAccount()
     {
         // Arrange - GASB compliant: 100-199=Assets
-        var account = CreateTestAccount("101.1000", "Cash Account", AccountType.Cash, FundType.General,
+        var account = CreateTestAccount("101.1000", "Cash Account", AccountType.Cash, MunicipalFundType.General,
             isActive: true, balance: 50000.00m);
         var accounts = new List<MunicipalAccount> { account };
         SeedDatabase(accounts);
@@ -307,7 +307,7 @@ public sealed class MunicipalAccountRepositoryUnitTests : IDisposable
     public async Task DeleteAsync_ExistingId_DeletesAccount()
     {
         // Arrange - GASB compliant: 100-199=Assets
-        var account = CreateTestAccount("101.1000", "Cash Account", AccountType.Cash, FundType.General, isActive: true);
+        var account = CreateTestAccount("101.1000", "Cash Account", AccountType.Cash, MunicipalFundType.General, isActive: true);
         var accounts = new List<MunicipalAccount> { account };
         SeedDatabase(accounts);
 
@@ -339,13 +339,13 @@ public sealed class MunicipalAccountRepositoryUnitTests : IDisposable
         // Arrange - GASB compliant: 100-199=Assets, 500-699=Expenses
         var accounts = new List<MunicipalAccount>
         {
-            CreateTestAccount("101.1000", "Cash Account", AccountType.Cash, FundType.General, 
+            CreateTestAccount("101.1000", "Cash Account", AccountType.Cash, MunicipalFundType.General, 
                 isActive: true, balance: 50000.00m, budget: 55000.00m),
-            CreateTestAccount("501.2000", "Salaries", AccountType.Salaries, FundType.General, 
+            CreateTestAccount("501.2000", "Salaries", AccountType.Salaries, MunicipalFundType.General, 
                 isActive: true, balance: 40000.00m, budget: 45000.00m),
-            CreateTestAccount("103.1000", "Closed Account", AccountType.Receivables, FundType.General, 
+            CreateTestAccount("103.1000", "Closed Account", AccountType.Receivables, MunicipalFundType.General, 
                 isActive: false, balance: 10000.00m, budget: 15000.00m),
-            CreateTestAccount("102.1000", "No Budget Account", AccountType.Investments, FundType.General, 
+            CreateTestAccount("102.1000", "No Budget Account", AccountType.Investments, MunicipalFundType.General, 
                 isActive: true, balance: 25000.00m, budget: 0.00m)
         };
         SeedDatabase(accounts);
@@ -367,9 +367,9 @@ public sealed class MunicipalAccountRepositoryUnitTests : IDisposable
         // Arrange - GASB compliant: 100-199=Assets, 500-699=Expenses
         var accounts = new List<MunicipalAccount>
         {
-            CreateTestAccount("501.2000", "Salaries", AccountType.Salaries, FundType.General, 
+            CreateTestAccount("501.2000", "Salaries", AccountType.Salaries, MunicipalFundType.General, 
                 isActive: true, budget: 45000.00m),
-            CreateTestAccount("101.1000", "Cash", AccountType.Cash, FundType.General, 
+            CreateTestAccount("101.1000", "Cash", AccountType.Cash, MunicipalFundType.General, 
                 isActive: true, budget: 55000.00m)
         };
         SeedDatabase(accounts);
@@ -425,16 +425,16 @@ public sealed class MunicipalAccountRepositoryUnitTests : IDisposable
     }
 
     /// <summary>
-    /// Helper method to get appropriate FundClass for a FundType
+    /// Helper method to get appropriate FundClass for a MunicipalFundType
     /// Following GASB 34 standards
     /// </summary>
-    private static FundClass GetFundClassForFund(FundType fundType)
+    private static FundClass GetFundClassForFund(MunicipalFundType MunicipalFundType)
     {
-        return fundType switch
+        return MunicipalFundType switch
         {
-            FundType.General or FundType.SpecialRevenue or FundType.CapitalProjects or FundType.DebtService => FundClass.Governmental,
-            FundType.Enterprise or FundType.InternalService or FundType.Water or FundType.Sewer or FundType.Trash or FundType.Utility => FundClass.Proprietary,
-            FundType.Trust or FundType.Agency => FundClass.Fiduciary,
+            MunicipalFundType.General or MunicipalFundType.SpecialRevenue or MunicipalFundType.CapitalProjects or MunicipalFundType.DebtService => FundClass.Governmental,
+            MunicipalFundType.Enterprise or MunicipalFundType.InternalService or MunicipalFundType.Water or MunicipalFundType.Sewer or MunicipalFundType.Trash or MunicipalFundType.Utility => FundClass.Proprietary,
+            MunicipalFundType.Trust or MunicipalFundType.Agency => FundClass.Fiduciary,
             _ => FundClass.Governmental // Default to Governmental
         };
     }
@@ -448,7 +448,7 @@ public sealed class MunicipalAccountRepositoryUnitTests : IDisposable
     /// - 400-499: Revenue (Taxes, Fees, Grants, Sales, etc.)
     /// - 500-699: Expenses (Salaries, Supplies, Services, etc.)
     /// </summary>
-    private static MunicipalAccount CreateTestAccount(string accountNumber, string name, AccountType accountType, FundType fund, bool isActive = true, decimal balance = 0m, decimal budget = 0m)
+    private static MunicipalAccount CreateTestAccount(string accountNumber, string name, AccountType accountType, MunicipalFundType fund, bool isActive = true, decimal balance = 0m, decimal budget = 0m)
     {
         return new MunicipalAccount
         {

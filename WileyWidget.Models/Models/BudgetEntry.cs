@@ -1,198 +1,70 @@
 using System;
-using System.ComponentModel;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Runtime.CompilerServices;
+using WileyWidget.Models.Entities;
 
 namespace WileyWidget.Models;
 
 /// <summary>
-/// Represents a budget entry for multi-year tracking
+/// Represents a budget entry with hierarchical support and GASB compliance
 /// </summary>
-public class BudgetEntry : INotifyPropertyChanged
+public class BudgetEntry : IAuditable
 {
-    private int _id;
-    private int _municipalAccountId;
-    private YearType _yearType;
-    private EntryType _entryType;
-    private decimal _amount;
-    private DateTime _createdDate = DateTime.UtcNow;
-    private string? _notes;
+    public int Id { get; set; }
 
-    /// <summary>
-    /// Unique identifier for the budget entry
-    /// </summary>
-    [Key]
-    public int Id
-    {
-        get => _id;
-        set
-        {
-            if (_id != value)
-            {
-                _id = value;
-                OnPropertyChanged();
-            }
-        }
-    }
+    [Required, MaxLength(50), RegularExpression(@"^\d{3}(\.\d{1,2})?$", ErrorMessage = "AccountNumber must be like '405' or '410.1'")]
+    public string AccountNumber { get; set; } = string.Empty; // e.g., "410.1"
 
-    /// <summary>
-    /// Reference to the municipal account
-    /// </summary>
-    [Required]
-    public int MunicipalAccountId
-    {
-        get => _municipalAccountId;
-        set
-        {
-            if (_municipalAccountId != value)
-            {
-                _municipalAccountId = value;
-                OnPropertyChanged();
-            }
-        }
-    }
+    [Required, MaxLength(200)]
+    public string Description { get; set; } = string.Empty;
 
-    public MunicipalAccount? MunicipalAccount { get; set; }
-
-    /// <summary>
-    /// Reference to the budget period
-    /// </summary>
-    [Required]
-    public int BudgetPeriodId { get; set; }
-    public BudgetPeriod? BudgetPeriod { get; set; }
-
-    /// <summary>
-    /// Type of year this entry represents
-    /// </summary>
-    [Required]
-    public YearType YearType
-    {
-        get => _yearType;
-        set
-        {
-            if (_yearType != value)
-            {
-                _yearType = value;
-                OnPropertyChanged();
-            }
-        }
-    }
-
-    /// <summary>
-    /// Type of entry (actual, estimate, budget)
-    /// </summary>
-    [Required]
-    public EntryType EntryType
-    {
-        get => _entryType;
-        set
-        {
-            if (_entryType != value)
-            {
-                _entryType = value;
-                OnPropertyChanged();
-            }
-        }
-    }
-
-    /// <summary>
-    /// The monetary amount
-    /// </summary>
-    [Required]
     [Column(TypeName = "decimal(18,2)")]
-    public decimal Amount
-    {
-        get => _amount;
-        set
-        {
-            if (_amount != value)
-            {
-                _amount = value;
-                OnPropertyChanged();
-            }
-        }
-    }
+    public decimal BudgetedAmount { get; set; }
 
-    /// <summary>
-    /// Date this entry was created/modified
-    /// </summary>
-    public DateTime CreatedDate
-    {
-        get => _createdDate;
-        set
-        {
-            if (_createdDate != value)
-            {
-                _createdDate = value;
-                OnPropertyChanged();
-            }
-        }
-    }
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal ActualAmount { get; set; }
 
-    /// <summary>
-    /// Notes about this entry
-    /// </summary>
-    [StringLength(200)]
-    public string? Notes
-    {
-        get => _notes;
-        set
-        {
-            if (_notes != value)
-            {
-                _notes = value;
-                OnPropertyChanged();
-            }
-        }
-    }
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal Variance { get; set; } // Computed in ViewModel, persisted
 
-    public event PropertyChangedEventHandler? PropertyChanged;
+    public int? ParentId { get; set; } // Hierarchy support
+    [ForeignKey("ParentId")]
+    public BudgetEntry? Parent { get; set; }
+    public ICollection<BudgetEntry> Children { get; set; } = new List<BudgetEntry>();
 
-    protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
-    {
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-    }
-}
+    // Multi-year support
+    [Required]
+    public int FiscalYear { get; set; } // e.g., 2026
+    public DateOnly StartPeriod { get; set; }
+    public DateOnly EndPeriod { get; set; }
 
-/// <summary>
-/// Types of years for budget tracking
-/// </summary>
-public enum YearType
-{
-    /// <summary>
-    /// Prior year actual amounts
-    /// </summary>
-    Prior,
+    // GASB compliance
+    public FundType FundType { get; set; } // Enum
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal EncumbranceAmount { get; set; } // Reserved funds
+    public bool IsGASBCompliant { get; set; } = true;
 
-    /// <summary>
-    /// Current year amounts
-    /// </summary>
-    Current,
+    // Relationships
+    public int DepartmentId { get; set; }
+    [ForeignKey("DepartmentId")]
+    public Department Department { get; set; } = null!;
+    public int? FundId { get; set; }
+    [ForeignKey("FundId")]
+    public Fund? Fund { get; set; }
 
-    /// <summary>
-    /// Budget year planned amounts
-    /// </summary>
-    Budget
-}
+    // Local Excel import tracking
+    [MaxLength(500)]
+    public string? SourceFilePath { get; set; } // e.g., "C:\Budgets\TOW_2026.xlsx"
+    // New: Excel metadata
+    public int? SourceRowNumber { get; set; } // For error reporting
+    // New: GASB activity code
+    [MaxLength(10)]
+    public string? ActivityCode { get; set; } // e.g., "GOV" for governmental
+    // New: Transactions
+    public ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
 
-/// <summary>
-/// Types of budget entries
-/// </summary>
-public enum EntryType
-{
-    /// <summary>
-    /// Actual historical amounts
-    /// </summary>
-    Actual,
-
-    /// <summary>
-    /// Estimated amounts
-    /// </summary>
-    Estimate,
-
-    /// <summary>
-    /// Budgeted/planned amounts
-    /// </summary>
-    Budget
+    // Auditing (simplified)
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? UpdatedAt { get; set; }
 }

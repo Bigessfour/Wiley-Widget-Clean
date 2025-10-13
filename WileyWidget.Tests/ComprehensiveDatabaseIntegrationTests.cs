@@ -69,7 +69,7 @@ public class ComprehensiveDatabaseIntegrationTests : IDisposable
         {
             Code = "FIN",
             Name = "Finance Department",
-            Fund = FundType.General
+            Fund = MunicipalFundType.General
         };
 
         _context.Departments.Add(department1);
@@ -93,7 +93,7 @@ public class ComprehensiveDatabaseIntegrationTests : IDisposable
             AccountNumber = new AccountNumber("101-1000"),
             Name = "General Fund Cash",
             Type = AccountType.Cash,
-            Fund = FundType.General,
+            Fund = MunicipalFundType.General,
             FundClass = FundClass.Governmental,
             DepartmentId = 1,
             BudgetPeriodId = 1,
@@ -107,7 +107,7 @@ public class ComprehensiveDatabaseIntegrationTests : IDisposable
             AccountNumber = new AccountNumber("201-2000"),
             Name = "General Fund Payables",
             Type = AccountType.Payables,
-            Fund = FundType.General,
+            Fund = MunicipalFundType.General,
             FundClass = FundClass.Governmental,
             DepartmentId = 1,
             BudgetPeriodId = 1,
@@ -240,7 +240,7 @@ public class ComprehensiveDatabaseIntegrationTests : IDisposable
             AccountNumber = new AccountNumber("301-3000"),
             Name = "Capital Improvement Fund",
             Type = AccountType.FundBalance,
-            Fund = FundType.General,
+            Fund = MunicipalFundType.General,
             FundClass = FundClass.Governmental,
             DepartmentId = 1, // Reference the seeded Finance department
             BudgetPeriodId = 1, // Reference the seeded budget period
@@ -255,7 +255,7 @@ public class ComprehensiveDatabaseIntegrationTests : IDisposable
         Assert.Equal("301-3000", addedAccount.AccountNumber.ToString());
 
         // Act - Get accounts by fund
-        var generalFundAccounts = await _municipalAccountRepository.GetByFundAsync(FundType.General);
+        var generalFundAccounts = await _municipalAccountRepository.GetByFundAsync(MunicipalFundType.General);
         Assert.Equal(3, generalFundAccounts.Count()); // 2 seeded + 1 new
 
         // Act - Get budget analysis

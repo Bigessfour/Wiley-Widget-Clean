@@ -70,6 +70,11 @@ namespace WileyWidget.ViewModels
             ValidateMaxTokens(value);
         }
 
+        partial void OnSelectedThemeChanged(string value)
+        {
+            ApplyThemeToAllWindows(value);
+        }
+
         [ObservableProperty]
         private int windowWidth = 1200;
 
@@ -269,6 +274,18 @@ namespace WileyWidget.ViewModels
         [ObservableProperty]
         private string fiscalYearDayValidation = string.Empty;
 
+        [ObservableProperty]
+        private string quickBooksClientIdValidation = string.Empty;
+
+        [ObservableProperty]
+        private string quickBooksClientSecretValidation = string.Empty;
+
+        [ObservableProperty]
+        private string quickBooksRedirectUriValidation = string.Empty;
+
+        [ObservableProperty]
+        private string syncfusionLicenseKeyValidation = string.Empty;
+
         // UI State
         [ObservableProperty]
         private bool isBusy;
@@ -416,16 +433,6 @@ namespace WileyWidget.ViewModels
                 QuickBooksRedirectUri = Environment.GetEnvironmentVariable("QUICKBOOKS_REDIRECT_URI") ?? "";
                 SelectedQuickBooksEnvironment = Environment.GetEnvironmentVariable("QUICKBOOKS_ENVIRONMENT") ?? "Sandbox";
 
-                // Fallback (disabled): Uncomment to re-enable Key Vault retrieval
-                // if (string.IsNullOrEmpty(QuickBooksClientId))
-                //     QuickBooksClientId = await _secretVaultService.GetSecretAsync("QuickBooks-ClientId") ?? "";
-                // if (string.IsNullOrEmpty(QuickBooksClientSecret))
-                //     QuickBooksClientSecret = await _secretVaultService.GetSecretAsync("QuickBooks-ClientSecret") ?? "";
-                // if (string.IsNullOrEmpty(QuickBooksRedirectUri))
-                //     QuickBooksRedirectUri = await _secretVaultService.GetSecretAsync("QuickBooks-RedirectUri") ?? "";
-                // if (string.IsNullOrEmpty(SelectedQuickBooksEnvironment))
-                //     SelectedQuickBooksEnvironment = await _secretVaultService.GetSecretAsync("QuickBooks-Environment") ?? "Sandbox";
-
                 // Test connection if credentials are available
                 if (!string.IsNullOrEmpty(QuickBooksClientId))
                 {
@@ -452,10 +459,6 @@ namespace WileyWidget.ViewModels
             {
                 // Prefer environment variable for license during troubleshooting
                 SyncfusionLicenseKey = Environment.GetEnvironmentVariable("SYNCFUSION_LICENSE_KEY") ?? "";
-
-                // Fallback (disabled): Uncomment to re-enable Key Vault retrieval
-                // if (string.IsNullOrEmpty(SyncfusionLicenseKey))
-                //     SyncfusionLicenseKey = await _secretVaultService.GetSecretAsync("Syncfusion-LicenseKey") ?? "";
 
                 // Simple license validation - check if key exists and is not empty
                 var isValid = !string.IsNullOrEmpty(SyncfusionLicenseKey);

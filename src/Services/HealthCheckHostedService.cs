@@ -14,6 +14,7 @@ using Polly.CircuitBreaker;
 using Polly.Retry;
 using WileyWidget.Models;
 using WileyWidget.Services;
+using WileyWidget.Data;
 using Serilog;
 
 namespace WileyWidget.Services.Hosting;
@@ -287,7 +288,7 @@ public class HealthCheckHostedService : IHostedService, IDisposable
             using (var scope = _serviceProvider.CreateScope())
             {
                 var provider = scope.ServiceProvider;
-                var contextFactory = provider.GetService<Microsoft.EntityFrameworkCore.IDbContextFactory<WileyWidget.Data.AppDbContext>>();
+                var contextFactory = provider.GetService<Microsoft.EntityFrameworkCore.IDbContextFactory<AppDbContext>>();
                 if (contextFactory != null)
                 {
                     await using var dbContext = await contextFactory.CreateDbContextAsync();
@@ -296,7 +297,7 @@ public class HealthCheckHostedService : IHostedService, IDisposable
                 else
                 {
                     // Fall back to resolving AppDbContext if factory not available (legacy registration)
-                    var dbContext = provider.GetService<WileyWidget.Data.AppDbContext>();
+                    var dbContext = provider.GetService<AppDbContext>();
                     if (dbContext != null)
                         await dbContext.Database.CanConnectAsync();
                 }

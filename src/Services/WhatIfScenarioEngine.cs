@@ -45,10 +45,10 @@ public class WhatIfScenarioEngine : IWhatIfScenarioEngine
         var baselineRecommendation = await _chargeCalculator.CalculateRecommendedChargeAsync(enterpriseId);
         var fundType = enterprise.Type switch
         {
-            "Water" => FundType.Water,
-            "Sewer" => FundType.Sewer,
-            "Trash" => FundType.Trash,
-            _ => FundType.Enterprise
+            "Water" => MunicipalFundType.Water,
+            "Sewer" => MunicipalFundType.Sewer,
+            "Trash" => MunicipalFundType.Trash,
+            _ => MunicipalFundType.Enterprise
         };
 
         var expenseAccounts = await accountRepo.GetByFundAsync(fundType);

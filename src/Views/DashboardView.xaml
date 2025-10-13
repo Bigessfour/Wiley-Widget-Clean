@@ -5,17 +5,26 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:WileyWidget"
         xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
+        xmlns:gauge="clr-namespace:Syncfusion.UI.Xaml.Gauges;assembly=Syncfusion.SfGauge.Wpf"
+        xmlns:chart="clr-namespace:Syncfusion.UI.Xaml.Charts;assembly=Syncfusion.SfChart.WPF"
         xmlns:syncfusionskin="clr-namespace:Syncfusion.SfSkinManager;assembly=Syncfusion.SfSkinManager.WPF"
         xmlns:notification="clr-namespace:Syncfusion.Windows.Controls.Notification;assembly=Syncfusion.SfBusyIndicator.WPF"
         xmlns:prism="http://prismlibrary.com/"
         mc:Ignorable="d"
         prism:ViewModelLocator.AutoWireViewModel="True"
-        Title="Dashboard" Height="700" Width="1200"
+        Title="Wiley Widget Dashboard - Municipal Financial Overview" Height="800" Width="1400"
         WindowStartupLocation="CenterScreen">
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
         <local:BudgetProgressConverter x:Key="BudgetProgressConverter" />
         <local:EmptyStringToVisibilityConverter x:Key="EmptyStringToVisibilityConverter" />
+        
+        <!-- Trackball Line Style for Chart Interactivity -->
+        <Style x:Key="TrackBallLineStyle" TargetType="Line">
+            <Setter Property="Stroke" Value="#2196F3"/>
+            <Setter Property="StrokeThickness" Value="1"/>
+            <Setter Property="StrokeDashArray" Value="3,3"/>
+        </Style>
     </Window.Resources>
 
     <!-- Apply declarative theming to prevent XAML loading crashes -->
@@ -26,17 +35,21 @@
             <syncfusion:RibbonTab Caption="Dashboard">
                 <syncfusion:RibbonBar Header="Actions">
                     <syncfusion:RibbonButton Label="Refresh" SizeForm="Large" Command="{Binding RefreshDashboardCommand}"
-                                           IsEnabled="{Binding IsLoading, Converter={StaticResource BoolToVis}, ConverterParameter= invert}" />
+                                           IsEnabled="{Binding IsLoading, Converter={StaticResource BoolToVis}, ConverterParameter= invert}"
+                                           ToolTipService.ToolTip="Refresh all dashboard data from QuickBooks Online and local database" />
                     <syncfusion:RibbonButton Label="Export" Command="{Binding ExportDashboardCommand}"
-                                           IsEnabled="{Binding IsLoading, Converter={StaticResource BoolToVis}, ConverterParameter= invert}" />
+                                           IsEnabled="{Binding IsLoading, Converter={StaticResource BoolToVis}, ConverterParameter= invert}"
+                                           ToolTipService.ToolTip="Export dashboard data to Excel or PDF format" />
                 </syncfusion:RibbonBar>
                 <syncfusion:RibbonBar Header="View">
                     <syncfusion:RibbonButton Label="Auto Refresh" Command="{Binding ToggleAutoRefreshCommand}"
-                                           IsEnabled="{Binding IsLoading, Converter={StaticResource BoolToVis}, ConverterParameter= invert}" />
+                                           IsEnabled="{Binding IsLoading, Converter={StaticResource BoolToVis}, ConverterParameter= invert}"
+                                           ToolTipService.ToolTip="Toggle automatic dashboard refresh" />
                     <Label Content="Interval:" VerticalAlignment="Center" />
                     <syncfusion:IntegerTextBox Value="{Binding RefreshIntervalMinutes, Mode=TwoWay}"
                                              Width="60" Margin="5,0"
-                                             IsEnabled="{Binding IsLoading, Converter={StaticResource BoolToVis}, ConverterParameter= invert}" />
+                                             IsEnabled="{Binding IsLoading, Converter={StaticResource BoolToVis}, ConverterParameter= invert}"
+                                             ToolTipService.ToolTip="Set refresh interval in minutes (recommended: 5-15 minutes)" />
                     <Label Content="minutes" VerticalAlignment="Center" />
                 </syncfusion:RibbonBar>
             </syncfusion:RibbonTab>
@@ -48,205 +61,428 @@
                         Background="Transparent" Foreground="#2196F3" BorderThickness="0" />
         </Grid>
 
-        <!-- Main Dashboard Content -->
+        <!-- Main Dashboard Content with Syncfusion Controls -->
         <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
-            <StackPanel Margin="10">
-                <!-- KPI Summary Cards -->
-                <WrapPanel Margin="0,0,0,20" Orientation="Horizontal">
-                    <!-- Total Enterprises -->
-                    <Border Background="#E3F2FD" BorderBrush="#1976D2" BorderThickness="2"
-                            CornerRadius="8" Margin="0,0,15,15" Padding="15" MinWidth="200">
-                        <StackPanel>
-                            <TextBlock Text="Total Enterprises" FontSize="14" FontWeight="Bold" Foreground="#1976D2" />
-                            <TextBlock Text="{Binding TotalEnterprises}" FontSize="32" FontWeight="Bold"
-                                     Foreground="#1976D2" Margin="0,5,0,0" />
-                            <TextBlock Text="{Binding EnterprisesChangeText}" FontSize="12"
-                                     Foreground="{Binding EnterprisesChangeColor}" Margin="0,5,0,0" />
-                        </StackPanel>
-                    </Border>
-
-                    <!-- Total Budget -->
-                    <Border Background="#F3E5F5" BorderBrush="#7B1FA2" BorderThickness="2"
-                            CornerRadius="8" Margin="0,0,15,15" Padding="15" MinWidth="200">
-                        <StackPanel>
-                            <TextBlock Text="Total Budget" FontSize="14" FontWeight="Bold" Foreground="#7B1FA2" />
-                            <TextBlock Text="{Binding TotalBudget, StringFormat=C0}" FontSize="32" FontWeight="Bold"
-                                     Foreground="#7B1FA2" Margin="0,5,0,0" />
-                            <TextBlock Text="{Binding BudgetChangeText}" FontSize="12"
-                                     Foreground="{Binding BudgetChangeColor}" Margin="0,5,0,0" />
-                        </StackPanel>
-                    </Border>
-
-                    <!-- Active Projects -->
-                    <Border Background="#E8F5E8" BorderBrush="#388E3C" BorderThickness="2"
-                            CornerRadius="8" Margin="0,0,15,15" Padding="15" MinWidth="200">
-                        <StackPanel>
-                            <TextBlock Text="Active Projects" FontSize="14" FontWeight="Bold" Foreground="#388E3C" />
-                            <TextBlock Text="{Binding ActiveProjects}" FontSize="32" FontWeight="Bold"
-                                     Foreground="#388E3C" Margin="0,5,0,0" />
-                            <TextBlock Text="{Binding ProjectsChangeText}" FontSize="12"
-                                     Foreground="{Binding ProjectsChangeColor}" Margin="0,5,0,0" />
-                        </StackPanel>
-                    </Border>
-
-                    <!-- System Health -->
-                    <Border Background="#FFF3E0" BorderBrush="#F57C00" BorderThickness="2"
-                            CornerRadius="8" Margin="0,0,15,15" Padding="15" MinWidth="200">
-                        <StackPanel>
-                            <TextBlock Text="System Health" FontSize="14" FontWeight="Bold" Foreground="#F57C00" />
-                            <ProgressBar Height="120" Margin="0,10,0,0" 
-                                        Value="{Binding SystemHealthScore}" 
-                                        Maximum="100" Minimum="0"
-                                        Foreground="{Binding SystemHealthColor}" />
-                            <TextBlock Text="{Binding SystemHealthStatus}" FontSize="16" FontWeight="Bold"
-                                     Foreground="{Binding SystemHealthColor}" Margin="0,10,0,0" HorizontalAlignment="Center" />
-                            <TextBlock Text="{Binding HealthScore, StringFormat={}{0}%}" FontSize="14"
-                                     Foreground="#F57C00" HorizontalAlignment="Center" />
-                        </StackPanel>
-                    </Border>
-
-                    <!-- Budget Utilization -->
-                    <Border Background="#FCE4EC" BorderBrush="#E91E63" BorderThickness="2"
-                            CornerRadius="8" Margin="0,0,15,15" Padding="15" MinWidth="200">
-                        <StackPanel>
-                            <TextBlock Text="Budget Utilization" FontSize="14" FontWeight="Bold" Foreground="#E91E63" />
-                            <ProgressBar Height="120" Margin="0,10,0,0" 
-                                        Value="{Binding BudgetUtilizationScore}" 
-                                        Maximum="100" Minimum="0"
-                                        Foreground="#E91E63" />
-                            <TextBlock Text="{Binding TotalBudget, StringFormat=C0}" FontSize="16" FontWeight="Bold"
-                                     Foreground="#E91E63" Margin="0,10,0,0" HorizontalAlignment="Center" />
-                            <TextBlock Text="Total Allocated" FontSize="12"
-                                     Foreground="#E91E63" HorizontalAlignment="Center" />
-                        </StackPanel>
-                    </Border>
-                </WrapPanel>
-
-                <!-- Charts and Analytics Section -->
-                <Grid Margin="0,0,0,20">
+            <StackPanel Margin="15">
+                
+                <!-- KPI Gauges Section - Visual Heavy Dashboard -->
+                <TextBlock Text="Key Performance Indicators" FontSize="20" FontWeight="Bold" Margin="0,0,0,15" />
+                
+                <Grid Margin="0,0,0,25">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- Budget Trend Chart -->
-                    <GroupBox Header="Budget Trends" Margin="0,0,10,0" Padding="10">
-                        <syncfusion:SfChart Height="200">
-                            <syncfusion:SfChart.PrimaryAxis>
-                                <syncfusion:CategoryAxis />
-                            </syncfusion:SfChart.PrimaryAxis>
-                            <syncfusion:SfChart.SecondaryAxis>
-                                <syncfusion:NumericalAxis LabelFormat="C0" />
-                            </syncfusion:SfChart.SecondaryAxis>
-                            <syncfusion:LineSeries ItemsSource="{Binding BudgetTrendData}"
-                                                 XBindingPath="Period"
-                                                 YBindingPath="Amount"
-                                                 Interior="#2196F3" />
-                        </syncfusion:SfChart>
-                    </GroupBox>
+                    <!-- Budget Utilization Gauge -->
+                    <Border Grid.Column="0" Background="#1E1E1E" BorderBrush="#2196F3" BorderThickness="2" 
+                            CornerRadius="8" Margin="5" Padding="10"
+                            ToolTipService.ToolTip="Budget utilization percentage - shows how much of the total budget has been spent">
+                        <StackPanel>
+                            <TextBlock Text="Budget Utilization" FontSize="14" FontWeight="SemiBold" 
+                                     HorizontalAlignment="Center" Margin="0,0,0,10" Foreground="#2196F3"/>
+                            <chart:SfChart Height="200" Width="200">
+                                <chart:SfChart.PrimaryAxis>
+                                    <chart:CategoryAxis />
+                                </chart:SfChart.PrimaryAxis>
+                                <chart:SfChart.SecondaryAxis>
+                                    <chart:NumericalAxis />
+                                </chart:SfChart.SecondaryAxis>
+                                <chart:DoughnutSeries ItemsSource="{Binding BudgetUtilizationData}" 
+                                                     XBindingPath="Category" 
+                                                     YBindingPath="Value"
+                                                     StartAngle="90"
+                                                     EndAngle="450"
+                                                     EnableAnimation="True" />
+                            </chart:SfChart>
+                            <TextBlock Text="{Binding BudgetUtilizationScore, StringFormat={}{0}%}" 
+                                     FontSize="24" FontWeight="Bold" HorizontalAlignment="Center" 
+                                     Foreground="#2196F3" Margin="0,5,0,0">
+                                <TextBlock.ToolTip>
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding BudgetUtilizationScore, StringFormat='Current utilization: {0}%'}" FontWeight="Bold"/>
+                                        <TextBlock Text="{Binding TotalBudget, StringFormat='Total Budget: {0:C0}'}" Margin="0,5,0,0"/>
+                                        <TextBlock Text="{Binding SpentAmount, StringFormat='Spent: {0:C0}'}" Margin="0,2,0,0"/>
+                                        <TextBlock Text="{Binding RemainingBudget, StringFormat='Remaining: {0:C0}'}" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                </TextBlock.ToolTip>
+                            </TextBlock>
+                            <TextBlock Text="{Binding TotalBudget, StringFormat='Total: {0:C0}'}" 
+                                     FontSize="12" HorizontalAlignment="Center" Foreground="#B0B0B0"/>
+                        </StackPanel>
+                    </Border>
 
-                    <!-- Enterprise Distribution -->
-                    <GroupBox Header="Enterprise Distribution" Margin="10,0,0,0" Padding="10">
-                        <syncfusion:SfChart Height="200">
-                            <syncfusion:SfChart.Legend>
-                                <syncfusion:ChartLegend />
-                            </syncfusion:SfChart.Legend>
-                            <syncfusion:PieSeries ItemsSource="{Binding EnterpriseTypeData}"
-                                                 XBindingPath="Type"
-                                                 YBindingPath="Count"
-                                                 Label="Type"
-                                                 ExplodeAll="True"
-                                                 ExplodeRadius="10" />
-                        </syncfusion:SfChart>
-                    </GroupBox>
+                    <!-- System Health Gauge -->
+                    <Border Grid.Column="1" Background="#1E1E1E" BorderBrush="#4CAF50" BorderThickness="2" 
+                            CornerRadius="8" Margin="5" Padding="10"
+                            ToolTipService.ToolTip="System health score based on data quality, API connectivity, and performance metrics">
+                        <StackPanel>
+                            <TextBlock Text="System Health" FontSize="14" FontWeight="SemiBold" 
+                                     HorizontalAlignment="Center" Margin="0,0,0,10" Foreground="#4CAF50"/>
+                            <gauge:SfCircularGauge Height="200" Width="200">
+                                <gauge:SfCircularGauge.Scales>
+                                    <gauge:CircularScale StartValue="0" EndValue="100" Interval="10"
+                                                       ShowRim="True" RimStroke="#4CAF50" RimStrokeThickness="3">
+                                        <gauge:CircularScale.Ranges>
+                                            <gauge:CircularRange StartValue="0" EndValue="50" Stroke="#F44336"/>
+                                            <gauge:CircularRange StartValue="50" EndValue="75" Stroke="#FFC107"/>
+                                            <gauge:CircularRange StartValue="75" EndValue="100" Stroke="#4CAF50"/>
+                                        </gauge:CircularScale.Ranges>
+                                        <gauge:CircularScale.Pointers>
+                                            <gauge:CircularPointer PointerType="NeedlePointer" 
+                                                                 Value="{Binding SystemHealthScore}"
+                                                                 NeedleLengthFactor="0.6"
+                                                                 NeedlePointerType="Triangle"
+                                                                 NeedlePointerStroke="#4CAF50"
+                                                                 NeedlePointerStrokeThickness="5"
+                                                                 EnableAnimation="True"
+                                                                 AnimationDuration="1500"/>
+                                        </gauge:CircularScale.Pointers>
+                                    </gauge:CircularScale>
+                                </gauge:SfCircularGauge.Scales>
+                            </gauge:SfCircularGauge>
+                            <TextBlock Text="{Binding SystemHealthStatus}" FontSize="24" FontWeight="Bold" 
+                                     HorizontalAlignment="Center" Foreground="#4CAF50" Margin="0,5,0,0">
+                                <TextBlock.ToolTip>
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding SystemHealthScore, StringFormat='Health score: {0}%'}" FontWeight="Bold"/>
+                                        <TextBlock Text="{Binding SystemHealthStatus, StringFormat='Status: {0}'}" Margin="0,5,0,0"/>
+                                        <TextBlock Text="0-50: Critical - Immediate attention required" Margin="0,5,0,0" Foreground="#F44336"/>
+                                        <TextBlock Text="50-75: Warning - Performance degraded" Margin="0,2,0,0" Foreground="#FFC107"/>
+                                        <TextBlock Text="75-100: Healthy - System operating normally" Margin="0,2,0,0" Foreground="#4CAF50"/>
+                                    </StackPanel>
+                                </TextBlock.ToolTip>
+                            </TextBlock>
+                            <TextBlock Text="{Binding SystemHealthScore, StringFormat='{}{0}% Score'}" 
+                                     FontSize="12" HorizontalAlignment="Center" Foreground="#B0B0B0"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Enterprise Count Display -->
+                    <Border Grid.Column="2" Background="#1E1E1E" BorderBrush="#9C27B0" BorderThickness="2" 
+                            CornerRadius="8" Margin="5" Padding="10"
+                            ToolTipService.ToolTip="Total number of enterprise funds tracked across all departments">
+                        <StackPanel>
+                            <TextBlock Text="Total Enterprises" FontSize="14" FontWeight="SemiBold" 
+                                     HorizontalAlignment="Center" Margin="0,0,0,10" Foreground="#9C27B0"/>
+                            <gauge:SfCircularGauge Height="200" Width="200">
+                                <gauge:SfCircularGauge.Scales>
+                                    <gauge:CircularScale StartValue="0" EndValue="100" Interval="20"
+                                                       ShowRim="True" RimStroke="#9C27B0" RimStrokeThickness="3">
+                                        <gauge:CircularScale.Pointers>
+                                            <gauge:CircularPointer PointerType="RangePointer" 
+                                                                 Value="{Binding TotalEnterprises}"
+                                                                 RangePointerStroke="#9C27B0"
+                                                                 RangePointerStrokeThickness="20"
+                                                                 EnableAnimation="True"
+                                                                 AnimationDuration="1500"/>
+                                        </gauge:CircularScale.Pointers>
+                                    </gauge:CircularScale>
+                                </gauge:SfCircularGauge.Scales>
+                            </gauge:SfCircularGauge>
+                            <TextBlock Text="{Binding TotalEnterprises}" FontSize="32" FontWeight="Bold" 
+                                     HorizontalAlignment="Center" Foreground="#9C27B0" Margin="0,5,0,0"
+                                     ToolTipService.ToolTip="Total enterprise funds being monitored"/>
+                            <TextBlock Text="{Binding EnterprisesChangeText}" FontSize="12" 
+                                     HorizontalAlignment="Center" Foreground="#B0B0B0"
+                                     ToolTipService.ToolTip="Change in enterprise count compared to last period"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Active Projects Display -->
+                    <Border Grid.Column="3" Background="#1E1E1E" BorderBrush="#FF9800" BorderThickness="2" 
+                            CornerRadius="8" Margin="5" Padding="10"
+                            ToolTipService.ToolTip="Number of currently active municipal projects and initiatives">
+                        <StackPanel>
+                            <TextBlock Text="Active Projects" FontSize="14" FontWeight="SemiBold" 
+                                     HorizontalAlignment="Center" Margin="0,0,0,10" Foreground="#FF9800"/>
+                            <gauge:SfCircularGauge Height="200" Width="200">
+                                <gauge:SfCircularGauge.Scales>
+                                    <gauge:CircularScale StartValue="0" EndValue="50" Interval="10"
+                                                       ShowRim="True" RimStroke="#FF9800" RimStrokeThickness="3">
+                                        <gauge:CircularScale.Pointers>
+                                            <gauge:CircularPointer PointerType="SymbolPointer" 
+                                                                 Value="{Binding ActiveProjects}"
+                                                                 Symbol="InvertedTriangle"
+                                                                 SymbolPointerHeight="15"
+                                                                 SymbolPointerWidth="15"
+                                                                 SymbolPointerStroke="#FF9800"
+                                                                 EnableAnimation="True"
+                                                                 AnimationDuration="1500"/>
+                                        </gauge:CircularScale.Pointers>
+                                    </gauge:CircularScale>
+                                </gauge:SfCircularGauge.Scales>
+                            </gauge:SfCircularGauge>
+                            <TextBlock Text="{Binding ActiveProjects}" FontSize="32" FontWeight="Bold" 
+                                     HorizontalAlignment="Center" Foreground="#FF9800" Margin="0,5,0,0"
+                                     ToolTipService.ToolTip="Total active projects in progress"/>
+                            <TextBlock Text="{Binding ProjectsChangeText}" FontSize="12" 
+                                     HorizontalAlignment="Center" Foreground="#B0B0B0"
+                                     ToolTipService.ToolTip="Change in active projects compared to last period"/>
+                        </StackPanel>
+                    </Border>
                 </Grid>
 
-                <!-- Recent Activity and Alerts -->
+
+                <!-- Charts and Analytics Section with Interactive Features -->
+                <TextBlock Text="Financial Trends and Analytics" FontSize="20" FontWeight="Bold" Margin="0,10,0,15" />
+                
+                <Grid Margin="0,0,0,20">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="2*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Budget Trend Chart with Interactive Features -->
+                    <Border Grid.Column="0" Background="#1E1E1E" BorderBrush="#2196F3" BorderThickness="2" 
+                            CornerRadius="8" Margin="5" Padding="15"
+                            ToolTipService.ToolTip="6-month historical budget trend showing spending patterns. Use mouse wheel to zoom and drag to pan.">
+                        <StackPanel>
+                            <TextBlock Text="Budget Trends (Historical Data from Municipal Accounts)" 
+                                     FontSize="14" FontWeight="SemiBold" Foreground="#2196F3" Margin="0,0,0,10"/>
+                            <chart:SfChart Height="300">
+                                <chart:SfChart.Header>
+                                    <TextBlock Text="6-Month Budget Trend" FontSize="14" FontWeight="Bold" 
+                                             HorizontalAlignment="Center" Foreground="White"/>
+                                </chart:SfChart.Header>
+                                
+                                <chart:SfChart.PrimaryAxis>
+                                    <chart:CategoryAxis Header="Period" FontSize="12" />
+                                </chart:SfChart.PrimaryAxis>
+                                
+                                <chart:SfChart.SecondaryAxis>
+                                    <chart:NumericalAxis Header="Amount (USD)" LabelFormat="C0" FontSize="12" />
+                                </chart:SfChart.SecondaryAxis>
+
+                                <!-- Enable Trackball for Interactive Tooltips -->
+                                <chart:SfChart.Behaviors>
+                                    <chart:ChartTrackBallBehavior ShowLine="True" LineStyle="{StaticResource TrackBallLineStyle}">
+                                        <chart:ChartTrackBallBehavior.ChartTrackBallStyle>
+                                            <Style TargetType="chart:ChartTrackBallControl">
+                                                <Setter Property="Background" Value="#2196F3"/>
+                                            </Style>
+                                        </chart:ChartTrackBallBehavior.ChartTrackBallStyle>
+                                    </chart:ChartTrackBallBehavior>
+                                    <chart:ChartZoomPanBehavior EnablePanning="True" EnableMouseWheelZooming="True" 
+                                                               ZoomMode="XY" EnableZoomingToolBar="True"/>
+                                </chart:SfChart.Behaviors>
+
+                                <chart:LineSeries ItemsSource="{Binding BudgetTrendData}"
+                                                XBindingPath="Period"
+                                                YBindingPath="Amount"
+                                                Interior="#2196F3"
+                                                StrokeThickness="3"
+                                                Label="Budget"
+                                                ShowTooltip="True"
+                                                EnableAnimation="True">
+                                    <chart:LineSeries.AdornmentsInfo>
+                                        <chart:ChartAdornmentInfo ShowLabel="True" 
+                                                                LabelPosition="Auto"
+                                                                SegmentLabelFormat="C0"
+                                                                Foreground="White"/>
+                                    </chart:LineSeries.AdornmentsInfo>
+                                    <chart:LineSeries.TooltipTemplate>
+                                        <DataTemplate>
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding Item.Period}" FontWeight="Bold"/>
+                                                <TextBlock Text="{Binding Item.Amount, StringFormat='Amount: {0:C0}'}"/>
+                                                <TextBlock Text="Hover for details (data from municipal accounts)" 
+                                                         FontStyle="Italic" FontSize="10" Foreground="#B0B0B0"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </chart:LineSeries.TooltipTemplate>
+                                </chart:LineSeries>
+                            </chart:SfChart>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Enterprise Distribution Pie Chart -->
+                    <Border Grid.Column="1" Background="#1E1E1E" BorderBrush="#9C27B0" BorderThickness="2" 
+                            CornerRadius="8" Margin="5" Padding="15"
+                            ToolTipService.ToolTip="Distribution of enterprise types across municipal departments">
+                        <StackPanel>
+                            <TextBlock Text="Enterprise Distribution" FontSize="14" FontWeight="SemiBold" 
+                                     Foreground="#9C27B0" Margin="0,0,0,10"/>
+                            <chart:SfChart Height="300">
+                                <chart:SfChart.Legend>
+                                    <chart:ChartLegend DockPosition="Bottom" />
+                                </chart:SfChart.Legend>
+                                
+                                <chart:PieSeries ItemsSource="{Binding EnterpriseTypeData}"
+                                               XBindingPath="Type"
+                                               YBindingPath="Count"
+                                               LabelPosition="OutsideExtended"
+                                               EnableAnimation="True"
+                                               ExplodeAll="False"
+                                               ExplodeIndex="0"
+                                               ExplodeRadius="10"
+                                               ShowTooltip="True">
+                                    <chart:PieSeries.AdornmentsInfo>
+                                        <chart:ChartAdornmentInfo ShowLabel="True" 
+                                                                LabelPosition="Outer"
+                                                                SegmentLabelFormat="#PERCENT{P0}"
+                                                                Foreground="White"/>
+                                    </chart:PieSeries.AdornmentsInfo>
+                                </chart:PieSeries>
+                            </chart:SfChart>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+
+                <!-- System Alerts Section with Enhanced Formatting -->
+                <TextBlock Text="System Alerts and Recent Activity" FontSize="20" FontWeight="Bold" Margin="0,10,0,15" />
+                
                 <Grid Margin="0,0,0,20">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
+
+                    <!-- System Alerts with Cell Formatting -->
+                    <Border Grid.Column="0" Background="#1E1E1E" BorderBrush="#F44336" BorderThickness="2" 
+                            CornerRadius="8" Margin="5" Padding="15"
+                            ToolTipService.ToolTip="Critical alerts for over-budget conditions and system warnings. Click to view details.">
+                        <StackPanel>
+                            <TextBlock Text="Critical Alerts (Over-Budget Warnings)" FontSize="14" 
+                                     FontWeight="SemiBold" Foreground="#F44336" Margin="0,0,0,10"/>
+                            <syncfusion:SfDataGrid x:Name="SystemAlertsGrid"
+                                                 ItemsSource="{Binding SystemAlerts}"
+                                                 AllowSorting="True"
+                                                 AllowFiltering="True"
+                                                 AutoGenerateColumns="False"
+                                                 SelectionMode="Single"
+                                                 Height="250"
+                                                 ToolTipService.ToolTip="Sort by clicking column headers. Filter using the filter icon.">
+                                <syncfusion:SfDataGrid.Columns>
+                                    <syncfusion:GridTextColumn MappingName="Priority"
+                                                              HeaderText="Priority"
+                                                              Width="100">
+                                        <syncfusion:GridTextColumn.CellStyle>
+                                            <Style TargetType="syncfusion:GridCell">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Priority}" Value="High">
+                                                        <Setter Property="Foreground" Value="#F44336"/>
+                                                        <Setter Property="FontWeight" Value="Bold"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Priority}" Value="Medium">
+                                                        <Setter Property="Foreground" Value="#FFC107"/>
+                                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Priority}" Value="Low">
+                                                        <Setter Property="Foreground" Value="#2196F3"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </syncfusion:GridTextColumn.CellStyle>
+                                    </syncfusion:GridTextColumn>
+                                    <syncfusion:GridTextColumn MappingName="Message"
+                                                              HeaderText="Alert Message"
+                                                              Width="250" />
+                                    <syncfusion:GridTextColumn MappingName="Timestamp"
+                                                              HeaderText="Time"
+                                                              DisplayBinding="{Binding Timestamp, StringFormat='HH:mm:ss'}"
+                                                              Width="100" />
+                                </syncfusion:SfDataGrid.Columns>
+                            </syncfusion:SfDataGrid>
+                        </StackPanel>
+                    </Border>
 
                     <!-- Recent Activity -->
-                    <GroupBox Header="Recent Activity" Margin="0,0,10,0" Padding="10">
-                        <syncfusion:SfDataGrid x:Name="RecentActivityGrid"
-                                             ItemsSource="{Binding RecentActivities}"
-                                             AllowSorting="True"
-                                             AllowFiltering="False"
-                                             AutoGenerateColumns="False"
-                                             Height="200">
-                            <syncfusion:SfDataGrid.Columns>
-                                <syncfusion:GridTextColumn MappingName="Timestamp"
-                                                          HeaderText="Time"
-                                                          DisplayBinding="{Binding Timestamp, StringFormat=HH:mm}"
-                                                          Width="100" />
-                                <syncfusion:GridTextColumn MappingName="Description"
-                                                          HeaderText="Activity"
-                                                          Width="200" />
-                                <syncfusion:GridTextColumn MappingName="Type"
-                                                          HeaderText="Type"
-                                                          Width="80" />
-                            </syncfusion:SfDataGrid.Columns>
-                        </syncfusion:SfDataGrid>
-                    </GroupBox>
-
-                    <!-- System Alerts -->
-                    <GroupBox Header="System Alerts" Margin="10,0,0,0" Padding="10">
-                        <syncfusion:SfDataGrid x:Name="SystemAlertsGrid"
-                                             ItemsSource="{Binding SystemAlerts}"
-                                             AllowSorting="True"
-                                             AllowFiltering="False"
-                                             AutoGenerateColumns="False"
-                                             Height="200">
-                            <syncfusion:SfDataGrid.Columns>
-                                <syncfusion:GridTextColumn MappingName="Priority"
-                                                          HeaderText="Priority"
-                                                          Width="80">
-                                    <syncfusion:GridTextColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <TextBlock Text="{Binding Priority}"
-                                                     Foreground="{Binding PriorityColor}" />
-                                        </DataTemplate>
-                                    </syncfusion:GridTextColumn.CellTemplate>
-                                </syncfusion:GridTextColumn>
-                                <syncfusion:GridTextColumn MappingName="Message"
-                                                          HeaderText="Alert"
-                                                          Width="200" />
-                                <syncfusion:GridTextColumn MappingName="Timestamp"
-                                                          HeaderText="Time"
-                                                          DisplayBinding="{Binding Timestamp, StringFormat=HH:mm}"
-                                                          Width="100" />
-                            </syncfusion:SfDataGrid.Columns>
-                        </syncfusion:SfDataGrid>
-                    </GroupBox>
+                    <Border Grid.Column="1" Background="#1E1E1E" BorderBrush="#4CAF50" BorderThickness="2" 
+                            CornerRadius="8" Margin="5" Padding="15"
+                            ToolTipService.ToolTip="Recent system activity and transaction log">
+                        <StackPanel>
+                            <TextBlock Text="Recent Activity" FontSize="14" FontWeight="SemiBold" 
+                                     Foreground="#4CAF50" Margin="0,0,0,10"/>
+                            <syncfusion:SfDataGrid x:Name="RecentActivityGrid"
+                                                 ItemsSource="{Binding RecentActivities}"
+                                                 AllowSorting="True"
+                                                 AllowFiltering="False"
+                                                 AutoGenerateColumns="False"
+                                                 SelectionMode="Single"
+                                                 Height="250"
+                                                 ToolTipService.ToolTip="Recent activity feed showing latest transactions and changes">
+                                <syncfusion:SfDataGrid.Columns>
+                                    <syncfusion:GridTextColumn MappingName="Timestamp"
+                                                              HeaderText="Time"
+                                                              DisplayBinding="{Binding Timestamp, StringFormat='HH:mm'}"
+                                                              Width="80" />
+                                    <syncfusion:GridTextColumn MappingName="Description"
+                                                              HeaderText="Activity"
+                                                              Width="220" />
+                                    <syncfusion:GridTextColumn MappingName="Type"
+                                                              HeaderText="Type"
+                                                              Width="100" />
+                                </syncfusion:SfDataGrid.Columns>
+                            </syncfusion:SfDataGrid>
+                        </StackPanel>
+                    </Border>
                 </Grid>
 
-                <!-- Quick Actions -->
-                <GroupBox Header="Quick Actions" Padding="10">
-                    <WrapPanel>
-                        <syncfusion:ButtonAdv Content="Add Enterprise"
-                                          Command="{Binding OpenEnterpriseManagementCommand}"
-                                          Margin="0,0,10,10"
-                                          IsEnabled="{Binding IsLoading, Converter={StaticResource BoolToVis}, ConverterParameter= invert}" />
-                        <syncfusion:ButtonAdv Content="Budget Analysis"
-                                          Command="{Binding OpenBudgetAnalysisCommand}"
-                                          Margin="0,0,10,10"
-                                          IsEnabled="{Binding IsLoading, Converter={StaticResource BoolToVis}, ConverterParameter= invert}" />
-                        <syncfusion:ButtonAdv Content="Settings"
-                                          Command="{Binding OpenSettingsCommand}"
-                                          Margin="0,0,10,10"
-                                          IsEnabled="{Binding IsLoading, Converter={StaticResource BoolToVis}, ConverterParameter= invert}" />
-                        <syncfusion:ButtonAdv Content="Generate Report"
-                                          Command="{Binding GenerateReportCommand}"
-                                          Margin="0,0,10,10"
-                                          IsEnabled="{Binding IsLoading, Converter={StaticResource BoolToVis}, ConverterParameter= invert}" />
-                        <syncfusion:ButtonAdv Content="Backup Data"
-                                          Command="{Binding BackupDataCommand}"
-                                          Margin="0,0,10,10"
-                                          IsEnabled="{Binding IsLoading, Converter={StaticResource BoolToVis}, ConverterParameter= invert}" />
-                    </WrapPanel>
-                </GroupBox>
+
+                <!-- Quick Actions / Navigation Tiles -->
+                <TextBlock Text="Quick Navigation" FontSize="20" FontWeight="Bold" Margin="0,10,0,15" />
+                
+                <WrapPanel Orientation="Horizontal" Margin="0,0,0,20">
+                    <syncfusion:ButtonAdv Content="Enterprise Management"
+                                         Command="{Binding OpenEnterpriseManagementCommand}"
+                                         Margin="5"
+                                         Width="180" Height="60"
+                                         SizeMode="Large"
+                                         IconHeight="24" IconWidth="24"
+                                         IsEnabled="{Binding IsLoading, Converter={StaticResource BoolToVis}, ConverterParameter=invert}">
+                        <syncfusion:ButtonAdv.ToolTip>
+                            <TextBlock Text="Manage municipal enterprise accounts"/>
+                        </syncfusion:ButtonAdv.ToolTip>
+                    </syncfusion:ButtonAdv>
+                    
+                    <syncfusion:ButtonAdv Content="Budget Analysis"
+                                         Command="{Binding OpenBudgetAnalysisCommand}"
+                                         Margin="5"
+                                         Width="180" Height="60"
+                                         SizeMode="Large"
+                                         IsEnabled="{Binding IsLoading, Converter={StaticResource BoolToVis}, ConverterParameter=invert}">
+                        <syncfusion:ButtonAdv.ToolTip>
+                            <TextBlock Text="View detailed budget analysis and GASB reports"/>
+                        </syncfusion:ButtonAdv.ToolTip>
+                    </syncfusion:ButtonAdv>
+                    
+                    <syncfusion:ButtonAdv Content="Generate Report"
+                                         Command="{Binding GenerateReportCommand}"
+                                         Margin="5"
+                                         Width="180" Height="60"
+                                         SizeMode="Large"
+                                         IsEnabled="{Binding IsLoading, Converter={StaticResource BoolToVis}, ConverterParameter=invert}">
+                        <syncfusion:ButtonAdv.ToolTip>
+                            <TextBlock Text="Generate financial reports for municipal accounts"/>
+                        </syncfusion:ButtonAdv.ToolTip>
+                    </syncfusion:ButtonAdv>
+                    
+                    <syncfusion:ButtonAdv Content="Settings"
+                                         Command="{Binding OpenSettingsCommand}"
+                                         Margin="5"
+                                         Width="180" Height="60"
+                                         SizeMode="Large"
+                                         IsEnabled="{Binding IsLoading, Converter={StaticResource BoolToVis}, ConverterParameter=invert}">
+                        <syncfusion:ButtonAdv.ToolTip>
+                            <TextBlock Text="Configure application settings"/>
+                        </syncfusion:ButtonAdv.ToolTip>
+                    </syncfusion:ButtonAdv>
+                    
+                    <syncfusion:ButtonAdv Content="Backup Data"
+                                         Command="{Binding BackupDataCommand}"
+                                         Margin="5"
+                                         Width="180" Height="60"
+                                         SizeMode="Large"
+                                         IsEnabled="{Binding IsLoading, Converter={StaticResource BoolToVis}, ConverterParameter=invert}">
+                        <syncfusion:ButtonAdv.ToolTip>
+                            <TextBlock Text="Backup municipal financial data"/>
+                        </syncfusion:ButtonAdv.ToolTip>
+                    </syncfusion:ButtonAdv>
+                </WrapPanel>
             </StackPanel>
         </ScrollViewer>
 

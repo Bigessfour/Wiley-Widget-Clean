@@ -33,6 +33,8 @@ namespace WileyWidget.ViewModels
         {
             public BusinessInterfaces.IEnterpriseRepository Enterprises => new TestEnterpriseRepository();
             public BusinessInterfaces.IMunicipalAccountRepository MunicipalAccounts => new TestMunicipalAccountRepository();
+            public BusinessInterfaces.IBudgetRepository Budgets => new TestBudgetRepository();
+            public BusinessInterfaces.IDepartmentRepository Departments => new TestDepartmentRepository();
             public IUtilityCustomerRepository UtilityCustomers => new TestUtilityCustomerRepository();
             public Task<FiscalYearSettings?> GetFiscalYearSettingsAsync() => Task.FromResult<FiscalYearSettings?>(null);
             public Task SaveFiscalYearSettingsAsync(FiscalYearSettings settings) => Task.CompletedTask;
@@ -69,7 +71,7 @@ namespace WileyWidget.ViewModels
             public Task<MunicipalAccount> UpdateAsync(MunicipalAccount account) => Task.FromResult(account);
             public Task<object> GetBudgetAnalysisAsync(int periodId) => Task.FromResult<object>(new { });
             public Task SyncFromQuickBooksAsync(List<Intuit.Ipp.Data.Account> qbAccounts) => Task.CompletedTask;
-            public Task<IEnumerable<MunicipalAccount>> GetByFundAsync(FundType fund) => Task.FromResult<IEnumerable<MunicipalAccount>>(new List<MunicipalAccount>());
+            public Task<IEnumerable<MunicipalAccount>> GetByFundAsync(MunicipalFundType fund) => Task.FromResult<IEnumerable<MunicipalAccount>>(new List<MunicipalAccount>());
             public Task<IEnumerable<MunicipalAccount>> GetByTypeAsync(AccountType type) => Task.FromResult<IEnumerable<MunicipalAccount>>(new List<MunicipalAccount>());
         }
 
@@ -89,6 +91,29 @@ namespace WileyWidget.ViewModels
             public Task<bool> ExistsByAccountNumberAsync(string accountNumber, int? excludeId = null) => Task.FromResult(false);
             public Task<int> GetCountAsync() => Task.FromResult(0);
             public Task<IEnumerable<UtilityCustomer>> GetCustomersOutsideCityLimitsAsync() => Task.FromResult(Enumerable.Empty<UtilityCustomer>());
+        }
+
+        private class TestBudgetRepository : BusinessInterfaces.IBudgetRepository
+        {
+            public Task<IEnumerable<BudgetEntry>> GetBudgetHierarchyAsync(int fiscalYear) => Task.FromResult<IEnumerable<BudgetEntry>>(new List<BudgetEntry>());
+            public Task<IEnumerable<BudgetEntry>> GetByFiscalYearAsync(int fiscalYear) => Task.FromResult<IEnumerable<BudgetEntry>>(new List<BudgetEntry>());
+            public Task<BudgetEntry?> GetByIdAsync(int id) => Task.FromResult<BudgetEntry?>(null);
+            public Task AddAsync(BudgetEntry budgetEntry) => Task.CompletedTask;
+            public Task UpdateAsync(BudgetEntry budgetEntry) => Task.CompletedTask;
+            public Task DeleteAsync(int id) => Task.CompletedTask;
+            public Task<IEnumerable<BudgetEntry>> GetByDepartmentAsync(int departmentId) => Task.FromResult<IEnumerable<BudgetEntry>>(new List<BudgetEntry>());
+            public Task<IEnumerable<BudgetEntry>> GetByFundAsync(int fundId) => Task.FromResult<IEnumerable<BudgetEntry>>(new List<BudgetEntry>());
+        }
+
+        private class TestDepartmentRepository : BusinessInterfaces.IDepartmentRepository
+        {
+            public Task<IEnumerable<Department>> GetAllAsync() => Task.FromResult<IEnumerable<Department>>(new List<Department>());
+            public Task<Department?> GetByIdAsync(int id) => Task.FromResult<Department?>(null);
+            public Task<Department?> GetByCodeAsync(string code) => Task.FromResult<Department?>(null);
+            public Task<Department?> GetByNameAsync(string name) => Task.FromResult<Department?>(null);
+            public Task AddAsync(Department department) => Task.CompletedTask;
+            public Task UpdateAsync(Department department) => Task.CompletedTask;
+            public Task DeleteAsync(int id) => Task.CompletedTask;
         }
 
         private class TestAIService : IAIService

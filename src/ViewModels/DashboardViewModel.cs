@@ -78,6 +78,9 @@ namespace WileyWidget.ViewModels
         private ObservableCollection<BudgetTrendItem> budgetTrendData = new();
 
         [ObservableProperty]
+        private ObservableCollection<BudgetTrendItem> historicalData = new();
+
+        [ObservableProperty]
         private ObservableCollection<EnterpriseTypeItem> enterpriseTypeData = new();
 
         // Activity and alerts
@@ -218,14 +221,19 @@ namespace WileyWidget.ViewModels
             {
                 // Load budget trend data (last 6 months)
                 BudgetTrendData.Clear();
+                HistoricalData.Clear();
+                
                 for (int i = 5; i >= 0; i--)
                 {
                     var date = DateTime.Now.AddMonths(-i);
-                    BudgetTrendData.Add(new BudgetTrendItem
+                    var trendItem = new BudgetTrendItem
                     {
                         Period = date.ToString("MMM yyyy"),
                         Amount = TotalBudget * (decimal)(0.8 + (i * 0.04)) // Simulated growth
-                    });
+                    };
+                    
+                    BudgetTrendData.Add(trendItem);
+                    HistoricalData.Add(trendItem); // Also populate HistoricalData for binding
                 }
 
                 // Load enterprise type distribution
