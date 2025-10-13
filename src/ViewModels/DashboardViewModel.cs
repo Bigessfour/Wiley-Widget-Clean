@@ -97,6 +97,10 @@ namespace WileyWidget.ViewModels
         [ObservableProperty]
         private ObservableCollection<AlertItem> systemAlerts = new();
 
+        // Enterprise data for grids
+        [ObservableProperty]
+        private ObservableCollection<Enterprise> enterprises = new();
+
         // Loading and status properties
         [ObservableProperty]
         private bool isLoading = false;
@@ -138,6 +142,13 @@ namespace WileyWidget.ViewModels
         [ObservableProperty]
         private string scenarioStatus;
 
+        // Search and filtering properties
+        [ObservableProperty]
+        private string searchText = string.Empty;
+
+        [ObservableProperty]
+        private ObservableCollection<Enterprise> filteredEnterprises = new();
+
         public DashboardViewModel(
             ILogger<DashboardViewModel> logger,
             IEnterpriseRepository enterpriseRepository,
@@ -163,6 +174,7 @@ namespace WileyWidget.ViewModels
                 // Load all dashboard data in parallel
                 await Task.WhenAll(
                     LoadKPIsAsync(),
+                    LoadEnterprisesAsync(),
                     LoadChartDataAsync(),
                     LoadActivitiesAsync(),
                     LoadAlertsAsync(),
@@ -189,7 +201,7 @@ namespace WileyWidget.ViewModels
             try
             {
                 // Get enterprise data
-                var enterprises = await _enterpriseRepository.GetAllAsync();
+                var enterprises = await Task.Run(() => _enterpriseRepository.GetAllAsync());
 
                 TotalEnterprises = enterprises.Count();
                 TotalBudget = enterprises.Sum(e => e.TotalBudget);
@@ -208,6 +220,30 @@ namespace WileyWidget.ViewModels
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading KPIs");
+            }
+        }
+
+        private async Task LoadEnterprisesAsync()
+        {
+            try
+            {
+                Enterprises.Clear();
+                var enterprises = await Task.Run(() => _enterpriseRepository.GetAllAsync());
+                foreach (var enterprise in enterprises)
+                {
+                    Enterprises.Add(enterprise);
+                }
+                
+                // Initialize filtered collection with all enterprises
+                FilteredEnterprises.Clear();
+                foreach (var enterprise in Enterprises)
+                {
+                    FilteredEnterprises.Add(enterprise);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading enterprises");
             }
         }
 
@@ -291,7 +327,7 @@ namespace WileyWidget.ViewModels
 
                 // Load enterprise type distribution
                 EnterpriseTypeData.Clear();
-                var enterprises = await _enterpriseRepository.GetAllAsync();
+                var enterprises = await Task.Run(() => _enterpriseRepository.GetAllAsync());
                 var typeGroups = enterprises.GroupBy(e => e.Type ?? "Other");
 
                 foreach (var group in typeGroups)
@@ -496,6 +532,40 @@ namespace WileyWidget.ViewModels
                           "Feature Not Implemented", MessageBoxButton.OK);
         }
 
+        [RelayCommand]
+        private void Search()
+        {
+            FilterEnterprises();
+        }
+
+        private void FilterEnterprises()
+        {
+            FilteredEnterprises.Clear();
+            
+            if (string.IsNullOrWhiteSpace(SearchText))
+            {
+                // No search text, show all enterprises
+                foreach (var enterprise in Enterprises)
+                {
+                    FilteredEnterprises.Add(enterprise);
+                }
+            }
+            else
+            {
+                // Filter enterprises based on search text
+                var filtered = Enterprises.Where(e =>
+                    (e.Name?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (e.Type?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (e.Description?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false)
+                );
+                
+                foreach (var enterprise in filtered)
+                {
+                    FilteredEnterprises.Add(enterprise);
+                }
+            }
+        }
+
         private async Task LoadScenarioInputsAsync()
         {
             try
@@ -528,7 +598,7 @@ namespace WileyWidget.ViewModels
             try
             {
                 // Get the first enterprise as current (you may want to implement proper selection logic)
-                var enterprises = await _enterpriseRepository.GetAllAsync();
+                var enterprises = await Task.Run(() => _enterpriseRepository.GetAllAsync());
                 return enterprises.FirstOrDefault()?.Id ?? 0;
             }
             catch
@@ -546,7 +616,7 @@ namespace WileyWidget.ViewModels
                 if (customerCount == 0) return 0;
 
                 // Get enterprise to determine fund type
-                var enterprise = await _enterpriseRepository.GetByIdAsync(enterpriseId);
+                var enterprise = await Task.Run(() => _enterpriseRepository.GetByIdAsync(enterpriseId));
                 if (enterprise == null) return 0;
 
                 // Map enterprise type to fund type (same logic as WhatIfScenarioEngine)
@@ -629,6 +699,11 @@ namespace WileyWidget.ViewModels
         partial void OnRefreshIntervalMinutesChanged(int value)
         {
             UpdateNextRefreshTime();
+        }
+
+        partial void OnSearchTextChanged(string value)
+        {
+            FilterEnterprises();
         }
     }
 

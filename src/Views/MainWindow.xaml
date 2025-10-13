@@ -12,6 +12,7 @@
     xmlns:syncfusionskin="clr-namespace:Syncfusion.SfSkinManager;assembly=Syncfusion.SfSkinManager.WPF"
     xmlns:notification="clr-namespace:Syncfusion.Windows.Controls.Notification;assembly=Syncfusion.SfBusyIndicator.WPF"
     xmlns:prism="http://prismlibrary.com/"
+    xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
     mc:Ignorable="d"
     DataContext="{Binding MainViewModel}"
     prism:ViewModelLocator.AutoWireViewModel="True"
@@ -130,7 +131,7 @@
             <StatusBarItem>
                 <StackPanel Orientation="Horizontal" Margin="4,0">
                     <TextBlock Text="View:" FontWeight="SemiBold"/>
-                    <TextBlock Text="{Binding CurrentViewName}" Margin="6,0,0,0"/>
+                    <TextBlock Text="{Binding CurrentViewName, FallbackValue=Loading...}" Margin="6,0,0,0"/>
                 </StackPanel>
             </StatusBarItem>
             <Separator />
@@ -144,10 +145,46 @@
             <StatusBarItem HorizontalAlignment="Right">
                 <StackPanel Orientation="Horizontal" Margin="4,0">
                     <TextBlock Text="User:" FontWeight="SemiBold"/>
-                    <TextBlock Text="{Binding CurrentUserName}" Margin="6,0,0,0"/>
+                    <TextBlock Text="{Binding CurrentUserName, FallbackValue=Loading...}" Margin="6,0,0,0"/>
                 </StackPanel>
             </StatusBarItem>
         </StatusBar>
+
+        <!-- Global Error Banner -->
+        <Border DockPanel.Dock="Top" 
+                Background="#FFE53935"
+                BorderBrush="#B71C1C"
+                BorderThickness="0,0,0,1"
+                Visibility="{Binding HasGlobalError, Converter={StaticResource BoolToVis}}"
+                x:Name="GlobalErrorBanner">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                
+                <TextBlock Grid.Column="0" 
+                          Text="{Binding GlobalErrorMessage, FallbackValue=Loading...}"
+                          Foreground="White"
+                          FontWeight="SemiBold"
+                          Margin="20,10"
+                          TextWrapping="Wrap"
+                          VerticalAlignment="Center" />
+                
+                <Button Grid.Column="1"
+                       Content="✕"
+                       Command="{Binding ClearGlobalErrorCommand}"
+                       Background="Transparent"
+                       BorderBrush="Transparent"
+                       Foreground="White"
+                       FontSize="16"
+                       FontWeight="Bold"
+                       Margin="10"
+                       Padding="10,5"
+                       VerticalAlignment="Center"
+                       ToolTip="Dismiss error" />
+            </Grid>
+        </Border>
 
         <!-- Header Section with Search -->
         <Border DockPanel.Dock="Top" Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"
@@ -161,7 +198,7 @@
 
                 <!-- Search TextBox -->
                 <TextBox Grid.Column="0" 
-                        Text="{Binding SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        Text="{Binding SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, FallbackValue=Loading...}"
                         Margin="0,0,20,0"
                         VerticalAlignment="Center"
                         TabIndex="1"
@@ -455,6 +492,9 @@
                      IsVS2010DraggingEnabled="True"
                      DockWindowContextMenuItemStyle="{StaticResource DockWindowMenuItemSeparatorStyle}"
                      syncfusionskin:SfSkinManager.VisualStyle="FluentDark">
+        <i:Interaction.Behaviors>
+            <!-- Custom behaviors for float window management -->
+        </i:Interaction.Behaviors>
 
             <!-- Custom Context Menu Items -->
             <syncfusion:DockingManager.DockWindowContextMenuItems>
@@ -942,5 +982,23 @@
                               syncfusion:DockingManager.CanMinimize="True"
                               syncfusion:DockingManager.CaptionToolTip="Application settings - configure preferences and system options" />
         </syncfusion:DockingManager>
+
+        <!-- Global Loading Overlay -->
+        <Border Background="#80000000"
+                Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}"
+                Panel.ZIndex="9999">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                <notification:SfBusyIndicator Width="72"
+                                             Height="72"
+                                             AnimationType="DoubleCircle"
+                                             Foreground="White"
+                                             IsBusy="{Binding IsLoading}" />
+                <TextBlock Text="Loading application..."
+                         Foreground="White"
+                         FontSize="14"
+                         Margin="0,15,0,0"
+                         HorizontalAlignment="Center" />
+            </StackPanel>
+        </Border>
     </DockPanel>
     </syncfusion:RibbonWindow>

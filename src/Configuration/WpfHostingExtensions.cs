@@ -11,6 +11,7 @@ using Microsoft.Extensions.Options;
 using Serilog;
 using Serilog.Debugging;
 using WileyWidget.Business.Interfaces;
+using WileyWidget.Configuration;
 using WileyWidget.Data;
 using WileyWidget.Models;
 using WileyWidget.Services;
@@ -176,10 +177,18 @@ public static class WpfHostingExtensions
         services.Configure<SyncfusionOptions>(configuration.GetSection("Syncfusion"));
         services.Configure<HealthCheckConfiguration>(configuration.GetSection("HealthChecks"));
         services.AddSingleton(sp => sp.GetRequiredService<IOptions<HealthCheckConfiguration>>().Value);
+
+        // Configure AppOptions with database and secrets integration
+        services.Configure<AppOptions>(configuration.GetSection("App"));
+        services.AddTransient<IConfigureOptions<AppOptions>, AppOptionsConfigurator>();
+        services.AddSingleton<IValidateOptions<AppOptions>, AppOptionsValidator>();
     }
 
     private static void ConfigureCoreServices(IServiceCollection services, IConfiguration configuration)
     {
+        // Database services - must be first as other services depend on it
+        services.AddEnterpriseDatabaseServices(configuration);
+
         // Critical services - load immediately
     services.AddSingleton<AuthenticationService>();
     services.AddSingleton<ISyncfusionLicenseService, SyncfusionLicenseService>();

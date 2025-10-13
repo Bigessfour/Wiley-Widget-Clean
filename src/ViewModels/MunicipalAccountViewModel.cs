@@ -91,6 +91,36 @@ public partial class MunicipalAccountViewModel : ObservableObject
     private AccountType selectedTypeFilter = AccountType.Asset;
 
     /// <summary>
+    /// Search text for filtering accounts
+    /// </summary>
+    [ObservableProperty]
+    private string searchText = string.Empty;
+
+    /// <summary>
+    /// Whether advanced filters are expanded
+    /// </summary>
+    [ObservableProperty]
+    private bool isAdvancedFiltersExpanded;
+
+    /// <summary>
+    /// Minimum balance filter
+    /// </summary>
+    [ObservableProperty]
+    private decimal? minBalanceFilter;
+
+    /// <summary>
+    /// Maximum balance filter
+    /// </summary>
+    [ObservableProperty]
+    private decimal? maxBalanceFilter;
+
+    /// <summary>
+    /// Selected department filter
+    /// </summary>
+    [ObservableProperty]
+    private Department? selectedDepartmentFilter;
+
+    /// <summary>
     /// Load all municipal accounts from database
     /// </summary>
     [RelayCommand]
@@ -269,14 +299,110 @@ public partial class MunicipalAccountViewModel : ObservableObject
     }
 
     /// <summary>
-    /// Clear error state
+    /// Apply comprehensive search and filters
     /// </summary>
     [RelayCommand]
-    private void ClearError()
+    private async Task ApplyFiltersAsync()
     {
-        HasError = false;
-        ErrorMessage = string.Empty;
-        StatusMessage = "Ready";
+        try
+        {
+            IsBusy = true;
+            HasError = false;
+            ErrorMessage = string.Empty;
+            StatusMessage = "Applying filters...";
+
+            // Get all accounts first
+            var allAccounts = await _accountRepository.GetAllAsync();
+            var filteredAccounts = allAccounts.AsEnumerable();
+
+            // Apply search text filter
+            if (!string.IsNullOrWhiteSpace(SearchText))
+            {
+                var searchLower = SearchText.ToLowerInvariant();
+                filteredAccounts = filteredAccounts.Where(a =>
+                    a.Name.ToLowerInvariant().Contains(searchLower) ||
+                    a.AccountNumber.Value.Contains(searchLower) ||
+                    a.FundDescription.ToLowerInvariant().Contains(searchLower) ||
+                    a.TypeDescription.ToLowerInvariant().Contains(searchLower) ||
+                    (a.Notes?.ToLowerInvariant().Contains(searchLower) ?? false) ||
+                    (a.Department?.Name.ToLowerInvariant().Contains(searchLower) ?? false));
+            }
+
+            // Apply fund type filter
+            if (SelectedFundFilter != MunicipalFundType.General) // Assuming General means "All"
+            {
+                filteredAccounts = filteredAccounts.Where(a => a.Fund == SelectedFundFilter);
+            }
+
+            // Apply account type filter
+            if (SelectedTypeFilter != AccountType.Asset) // Assuming Asset means "All"
+            {
+                filteredAccounts = filteredAccounts.Where(a => a.Type == SelectedTypeFilter);
+            }
+
+            // Apply balance range filters
+            if (MinBalanceFilter.HasValue)
+            {
+                filteredAccounts = filteredAccounts.Where(a => a.Balance >= MinBalanceFilter.Value);
+            }
+            if (MaxBalanceFilter.HasValue)
+            {
+                filteredAccounts = filteredAccounts.Where(a => a.Balance <= MaxBalanceFilter.Value);
+            }
+
+            // Apply department filter
+            if (SelectedDepartmentFilter != null)
+            {
+                filteredAccounts = filteredAccounts.Where(a => a.DepartmentId == SelectedDepartmentFilter.Id);
+            }
+
+            // Update the collection
+            MunicipalAccounts.Clear();
+            foreach (var account in filteredAccounts)
+            {
+                MunicipalAccounts.Add(account);
+            }
+
+            StatusMessage = $"Filtered to {MunicipalAccounts.Count} accounts";
+            Log.Information("Applied filters, showing {Count} accounts", MunicipalAccounts.Count);
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Failed to apply filters: {ex.Message}";
+            HasError = true;
+            StatusMessage = "Filter failed";
+            Log.Error(ex, "Failed to apply filters");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    /// <summary>
+    /// Clear all filters and show all accounts
+    /// </summary>
+    [RelayCommand]
+    private async Task ClearFiltersAsync()
+    {
+        try
+        {
+            SearchText = string.Empty;
+            SelectedFundFilter = MunicipalFundType.General;
+            SelectedTypeFilter = AccountType.Asset;
+            MinBalanceFilter = null;
+            MaxBalanceFilter = null;
+            SelectedDepartmentFilter = null;
+            IsAdvancedFiltersExpanded = false;
+
+            await LoadAccountsAsync();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Failed to clear filters: {ex.Message}";
+            HasError = true;
+            Log.Error(ex, "Failed to clear filters");
+        }
     }
 
     /// <summary>

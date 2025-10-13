@@ -51,6 +51,8 @@
     <PackageVersion Include="Syncfusion.Themes.FluentDark.WPF" Version="31.1.20" />
     <PackageVersion Include="Syncfusion.Themes.FluentLight.WPF" Version="31.1.20" />
     <PackageVersion Include="Syncfusion.Tools.WPF" Version="31.1.20" />
+    <PackageVersion Include="Syncfusion.XlsIO.WPF" Version="31.1.20" />
+    <PackageVersion Include="Syncfusion.Pdf.WPF" Version="31.1.20" />
     <!-- QuickBooks -->
     <PackageVersion Include="IppOAuth2PlatformSdk" Version="14.0.0" />
     <PackageVersion Include="IppDotNetSdkForQuickBooksApiV3" Version="14.7.0" />

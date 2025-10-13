@@ -1,12 +1,14 @@
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows;
+using System.Windows.Media;
 using Syncfusion.SfSkinManager;
 using WileyWidget.Services;
 using WileyWidget.Data;
 using Serilog;
 using Microsoft.Extensions.DependencyInjection;
 using BusinessInterfaces = WileyWidget.Business.Interfaces;
+using System.ComponentModel;
 
 namespace WileyWidget;
 
@@ -37,6 +39,12 @@ public partial class AIAssistView : UserControl
         var logger = _viewScope.ServiceProvider.GetRequiredService<Microsoft.Extensions.Logging.ILogger<ViewModels.AIAssistViewModel>>();
         DataContext = new ViewModels.AIAssistViewModel(aiService, chargeCalculator, whatIfEngine, grokSupercomputer, enterpriseRepository, dispatcherHelper, logger);
 
+        // Subscribe to ViewModel property changes for auto-scroll
+        if (DataContext is ViewModels.AIAssistViewModel vm)
+        {
+            vm.PropertyChanged += OnViewModelPropertyChanged;
+        }
+
         // Apply current theme
         TryApplyTheme(SettingsService.Instance.Current.Theme);
 
@@ -63,6 +71,19 @@ public partial class AIAssistView : UserControl
         {
             ViewModel.SendMessageCommand.Execute(null);
             e.Handled = true;
+        }
+    }
+
+    /// <summary>
+    /// Handle ViewModel property changes for auto-scroll behavior
+    /// </summary>
+    private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        // Auto-scroll implementation pending - requires control access after XAML compilation
+        if (e.PropertyName == nameof(ViewModels.AIAssistViewModel.Response))
+        {
+            // TODO: Implement auto-scroll to end when response updates
+            // This requires the ResponseOutput control to be accessible after build
         }
     }
 

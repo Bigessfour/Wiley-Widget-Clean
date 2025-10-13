@@ -28,6 +28,15 @@ public partial class AIAssistViewModel : ObservableObject
     private string messageText = string.Empty;
 
     [ObservableProperty]
+    private string queryText = string.Empty;
+
+    [ObservableProperty]
+    private string response = string.Empty;
+
+    [ObservableProperty]
+    private string selectedHistoryItem;
+
+    [ObservableProperty]
     private bool isTyping = false;
 
     /// <summary>
@@ -200,6 +209,44 @@ public partial class AIAssistViewModel : ObservableObject
     }
 
     private bool CanSendMessage() => !string.IsNullOrWhiteSpace(MessageText);
+
+    /// <summary>
+    /// Generate response command (placeholder for charge calculation)
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanGenerate))]
+    private async Task Generate()
+    {
+        if (string.IsNullOrWhiteSpace(QueryText))
+        {
+            Response = "Please enter a query to generate a response.";
+            return;
+        }
+
+        IsProcessing = true;
+        try
+        {
+            // Placeholder for charge calculation - using IChargeCalculatorService
+            // This is a basic implementation that will be enhanced
+            var result = await Task.Run(() =>
+            {
+                // Simple placeholder calculation
+                return $"Generated response for: {QueryText}\n\nThis is a placeholder response. The IChargeCalculatorService integration is pending.";
+            });
+
+            Response = result;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error generating response");
+            Response = $"Error generating response: {ex.Message}";
+        }
+        finally
+        {
+            IsProcessing = false;
+        }
+    }
+
+    private bool CanGenerate() => !string.IsNullOrWhiteSpace(QueryText) && !IsProcessing;
 
     /// <summary>
     /// Clear chat command

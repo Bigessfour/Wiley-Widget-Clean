@@ -2501,6 +2501,21 @@ public partial class MainWindow : RibbonWindow
         }
     }
 
+    /// <summary>
+    /// Sets a global error message for display in the error banner
+    /// </summary>
+    private void SetGlobalError(string message)
+    {
+        if (DataContext is ViewModels.MainViewModel vm)
+        {
+            vm.SetGlobalError(message);
+        }
+        else
+        {
+            Log.Warning("Cannot set global error - DataContext is not MainViewModel");
+        }
+    }
+
     private void OnWindowClosing(object sender, System.ComponentModel.CancelEventArgs e)
     {
         // Prevent the window from closing briefly to keep the app alive during startup diagnostics

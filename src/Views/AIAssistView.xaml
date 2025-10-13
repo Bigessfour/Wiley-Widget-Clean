@@ -39,27 +39,43 @@
                 </Grid.ColumnDefinitions>
 
                 <syncfusion:SfTextBoxExt x:Name="MessageInput"
-                                       Text="{Binding MessageText, UpdateSourceTrigger=PropertyChanged}"
+                                       Text="{Binding QueryText, UpdateSourceTrigger=PropertyChanged}"
                                        Watermark="Ask about budgets..."
                                        ToolTip="Enter query for AI analysis (e.g., 'What if we increase rates?')"
                                        VerticalAlignment="Center"
                                        Margin="0,0,10,0"
                                        KeyDown="OnMessageInputKeyDown" />
 
-                <syncfusion:ButtonAdv Grid.Column="1"
-                                    Label="Send"
-                                    Command="{Binding SendMessageCommand}"
-                                    ToolTip="Send query to AI (supports GASB queries)"
-                                    Background="#1976D2"
-                                    Foreground="White" />
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <syncfusion:ButtonAdv Label="Send"
+                                        Command="{Binding SendMessageCommand}"
+                                        ToolTip="Send query to AI (supports GASB queries)"
+                                        Background="#1976D2"
+                                        Foreground="White"
+                                        Margin="0,0,5,0" />
+                    <syncfusion:ButtonAdv Label="Generate"
+                                        Command="{Binding GenerateCommand}"
+                                        ToolTip="Generate calculation response"
+                                        Background="#4CAF50"
+                                        Foreground="White" />
+                </StackPanel>
             </Grid>
         </Border>
 
-        <!-- Chat Area (Middle) -->
-        <chat:SfAIAssistView Grid.Row="1"
-                            CurrentUser="{Binding CurrentUser}"
-                            Messages="{Binding Messages}"
-                            Margin="0,5,0,5" />
+        <!-- Response Output Area (Middle) -->
+        <Border Grid.Row="1" Background="White" BorderBrush="#E9ECEF" BorderThickness="1"
+                Padding="10" Margin="0,5,0,5">
+            <TextBox x:Name="ResponseOutput"
+                    Text="{Binding Response, Mode=OneWay}"
+                    IsReadOnly="True"
+                    TextWrapping="Wrap"
+                    VerticalScrollBarVisibility="Auto"
+                    HorizontalScrollBarVisibility="Auto"
+                    AcceptsReturn="True"
+                    ToolTip="AI-generated response and calculations"
+                    FontFamily="Consolas"
+                    FontSize="12" />
+        </Border>
 
         <!-- Bottom Toolbar -->
         <Border Grid.Row="2" Background="#F0F0F0" BorderBrush="#CCCCCC" BorderThickness="1,1,1,0"
@@ -89,11 +105,15 @@
                                         ToolTip="Switch to Proactive Advisor mode" />
                 </StackPanel>
 
-                <!-- History ComboBox -->
-                <ComboBox Grid.Column="1"
-                          ItemsSource="{Binding ConversationHistory}"
-                          ToolTip="Select from past conversations"
-                          Margin="10,0" />
+                <!-- History List -->
+                <ListBox Grid.Column="1"
+                         ItemsSource="{Binding ConversationHistory}"
+                         SelectedItem="{Binding SelectedHistoryItem, Mode=TwoWay}"
+                         ToolTip="Select from past conversations"
+                         Margin="10,0"
+                         Background="White"
+                         BorderBrush="#CCCCCC"
+                         BorderThickness="1" />
 
                 <!-- Additional Actions -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal">

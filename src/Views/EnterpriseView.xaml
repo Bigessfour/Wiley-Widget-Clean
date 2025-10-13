@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:WileyWidget"
+        xmlns:views="clr-namespace:WileyWidget.Views"
         xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
         xmlns:notification="http://schemas.syncfusion.com/wpf"
         xmlns:syncfusionskin="clr-namespace:Syncfusion.SfSkinManager;assembly=Syncfusion.SfSkinManager.WPF"
@@ -13,7 +14,8 @@
         WindowStartupLocation="CenterScreen">
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
-        <local:BalanceColorConverter x:Key="BalanceColorConverter" />
+        <views:BalanceColorConverter x:Key="BalanceColorConverter" />
+        <views:StatusColorConverter x:Key="StatusColorConverter" />
         
         <!-- Currency Cell Template with Color Indicators -->
         <DataTemplate x:Key="CurrencyTemplate">
@@ -52,6 +54,16 @@
                           FontWeight="Bold"
                           Foreground="{Binding Enterprise.MonthlyBalance, Converter={StaticResource BalanceColorConverter}}"/>
             </Grid>
+        </DataTemplate>
+
+        <!-- Status Cell Template with Color Coding -->
+        <DataTemplate x:Key="StatusCellTemplate">
+            <Border Background="{Binding Enterprise.Status, Converter={StaticResource StatusColorConverter}, ConverterParameter=Light}" 
+                    Padding="4,2" CornerRadius="2">
+                <TextBlock Text="{Binding Enterprise.Status}" 
+                          FontWeight="SemiBold"
+                          Foreground="{Binding Enterprise.Status, Converter={StaticResource StatusColorConverter}}"/>
+            </Border>
         </DataTemplate>
     </Window.Resources>
 
@@ -115,16 +127,11 @@
                                            Command="{Binding ClearGroupingCommand}"
                                            ToolTip="Remove all grouping and show flat list"/>
                 </syncfusion:RibbonBar>
-                <syncfusion:RibbonBar Header="Analytics">
-                    <syncfusion:RibbonButton Label="Budget Summary" 
-                                           Command="{Binding UpdateBudgetSummaryCommand}"
-                                           ToolTip="Calculate and display budget summary across all enterprises"/>
-                    <syncfusion:RibbonButton Label="Rate Analysis" 
-                                           Command="{Binding RateAnalysisCommand}"
-                                           ToolTip="Analyze rate structures and break-even points"/>
-                    <syncfusion:RibbonButton Label="Trend Analysis" 
-                                           Command="{Binding TrendAnalysisCommand}"
-                                           ToolTip="View financial trends over time"/>
+                <syncfusion:RibbonBar Header="Navigation">
+                    <syncfusion:RibbonButton Label="Budget View" 
+                                           SizeForm="Large" 
+                                           Command="{Binding NavigateToBudgetViewCommand}"
+                                           ToolTip="Navigate to Budget View for financial analysis"/>
                 </syncfusion:RibbonBar>
             </syncfusion:RibbonTab>
         </syncfusion:Ribbon>
@@ -208,36 +215,34 @@
                     </Grid>
                 </Border>
 
-                <syncfusion:SfTreeGrid
-                    x:Name="EnterpriseTreeGrid"
-                    ItemsSource="{Binding PagedHierarchicalEnterprises}"
-                    SelectedItem="{Binding SelectedNode, Mode=TwoWay}"
-                    AutoGenerateColumns="False"
+                <syncfusion:SfDataGrid
+                    x:Name="EnterpriseDataGrid"
+                    ItemsSource="{Binding EnterpriseList}"
+                    SelectedItem="{Binding SelectedEnterprise, Mode=TwoWay}"
+                    AllowGrouping="True"
                     AllowSorting="True"
                     AllowEditing="True"
                     AllowResizingColumns="True"
                     AllowResizingHiddenColumns="True"
-                    AllowTriStateChecking="True"
-                    AutoExpandMode="RootNodesExpanded"
+                    AutoGenerateColumns="False"
                     ColumnSizer="Star"
-                    ExpanderColumn="Name"
-                    NavigationMode="Row"
-                    ShowRowHeader="True"
-                    RowHeaderWidth="36"
                     RowHeight="32"
                     SelectionMode="Single"
-                    ChildPropertyName="Children"
                     Margin="8,0,8,8"
-                    ToolTipService.ToolTip="Enterprise hierarchy grid - Expand/collapse departments, edit inline, or right-click for options">
+                    SelectionChanged="EnterpriseDataGrid_SelectionChanged"
+                    EnableDataVirtualization="True"
+                    VirtualizingPanel.ScrollUnit="Pixel"
+                    VirtualizingPanel.VirtualizationMode="Recycling"
+                    VirtualizingPanel.CacheLength="5,5"
+                    VirtualizingPanel.CacheLengthUnit="Page"
+                    ToolTipService.ToolTip="Enterprise data grid with grouping support - Select rows for editing, group by columns">
 
-                    <syncfusion:SfTreeGrid.SortColumnDescriptions>
-                        <syncfusion:SortColumnDescriptions>
-                            <syncfusion:SortColumnDescription ColumnName="Name" SortDirection="Ascending" />
-                        </syncfusion:SortColumnDescriptions>
-                    </syncfusion:SfTreeGrid.SortColumnDescriptions>
+                    <syncfusion:SfDataGrid.GroupColumnDescriptions>
+                        <syncfusion:GroupColumnDescription ColumnName="Type" />
+                    </syncfusion:SfDataGrid.GroupColumnDescriptions>
 
                     <!-- Context Menu -->
-                    <syncfusion:SfTreeGrid.ContextMenu>
+                    <syncfusion:SfDataGrid.ContextMenu>
                         <ContextMenu>
                             <MenuItem Header="Add New Enterprise" 
                                      Command="{Binding AddEnterpriseAsyncCommand}"
@@ -260,108 +265,109 @@
                                      Command="{Binding ViewAuditHistoryAsyncCommand}"
                                      ToolTip="View change history for this enterprise"/>
                         </ContextMenu>
-                    </syncfusion:SfTreeGrid.ContextMenu>
+                    </syncfusion:SfDataGrid.ContextMenu>
 
                     <!-- Enhanced Data Grid Columns with Custom Templates -->
-                    <syncfusion:SfTreeGrid.Columns>
-                        <syncfusion:TreeGridCheckBoxColumn HeaderText="Select" 
-                                                         MappingName="Enterprise.IsSelected" 
-                                                         Width="70"
-                                                         ToolTipService.ToolTip="Select multiple enterprises for bulk operations"/>
+                    <syncfusion:SfDataGrid.Columns>
+                        <syncfusion:GridCheckBoxColumn HeaderText="Select" 
+                                                     MappingName="IsSelected" 
+                                                     Width="70"
+                                                     ToolTipService.ToolTip="Select multiple enterprises for bulk operations"/>
                         
-                        <syncfusion:TreeGridTextColumn HeaderText="Name" 
-                                                     MappingName="Name" 
-                                                     MinimumWidth="180"
-                                                     ToolTipService.ToolTip="Enterprise or department name"/>
+                        <syncfusion:GridTextColumn HeaderText="Name" 
+                                                 MappingName="Name" 
+                                                 MinimumWidth="180"
+                                                 ToolTipService.ToolTip="Enterprise or department name"/>
                         
-                        <syncfusion:TreeGridTextColumn HeaderText="Type" 
-                                                     MappingName="Enterprise.Type" 
-                                                     MinimumWidth="120"
-                                                     ToolTipService.ToolTip="Service type (Water, Electric, Gas, Sewer, etc.)"/>
+                        <syncfusion:GridTextColumn HeaderText="Type" 
+                                                 MappingName="Type" 
+                                                 MinimumWidth="120"
+                                                 ToolTipService.ToolTip="Service type (Water, Electric, Gas, Sewer, etc.)"/>
                         
-                        <syncfusion:TreeGridTextColumn HeaderText="Status" 
-                                                     MappingName="Enterprise.Status" 
-                                                     MinimumWidth="110"
-                                                     ToolTipService.ToolTip="Operational status (Active, Inactive, Pending)"/>
+                        <syncfusion:GridTextColumn HeaderText="Status" 
+                                                 MappingName="Status" 
+                                                 MinimumWidth="110"
+                                                 CellTemplate="{StaticResource StatusCellTemplate}"
+                                                 ToolTipService.ToolTip="Operational status (Active, Inactive, Pending)"/>
                         
-                        <syncfusion:TreeGridNumericColumn HeaderText="Customer Count"
-                                                        MappingName="Enterprise.CitizenCount" 
-                                                        MinimumWidth="100" 
-                                                        NumberDecimalDigits="0"
-                                                        ShowToolTip="True">
-                            <syncfusion:TreeGridNumericColumn.ToolTipTemplate>
+                        <syncfusion:GridNumericColumn HeaderText="Customer Count"
+                                                    MappingName="CitizenCount" 
+                                                    MinimumWidth="100" 
+                                                    NumberDecimalDigits="0"
+                                                    ShowToolTip="True">
+                            <syncfusion:GridNumericColumn.ToolTipTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="Number of citizens served" />
                                 </DataTemplate>
-                            </syncfusion:TreeGridNumericColumn.ToolTipTemplate>
-                        </syncfusion:TreeGridNumericColumn>
+                            </syncfusion:GridNumericColumn.ToolTipTemplate>
+                        </syncfusion:GridNumericColumn>
                         
                         <!-- Enhanced Currency Columns with Custom Formatting -->
-                        <syncfusion:TreeGridCurrencyColumn HeaderText="Rate" 
-                                                         MappingName="Enterprise.CurrentRate" 
-                                                         MinimumWidth="120"
-                                                         CurrencySymbol="$"
-                                                         CurrencyDecimalDigits="2"
-                                                         ShowToolTip="True">
-                            <syncfusion:TreeGridCurrencyColumn.ToolTipTemplate>
+                        <syncfusion:GridCurrencyColumn HeaderText="Rate" 
+                                                     MappingName="CurrentRate" 
+                                                     MinimumWidth="120"
+                                                     CurrencySymbol="$"
+                                                     CurrencyDecimalDigits="2"
+                                                     ShowToolTip="True">
+                            <syncfusion:GridCurrencyColumn.ToolTipTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="Current billing rate per unit" />
                                 </DataTemplate>
-                            </syncfusion:TreeGridCurrencyColumn.ToolTipTemplate>
-                        </syncfusion:TreeGridCurrencyColumn>
+                            </syncfusion:GridCurrencyColumn.ToolTipTemplate>
+                        </syncfusion:GridCurrencyColumn>
                         
-                        <syncfusion:TreeGridCurrencyColumn HeaderText="Revenue" 
-                                                         MappingName="Enterprise.MonthlyRevenue" 
-                                                         MinimumWidth="140"
-                                                         CurrencySymbol="$"
-                                                         CurrencyDecimalDigits="2"
-                                                         ShowToolTip="True">
-                            <syncfusion:TreeGridCurrencyColumn.ToolTipTemplate>
+                        <syncfusion:GridCurrencyColumn HeaderText="Revenue" 
+                                                     MappingName="MonthlyRevenue" 
+                                                     MinimumWidth="140"
+                                                     CurrencySymbol="$"
+                                                     CurrencyDecimalDigits="2"
+                                                     ShowToolTip="True">
+                            <syncfusion:GridCurrencyColumn.ToolTipTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="Monthly revenue (Rate × Citizens × Usage)" />
                                 </DataTemplate>
-                            </syncfusion:TreeGridCurrencyColumn.ToolTipTemplate>
-                        </syncfusion:TreeGridCurrencyColumn>
+                            </syncfusion:GridCurrencyColumn.ToolTipTemplate>
+                        </syncfusion:GridCurrencyColumn>
                         
-                        <syncfusion:TreeGridCurrencyColumn HeaderText="Expenses" 
-                                                         MappingName="Enterprise.MonthlyExpenses" 
-                                                         MinimumWidth="140"
-                                                         CurrencySymbol="$"
-                                                         CurrencyDecimalDigits="2"
-                                                         ShowToolTip="True">
-                            <syncfusion:TreeGridCurrencyColumn.ToolTipTemplate>
+                        <syncfusion:GridCurrencyColumn HeaderText="Expenses" 
+                                                     MappingName="MonthlyExpenses" 
+                                                     MinimumWidth="140"
+                                                     CurrencySymbol="$"
+                                                     CurrencyDecimalDigits="2"
+                                                     ShowToolTip="True">
+                            <syncfusion:GridCurrencyColumn.ToolTipTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="Monthly operational expenses" />
                                 </DataTemplate>
-                            </syncfusion:TreeGridCurrencyColumn.ToolTipTemplate>
-                        </syncfusion:TreeGridCurrencyColumn>
+                            </syncfusion:GridCurrencyColumn.ToolTipTemplate>
+                        </syncfusion:GridCurrencyColumn>
                         
                         <!-- Balance column with custom template -->
-                        <syncfusion:TreeGridTemplateColumn HeaderText="Balance" 
-                                                         MappingName="Enterprise.MonthlyBalance" 
-                                                         MinimumWidth="140"
-                                                         CellTemplate="{StaticResource BalanceCellTemplate}"
-                                                         ShowToolTip="True">
-                            <syncfusion:TreeGridTemplateColumn.ToolTipTemplate>
+                        <syncfusion:GridTemplateColumn HeaderText="Balance" 
+                                                     MappingName="MonthlyBalance" 
+                                                     MinimumWidth="140"
+                                                     CellTemplate="{StaticResource BalanceCellTemplate}"
+                                                     ShowToolTip="True">
+                            <syncfusion:GridTemplateColumn.ToolTipTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="Monthly net balance (Revenue - Expenses)&#x0a;Green arrow = profit, Red arrow = loss" />
                                 </DataTemplate>
-                            </syncfusion:TreeGridTemplateColumn.ToolTipTemplate>
-                        </syncfusion:TreeGridTemplateColumn>
+                            </syncfusion:GridTemplateColumn.ToolTipTemplate>
+                        </syncfusion:GridTemplateColumn>
                         
-                        <syncfusion:TreeGridDateTimeColumn HeaderText="Last Updated" 
-                                                         MappingName="Enterprise.LastUpdated" 
-                                                         MinimumWidth="160"
-                                                         Pattern="FullDateTime"
-                                                         ShowToolTip="True">
-                            <syncfusion:TreeGridDateTimeColumn.ToolTipTemplate>
+                        <syncfusion:GridDateTimeColumn HeaderText="Last Updated" 
+                                                     MappingName="LastUpdated" 
+                                                     MinimumWidth="160"
+                                                     Pattern="FullDateTime"
+                                                     ShowToolTip="True">
+                            <syncfusion:GridDateTimeColumn.ToolTipTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="Last modification date and time" />
                                 </DataTemplate>
-                            </syncfusion:TreeGridDateTimeColumn.ToolTipTemplate>
-                        </syncfusion:TreeGridDateTimeColumn>
-                    </syncfusion:SfTreeGrid.Columns>
-                </syncfusion:SfTreeGrid>
+                            </syncfusion:GridDateTimeColumn.ToolTipTemplate>
+                        </syncfusion:GridDateTimeColumn>
+                    </syncfusion:SfDataGrid.Columns>
+                </syncfusion:SfDataGrid>
 
                 <!-- Data Pager -->
                 <syncfusion:SfDataPager x:Name="dataPager"

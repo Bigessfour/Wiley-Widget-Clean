@@ -18,6 +18,7 @@
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
         <local:BudgetProgressConverter x:Key="BudgetProgressConverter" />
         <local:EmptyStringToVisibilityConverter x:Key="EmptyStringToVisibilityConverter" />
+        <local:CountToVisibilityConverter x:Key="CountToVisibilityConverter" />
         
         <!-- Trackball Line Style for Chart Interactivity -->
         <Style x:Key="TrackBallLineStyle" TargetType="Line">
@@ -246,92 +247,136 @@
                         <StackPanel>
                             <TextBlock Text="Budget Trends (Historical Data from Municipal Accounts)" 
                                      FontSize="14" FontWeight="SemiBold" Foreground="#2196F3" Margin="0,0,0,10"/>
-                            <chart:SfChart Height="300">
-                                <chart:SfChart.Header>
-                                    <TextBlock Text="6-Month Budget Trend" FontSize="14" FontWeight="Bold" 
-                                             HorizontalAlignment="Center" Foreground="White"/>
-                                </chart:SfChart.Header>
-                                
-                                <chart:SfChart.Legend>
-                                    <chart:ChartLegend DockPosition="Bottom" 
-                                                     Background="Transparent"
-                                                     Foreground="White"/>
-                                </chart:SfChart.Legend>
-                                
-                                <chart:SfChart.PrimaryAxis>
-                                    <chart:CategoryAxis Header="Period" FontSize="12" />
-                                </chart:SfChart.PrimaryAxis>
-                                
-                                <chart:SfChart.SecondaryAxis>
-                                    <chart:NumericalAxis Header="Amount (USD)" LabelFormat="C0" FontSize="12" />
-                                </chart:SfChart.SecondaryAxis>
+                            <Grid Height="300">
+                                <!-- Chart Content -->
+                                <chart:SfChart x:Name="BudgetTrendChart" Height="300">
+                                    <chart:SfChart.Style>
+                                        <Style TargetType="chart:SfChart">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding BudgetTrendData.Count}" Value="0">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </chart:SfChart.Style>
+                                    
+                                    <chart:SfChart.Header>
+                                        <TextBlock Text="6-Month Budget Trend" FontSize="14" FontWeight="Bold" 
+                                                 HorizontalAlignment="Center" Foreground="White"/>
+                                    </chart:SfChart.Header>
+                                    
+                                    <chart:SfChart.Legend>
+                                        <chart:ChartLegend DockPosition="Bottom" 
+                                                         Background="Transparent"
+                                                         Foreground="White"/>
+                                    </chart:SfChart.Legend>
+                                    
+                                    <chart:SfChart.PrimaryAxis>
+                                        <chart:CategoryAxis Header="Period" FontSize="12" />
+                                    </chart:SfChart.PrimaryAxis>
+                                    
+                                    <chart:SfChart.SecondaryAxis>
+                                        <chart:NumericalAxis Header="Amount (USD)" LabelFormat="C0" FontSize="12" />
+                                    </chart:SfChart.SecondaryAxis>
 
-                                <!-- Enable Trackball for Interactive Tooltips -->
-                                <chart:SfChart.Behaviors>
-                                    <chart:ChartTrackBallBehavior ShowLine="True" LineStyle="{StaticResource TrackBallLineStyle}">
-                                        <chart:ChartTrackBallBehavior.ChartTrackBallStyle>
-                                            <Style TargetType="chart:ChartTrackBallControl">
-                                                <Setter Property="Background" Value="#2196F3"/>
-                                            </Style>
-                                        </chart:ChartTrackBallBehavior.ChartTrackBallStyle>
-                                    </chart:ChartTrackBallBehavior>
-                                    <chart:ChartZoomPanBehavior EnablePanning="True" EnableMouseWheelZooming="True" 
-                                                               ZoomMode="XY" EnableZoomingToolBar="True"/>
-                                </chart:SfChart.Behaviors>
+                                    <!-- Enable Trackball for Interactive Tooltips -->
+                                    <chart:SfChart.Behaviors>
+                                        <chart:ChartTrackBallBehavior ShowLine="True" LineStyle="{StaticResource TrackBallLineStyle}">
+                                            <chart:ChartTrackBallBehavior.ChartTrackBallStyle>
+                                                <Style TargetType="chart:ChartTrackBallControl">
+                                                    <Setter Property="Background" Value="#2196F3"/>
+                                                </Style>
+                                            </chart:ChartTrackBallBehavior.ChartTrackBallStyle>
+                                        </chart:ChartTrackBallBehavior>
+                                        <chart:ChartTooltip>
+                                            <chart:ChartTooltip.Style>
+                                                <Style TargetType="chart:ChartTooltip">
+                                                    <Setter Property="Background" Value="#2196F3"/>
+                                                    <Setter Property="BorderBrush" Value="#FFFFFF"/>
+                                                    <Setter Property="BorderThickness" Value="1"/>
+                                                </Style>
+                                            </chart:ChartTooltip.Style>
+                                        </chart:ChartTooltip>
+                                        <chart:ChartZoomPanBehavior EnablePanning="True" EnableMouseWheelZooming="True" 
+                                                                   ZoomMode="XY" EnableZoomingToolBar="True"/>
+                                    </chart:SfChart.Behaviors>
 
-                                <chart:LineSeries ItemsSource="{Binding BudgetTrendData}"
-                                                XBindingPath="Period"
-                                                YBindingPath="Amount"
-                                                Interior="#2196F3"
-                                                StrokeThickness="3"
-                                                Label="Budget"
-                                                ShowTooltip="True"
-                                                EnableAnimation="True">
-                                    <chart:LineSeries.AdornmentsInfo>
-                                        <chart:ChartAdornmentInfo ShowLabel="True" 
-                                                                LabelPosition="Auto"
-                                                                SegmentLabelFormat="C0"
-                                                                Foreground="White"/>
-                                    </chart:LineSeries.AdornmentsInfo>
-                                    <chart:LineSeries.TooltipTemplate>
-                                        <DataTemplate>
-                                            <StackPanel>
-                                                <TextBlock Text="{Binding Item.Period}" FontWeight="Bold"/>
-                                                <TextBlock Text="{Binding Item.Amount, StringFormat='Amount: {0:C0}'}"/>
-                                                <TextBlock Text="Hover for details (data from municipal accounts)" 
-                                                         FontStyle="Italic" FontSize="10" Foreground="#B0B0B0"/>
-                                            </StackPanel>
-                                        </DataTemplate>
-                                    </chart:LineSeries.TooltipTemplate>
-                                </chart:LineSeries>
+                                    <chart:LineSeries ItemsSource="{Binding BudgetTrendData}"
+                                                    XBindingPath="Period"
+                                                    YBindingPath="Amount"
+                                                    Interior="#2196F3"
+                                                    StrokeThickness="3"
+                                                    Label="Budget"
+                                                    ShowTooltip="True"
+                                                    EnableAnimation="True">
+                                        <chart:LineSeries.AdornmentsInfo>
+                                            <chart:ChartAdornmentInfo ShowLabel="True" 
+                                                                    LabelPosition="Auto"
+                                                                    SegmentLabelFormat="C0"
+                                                                    Foreground="White"/>
+                                        </chart:LineSeries.AdornmentsInfo>
+                                        <chart:LineSeries.TooltipTemplate>
+                                            <DataTemplate>
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding Item.Period}" FontWeight="Bold"/>
+                                                    <TextBlock Text="{Binding Item.Amount, StringFormat='Amount: {0:C0}'}"/>
+                                                    <TextBlock Text="Hover for details (data from municipal accounts)" 
+                                                             FontStyle="Italic" FontSize="10" Foreground="#B0B0B0"/>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </chart:LineSeries.TooltipTemplate>
+                                    </chart:LineSeries>
 
-                                <chart:LineSeries ItemsSource="{Binding RateTrendData}"
-                                                XBindingPath="Period"
-                                                YBindingPath="Rate"
-                                                Interior="#FF9800"
-                                                StrokeThickness="2"
-                                                StrokeDashArray="5,5"
-                                                Label="Suggested Rate"
-                                                ShowTooltip="True"
-                                                EnableAnimation="True">
-                                    <chart:LineSeries.AdornmentsInfo>
-                                        <chart:ChartAdornmentInfo ShowLabel="True" 
-                                                                LabelPosition="Auto"
-                                                                SegmentLabelFormat="C2"
-                                                                Foreground="White"/>
-                                    </chart:LineSeries.AdornmentsInfo>
-                                    <chart:LineSeries.TooltipTemplate>
-                                        <DataTemplate>
-                                            <StackPanel>
-                                                <TextBlock Text="{Binding Item.Period}" FontWeight="Bold"/>
-                                                <TextBlock Text="{Binding Item.Rate, StringFormat='Suggested Rate: {0:C2}'}"/>
-                                                <TextBlock Text="Calculated based on enterprise expenses and customer count" 
-                                                         FontStyle="Italic" FontSize="10" Foreground="#B0B0B0"/>
-                                            </StackPanel>
-                                        </DataTemplate>
-                                    </chart:LineSeries.TooltipTemplate>
-                                </chart:LineSeries>
-                            </chart:SfChart>
+                                    <chart:LineSeries ItemsSource="{Binding RateTrendData}"
+                                                    XBindingPath="Period"
+                                                    YBindingPath="Rate"
+                                                    Interior="#FF9800"
+                                                    StrokeThickness="2"
+                                                    StrokeDashArray="5,5"
+                                                    Label="Suggested Rate"
+                                                    ShowTooltip="True"
+                                                    EnableAnimation="True">
+                                        <chart:LineSeries.AdornmentsInfo>
+                                            <chart:ChartAdornmentInfo ShowLabel="True" 
+                                                                    LabelPosition="Auto"
+                                                                    SegmentLabelFormat="C2"
+                                                                    Foreground="White"/>
+                                        </chart:LineSeries.AdornmentsInfo>
+                                        <chart:LineSeries.TooltipTemplate>
+                                            <DataTemplate>
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding Item.Period}" FontWeight="Bold"/>
+                                                    <TextBlock Text="{Binding Item.Rate, StringFormat='Suggested Rate: {0:C2}'}"/>
+                                                    <TextBlock Text="Calculated based on enterprise expenses and customer count" 
+                                                             FontStyle="Italic" FontSize="10" Foreground="#B0B0B0"/>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </chart:LineSeries.TooltipTemplate>
+                                    </chart:LineSeries>
+                                </chart:SfChart>
+
+                                <!-- Empty State -->
+                                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center"
+                                          Visibility="Collapsed" x:Name="BudgetEmptyState">
+                                    <StackPanel.Style>
+                                        <Style TargetType="StackPanel">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding BudgetTrendData.Count}" Value="0">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </StackPanel.Style>
+                                    
+                                    <TextBlock Text="No budget trend data available" 
+                                                          FontSize="16" FontWeight="SemiBold" 
+                                                          Foreground="#B0B0B0" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="Budget data will appear here once enterprises are configured and have historical data." 
+                                                          FontSize="12" Foreground="#808080" 
+                                                          HorizontalAlignment="Center" Margin="0,10,0,0" 
+                                                          TextWrapping="Wrap" MaxWidth="300"/>
+                                </StackPanel>
+                            </Grid>
                         </StackPanel>
                     </Border>
 
@@ -342,28 +387,74 @@
                         <StackPanel>
                             <TextBlock Text="Enterprise Distribution" FontSize="14" FontWeight="SemiBold" 
                                      Foreground="#9C27B0" Margin="0,0,0,10"/>
-                            <chart:SfChart Height="300">
-                                <chart:SfChart.Legend>
-                                    <chart:ChartLegend DockPosition="Bottom" />
-                                </chart:SfChart.Legend>
-                                
-                                <chart:PieSeries ItemsSource="{Binding EnterpriseTypeData}"
-                                               XBindingPath="Type"
-                                               YBindingPath="Count"
-                                               LabelPosition="OutsideExtended"
-                                               EnableAnimation="True"
-                                               ExplodeAll="False"
-                                               ExplodeIndex="0"
-                                               ExplodeRadius="10"
-                                               ShowTooltip="True">
-                                    <chart:PieSeries.AdornmentsInfo>
-                                        <chart:ChartAdornmentInfo ShowLabel="True" 
-                                                                LabelPosition="Outer"
-                                                                SegmentLabelFormat="#PERCENT{P0}"
-                                                                Foreground="White"/>
-                                    </chart:PieSeries.AdornmentsInfo>
-                                </chart:PieSeries>
-                            </chart:SfChart>
+                            <Grid Height="300">
+                                <chart:SfChart Height="300">
+                                    <chart:SfChart.Style>
+                                        <Style TargetType="chart:SfChart">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding EnterpriseTypeData.Count}" Value="0">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </chart:SfChart.Style>
+                                    
+                                    <chart:SfChart.Legend>
+                                        <chart:ChartLegend DockPosition="Bottom" />
+                                    </chart:SfChart.Legend>
+                                    
+                                    <chart:SfChart.Behaviors>
+                                        <chart:ChartTooltip>
+                                            <chart:ChartTooltip.Style>
+                                                <Style TargetType="chart:ChartTooltip">
+                                                    <Setter Property="Background" Value="#9C27B0"/>
+                                                    <Setter Property="BorderBrush" Value="#FFFFFF"/>
+                                                    <Setter Property="BorderThickness" Value="1"/>
+                                                </Style>
+                                            </chart:ChartTooltip.Style>
+                                        </chart:ChartTooltip>
+                                    </chart:SfChart.Behaviors>
+                                    
+                                    <chart:PieSeries ItemsSource="{Binding EnterpriseTypeData}"
+                                                   XBindingPath="Type"
+                                                   YBindingPath="Count"
+                                                   LabelPosition="OutsideExtended"
+                                                   EnableAnimation="True"
+                                                   ExplodeAll="False"
+                                                   ExplodeIndex="0"
+                                                   ExplodeRadius="10"
+                                                   ShowTooltip="True">
+                                        <chart:PieSeries.AdornmentsInfo>
+                                            <chart:ChartAdornmentInfo ShowLabel="True" 
+                                                                    LabelPosition="Outer"
+                                                                    SegmentLabelFormat="#PERCENT{P0}"
+                                                                    Foreground="White"/>
+                                        </chart:PieSeries.AdornmentsInfo>
+                                    </chart:PieSeries>
+                                </chart:SfChart>
+
+                                <!-- Empty State -->
+                                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center"
+                                          Visibility="Collapsed">
+                                    <StackPanel.Style>
+                                        <Style TargetType="StackPanel">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding EnterpriseTypeData.Count}" Value="0">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </StackPanel.Style>
+                                    
+                                    <TextBlock Text="No enterprise data available" 
+                                                          FontSize="16" FontWeight="SemiBold" 
+                                                          Foreground="#B0B0B0" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="Enterprise distribution will appear here once enterprises are configured." 
+                                                          FontSize="12" Foreground="#808080" 
+                                                          HorizontalAlignment="Center" Margin="0,10,0,0" 
+                                                          TextWrapping="Wrap" MaxWidth="300"/>
+                                </StackPanel>
+                            </Grid>
                         </StackPanel>
                     </Border>
                 </Grid>

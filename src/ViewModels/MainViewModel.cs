@@ -105,6 +105,18 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private string errorMessage = string.Empty;
 
     /// <summary>
+    /// Global error message for critical system errors (DI failures, etc.)
+    /// </summary>
+    [ObservableProperty]
+    private string globalErrorMessage = string.Empty;
+
+    /// <summary>
+    /// Whether there is a global error to display
+    /// </summary>
+    [ObservableProperty]
+    private bool hasGlobalError = false;
+
+    /// <summary>
     /// Current authenticated user name for display in UI
     /// </summary>
     [ObservableProperty]
@@ -329,6 +341,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         {
             Log.Error(ex, "Failed to initialize MainViewModel");
             ErrorMessage = "Failed to initialize application. Please try restarting.";
+            SetGlobalError($"Application initialization failed: {ex.Message}. Some features may not be available.");
         }
         finally
         {
@@ -1101,6 +1114,27 @@ The AI has access to your enterprise data including:
         QuickBooksHasError = false;
         QuickBooksStatusMessage = "Error cleared";
         Log.Information("QuickBooks error cleared by user");
+    }
+
+    /// <summary>
+    /// Sets a global error message for critical system failures
+    /// </summary>
+    public void SetGlobalError(string message)
+    {
+        GlobalErrorMessage = message;
+        HasGlobalError = !string.IsNullOrWhiteSpace(message);
+        Log.Error("Global error set: {Message}", message);
+    }
+
+    /// <summary>
+    /// Clears the global error message
+    /// </summary>
+    [RelayCommand]
+    private void ClearGlobalError()
+    {
+        GlobalErrorMessage = string.Empty;
+        HasGlobalError = false;
+        Log.Information("Global error cleared by user");
     }
 
     [RelayCommand]

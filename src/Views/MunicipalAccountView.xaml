@@ -25,6 +25,7 @@
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
         <views:BalanceColorConverter x:Key="BalanceColorConverter" />
+        <views:UniqueDepartmentsConverter x:Key="UniqueDepartmentsConverter" />
         
         <!-- Enum Data Providers -->
         <ObjectDataProvider x:Key="FundTypeValues" MethodName="GetValues" ObjectType="{x:Type sys:Enum}">
@@ -115,8 +116,17 @@
                     </syncfusion:RibbonBar>
                     
                     <!-- Filter Bar -->
-                    <syncfusion:RibbonBar Header="Filters" Width="240">
+                    <syncfusion:RibbonBar Header="Filters" Width="320">
                         <StackPanel Orientation="Vertical" Margin="8">
+                            <!-- Search Box -->
+                            <TextBlock Text="Search Accounts" Margin="0,0,0,4" 
+                                      Foreground="#FFE0E6F0" FontWeight="SemiBold" />
+                            <TextBox Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    Margin="0,0,0,8"
+                                    Padding="4"
+                                    ToolTip="Search by account name, number, fund, type, notes, or department" />
+                            
+                            <!-- Basic Filters -->
                             <TextBlock Text="Fund Type" Margin="0,0,0,4" 
                                       Foreground="#FFE0E6F0" FontWeight="SemiBold" />
                             <ComboBox ItemsSource="{Binding Source={StaticResource FundTypeValues}}"
@@ -131,10 +141,57 @@
                                       Margin="0,0,0,8"
                                       ToolTip="Filter accounts by account type" />
                             
-                            <syncfusion:ButtonAdv Label="Apply Filters"
-                                                 Command="{Binding FilterByFundCommand}"
-                                                 SizeMode="Normal"
-                                                 ToolTip="Apply selected filters to account list" />
+                            <!-- Advanced Filters Expander -->
+                            <Expander Header="Advanced Filters" 
+                                     IsExpanded="{Binding IsAdvancedFiltersExpanded, Mode=TwoWay}"
+                                     Margin="0,8,0,8">
+                                <StackPanel Orientation="Vertical" Margin="8">
+                                    <!-- Balance Range -->
+                                    <TextBlock Text="Balance Range" Margin="0,0,0,4" 
+                                              Foreground="#FFE0E6F0" FontWeight="SemiBold" />
+                                    <Grid Margin="0,0,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="20" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox Grid.Column="0" 
+                                                Text="{Binding MinBalanceFilter, Mode=TwoWay, StringFormat=C2}"
+                                                Padding="4"
+                                                ToolTip="Minimum balance" />
+                                        <TextBlock Grid.Column="1" Text=" - " 
+                                                  Foreground="#FFE0E6F0" 
+                                                  VerticalAlignment="Center" 
+                                                  HorizontalAlignment="Center" />
+                                        <TextBox Grid.Column="2" 
+                                                Text="{Binding MaxBalanceFilter, Mode=TwoWay, StringFormat=C2}"
+                                                Padding="4"
+                                                ToolTip="Maximum balance" />
+                                    </Grid>
+                                    
+                                    <!-- Department Filter -->
+                                    <TextBlock Text="Department" Margin="0,0,0,4" 
+                                              Foreground="#FFE0E6F0" FontWeight="SemiBold" />
+                                    <ComboBox ItemsSource="{Binding MunicipalAccounts, Converter={StaticResource UniqueDepartmentsConverter}}"
+                                              SelectedItem="{Binding SelectedDepartmentFilter, Mode=TwoWay}"
+                                              DisplayMemberPath="Name"
+                                              Margin="0,0,0,8"
+                                              ToolTip="Filter by department" />
+                                </StackPanel>
+                            </Expander>
+                            
+                            <!-- Filter Action Buttons -->
+                            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                <syncfusion:ButtonAdv Label="Apply Filters"
+                                                     Command="{Binding ApplyFiltersCommand}"
+                                                     SizeMode="Normal"
+                                                     ToolTip="Apply selected filters to account list"
+                                                     Margin="0,0,4,0" />
+                                <syncfusion:ButtonAdv Label="Clear"
+                                                     Command="{Binding ClearFiltersCommand}"
+                                                     SizeMode="Normal"
+                                                     ToolTip="Clear all filters and show all accounts" />
+                            </StackPanel>
                         </StackPanel>
                     </syncfusion:RibbonBar>
                     
@@ -222,7 +279,9 @@
                                           SelectionMode="Single"
                                           NavigationMode="Row"
                                           EditTrigger="OnTap"
-                                          LiveDataUpdateMode="AllowDataShaping">
+                                          LiveDataUpdateMode="AllowDataShaping"
+                                          EnableDataVirtualization="True"
+                                          UseDrawing="True">
                         
                         <!-- Column Definitions -->
                         <syncfusion:SfDataGrid.Columns>
@@ -317,6 +376,7 @@
                         <!-- Grouping Configuration -->
                         <syncfusion:SfDataGrid.GroupColumnDescriptions>
                             <syncfusion:GroupColumnDescription ColumnName="FundDescription" />
+                            <syncfusion:GroupColumnDescription ColumnName="TypeDescription" />
                         </syncfusion:SfDataGrid.GroupColumnDescriptions>
                         
                         <!-- Summary Rows -->

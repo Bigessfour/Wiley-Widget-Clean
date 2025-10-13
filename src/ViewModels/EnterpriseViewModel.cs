@@ -10,6 +10,7 @@ using Serilog;
 using System.Threading;
 using System.Globalization;
 using System.Diagnostics;
+using System.ComponentModel;
 
 namespace WileyWidget.ViewModels;
 
@@ -17,14 +18,14 @@ namespace WileyWidget.ViewModels;
 /// View model for managing municipal enterprises (Phase 1)
 /// Provides data binding for enterprise CRUD operations and budget calculations
 /// </summary>
-public partial class EnterpriseViewModel : ObservableObject, IDisposable
+public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataErrorInfo
 {
-    private readonly IEnterpriseRepository _enterpriseRepository;
+    private readonly IUnitOfWork _unitOfWork;
 
     /// <summary>
     /// Collection of all enterprises for data binding
     /// </summary>
-    public ObservableCollection<Enterprise> Enterprises { get; } = new();
+    public ObservableCollection<Enterprise> EnterpriseList { get; } = new();
 
     /// <summary>
     /// Currently selected enterprise in the UI
@@ -38,6 +39,24 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable
             if (_selectedEnterprise != value)
             {
                 _selectedEnterprise = value;
+                OnPropertyChanged();
+                SelectionChangedCommand?.Execute(null);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Status message for user feedback
+    /// </summary>
+    private string _statusMessage = "Ready";
+    public string StatusMessage
+    {
+        get => _statusMessage;
+        set
+        {
+            if (_statusMessage != value)
+            {
+                _statusMessage = value;
                 OnPropertyChanged();
             }
         }
@@ -81,6 +100,117 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable
     /// Semaphore to prevent concurrent loading operations
     /// </summary>
     private readonly SemaphoreSlim _loadSemaphore = new(1, 1);
+
+    /// <summary>
+    /// Selection changed command (no drill-down implementation)
+    /// </summary>
+    [RelayCommand]
+    private void SelectionChanged()
+    {
+        // No drill-down implementation as requested
+        // Could be used for future navigation or status updates
+    }
+
+    /// <summary>
+    /// Navigate to BudgetView command
+    /// </summary>
+    [RelayCommand]
+    private void NavigateToBudgetView()
+    {
+        // Navigation to BudgetView - implementation depends on navigation service
+        // This could use messaging, navigation service, or window management
+        // For now, this is a stub that can be implemented based on the app's navigation pattern
+    }
+
+    /// <summary>
+    /// Export to Excel command
+    /// </summary>
+    [RelayCommand]
+    private async Task ExportToExcelAsync()
+    {
+        try
+        {
+            // This will be handled by the View - the command triggers UI interaction
+            await Task.CompletedTask; // Placeholder
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error in Excel export command");
+        }
+    }
+
+    /// <summary>
+    /// Export to PDF report command
+    /// </summary>
+    [RelayCommand]
+    private async Task ExportToPdfReportAsync()
+    {
+        try
+        {
+            // TODO: Implement PDF report export
+            // This would generate a comprehensive PDF with charts, summaries, etc.
+            StatusMessage = "PDF report export feature coming soon...";
+            await Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error in PDF report export command");
+        }
+    }
+
+    /// <summary>
+    /// Export to Excel advanced command
+    /// </summary>
+    [RelayCommand]
+    private async Task ExportToExcelAdvancedAsync()
+    {
+        try
+        {
+            // TODO: Implement advanced Excel export with formatting
+            StatusMessage = "Advanced Excel export feature coming soon...";
+            await Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error in Excel advanced export command");
+        }
+    }
+
+    /// <summary>
+    /// Export to CSV command
+    /// </summary>
+    [RelayCommand]
+    private async Task ExportToCsvAsync()
+    {
+        try
+        {
+            // TODO: Implement CSV export
+            StatusMessage = "CSV export feature coming soon...";
+            await Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error in CSV export command");
+        }
+    }
+
+    /// <summary>
+    /// Export selection command
+    /// </summary>
+    [RelayCommand]
+    private async Task ExportSelectionAsync()
+    {
+        try
+        {
+            // TODO: Implement selection export
+            StatusMessage = "Selection export feature coming soon...";
+            await Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error in selection export command");
+        }
+    }
 
     /// <summary>
     /// Executes an operation with retry logic and exponential backoff
@@ -132,18 +262,18 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable
             cancellationToken.ThrowIfCancellationRequested();
             
             var enterprises = await ExecuteWithRetryAsync(
-                async (ct) => await _enterpriseRepository.GetAllAsync(),
+                async (ct) => await _unitOfWork.Enterprises.GetAllAsync(),
                 cancellationToken: cancellationToken);
             
             // Check for cancellation before updating UI
             cancellationToken.ThrowIfCancellationRequested();
             
-            Enterprises.Clear();
+            EnterpriseList.Clear();
             foreach (var enterprise in enterprises)
             {
                 // Check for cancellation during UI updates
                 cancellationToken.ThrowIfCancellationRequested();
-                Enterprises.Add(enterprise);
+                EnterpriseList.Add(enterprise);
             }
         }
         catch (OperationCanceledException)
@@ -166,9 +296,9 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable
     /// <summary>
     /// Constructor with dependency injection
     /// </summary>
-    public EnterpriseViewModel(IEnterpriseRepository enterpriseRepository)
+    public EnterpriseViewModel(IUnitOfWork unitOfWork)
     {
-        _enterpriseRepository = enterpriseRepository ?? throw new ArgumentNullException(nameof(enterpriseRepository));
+        _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
     }
 
     /// <summary>
@@ -188,8 +318,8 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable
                 Notes = "New enterprise - update details"
             };
 
-            var addedEnterprise = await _enterpriseRepository.AddAsync(newEnterprise);
-            Enterprises.Add(addedEnterprise);
+            var addedEnterprise = await _unitOfWork.Enterprises.AddAsync(newEnterprise);
+            EnterpriseList.Add(addedEnterprise);
             SelectedEnterprise = addedEnterprise;
         }
         catch (Exception ex)
@@ -210,7 +340,7 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable
         try
         {
             // MonthlyRevenue is now automatically calculated from CitizenCount * CurrentRate
-            await _enterpriseRepository.UpdateAsync(SelectedEnterprise);
+            await _unitOfWork.Enterprises.UpdateAsync(SelectedEnterprise);
         }
         catch (Exception ex)
         {
@@ -229,11 +359,11 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable
 
         try
         {
-            var success = await _enterpriseRepository.DeleteAsync(SelectedEnterprise.Id);
+            var success = await _unitOfWork.Enterprises.DeleteAsync(SelectedEnterprise.Id);
             if (success)
             {
-                Enterprises.Remove(SelectedEnterprise);
-                SelectedEnterprise = Enterprises.FirstOrDefault();
+                EnterpriseList.Remove(SelectedEnterprise);
+                SelectedEnterprise = EnterpriseList.FirstOrDefault();
             }
         }
         catch (Exception ex)
@@ -257,20 +387,46 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable
     /// </summary>
     public string GetBudgetSummary()
     {
-        if (!Enterprises.Any())
+        if (!EnterpriseList.Any())
             return "No enterprises loaded";
 
-        var totalRevenue = Enterprises.Sum(e => e.MonthlyRevenue);
-        var totalExpenses = Enterprises.Sum(e => e.MonthlyExpenses);
+        var totalRevenue = EnterpriseList.Sum(e => e.MonthlyRevenue);
+        var totalExpenses = EnterpriseList.Sum(e => e.MonthlyExpenses);
         var totalBalance = totalRevenue - totalExpenses;
-        var totalCitizens = Enterprises.Sum(e => e.CitizenCount);
+        var totalCitizens = EnterpriseList.Sum(e => e.CitizenCount);
 
         return $"Total Revenue: ${totalRevenue.ToString("N2", CultureInfo.InvariantCulture)}\n" +
                $"Total Expenses: ${totalExpenses.ToString("N2", CultureInfo.InvariantCulture)}\n" +
                $"Monthly Balance: ${totalBalance.ToString("N2", CultureInfo.InvariantCulture)}\n" +
                $"Citizens Served: {totalCitizens}\n" +
                $"Status: {(totalBalance >= 0 ? "Surplus" : "Deficit")}";
-}    /// <summary>
+    }
+
+    /// <summary>
+    /// IDataErrorInfo implementation - validation stubs
+    /// </summary>
+    public string Error => null;
+
+    /// <summary>
+    /// IDataErrorInfo implementation - property-level validation
+    /// </summary>
+    public string this[string columnName]
+    {
+        get
+        {
+            return columnName switch
+            {
+                // Validation stubs - implement as needed
+                "SelectedEnterprise.Name" => string.IsNullOrWhiteSpace(SelectedEnterprise?.Name) ? "Name is required" : null,
+                "SelectedEnterprise.CurrentRate" => SelectedEnterprise?.CurrentRate < 0 ? "Rate cannot be negative" : null,
+                "SelectedEnterprise.MonthlyExpenses" => SelectedEnterprise?.MonthlyExpenses < 0 ? "Expenses cannot be negative" : null,
+                "SelectedEnterprise.CitizenCount" => SelectedEnterprise?.CitizenCount < 0 ? "Citizen count cannot be negative" : null,
+                _ => null
+            };
+        }
+    }
+
+    /// <summary>
     /// Disposes of managed resources
     /// </summary>
     public void Dispose()

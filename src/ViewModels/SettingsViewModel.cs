@@ -4,6 +4,8 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Collections;
+using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
@@ -11,17 +13,59 @@ using WileyWidget.Data;
 using WileyWidget.Services;
 using Syncfusion.SfSkinManager;
 using Syncfusion.Windows.Shared;
+using Microsoft.Extensions.Options;
+using WileyWidget.Configuration;
 
 namespace WileyWidget.ViewModels
 {
-    public partial class SettingsViewModel : ObservableObject
+    public partial class SettingsViewModel : ObservableObject, INotifyDataErrorInfo
     {
         private readonly ILogger<SettingsViewModel> _logger;
+        private readonly IOptions<AppOptions> _appOptions;
+        private readonly IOptionsMonitor<AppOptions> _appOptionsMonitor;
         private readonly AppDbContext _dbContext;
     private readonly ISecretVaultService _secretVaultService;
         private readonly IQuickBooksService _quickBooksService;
         private readonly ISyncfusionLicenseService _syncfusionLicenseService;
         private readonly IAIService _aiService;
+        private readonly IThemeManager _themeManager;
+
+        private readonly Dictionary<string, List<string>> _errors = new();
+
+        public event EventHandler<DataErrorsChangedEventArgs>? ErrorsChanged;
+
+        public bool HasErrors => _errors.Any();
+
+        public IEnumerable GetErrors(string? propertyName)
+        {
+            if (string.IsNullOrEmpty(propertyName))
+                return _errors.Values.SelectMany(x => x);
+
+            return _errors.TryGetValue(propertyName, out var errors) ? errors : Enumerable.Empty<string>();
+        }
+
+        private void AddError(string propertyName, string error)
+        {
+            if (!_errors.ContainsKey(propertyName))
+                _errors[propertyName] = new List<string>();
+
+            if (!_errors[propertyName].Contains(error))
+            {
+                _errors[propertyName].Add(error);
+                OnErrorsChanged(propertyName);
+            }
+        }
+
+        private void ClearErrors(string propertyName)
+        {
+            if (_errors.Remove(propertyName))
+                OnErrorsChanged(propertyName);
+        }
+
+        private void OnErrorsChanged(string propertyName)
+        {
+            ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(propertyName));
+        }
 
         // General Settings
         [ObservableProperty]
@@ -29,6 +73,9 @@ namespace WileyWidget.ViewModels
 
         [ObservableProperty]
         private string selectedTheme = "FluentDark";
+
+        [ObservableProperty]
+        private bool isDarkMode;
 
         partial void OnWindowWidthChanged(int value)
         {
@@ -72,7 +119,8 @@ namespace WileyWidget.ViewModels
 
         partial void OnSelectedThemeChanged(string value)
         {
-            ApplyThemeToAllWindows(value);
+            IsDarkMode = value?.Contains("Dark", StringComparison.OrdinalIgnoreCase) == true;
+            _themeManager.ApplyTheme(value);
         }
 
         [ObservableProperty]
@@ -304,19 +352,25 @@ namespace WileyWidget.ViewModels
 
         public SettingsViewModel(
             ILogger<SettingsViewModel> logger,
+            IOptions<AppOptions> appOptions,
+            IOptionsMonitor<AppOptions> appOptionsMonitor,
             AppDbContext dbContext,
             ISecretVaultService secretVaultService,
             IQuickBooksService quickBooksService,
             ISyncfusionLicenseService syncfusionLicenseService,
-            IAIService aiService)
+            IAIService aiService,
+            IThemeManager themeManager)
         {
             // Validate required dependencies
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _appOptions = appOptions ?? throw new ArgumentNullException(nameof(appOptions));
+            _appOptionsMonitor = appOptionsMonitor ?? throw new ArgumentNullException(nameof(appOptionsMonitor));
             _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
             _secretVaultService = secretVaultService ?? throw new ArgumentNullException(nameof(secretVaultService));
             _quickBooksService = quickBooksService ?? throw new ArgumentNullException(nameof(quickBooksService));
             _syncfusionLicenseService = syncfusionLicenseService ?? throw new ArgumentNullException(nameof(syncfusionLicenseService));
             _aiService = aiService ?? throw new ArgumentNullException(nameof(aiService));
+            _themeManager = themeManager ?? throw new ArgumentNullException(nameof(themeManager));
 
             // Initialize system info
             SystemInfo = $"OS: {Environment.OSVersion}\n" +
@@ -372,36 +426,37 @@ namespace WileyWidget.ViewModels
         {
             try
             {
-                // Load from database
+                // Load from options (which are configured from database and configuration)
+                var options = _appOptions.Value;
+                SelectedTheme = options.Theme;
+                WindowWidth = options.WindowWidth;
+                WindowHeight = options.WindowHeight;
+                MaximizeOnStartup = options.MaximizeOnStartup;
+                ShowSplashScreen = options.ShowSplashScreen;
+                IsDarkMode = options.IsDarkMode;
+
+                // Also load from database for any additional settings not in options
                 var settings = await _dbContext.AppSettings.FindAsync(1);
                 if (settings != null)
                 {
-                    SelectedTheme = settings.Theme ?? "FluentDark";
-                    WindowWidth = (int)(settings.WindowWidth ?? 1200);
-                    WindowHeight = (int)(settings.WindowHeight ?? 800);
-                    MaximizeOnStartup = settings.WindowMaximized ?? false;
-                    // Note: ShowSplashScreen is not in AppSettings yet, keeping as default
-                    ShowSplashScreen = true;
-                }
-                else
-                {
-                    // Use default values if no settings exist
-                    SelectedTheme = "FluentDark";
-                    WindowWidth = 1200;
-                    WindowHeight = 800;
-                    MaximizeOnStartup = false;
-                    ShowSplashScreen = true;
+                    // Override with database values if they exist
+                    SelectedTheme = settings.Theme ?? options.Theme;
+                    WindowWidth = (int)(settings.WindowWidth ?? options.WindowWidth);
+                    WindowHeight = (int)(settings.WindowHeight ?? options.WindowHeight);
+                    MaximizeOnStartup = settings.WindowMaximized ?? options.MaximizeOnStartup;
+                    IsDarkMode = SelectedTheme.Contains("Dark", StringComparison.OrdinalIgnoreCase);
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to load general settings from database");
+                _logger.LogError(ex, "Failed to load general settings");
                 // Fall back to defaults
                 SelectedTheme = "FluentDark";
                 WindowWidth = 1200;
                 WindowHeight = 800;
                 MaximizeOnStartup = false;
                 ShowSplashScreen = true;
+                IsDarkMode = true;
             }
         }
 
@@ -609,18 +664,33 @@ namespace WileyWidget.ViewModels
                 IsBusy = true;
                 BusyMessage = "Saving settings...";
 
-                // Save to secure storage and configuration
-                await SaveGeneralSettingsAsync();
-                await SaveQuickBooksSettingsAsync();
-                await SaveSyncfusionSettingsAsync();
-                await SaveXaiSettingsAsync();
-                await SaveAdvancedSettingsAsync();
+                // Use transaction for database operations
+                using var transaction = await _dbContext.Database.BeginTransactionAsync();
 
-                SettingsStatus = "Settings saved successfully";
-                HasUnsavedChanges = false;
-                LastSaved = DateTime.Now.ToString("g");
+                try
+                {
+                    // Save to secure storage and configuration
+                    await SaveGeneralSettingsAsync();
+                    await SaveQuickBooksSettingsAsync();
+                    await SaveSyncfusionSettingsAsync();
+                    await SaveXaiSettingsAsync();
+                    await SaveAdvancedSettingsAsync();
 
-                _logger.LogInformation("Settings saved successfully");
+                    // Commit transaction
+                    await transaction.CommitAsync();
+
+                    SettingsStatus = "Settings saved successfully";
+                    HasUnsavedChanges = false;
+                    LastSaved = DateTime.Now.ToString("g");
+
+                    _logger.LogInformation("Settings saved successfully");
+                }
+                catch
+                {
+                    // Rollback transaction on error
+                    await transaction.RollbackAsync();
+                    throw;
+                }
             }
             catch (Exception ex)
             {
@@ -991,12 +1061,16 @@ namespace WileyWidget.ViewModels
         // Validation Methods
         private void ValidateWindowWidth(int value)
         {
+            ClearErrors(nameof(WindowWidth));
+
             if (value < 800)
             {
+                AddError(nameof(WindowWidth), "Minimum width is 800 pixels");
                 WindowWidthValidation = "Minimum width is 800 pixels";
             }
             else if (value > 3840)
             {
+                AddError(nameof(WindowWidth), "Maximum width is 3840 pixels");
                 WindowWidthValidation = "Maximum width is 3840 pixels";
             }
             else
@@ -1007,12 +1081,16 @@ namespace WileyWidget.ViewModels
 
         private void ValidateWindowHeight(int value)
         {
+            ClearErrors(nameof(WindowHeight));
+
             if (value < 600)
             {
+                AddError(nameof(WindowHeight), "Minimum height is 600 pixels");
                 WindowHeightValidation = "Minimum height is 600 pixels";
             }
             else if (value > 2160)
             {
+                AddError(nameof(WindowHeight), "Maximum height is 2160 pixels");
                 WindowHeightValidation = "Maximum height is 2160 pixels";
             }
             else

@@ -17,6 +17,24 @@
     </Window.InputBindings>
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
+        <Style x:Key="ValidationErrorBorder" TargetType="Control">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding RelativeSource={RelativeSource Self}, Path=(Validation.HasError)}" Value="True">
+                    <Setter Property="BorderBrush" Value="Red" />
+                    <Setter Property="BorderThickness" Value="2" />
+                    <Setter Property="ToolTip" Value="{Binding RelativeSource={RelativeSource Self}, Path=(Validation.Errors)[0].ErrorContent}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="ValidationTextBox" TargetType="TextBox" BasedOn="{StaticResource ValidationErrorBorder}">
+            <Setter Property="Margin" Value="0,0,0,2" />
+        </Style>
+        <Style x:Key="ValidationIntegerTextBox" TargetType="syncfusion:IntegerTextBox" BasedOn="{StaticResource ValidationErrorBorder}">
+            <Setter Property="Margin" Value="0,0,0,2" />
+        </Style>
+        <Style x:Key="ValidationSfMaskedEdit" TargetType="syncfusion:SfMaskedEdit" BasedOn="{StaticResource ValidationErrorBorder}">
+            <Setter Property="Margin" Value="0,0,0,2" />
+        </Style>
     </Window.Resources>
 
     <DockPanel>
@@ -66,10 +84,10 @@
                                          ToolTip="Choose the visual theme for the application interface. Changes apply immediately to toggle between FluentDark and FluentLight themes." />
 
                                 <Label Content="Window Width:" />
-                                <syncfusion:IntegerTextBox Value="{Binding WindowWidth, Mode=TwoWay}"
+                                <syncfusion:IntegerTextBox Value="{Binding WindowWidth, Mode=TwoWay, ValidatesOnDataErrors=True, NotifyOnValidationError=True}"
                                                          MinValue="800"
                                                          MaxValue="3840"
-                                                         Margin="0,0,0,2"
+                                                         Style="{StaticResource ValidationIntegerTextBox}"
                                                          ToolTip="Set the default window width in pixels (800-3840)" />
                                 <TextBlock Text="{Binding WindowWidthValidation}"
                                          Foreground="Red"
@@ -77,10 +95,10 @@
                                          Margin="0,0,0,6" />
 
                                 <Label Content="Window Height:" />
-                                <syncfusion:IntegerTextBox Value="{Binding WindowHeight, Mode=TwoWay}"
+                                <syncfusion:IntegerTextBox Value="{Binding WindowHeight, Mode=TwoWay, ValidatesOnDataErrors=True, NotifyOnValidationError=True}"
                                                          MinValue="600"
                                                          MaxValue="2160"
-                                                         Margin="0,0,0,2"
+                                                         Style="{StaticResource ValidationIntegerTextBox}"
                                                          ToolTip="Set the default window height in pixels (600-2160)" />
                                 <TextBlock Text="{Binding WindowHeightValidation}"
                                          Foreground="Red"
@@ -123,8 +141,8 @@
                             <StackPanel>
                                 <Label Content="Client ID:*" />
                                 <syncfusion:SfMaskedEdit Mask="[A-Za-z0-9]*"
-                                                       Value="{Binding QuickBooksClientId, Mode=TwoWay}"
-                                                       Margin="0,0,0,2"
+                                                       Value="{Binding QuickBooksClientId, Mode=TwoWay, ValidatesOnDataErrors=True, NotifyOnValidationError=True}"
+                                                       Style="{StaticResource ValidationSfMaskedEdit}"
                                                        PromptChar=" "
                                                        ToolTip="Enter your QuickBooks OAuth2 Client ID from the Intuit Developer Portal. Required for API authentication." />
                                 <TextBlock Text="{Binding QuickBooksClientIdValidation}"
@@ -134,8 +152,8 @@
 
                                 <Label Content="Client Secret:*" />
                                 <syncfusion:SfMaskedEdit Mask="[A-Za-z0-9]*"
-                                                       Value="{Binding QuickBooksClientSecret, Mode=TwoWay}"
-                                                       Margin="0,0,0,2"
+                                                       Value="{Binding QuickBooksClientSecret, Mode=TwoWay, ValidatesOnDataErrors=True, NotifyOnValidationError=True}"
+                                                       Style="{StaticResource ValidationSfMaskedEdit}"
                                                        PromptChar=" "
                                                        ToolTip="Enter your QuickBooks OAuth2 Client Secret. This is securely stored in the local vault." />
                                 <TextBlock Text="{Binding QuickBooksClientSecretValidation}"
@@ -144,8 +162,8 @@
                                          Margin="0,0,0,8" />
 
                                 <Label Content="Redirect URI:*" />
-                                <TextBox Text="{Binding QuickBooksRedirectUri, Mode=TwoWay}"
-                                       Margin="0,0,0,2"
+                                <TextBox Text="{Binding QuickBooksRedirectUri, Mode=TwoWay, ValidatesOnDataErrors=True, NotifyOnValidationError=True}"
+                                       Style="{StaticResource ValidationTextBox}"
                                        ToolTip="OAuth2 redirect URI configured in Intuit Developer Portal (e.g., https://localhost:5001/callback)" />
                                 <TextBlock Text="{Binding QuickBooksRedirectUriValidation}"
                                          Foreground="Red"

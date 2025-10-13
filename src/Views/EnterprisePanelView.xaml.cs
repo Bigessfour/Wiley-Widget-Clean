@@ -31,8 +31,8 @@ public partial class EnterprisePanelView : UserControl
         if (provider != null)
         {
             _viewScope = provider.CreateScope();
-            var enterpriseRepository = _viewScope.ServiceProvider.GetRequiredService<BusinessInterfaces.IEnterpriseRepository>();
-            DataContext = new EnterpriseViewModel(enterpriseRepository);
+            var unitOfWork = _viewScope.ServiceProvider.GetRequiredService<BusinessInterfaces.IUnitOfWork>();
+            DataContext = new EnterpriseViewModel(unitOfWork);
 
             // Dispose the scope when the control is unloaded
             this.Unloaded += (_, _) => { try { _viewScope.Dispose(); } catch { } };
