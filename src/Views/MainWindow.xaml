@@ -2,9 +2,120 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:prism="http://prismlibrary.com/"
-        Title="WileyWidget" Height="600" Width="800"
+        xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
+        xmlns:syncfusionskin="clr-namespace:Syncfusion.SfSkinManager;assembly=Syncfusion.SfSkinManager.WPF"
+        Title="WileyWidget - Municipal Enterprise Management" 
+        Height="768" Width="1280"
+        MinHeight="600" MinWidth="1024"
+        WindowState="Maximized"
+        WindowStartupLocation="CenterScreen"
+        ShowInTaskbar="True"
         prism:ViewModelLocator.AutoWireViewModel="True">
-    <Grid>
-        <ContentControl prism:RegionManager.RegionName="MainRegion" />
+    
+    <!-- Apply Syncfusion theme at window level -->
+    <Grid syncfusionskin:SfSkinManager.VisualStyle="FluentDark">
+        <DockPanel LastChildFill="True">
+            <!-- Main Ribbon at Top -->
+            <syncfusion:Ribbon x:Name="MainRibbon" DockPanel.Dock="Top">
+                <syncfusion:RibbonTab Caption="Home" IsChecked="True">
+                    <syncfusion:RibbonBar Header="Navigation">
+                        <syncfusion:RibbonButton Label="Dashboard" 
+                                               SizeForm="Large"
+                                               Command="{Binding NavigateToDashboardCommand}"
+                                               LargeIcon="pack://application:,,,/Resources/dashboard-32.png"/>
+                        <syncfusion:RibbonButton Label="Enterprises" 
+                                               SizeForm="Large"
+                                               Command="{Binding NavigateToEnterprisesCommand}"
+                                               LargeIcon="pack://application:,,,/Resources/enterprise-32.png"/>
+                        <syncfusion:RibbonButton Label="Accounts" 
+                                               SizeForm="Large"
+                                               Command="{Binding NavigateToAccountsCommand}"
+                                               LargeIcon="pack://application:,,,/Resources/account-32.png"/>
+                        <syncfusion:RibbonButton Label="Budget" 
+                                               SizeForm="Large"
+                                               Command="{Binding NavigateToBudgetCommand}"
+                                               LargeIcon="pack://application:,,,/Resources/budget-32.png"/>
+                    </syncfusion:RibbonBar>
+                    <syncfusion:RibbonBar Header="Tools">
+                        <syncfusion:RibbonButton Label="Settings" 
+                                               Command="{Binding OpenSettingsCommand}"/>
+                        <syncfusion:RibbonButton Label="Reports" 
+                                               Command="{Binding OpenReportsCommand}"/>
+                        <syncfusion:RibbonButton Label="AI Assist" 
+                                               Command="{Binding OpenAIAssistCommand}"/>
+                    </syncfusion:RibbonBar>
+                </syncfusion:RibbonTab>
+                <syncfusion:RibbonTab Caption="Data">
+                    <syncfusion:RibbonBar Header="Import/Export">
+                        <syncfusion:RibbonButton Label="Import Excel" 
+                                               Command="{Binding ImportExcelCommand}"/>
+                        <syncfusion:RibbonButton Label="Export Data" 
+                                               Command="{Binding ExportDataCommand}"/>
+                        <syncfusion:RibbonButton Label="Sync QuickBooks" 
+                                               Command="{Binding SyncQuickBooksCommand}"/>
+                    </syncfusion:RibbonBar>
+                </syncfusion:RibbonTab>
+            </syncfusion:Ribbon>
+
+            <!-- Status Bar at Bottom -->
+            <StatusBar DockPanel.Dock="Bottom" Height="28" Background="#2D2D30">
+                <StatusBarItem>
+                    <TextBlock Text="{Binding StatusMessage, FallbackValue='Ready'}" 
+                             Foreground="White" Margin="5,0"/>
+                </StatusBarItem>
+                <Separator/>
+                <StatusBarItem>
+                    <TextBlock Foreground="White">
+                        <Run Text="User: "/>
+                        <Run Text="{Binding CurrentUser, FallbackValue='Administrator'}"/>
+                    </TextBlock>
+                </StatusBarItem>
+                <Separator/>
+                <StatusBarItem HorizontalAlignment="Right">
+                    <TextBlock Foreground="White">
+                        <Run Text="Last Updated: "/>
+                        <Run Text="{Binding LastUpdateTime, FallbackValue='Never', StringFormat='hh:mm tt'}"/>
+                    </TextBlock>
+                </StatusBarItem>
+            </StatusBar>
+
+            <!-- DockingManager for Main Content Area -->
+            <syncfusion:DockingManager x:Name="MainDockingManager" 
+                                      UseDocumentContainer="True"
+                                      ContainerMode="TDI"
+                                      PersistState="True">
+                
+                <!-- Main Content Region (Document Area) -->
+                <ContentControl x:Name="MainContentRegion"
+                              prism:RegionManager.RegionName="MainRegion"
+                              syncfusion:DockingManager.State="Document"
+                              syncfusion:DockingManager.Header="Dashboard"
+                              syncfusion:DockingManager.CanClose="False"/>
+
+                <!-- Left Panel: Navigation/Enterprises -->
+                <ContentControl x:Name="LeftPanelRegion"
+                              prism:RegionManager.RegionName="LeftPanelRegion"
+                              syncfusion:DockingManager.State="Dock"
+                              syncfusion:DockingManager.SideInDockedMode="Left"
+                              syncfusion:DockingManager.DesiredWidthInDockedMode="280"
+                              syncfusion:DockingManager.Header="Navigation"/>
+
+                <!-- Right Panel: Properties/Details -->
+                <ContentControl x:Name="RightPanelRegion"
+                              prism:RegionManager.RegionName="RightPanelRegion"
+                              syncfusion:DockingManager.State="Dock"
+                              syncfusion:DockingManager.SideInDockedMode="Right"
+                              syncfusion:DockingManager.DesiredWidthInDockedMode="320"
+                              syncfusion:DockingManager.Header="Properties"/>
+
+                <!-- Bottom Panel: Logs/Alerts -->
+                <ContentControl x:Name="BottomPanelRegion"
+                              prism:RegionManager.RegionName="BottomPanelRegion"
+                              syncfusion:DockingManager.State="Dock"
+                              syncfusion:DockingManager.SideInDockedMode="Bottom"
+                              syncfusion:DockingManager.DesiredHeightInDockedMode="180"
+                              syncfusion:DockingManager.Header="System Alerts"/>
+            </syncfusion:DockingManager>
+        </DockPanel>
     </Grid>
 </Window>

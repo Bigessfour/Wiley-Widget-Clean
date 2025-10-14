@@ -1,4 +1,7 @@
 using System;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using Prism.DryIoc;
 using Prism.Ioc;
@@ -14,7 +17,13 @@ using WileyWidget.ViewModels;
 using WileyWidget.Views;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Serilog.Extensions.Logging;
+using Microsoft.EntityFrameworkCore;
 using WileyWidget.Configuration;
+using WileyWidget.Data;
+using WileyWidget.Business.Interfaces;
+using WileyWidget.Models;
 
 namespace WileyWidget.Startup
 {
@@ -67,6 +76,31 @@ namespace WileyWidget.Startup
                         Log.Information("Splash screen closed after shell initialization and module loading");
                     }
 
+                    // Validate regions after module initialization
+                    try
+                    {
+                        var regionManager = Container.Resolve<IRegionManager>();
+                        var mainRegion = regionManager.Regions["MainRegion"];
+                        
+                        if (mainRegion == null)
+                        {
+                            Log.Error("MainRegion not found in RegionManager - views will not be displayed");
+                        }
+                        else
+                        {
+                            Log.Information("MainRegion found with {ViewCount} views", mainRegion.Views.Count());
+                            
+                            if (mainRegion.Views.Count() == 0)
+                            {
+                                Log.Warning("MainRegion has no views registered - dashboard may be empty");
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Warning(ex, "Failed to validate regions after module initialization");
+                    }
+
                     // Navigate to default view
                     try
                     {
@@ -98,10 +132,63 @@ namespace WileyWidget.Startup
             containerRegistry.RegisterInstance<IConfiguration>(_configuration);
             Log.Debug("Registered IConfiguration");
 
-            // Register services using existing patterns from WpfHostingExtensions
-            // Note: We need to bridge between Prism's IContainerRegistry and IServiceCollection
-            // For now, register key services directly
+            // Register Microsoft.Extensions.Logging integration with Serilog
+            // This is CRITICAL for ViewModels that inject ILogger<T>
+            var loggerFactory = new SerilogLoggerFactory(Log.Logger, dispose: false);
+            containerRegistry.RegisterInstance<ILoggerFactory>(loggerFactory);
             
+            // Register generic ILogger<T> so any ViewModel can inject ILogger<TViewModel>
+            containerRegistry.Register(typeof(ILogger<>), typeof(Logger<>));
+            Log.Debug("Registered ILoggerFactory and ILogger<T> for Microsoft.Extensions.Logging integration");
+
+            // Register Prism core services (EventAggregator, RegionManager are auto-registered by Prism)
+            // but ensure IEventAggregator is available
+            Log.Debug("Prism core services (IEventAggregator, IRegionManager) auto-registered");
+
+            // Register Database Context Factory - simplified approach for Prism
+            // Instead of bridging to IServiceCollection, register DbContext directly
+            // CRITICAL: Use Register (transient) not RegisterSingleton to avoid disposal issues
+            containerRegistry.Register<AppDbContext>(provider =>
+            {
+                var config = provider.Resolve<IConfiguration>();
+                var loggerFactory = provider.Resolve<ILoggerFactory>();
+                var connectionString = config.GetConnectionString("DefaultConnection");
+                
+                var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
+                
+                if (string.IsNullOrEmpty(connectionString) || connectionString.Contains("Data Source=:memory:"))
+                {
+                    // Use SQLite in-memory for testing
+                    optionsBuilder.UseSqlite("Data Source=:memory:");
+                    Log.Warning("Using SQLite in-memory database (no connection string configured)");
+                }
+                else if (connectionString.Contains(".db") || connectionString.Contains("Data Source="))
+                {
+                    optionsBuilder.UseSqlite(connectionString);
+                    Log.Information("Using SQLite database");
+                }
+                else
+                {
+                    optionsBuilder.UseSqlServer(connectionString);
+                    Log.Information("Using SQL Server database");
+                }
+                
+                optionsBuilder.UseLoggerFactory(loggerFactory);
+                optionsBuilder.EnableSensitiveDataLogging(true);
+                optionsBuilder.EnableDetailedErrors(true);
+                
+                return new AppDbContext(optionsBuilder.Options);
+            });
+            
+            // Register DbContextFactory using a simple wrapper
+            containerRegistry.Register<IDbContextFactory<AppDbContext>>(provider =>
+            {
+                return new PrismDbContextFactory(provider);
+            });
+            
+            Log.Debug("Registered database services with DbContext factory pattern (transient lifetime)");
+
+            // Register core infrastructure services
             containerRegistry.RegisterSingleton<ISyncfusionLicenseService, SyncfusionLicenseService>();
             containerRegistry.RegisterSingleton<SyncfusionLicenseState>();
             containerRegistry.RegisterSingleton<ISecretVaultService, LocalSecretVaultService>();
@@ -109,6 +196,28 @@ namespace WileyWidget.Startup
             containerRegistry.RegisterSingleton<ISettingsService>(provider => provider.Resolve<SettingsService>());
             containerRegistry.RegisterSingleton<ThemeManager>();
             containerRegistry.RegisterSingleton<IThemeManager>(provider => provider.Resolve<ThemeManager>());
+            containerRegistry.RegisterSingleton<IDispatcherHelper, DispatcherHelper>();
+            
+            // Register data repositories - Transient to work with DbContextFactory
+            // Each repository resolves a fresh AppDbContext via the factory
+            containerRegistry.Register<IEnterpriseRepository, WileyWidget.Data.EnterpriseRepository>();
+            containerRegistry.Register<IUtilityCustomerRepository, WileyWidget.Data.UtilityCustomerRepository>();
+            containerRegistry.Register<IMunicipalAccountRepository, WileyWidget.Data.MunicipalAccountRepository>();
+            containerRegistry.Register<IUnitOfWork, WileyWidget.Data.UnitOfWork>();
+            
+            // Register business services
+            containerRegistry.RegisterSingleton<IWhatIfScenarioEngine, WhatIfScenarioEngine>();
+            containerRegistry.RegisterSingleton<FiscalYearSettings>();
+            containerRegistry.RegisterSingleton<IChargeCalculatorService, ServiceChargeCalculatorService>();
+            
+            // Register AI services
+            containerRegistry.RegisterSingleton<IAIService, XAIService>();
+            
+            // Register QuickBooks service (optional - module will handle gracefully if missing)
+            containerRegistry.RegisterSingleton<IQuickBooksService, QuickBooksService>();
+            
+            // Register Excel services
+            containerRegistry.RegisterSingleton<IExcelReaderService, ExcelReaderService>();
             
             // Register StartupPerformanceMonitor for telemetry and performance tracking
             containerRegistry.RegisterSingleton<WileyWidget.Diagnostics.StartupPerformanceMonitor>();
@@ -116,12 +225,12 @@ namespace WileyWidget.Startup
             // Register Prism DialogService for modal dialogs without owner issues
             containerRegistry.RegisterSingleton<Prism.Dialogs.IDialogService, Prism.Dialogs.DialogService>();
             
-            Log.Debug("Registered core services");
+            Log.Debug("Registered core services and repositories");
 
-            // Register ViewModels
+            // Register ViewModels - these are registered as transient by default in Prism
+            // Remove duplicate registrations - modules will handle their own ViewModels
             containerRegistry.RegisterSingleton<MainViewModel>();
-            containerRegistry.Register<DashboardViewModel>();
-            containerRegistry.Register<MunicipalAccountViewModel>();
+            
             Log.Debug("Registered ViewModels");
 
             // Register MainWindow as singleton
@@ -274,6 +383,37 @@ namespace WileyWidget.Startup
             var config = builder.Build();
             Log.Debug("Configuration built successfully");
             return config;
+        }
+    }
+
+    /// <summary>
+    /// Prism-compatible DbContextFactory that creates fresh AppDbContext instances.
+    /// Works with Prism's DI container to provide proper EF Core lifetime management.
+    /// </summary>
+    internal sealed class PrismDbContextFactory : IDbContextFactory<AppDbContext>
+    {
+        private readonly IContainerProvider _containerProvider;
+
+        public PrismDbContextFactory(IContainerProvider containerProvider)
+        {
+            _containerProvider = containerProvider ?? throw new ArgumentNullException(nameof(containerProvider));
+        }
+
+        /// <summary>
+        /// Creates a new AppDbContext instance from the Prism container.
+        /// Each call creates a fresh context to avoid disposal issues.
+        /// </summary>
+        public AppDbContext CreateDbContext()
+        {
+            return _containerProvider.Resolve<AppDbContext>();
+        }
+
+        /// <summary>
+        /// Async version of CreateDbContext for compatibility.
+        /// </summary>
+        public Task<AppDbContext> CreateDbContextAsync(CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(CreateDbContext());
         }
     }
 }
