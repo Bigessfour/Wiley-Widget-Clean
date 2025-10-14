@@ -26,17 +26,20 @@ namespace WileyWidget
             // Note: Theme is now applied declaratively in XAML to prevent loading crashes
 
             // Get the ViewModel from the service provider
-            if (App.ServiceProvider != null)
+            DashboardViewModel? resolvedViewModel = null;
+            try
             {
-                _viewModel = (DashboardViewModel)App.ServiceProvider.GetService(typeof(DashboardViewModel));
-                if (_viewModel == null)
-                {
-                    MessageBox.Show("Dashboard ViewModel could not be loaded. Please check the application configuration.",
-                                  "Configuration Error", MessageBoxButton.OK);
-                    Close();
-                    return;
-                }
+                var provider = App.GetActiveServiceProvider();
+                resolvedViewModel = provider.GetService(typeof(DashboardViewModel)) as DashboardViewModel;
+            }
+            catch (InvalidOperationException)
+            {
+                resolvedViewModel = null;
+            }
 
+            if (resolvedViewModel != null)
+            {
+                _viewModel = resolvedViewModel;
                 DataContext = _viewModel;
 
                 // Set up auto-refresh timer

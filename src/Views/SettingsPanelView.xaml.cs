@@ -15,9 +15,19 @@ public partial class SettingsPanelView : UserControl
         InitializeComponent();
 
         // Get the ViewModel from the service provider
-        if (App.ServiceProvider != null)
+        System.IServiceProvider? provider = null;
+        try
         {
-            _viewModel = (SettingsViewModel?)App.ServiceProvider.GetService(typeof(SettingsViewModel));
+            provider = App.GetActiveServiceProvider();
+        }
+        catch (System.InvalidOperationException)
+        {
+            provider = null;
+        }
+
+        if (provider != null)
+        {
+            _viewModel = (SettingsViewModel?)provider.GetService(typeof(SettingsViewModel));
             if (_viewModel == null)
             {
                 // Don't show modal dialogs - fall back to a lightweight DataContext

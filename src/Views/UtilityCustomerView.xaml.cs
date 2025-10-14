@@ -195,12 +195,14 @@ public partial class UtilityCustomerView : Window
             return provider;
         }
 
-        if (App.ServiceProvider is not null)
+        try
         {
-            return App.ServiceProvider;
+            return App.GetActiveServiceProvider();
         }
-
-        return Application.Current?.Properties["ServiceProvider"] as IServiceProvider;
+        catch (InvalidOperationException)
+        {
+            return Application.Current?.Properties["ServiceProvider"] as IServiceProvider;
+        }
     }
 
     private UtilityCustomerViewModel CreateViewModel(IServiceProvider? provider)

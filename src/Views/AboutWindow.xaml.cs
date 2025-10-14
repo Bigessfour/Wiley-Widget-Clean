@@ -14,11 +14,22 @@ public partial class AboutWindow : Window
     {
         InitializeComponent();
 
-        // Get the ViewModel from DI container
-        if (App.ServiceProvider?.GetService(typeof(ViewModels.AboutViewModel)) is ViewModels.AboutViewModel viewModel)
+        ViewModels.AboutViewModel? viewModel = null;
+        try
         {
-            DataContext = viewModel;
-            viewModel.CloseAction = () => Close();
+            var provider = App.GetActiveServiceProvider();
+            viewModel = provider.GetService(typeof(ViewModels.AboutViewModel)) as ViewModels.AboutViewModel;
+        }
+        catch (InvalidOperationException)
+        {
+            viewModel = null;
+        }
+
+        // Get the ViewModel from DI container
+        if (viewModel is ViewModels.AboutViewModel resolvedViewModel)
+        {
+            DataContext = resolvedViewModel;
+            resolvedViewModel.CloseAction = () => Close();
         }
         else
         {

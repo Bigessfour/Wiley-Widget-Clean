@@ -24,22 +24,24 @@ public partial class DashboardPanelView : UserControl
         InitializeComponent();
 
         // Get the ViewModel from the service provider
-        if (App.ServiceProvider != null)
+        DashboardViewModel? resolvedViewModel = null;
+        try
         {
-            _viewModel = (DashboardViewModel)App.ServiceProvider.GetService(typeof(DashboardViewModel));
-            if (_viewModel == null)
-            {
-                // Don't show modal dialogs - fall back to a lightweight DataContext
-                Serilog.Log.Error("Dashboard ViewModel could not be loaded. Falling back to test-friendly DataContext.");
-                DataContext = new { Title = "Dashboard" };
-            }
-            else
-            {
-                DataContext = _viewModel;
+            var provider = App.GetActiveServiceProvider();
+            resolvedViewModel = provider.GetService(typeof(DashboardViewModel)) as DashboardViewModel;
+        }
+        catch (InvalidOperationException)
+        {
+            resolvedViewModel = null;
+        }
 
-                // Set up auto-refresh timer
-                SetupAutoRefreshTimer();
-            }
+        if (resolvedViewModel != null)
+        {
+            _viewModel = resolvedViewModel;
+            DataContext = _viewModel;
+
+            // Set up auto-refresh timer
+            SetupAutoRefreshTimer();
         }
         else
         {

@@ -17,6 +17,10 @@
     </Window.InputBindings>
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
+        
+        <!-- ZeroToVisibleConverter for empty state handling -->
+        <local:ZeroToVisibleConverter x:Key="ZeroToVisibleConverter" />
+        
         <Style x:Key="ValidationErrorBorder" TargetType="Control">
             <Style.Triggers>
                 <DataTrigger Binding="{Binding RelativeSource={RelativeSource Self}, Path=(Validation.HasError)}" Value="True">
@@ -131,6 +135,35 @@
                         </GroupBox>
                     </StackPanel>
                 </ScrollViewer>
+            </TabItem>
+
+            <!-- Property Grid View (Syncfusion) -->
+            <TabItem Header="Property Grid">
+                <Grid Margin="8">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Help Text -->
+                    <TextBlock Grid.Row="0" 
+                             Text="Use the Property Grid below to view and edit all settings organized by category"
+                             FontStyle="Italic"
+                             Foreground="Gray"
+                             Margin="0,0,0,8"
+                             HorizontalAlignment="Left" />
+
+                    <!-- Settings Editor using standard WPF StackPanel -->
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                        <StackPanel x:Name="SettingsStackPanel" Margin="8">
+                            <TextBlock Text="Application settings will be displayed here."
+                                     Style="{StaticResource SubheadingTextBlockStyle}"
+                                     Margin="0,8,0,16" />
+                            
+                            <!-- Settings controls will be added here programmatically or via binding -->
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
             </TabItem>
 
             <!-- QuickBooks Integration -->

@@ -27,7 +27,16 @@ public partial class EnterprisePanelView : UserControl
         EnsureNamedElementsAreDiscoverable();
 
         // Create a scope for the view and resolve the repository from the scope
-        var provider = App.ServiceProvider ?? Application.Current?.Properties["ServiceProvider"] as IServiceProvider;
+        IServiceProvider? provider = null;
+        try
+        {
+            provider = App.GetActiveServiceProvider();
+        }
+        catch (InvalidOperationException)
+        {
+            provider = Application.Current?.Properties["ServiceProvider"] as IServiceProvider;
+        }
+
         if (provider != null)
         {
             _viewScope = provider.CreateScope();

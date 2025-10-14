@@ -22,7 +22,16 @@ public partial class ReportsView : Window
     {
         InitializeComponent();
 
-        var provider = App.ServiceProvider ?? Application.Current?.Properties["ServiceProvider"] as IServiceProvider;
+        IServiceProvider? provider = null;
+        try
+        {
+            provider = App.GetActiveServiceProvider();
+        }
+        catch (InvalidOperationException)
+        {
+            provider = Application.Current?.Properties["ServiceProvider"] as IServiceProvider;
+        }
+
         if (provider is null)
         {
             throw new InvalidOperationException("ServiceProvider is not available for ReportsView");

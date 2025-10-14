@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:WileyWidget"
+        xmlns:converters="clr-namespace:WileyWidget.Converters"
     xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
     xmlns:notification="http://schemas.syncfusion.com/wpf"
     xmlns:chart="http://schemas.syncfusion.com/wpf"
@@ -18,6 +19,8 @@
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
         <local:BalanceColorConverter x:Key="BalanceColorConverter" />
+        <converters:ZeroToVisibleConverter x:Key="ZeroToVisibleConverter" />
+        <local:BudgetProgressConverter x:Key="BudgetProgressConverter" />
 
         <!-- Pie Chart Label Template -->
         <DataTemplate x:Key="PieChartLabelTemplate">
@@ -160,29 +163,29 @@
         </ToolBar>
 
         <!-- Central Hierarchical Budget Grid (SfTreeGrid) -->
-        <syncfusion:SfTreeGrid Grid.Row="1" 
-                               x:Name="BudgetTreeGrid"
-                               ItemsSource="{Binding BudgetAccounts}"
-                               ChildPropertyName="Children"
-                               AutoGenerateColumns="False"
-                               AllowEditing="True"
-                               EditTrigger="OnTap"
-                               AllowSorting="True"
-                               AllowFiltering="True"
-                               AllowResizingColumns="True"
-                               ColumnSizer="AutoFillColumn"
-                               ExpanderColumn="AccountNumber"
-                               SelfRelationRootValue="-1"
-                               SelectionMode="Single"
-                               NavigationMode="Cell"
-                               LiveNodeUpdateMode="AllowDataShaping"
-                               GridValidationMode="InEdit"
-                               RowHeight="32"
-                               AutoExpandMode="RootNodesExpanded"
-                               Margin="8"
-                               CellToolTipOpening="BudgetTreeGrid_CellToolTipOpening"
-                               CurrentCellEndEdit="BudgetTreeGrid_CurrentCellEndEdit"
-                               AutomationProperties.Name="GASB-Compliant Hierarchical Budget Accounts">
+        <Grid Grid.Row="1">
+            <syncfusion:SfTreeGrid x:Name="BudgetTreeGrid"
+                                   ItemsSource="{Binding BudgetAccounts, FallbackValue=Empty}"
+                                   ChildPropertyName="Children"
+                                   AutoGenerateColumns="False"
+                                   AllowEditing="True"
+                                   EditTrigger="OnTap"
+                                   AllowSorting="True"
+                                   AllowFiltering="True"
+                                   AllowResizingColumns="True"
+                                   ColumnSizer="AutoFillColumn"
+                                   ExpanderColumn="AccountNumber"
+                                   SelfRelationRootValue="-1"
+                                   SelectionMode="Single"
+                                   NavigationMode="Cell"
+                                   LiveNodeUpdateMode="AllowDataShaping"
+                                   GridValidationMode="InEdit"
+                                   RowHeight="32"
+                                   AutoExpandMode="RootNodesExpanded"
+                                   Margin="8"
+                                   CellToolTipOpening="BudgetTreeGrid_CellToolTipOpening"
+                                   CurrentCellEndEdit="BudgetTreeGrid_CurrentCellEndEdit"
+                                   AutomationProperties.Name="GASB-Compliant Hierarchical Budget Accounts">
             
             <syncfusion:SfTreeGrid.Columns>
                 <!-- Account Number (Tree Column for hierarchy) -->
@@ -259,10 +262,20 @@
                         </DataTemplate>
                     </syncfusion:TreeGridPercentColumn.ToolTipTemplate>
                 </syncfusion:TreeGridPercentColumn>
-            </syncfusion:SfTreeGrid.Columns>
-        </syncfusion:SfTreeGrid>
+                </syncfusion:SfTreeGrid.Columns>
+            </syncfusion:SfTreeGrid>
 
-        <!-- Footer with Total Calculations -->
+            <!-- Empty State Message -->
+            <TextBlock Text="No budget data available. Click 'Refresh' to load budgets for the selected fiscal year."
+                       FontSize="16"
+                       FontWeight="SemiBold"
+                       Foreground="#FF9E9E9E"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       TextWrapping="Wrap"
+                       Margin="20"
+                       Visibility="{Binding BudgetAccounts.Count, Converter={StaticResource ZeroToVisibleConverter}}" />
+        </Grid>        <!-- Footer with Total Calculations -->
         <Border Grid.Row="2" 
                 Background="#FF2C3038" 
                 BorderBrush="#FF3D4451" 

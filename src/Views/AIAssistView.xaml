@@ -14,6 +14,13 @@
              syncskin:SfSkinManager.Theme="FluentDark">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
+        
+        <!-- Converter for empty collection visibility -->
+        <local:ZeroToVisibleConverter x:Key="ZeroToVisibleConverter" />
+        
+        <!-- Chat message converters -->
+        <local:AuthorBackgroundConverter x:Key="MessageBackgroundConverter" />
+        <local:AuthorAlignmentConverter x:Key="MessageAlignmentConverter" />
     </UserControl.Resources>
 
     <Grid>
@@ -40,41 +47,104 @@
 
                 <syncfusion:SfTextBoxExt x:Name="MessageInput"
                                        Text="{Binding QueryText, UpdateSourceTrigger=PropertyChanged}"
-                                       Watermark="Ask about budgets..."
-                                       ToolTip="Enter query for AI analysis (e.g., 'What if we increase rates?')"
+                                       Watermark="Ask about budgets, rates, or financial scenarios..."
+                                       ToolTip="Enter query for AI analysis (e.g., 'Calculate recommended service charge for Enterprise 1')"
                                        VerticalAlignment="Center"
                                        Margin="0,0,10,0"
                                        KeyDown="OnMessageInputKeyDown" />
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
                     <syncfusion:ButtonAdv Label="Send"
-                                        Command="{Binding SendMessageCommand}"
-                                        ToolTip="Send query to AI (supports GASB queries)"
+                                        Command="{Binding SendCommand}"
+                                        ToolTip="Send query to AI Assistant with charge calculations"
                                         Background="#1976D2"
                                         Foreground="White"
                                         Margin="0,0,5,0" />
-                    <syncfusion:ButtonAdv Label="Generate"
-                                        Command="{Binding GenerateCommand}"
-                                        ToolTip="Generate calculation response"
-                                        Background="#4CAF50"
+                    <syncfusion:ButtonAdv Label="Clear"
+                                        Command="{Binding ClearResponsesCommand}"
+                                        ToolTip="Clear conversation history"
+                                        Background="#757575"
                                         Foreground="White" />
                 </StackPanel>
             </Grid>
         </Border>
 
-        <!-- Response Output Area (Middle) -->
+        <!-- Chat Response Area (Middle) with auto-scroll -->
         <Border Grid.Row="1" Background="White" BorderBrush="#E9ECEF" BorderThickness="1"
-                Padding="10" Margin="0,5,0,5">
-            <TextBox x:Name="ResponseOutput"
-                    Text="{Binding Response, Mode=OneWay}"
-                    IsReadOnly="True"
-                    TextWrapping="Wrap"
-                    VerticalScrollBarVisibility="Auto"
-                    HorizontalScrollBarVisibility="Auto"
-                    AcceptsReturn="True"
-                    ToolTip="AI-generated response and calculations"
-                    FontFamily="Consolas"
-                    FontSize="12" />
+                Padding="5" Margin="0,5,0,5">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <!-- ScrollViewer with auto-scroll to bottom -->
+                <ScrollViewer x:Name="ChatScrollViewer"
+                             VerticalScrollBarVisibility="Auto"
+                             HorizontalScrollBarVisibility="Disabled">
+                    <ItemsControl ItemsSource="{Binding Responses, FallbackValue=Empty}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="{Binding Author.Name, Converter={StaticResource MessageBackgroundConverter}}"
+                                        CornerRadius="8"
+                                        Padding="10,8"
+                                        Margin="5"
+                                        MaxWidth="500"
+                                        HorizontalAlignment="{Binding Author.Name, Converter={StaticResource MessageAlignmentConverter}}">
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding Author.Name}" 
+                                                 FontWeight="Bold" 
+                                                 FontSize="12"
+                                                 Margin="0,0,0,4"
+                                                 Foreground="#424242" />
+                                        <TextBlock Text="{Binding Text}" 
+                                                 TextWrapping="Wrap"
+                                                 FontSize="14"
+                                                 Foreground="#212121" />
+                                        <TextBlock Text="{Binding DateTime, StringFormat='hh:mm tt'}" 
+                                                 FontSize="10"
+                                                 Margin="0,4,0,0"
+                                                 Foreground="#757575"
+                                                 HorizontalAlignment="Right" />
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+
+                <!-- Empty state message (visible when Responses.Count = 0) -->
+                <TextBlock Text="Start a conversation by asking about service charges, budgets, or financial scenarios."
+                         Visibility="{Binding Responses.Count, Converter={StaticResource ZeroToVisibleConverter}}"
+                         HorizontalAlignment="Center"
+                         VerticalAlignment="Center"
+                         FontSize="16"
+                         Foreground="#9E9E9E"
+                         TextWrapping="Wrap"
+                         TextAlignment="Center"
+                         Margin="20" />
+                
+                <!-- Error message overlay (visible when ErrorMessage is set) -->
+                <Border Background="#FFEBEE" 
+                       BorderBrush="#E57373" 
+                       BorderThickness="1"
+                       CornerRadius="4"
+                       Padding="12"
+                       Margin="10"
+                       Visibility="{Binding ErrorMessage, Converter={StaticResource BoolToVis}}"
+                       VerticalAlignment="Top">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="⚠️" 
+                                 FontSize="18"
+                                 Margin="0,0,8,0"
+                                 VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding ErrorMessage}" 
+                                 TextWrapping="Wrap"
+                                 FontSize="13"
+                                 Foreground="#C62828"
+                                 VerticalAlignment="Center" />
+                    </StackPanel>
+                </Border>
+            </Grid>
         </Border>
 
         <!-- Bottom Toolbar -->
@@ -94,7 +164,7 @@
                                         CommandParameter="General"
                                         ToolTip="Switch to General AI mode"
                                         Margin="0,0,5,0" />
-                    <syncfusion:ButtonAdv Label=" What-If"
+                    <syncfusion:ButtonAdv Label="🔮 What-If"
                                         Command="{Binding SetConversationModeCommand}"
                                         CommandParameter="WhatIf"
                                         ToolTip="Switch to What-If scenario mode"
@@ -106,21 +176,18 @@
                 </StackPanel>
 
                 <!-- History List -->
-                <ListBox Grid.Column="1"
+                <ComboBox Grid.Column="1"
                          ItemsSource="{Binding ConversationHistory}"
                          SelectedItem="{Binding SelectedHistoryItem, Mode=TwoWay}"
                          ToolTip="Select from past conversations"
                          Margin="10,0"
                          Background="White"
                          BorderBrush="#CCCCCC"
-                         BorderThickness="1" />
+                         BorderThickness="1"
+                         VerticalAlignment="Center" />
 
                 <!-- Additional Actions -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal">
-                    <syncfusion:ButtonAdv Label="Clear" 
-                                        Command="{Binding ClearChatCommand}"
-                                        ToolTip="Clear chat history"
-                                        Margin="0,0,5,0" />
                     <syncfusion:ButtonAdv Label="Export"
                                         Command="{Binding ExportChatCommand}"
                                         ToolTip="Export chat history" />

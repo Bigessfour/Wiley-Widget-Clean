@@ -550,6 +550,121 @@
                     </Border>
                 </Grid>
 
+                <!-- Enterprise Data Grid Section with Syncfusion WPF DataGrid -->
+                <TextBlock Text="Enterprise Funds Overview" FontSize="20" FontWeight="Bold" Margin="0,10,0,15" />
+                
+                <Border Background="#1E1E1E" BorderBrush="#2196F3" BorderThickness="2" 
+                        CornerRadius="8" Margin="5,0,5,20" Padding="15"
+                        ToolTipService.ToolTip="Complete list of enterprise funds with sorting and filtering capabilities">
+                    <StackPanel>
+                        <!-- Search Bar -->
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <TextBlock Text="Search:" VerticalAlignment="Center" Margin="0,0,10,0" FontSize="14"/>
+                            <TextBox Grid.Column="1" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
+                                   Height="30" VerticalContentAlignment="Center"
+                                   ToolTipService.ToolTip="Search enterprises by name or description"/>
+                            <syncfusion:ButtonAdv Grid.Column="2" Content="Clear" Command="{Binding ClearSearchCommand}"
+                                                Margin="10,0,0,0" Height="30" Width="80"
+                                                ToolTipService.ToolTip="Clear search filter"/>
+                        </Grid>
+
+                        <!-- Enterprises DataGrid with explicit columns as per Syncfusion WPF documentation -->
+                        <syncfusion:SfDataGrid x:Name="EnterprisesGrid"
+                                             ItemsSource="{Binding Enterprises, UpdateSourceTrigger=PropertyChanged, FallbackValue={}}"
+                                             AutoGenerateColumns="False"
+                                             AllowSorting="True"
+                                             AllowFiltering="True"
+                                             AllowResizingColumns="True"
+                                             AllowGrouping="True"
+                                             SelectionMode="Single"
+                                             Height="350"
+                                             ColumnSizer="Star"
+                                             ToolTipService.ToolTip="Click column headers to sort. Use filter icon for filtering.">
+                            
+                            <!-- Define explicit columns as per Syncfusion WPF DataGrid documentation -->
+                            <syncfusion:SfDataGrid.Columns>
+                                <syncfusion:GridTextColumn MappingName="Name" 
+                                                          HeaderText="Enterprise Name" 
+                                                          Width="200"
+                                                          AllowFiltering="True"
+                                                          AllowSorting="True"/>
+                                
+                                <syncfusion:GridTextColumn MappingName="Description" 
+                                                          HeaderText="Description" 
+                                                          Width="250"
+                                                          AllowFiltering="True"/>
+                                
+                                <syncfusion:GridNumericColumn MappingName="TotalBudget" 
+                                                             HeaderText="Total Budget" 
+                                                             Width="150"
+                                                             DisplayBinding="{Binding TotalBudget, StringFormat=C0}"
+                                                             AllowSorting="True"
+                                                             TextAlignment="Right"/>
+                                
+                                <syncfusion:GridTextColumn MappingName="Status" 
+                                                          HeaderText="Status" 
+                                                          Width="120"
+                                                          AllowFiltering="True"
+                                                          AllowSorting="True">
+                                    <syncfusion:GridTextColumn.CellStyle>
+                                        <Style TargetType="syncfusion:GridCell">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Status}" Value="Active">
+                                                    <Setter Property="Foreground" Value="#4CAF50"/>
+                                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Status}" Value="Inactive">
+                                                    <Setter Property="Foreground" Value="#FFC107"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Status}" Value="Suspended">
+                                                    <Setter Property="Foreground" Value="#F44336"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </syncfusion:GridTextColumn.CellStyle>
+                                </syncfusion:GridTextColumn>
+                                
+                                <syncfusion:GridDateTimeColumn MappingName="LastModified" 
+                                                              HeaderText="Last Modified" 
+                                                              Width="150"
+                                                              DisplayBinding="{Binding LastModified, StringFormat='MM/dd/yyyy'}"
+                                                              AllowSorting="True"/>
+                                
+                                <syncfusion:GridNumericColumn MappingName="Id" 
+                                                             HeaderText="ID" 
+                                                             Width="80"
+                                                             AllowSorting="True"
+                                                             TextAlignment="Right"/>
+                            </syncfusion:SfDataGrid.Columns>
+                        </syncfusion:SfDataGrid>
+
+                        <!-- Empty State Display -->
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,20,0,0"
+                                  Visibility="{Binding Enterprises.Count, Converter={StaticResource CountToVisibilityConverter}}">
+                            <TextBlock Text="No Enterprise Data Available" 
+                                     FontSize="18" FontWeight="SemiBold" 
+                                     Foreground="#B0B0B0" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Enterprise funds will appear here once configured in the system." 
+                                     FontSize="12" Foreground="#808080" 
+                                     HorizontalAlignment="Center" Margin="0,10,0,0" 
+                                     TextWrapping="Wrap" MaxWidth="400"/>
+                        </StackPanel>
+
+                        <!-- Error Message Display -->
+                        <TextBlock Text="{Binding ErrorMessage}" 
+                                 Foreground="#F44336" 
+                                 FontSize="12" 
+                                 Margin="0,10,0,0"
+                                 TextWrapping="Wrap"
+                                 Visibility="{Binding ErrorMessage, Converter={StaticResource EmptyStringToVisibilityConverter}}"/>
+                    </StackPanel>
+                </Border>
 
                 <!-- Quick Actions / Navigation Tiles -->
                 <TextBlock Text="Quick Navigation" FontSize="20" FontWeight="Bold" Margin="0,10,0,15" />

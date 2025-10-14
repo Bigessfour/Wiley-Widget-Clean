@@ -23,8 +23,16 @@ public partial class AIAssistView : UserControl
         InitializeComponent();
 
         // Create a scope for the view to resolve scoped services
-        // Prefer the statically-initialized App.ServiceProvider; fall back to Application.Current.Properties when available
-        var provider = App.ServiceProvider ?? Application.Current?.Properties["ServiceProvider"] as IServiceProvider;
+        IServiceProvider? provider = null;
+        try
+        {
+            provider = App.GetActiveServiceProvider();
+        }
+        catch (InvalidOperationException)
+        {
+            provider = Application.Current?.Properties["ServiceProvider"] as IServiceProvider;
+        }
+
         if (provider == null)
             throw new InvalidOperationException("ServiceProvider is not available for AIAssistView");
 
@@ -69,7 +77,7 @@ public partial class AIAssistView : UserControl
     {
         if (e.Key == Key.Enter && ViewModel != null)
         {
-            ViewModel.SendMessageCommand.Execute(null);
+            ViewModel.SendCommand.Execute(null);
             e.Handled = true;
         }
     }
@@ -79,11 +87,15 @@ public partial class AIAssistView : UserControl
     /// </summary>
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        // Auto-scroll implementation pending - requires control access after XAML compilation
-        if (e.PropertyName == nameof(ViewModels.AIAssistViewModel.Response))
+        // Auto-scroll to bottom when Responses collection changes
+        if (e.PropertyName == nameof(ViewModels.AIAssistViewModel.Responses))
         {
-            // TODO: Implement auto-scroll to end when response updates
-            // This requires the ResponseOutput control to be accessible after build
+            // Scroll to bottom after a brief delay to allow rendering
+            Dispatcher.InvokeAsync(() =>
+            {
+                var scrollViewer = FindName("ChatScrollViewer") as System.Windows.Controls.ScrollViewer;
+                scrollViewer?.ScrollToBottom();
+            }, System.Windows.Threading.DispatcherPriority.Loaded);
         }
     }
 

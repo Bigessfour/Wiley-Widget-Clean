@@ -1,6 +1,7 @@
 using System;
 using System.Windows;
 using WileyWidget.ViewModels;
+using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 
 namespace WileyWidget.Views;
@@ -22,8 +23,8 @@ public partial class MunicipalAccountView : Window
         try
         {
             // Get ViewModel from DI container or create new instance
-            _viewModel = App.ServiceProvider?.GetService(typeof(MunicipalAccountViewModel)) as MunicipalAccountViewModel
-                        ?? throw new InvalidOperationException("MunicipalAccountViewModel could not be resolved from DI container");
+            var provider = App.GetActiveServiceProvider();
+            _viewModel = provider.GetRequiredService<MunicipalAccountViewModel>();
             
             DataContext = _viewModel;
             

@@ -118,7 +118,16 @@ public partial class BudgetView : UserControl
     /// </summary>
     public static void ShowBudgetWindow()
     {
-        var provider = App.ServiceProvider ?? Application.Current?.Properties["ServiceProvider"] as IServiceProvider;
+        IServiceProvider? provider = null;
+        try
+        {
+            provider = App.GetActiveServiceProvider();
+        }
+        catch (InvalidOperationException)
+        {
+            provider = Application.Current?.Properties["ServiceProvider"] as IServiceProvider;
+        }
+
         BudgetViewModel? viewModel = null;
 
         if (provider != null)

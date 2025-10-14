@@ -26,9 +26,18 @@ namespace WileyWidget
             TryApplyTheme(SettingsService.Instance.Current.Theme);
 
             // Get the ViewModel from the service provider
-            if (App.ServiceProvider != null)
+            IServiceProvider? provider = null;
+            try
             {
-                _viewModel = (SettingsViewModel?)App.ServiceProvider.GetService(typeof(SettingsViewModel));
+                provider = App.GetActiveServiceProvider();
+            }
+            catch (InvalidOperationException)
+            {
+                provider = null;
+            }
+
+            if (provider != null) {
+                _viewModel = (SettingsViewModel?)provider.GetService(typeof(SettingsViewModel));
                 if (_viewModel == null)
                 {
                         // Don't show modal dialogs or close the window from the constructor —

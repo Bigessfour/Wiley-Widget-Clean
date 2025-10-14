@@ -10,6 +10,7 @@
         xmlns:models="clr-namespace:WileyWidget.Models;assembly=WileyWidget.Models"
         xmlns:viewmodels="clr-namespace:WileyWidget.ViewModels"
         xmlns:views="clr-namespace:WileyWidget.Views"
+        xmlns:converters="clr-namespace:WileyWidget.Converters"
         syncfusionskin:SfSkinManager.Theme="{syncfusionskin:SkinManagerExtension ThemeName=FluentDark}"
         mc:Ignorable="d"
         Title="Municipal Account Management" 
@@ -26,6 +27,7 @@
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
         <views:BalanceColorConverter x:Key="BalanceColorConverter" />
         <views:UniqueDepartmentsConverter x:Key="UniqueDepartmentsConverter" />
+        <converters:ZeroToVisibleConverter x:Key="ZeroToVisibleConverter" />
         
         <!-- Enum Data Providers -->
         <ObjectDataProvider x:Key="FundTypeValues" MethodName="GetValues" ObjectType="{x:Type sys:Enum}">
@@ -203,6 +205,12 @@
                                                   Command="{Binding NavigateBackCommand}"
                                                   ToolTip="Return to main dashboard" />
                         
+                        <syncfusion:RibbonButton Label="Budget Analysis"
+                                                  SizeForm="Large"
+                                                  LargeIcon="Pack://application:,,,/Assets/Icons/Budget32.png"
+                                                  Command="{Binding NavigateToBudgetCommand}"
+                                                  ToolTip="Navigate to Budget Analysis view" />
+                        
                         <syncfusion:RibbonButton Label="Export"
                                                   SizeForm="Small"
                                                   SmallIcon="Pack://application:,,,/Assets/Icons/Export16.png"
@@ -264,7 +272,7 @@
                     <!-- Hierarchical Data Grid -->
                     <syncfusion:SfDataGrid Grid.Row="1" 
                                           x:Name="AccountsGrid"
-                                          ItemsSource="{Binding MunicipalAccounts}"
+                                          ItemsSource="{Binding MunicipalAccounts, FallbackValue=Empty}"
                                           SelectedItem="{Binding SelectedAccount, Mode=TwoWay}"
                                           AutoGenerateColumns="False"
                                           AllowEditing="True"
@@ -281,7 +289,8 @@
                                           EditTrigger="OnTap"
                                           LiveDataUpdateMode="AllowDataShaping"
                                           EnableDataVirtualization="True"
-                                          UseDrawing="True">
+                                          UseDrawing="True"
+                                          VirtualizingStackPanel.IsVirtualizing="True">
                         
                         <!-- Column Definitions -->
                         <syncfusion:SfDataGrid.Columns>
@@ -426,6 +435,30 @@
                         </syncfusion:SfDataGrid.RecordContextMenu>
                         
                     </syncfusion:SfDataGrid>
+                    
+                    <!-- Empty State Message -->
+                    <StackPanel Grid.Row="1"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               Visibility="{Binding MunicipalAccounts.Count, Converter={StaticResource ZeroToVisibleConverter}}">
+                        <TextBlock Text="📊" 
+                                  FontSize="48" 
+                                  HorizontalAlignment="Center"
+                                  Margin="0,0,0,16" />
+                        <TextBlock Text="No accounts found" 
+                                  FontSize="18" 
+                                  FontWeight="SemiBold"
+                                  Foreground="#FFB9C8EC"
+                                  HorizontalAlignment="Center"
+                                  Margin="0,0,0,8" />
+                        <TextBlock Text="Click 'Load Accounts' or 'Sync QuickBooks' to get started" 
+                                  FontSize="14" 
+                                  Foreground="#FF7F8FA6"
+                                  HorizontalAlignment="Center"
+                                  TextWrapping="Wrap"
+                                  TextAlignment="Center"
+                                  MaxWidth="300" />
+                    </StackPanel>
                 </Grid>
             </Border>
             
