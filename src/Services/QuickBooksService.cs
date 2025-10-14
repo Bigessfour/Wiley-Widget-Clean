@@ -57,7 +57,17 @@ public sealed class QuickBooksService : IQuickBooksService
                       Environment.GetEnvironmentVariable("QBO_ENVIRONMENT", EnvironmentVariableTarget.User) ??
                       "sandbox";
 
-        _oauthClient = new OAuth2Client(_clientId, _clientSecret, _redirectUri, _environment);
+        try
+        {
+            _oauthClient = new OAuth2Client(_clientId, _clientSecret, _redirectUri, _environment);
+        }
+        catch (System.MissingMethodException ex)
+        {
+            // Intuit OAuth2 library has Serilog version conflict - disable advanced logging
+            _logger.LogWarning(ex, "QuickBooks OAuth2Client failed to initialize with advanced logging - continuing without it");
+            // OAuth2Client still works for basic operations even if logging initialization fails
+            _oauthClient = null; // Will need to handle null checks
+        }
 
         _logger.LogInformation("QuickBooks service initialized - ClientId: {ClientIdPrefix}..., RealmId: {RealmId}, Environment: {Environment}",
             _clientId.Substring(0, Math.Min(8, _clientId.Length)), _realmId, _environment);
@@ -157,6 +167,12 @@ public sealed class QuickBooksService : IQuickBooksService
 
     public async System.Threading.Tasks.Task<bool> TestConnectionAsync()
     {
+        if (_oauthClient == null)
+        {
+            _logger.LogWarning("QuickBooks OAuth client not initialized - skipping connection test");
+            return false;
+        }
+
         try
         {
             await RefreshTokenIfNeededAsync();

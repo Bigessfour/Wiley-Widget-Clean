@@ -19,6 +19,11 @@ namespace WileyWidget.Startup.Modules
         {
             Log.Information("Initializing QuickBooksModule");
 
+            // TODO: QuickBooks initialization temporarily disabled until views are working
+            // The QB OAuth2 library has Serilog version conflicts that need to be resolved
+            // Enable this after views are rendering and we can access the authentication controls
+            
+            /* COMMENTED OUT - QB INITIALIZATION DISABLED
             try
             {
                 // QuickBooks services are optional - may not be registered yet
@@ -89,8 +94,9 @@ namespace WileyWidget.Startup.Modules
             {
                 Log.Error(ex, "Failed to initialize QuickBooks module");
             }
+            END COMMENTED OUT SECTION */
 
-            Log.Information("QuickBooksModule initialization completed");
+            Log.Information("QuickBooksModule initialization completed (QB init disabled)");
         }
 
         public void RegisterTypes(IContainerRegistry containerRegistry)

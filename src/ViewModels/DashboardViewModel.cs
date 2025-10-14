@@ -223,9 +223,11 @@ namespace WileyWidget.ViewModels
         _eventAggregator.GetEvent<EnterpriseChangedMessage>().Subscribe(OnEnterpriseChanged);
     }        public async Task LoadDashboardDataAsync()
         {
+            var hasErrors = false;
             try
             {
                 DashboardStatus = "Loading dashboard data...";
+                _logger.LogInformation("Starting dashboard data load");
 
                 // Load all dashboard data in parallel
                 await Task.WhenAll(
@@ -241,14 +243,27 @@ namespace WileyWidget.ViewModels
                 LastUpdated = DateTime.Now.ToString("g");
                 UpdateNextRefreshTime();
 
-                _logger.LogInformation("Dashboard data loaded successfully");
+                _logger.LogInformation("Dashboard data loaded successfully - {TotalEnterprises} enterprises, ${TotalBudget} total budget", 
+                    TotalEnterprises, TotalBudget);
             }
             catch (Exception ex)
             {
+                hasErrors = true;
                 DashboardStatus = "Error loading dashboard";
-                _logger.LogError(ex, "Error loading dashboard data");
-                MessageBox.Show($"Error loading dashboard: {ex.Message}", "Dashboard Error",
-                              MessageBoxButton.OK);
+                _logger.LogError(ex, "CRITICAL: Dashboard data load failed - {Message}", ex.Message);
+                
+                // Don't show misleading success message
+                MessageBox.Show($"Error loading dashboard: {ex.Message}\n\nPlease check the logs for details.", "Dashboard Error",
+                              MessageBoxButton.OK, MessageBoxImage.Error);
+                
+                throw; // Propagate exception to prevent misleading success logs
+            }
+            finally
+            {
+                if (!hasErrors)
+                {
+                    _logger.LogDebug("Dashboard load completed without errors");
+                }
             }
         }
 
@@ -256,8 +271,8 @@ namespace WileyWidget.ViewModels
         {
             try
             {
-                // Get enterprise data
-                var enterprises = await Task.Run(() => _enterpriseRepository.GetAllAsync());
+                // Get enterprise data - await directly, no Task.Run wrapper
+                var enterprises = await _enterpriseRepository.GetAllAsync();
 
                 TotalEnterprises = enterprises.Count();
                 TotalBudget = enterprises.Sum(e => e.TotalBudget);
@@ -272,10 +287,14 @@ namespace WileyWidget.ViewModels
 
                 // Calculate changes (simplified - in real app would compare with historical data)
                 CalculateChanges();
+                
+                _logger.LogDebug("KPIs loaded successfully: {TotalEnterprises} enterprises, ${TotalBudget} budget", 
+                    TotalEnterprises, TotalBudget);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading KPIs");
+                throw; // Propagate error to caller
             }
         }
 
@@ -286,8 +305,8 @@ namespace WileyWidget.ViewModels
                 ErrorMessage = string.Empty;
                 Enterprises.Clear();
                 
-                // Use Task.Run for async data loading to avoid blocking UI
-                var enterprises = await Task.Run(async () => await _enterpriseRepository.GetAllAsync());
+                // Await directly - repository already uses async/await properly
+                var enterprises = await _enterpriseRepository.GetAllAsync();
                 
                 foreach (var enterprise in enterprises)
                 {
@@ -300,11 +319,14 @@ namespace WileyWidget.ViewModels
                 {
                     FilteredEnterprises.Add(enterprise);
                 }
+                
+                _logger.LogDebug("Loaded {Count} enterprises successfully", enterprises.Count());
             }
             catch (Exception ex)
             {
                 ErrorMessage = $"Failed to load enterprises: {ex.Message}";
                 _logger.LogError(ex, "Error loading enterprises");
+                throw; // Propagate error to caller
             }
         }
 
@@ -386,9 +408,9 @@ namespace WileyWidget.ViewModels
                     RateTrendData.Add(rateItem);
                 }
 
-                // Load enterprise type distribution
+                // Load enterprise type distribution - await directly
                 EnterpriseTypeData.Clear();
-                var enterprises = await Task.Run(() => _enterpriseRepository.GetAllAsync());
+                var enterprises = await _enterpriseRepository.GetAllAsync();
                 var typeGroups = enterprises.GroupBy(e => e.Type ?? "Other");
 
                 foreach (var group in typeGroups)
@@ -399,10 +421,13 @@ namespace WileyWidget.ViewModels
                         Count = group.Count()
                     });
                 }
+                
+                _logger.LogDebug("Chart data loaded successfully");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading chart data");
+                throw; // Propagate error to caller
             }
         }
 

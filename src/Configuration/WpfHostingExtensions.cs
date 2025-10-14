@@ -21,6 +21,7 @@ using WileyWidget.Services.Excel;
 using WileyWidget.Services.Hosting;
 using WileyWidget.Services.Threading;
 using WileyWidget.ViewModels;
+using WileyWidget.Views;
 
 namespace WileyWidget.Configuration;
 

@@ -8,6 +8,7 @@
     <PackageVersion Include="Microsoft.CodeAnalysis.Common" Version="4.8.0" />
     <PackageVersion Include="Microsoft.CodeAnalysis.VisualBasic" Version="4.8.0" />
     <PackageVersion Include="Microsoft.Data.SqlClient" Version="6.1.1" />
+    <PackageVersion Include="Microsoft.DotNet.Interactive" Version="1.0.0-beta.23506.1" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="9.0.8" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.8">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -25,7 +26,6 @@
     <PackageVersion Include="Microsoft.Identity.Client.Broker" Version="4.77.0" />
     <PackageVersion Include="Microsoft.Identity.Client" Version="4.77.0" />
     <PackageVersion Include="Microsoft.Graph" Version="5.67.0" />
-    <PackageVersion Include="Prism.Unity" Version="9.0.537" />
     <!-- Serilog -->
     <PackageVersion Include="Serilog" Version="4.2.0" />
     <PackageVersion Include="Serilog.Enrichers.Environment" Version="3.0.1" />
@@ -97,6 +97,7 @@
     <!-- Prism MVVM Framework -->
     <PackageVersion Include="Prism.Core" Version="9.0.537" />
     <PackageVersion Include="Prism.Wpf" Version="9.0.537" />
-    <PackageVersion Include="Prism.DryIoc" Version="9.0.537" />
+    <PackageVersion Include="Prism.Unity" Version="9.0.537" />
+    <PackageVersion Include="Unity.Container" Version="5.11.11" />
   </ItemGroup>
 </Project>

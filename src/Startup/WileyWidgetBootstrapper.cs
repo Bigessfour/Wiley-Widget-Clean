@@ -3,7 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using Prism.DryIoc;
+using Prism.Unity;
 using Prism.Ioc;
 using Prism.Modularity;
 using Prism;
@@ -24,11 +24,12 @@ using WileyWidget.Configuration;
 using WileyWidget.Data;
 using WileyWidget.Business.Interfaces;
 using WileyWidget.Models;
+using Unity;
 
 namespace WileyWidget.Startup
 {
     /// <summary>
-    /// Bootstrapper for WileyWidget application using Prism with DryIoc container.
+    /// Bootstrapper for WileyWidget application using Prism with Unity container.
     /// Coordinates initialization, module loading, and shell creation.
     /// </summary>
     public class WileyWidgetBootstrapper : PrismBootstrapper
@@ -134,7 +135,9 @@ namespace WileyWidget.Startup
 
             // Register Microsoft.Extensions.Logging integration with Serilog
             // This is CRITICAL for ViewModels that inject ILogger<T>
+#pragma warning disable CA2000 // Logger factory should live for application lifetime, disposed by container
             var loggerFactory = new SerilogLoggerFactory(Log.Logger, dispose: false);
+#pragma warning restore CA2000
             containerRegistry.RegisterInstance<ILoggerFactory>(loggerFactory);
             
             // Register generic ILogger<T> so any ViewModel can inject ILogger<TViewModel>

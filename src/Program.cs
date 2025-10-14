@@ -35,7 +35,7 @@ public static class Program
             try
             {
                 var app = new System.Windows.Application();
-                var mainWindow = new WileyWidget.MainWindow();
+                var mainWindow = new WileyWidget.Views.MainWindow();
                 app.MainWindow = mainWindow;
                 mainWindow.Show();
                 app.Run();

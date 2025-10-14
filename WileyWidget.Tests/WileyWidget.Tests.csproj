@@ -25,6 +25,8 @@
     </PackageReference>
     <PackageReference Include="FluentAssertions" />
     <PackageReference Include="Moq" />
+    <PackageReference Include="Prism.Core" />
+    <PackageReference Include="Prism.Wpf" />
     <PackageReference Include="RichardSzalay.MockHttp" />
     <PackageReference Include="CommunityToolkit.Mvvm" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />

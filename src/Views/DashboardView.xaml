@@ -7,6 +7,7 @@
              xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
              xmlns:gauge="clr-namespace:Syncfusion.UI.Xaml.Gauges;assembly=Syncfusion.SfGauge.Wpf"
              xmlns:chart="clr-namespace:Syncfusion.UI.Xaml.Charts;assembly=Syncfusion.SfChart.WPF"
+             xmlns:grid="clr-namespace:Syncfusion.UI.Xaml.Grid;assembly=Syncfusion.SfGrid.WPF"
              xmlns:syncfusionskin="clr-namespace:Syncfusion.SfSkinManager;assembly=Syncfusion.SfSkinManager.WPF"
              xmlns:notification="clr-namespace:Syncfusion.Windows.Controls.Notification;assembly=Syncfusion.SfBusyIndicator.WPF"
              xmlns:prism="http://prismlibrary.com/"
@@ -294,15 +295,6 @@
                                                 </Style>
                                             </chart:ChartTrackBallBehavior.ChartTrackBallStyle>
                                         </chart:ChartTrackBallBehavior>
-                                        <chart:ChartTooltip>
-                                            <chart:ChartTooltip.Style>
-                                                <Style TargetType="chart:ChartTooltip">
-                                                    <Setter Property="Background" Value="#2196F3"/>
-                                                    <Setter Property="BorderBrush" Value="#FFFFFF"/>
-                                                    <Setter Property="BorderThickness" Value="1"/>
-                                                </Style>
-                                            </chart:ChartTooltip.Style>
-                                        </chart:ChartTooltip>
                                         <chart:ChartZoomPanBehavior EnablePanning="True" EnableMouseWheelZooming="True" 
                                                                    ZoomMode="XY" EnableZoomingToolBar="True"/>
                                     </chart:SfChart.Behaviors>
@@ -409,18 +401,6 @@
                                         <chart:ChartLegend DockPosition="Bottom" />
                                     </chart:SfChart.Legend>
                                     
-                                    <chart:SfChart.Behaviors>
-                                        <chart:ChartTooltip>
-                                            <chart:ChartTooltip.Style>
-                                                <Style TargetType="chart:ChartTooltip">
-                                                    <Setter Property="Background" Value="#9C27B0"/>
-                                                    <Setter Property="BorderBrush" Value="#FFFFFF"/>
-                                                    <Setter Property="BorderThickness" Value="1"/>
-                                                </Style>
-                                            </chart:ChartTooltip.Style>
-                                        </chart:ChartTooltip>
-                                    </chart:SfChart.Behaviors>
-                                    
                                     <chart:PieSeries ItemsSource="{Binding EnterpriseTypeData}"
                                                    XBindingPath="Type"
                                                    YBindingPath="Count"
@@ -466,6 +446,81 @@
                 </Grid>
 
 
+                <!-- Main Dashboard Chart Section -->
+                <TextBlock Text="Financial Overview Dashboard" FontSize="20" FontWeight="Bold" Margin="0,10,0,15" />
+
+                <Border Background="#1E1E1E" BorderBrush="#2196F3" BorderThickness="2"
+                        CornerRadius="8" Margin="5,0,5,20" Padding="15"
+                        ToolTipService.ToolTip="Comprehensive financial dashboard showing budgets, expenses, and revenues">
+                    <StackPanel>
+                        <chart:SfChart x:Name="DashboardChart"
+                                     Height="400">
+                            <chart:SfChart.PrimaryAxis>
+                                <chart:CategoryAxis />
+                            </chart:SfChart.PrimaryAxis>
+                            <chart:SfChart.SecondaryAxis>
+                                <chart:NumericalAxis />
+                            </chart:SfChart.SecondaryAxis>
+                            <chart:SfChart.Header>
+                                <TextBlock Text="Financial Dashboard" FontSize="16" FontWeight="Bold"
+                                         HorizontalAlignment="Center" Foreground="White"/>
+                            </chart:SfChart.Header>
+
+                            <chart:SfChart.Legend>
+                                <chart:ChartLegend DockPosition="Bottom"
+                                                 Background="Transparent"
+                                                 Foreground="White"/>
+                            </chart:SfChart.Legend>
+
+                            <chart:ColumnSeries ItemsSource="{Binding ChartData}"
+                                              XBindingPath="Period"
+                                              YBindingPath="Amount"
+                                              Interior="#2196F3"
+                                              Label="Total Budget"
+                                              ShowTooltip="True"
+                                              EnableAnimation="True">
+                                <chart:ColumnSeries.AdornmentsInfo>
+                                    <chart:ChartAdornmentInfo ShowLabel="True"
+                                                            LabelPosition="Top"
+                                                            SegmentLabelFormat="C0"
+                                                            Foreground="White"/>
+                                </chart:ColumnSeries.AdornmentsInfo>
+                            </chart:ColumnSeries>
+
+                            <chart:ColumnSeries ItemsSource="{Binding ExpenseData}"
+                                              XBindingPath="Period"
+                                              YBindingPath="Amount"
+                                              Interior="#F44336"
+                                              Label="Expenses"
+                                              ShowTooltip="True"
+                                              EnableAnimation="True">
+                                <chart:ColumnSeries.AdornmentsInfo>
+                                    <chart:ChartAdornmentInfo ShowLabel="True"
+                                                            LabelPosition="Top"
+                                                            SegmentLabelFormat="C0"
+                                                            Foreground="White"/>
+                                </chart:ColumnSeries.AdornmentsInfo>
+                            </chart:ColumnSeries>
+
+                            <chart:ColumnSeries ItemsSource="{Binding RevenueData}"
+                                              XBindingPath="Period"
+                                              YBindingPath="Amount"
+                                              Interior="#4CAF50"
+                                              Label="Revenue"
+                                              ShowTooltip="True"
+                                              EnableAnimation="True">
+                                <chart:ColumnSeries.AdornmentsInfo>
+                                    <chart:ChartAdornmentInfo ShowLabel="True"
+                                                            LabelPosition="Top"
+                                                            SegmentLabelFormat="C0"
+                                                            Foreground="White"/>
+                                </chart:ColumnSeries.AdornmentsInfo>
+                            </chart:ColumnSeries>
+                        </chart:SfChart>
+                    </StackPanel>
+                </Border>
+
+
                 <!-- System Alerts Section with Enhanced Formatting -->
                 <TextBlock Text="System Alerts and Recent Activity" FontSize="20" FontWeight="Bold" Margin="0,10,0,15" />
                 
@@ -493,25 +548,7 @@
                                 <syncfusion:SfDataGrid.Columns>
                                     <syncfusion:GridTextColumn MappingName="Priority"
                                                               HeaderText="Priority"
-                                                              Width="100">
-                                        <syncfusion:GridTextColumn.CellStyle>
-                                            <Style TargetType="syncfusion:GridCell">
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding Priority}" Value="High">
-                                                        <Setter Property="Foreground" Value="#F44336"/>
-                                                        <Setter Property="FontWeight" Value="Bold"/>
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding Priority}" Value="Medium">
-                                                        <Setter Property="Foreground" Value="#FFC107"/>
-                                                        <Setter Property="FontWeight" Value="SemiBold"/>
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding Priority}" Value="Low">
-                                                        <Setter Property="Foreground" Value="#2196F3"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </syncfusion:GridTextColumn.CellStyle>
-                                    </syncfusion:GridTextColumn>
+                                                              Width="100"/>
                                     <syncfusion:GridTextColumn MappingName="Message"
                                                               HeaderText="Alert Message"
                                                               Width="250" />
@@ -617,24 +654,7 @@
                                                           HeaderText="Status" 
                                                           Width="120"
                                                           AllowFiltering="True"
-                                                          AllowSorting="True">
-                                    <syncfusion:GridTextColumn.CellStyle>
-                                        <Style TargetType="syncfusion:GridCell">
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding Status}" Value="Active">
-                                                    <Setter Property="Foreground" Value="#4CAF50"/>
-                                                    <Setter Property="FontWeight" Value="SemiBold"/>
-                                                </DataTrigger>
-                                                <DataTrigger Binding="{Binding Status}" Value="Inactive">
-                                                    <Setter Property="Foreground" Value="#FFC107"/>
-                                                </DataTrigger>
-                                                <DataTrigger Binding="{Binding Status}" Value="Suspended">
-                                                    <Setter Property="Foreground" Value="#F44336"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </syncfusion:GridTextColumn.CellStyle>
-                                </syncfusion:GridTextColumn>
+                                                          AllowSorting="True"/>
                                 
                                 <syncfusion:GridDateTimeColumn MappingName="LastModified" 
                                                               HeaderText="Last Modified" 

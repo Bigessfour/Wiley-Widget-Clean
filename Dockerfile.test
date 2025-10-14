@@ -1,0 +1,28 @@
+# Dockerfile for running xUnit tests for Wiley Widget Prism WPF application
+# Based on .NET 9.0 SDK Windows Server Core LTSC 2022
+FROM mcr.microsoft.com/dotnet/sdk:9.0-windowsservercore-ltsc2022
+
+# Set the working directory
+WORKDIR /app
+
+# Copy solution and project files for dependency resolution
+COPY ["WileyWidget.sln", "./"]
+COPY ["WileyWidget.csproj", "./"]
+COPY ["WileyWidget.Tests/WileyWidget.Tests.csproj", "./WileyWidget.Tests/"]
+COPY ["WileyWidget.Models/WileyWidget.Models.csproj", "./WileyWidget.Models/"]
+COPY ["Directory.Build.props", "./"]
+COPY ["Directory.Build.targets", "./"]
+COPY ["Directory.Packages.props", "./"]
+COPY ["global.json", "./"]
+
+# Restore NuGet packages
+RUN dotnet restore "WileyWidget.sln"
+
+# Copy the entire source code
+COPY . .
+
+# Build the solution in Release mode
+RUN dotnet build "WileyWidget.sln" --configuration Release --no-restore
+
+# Run the xUnit tests
+ENTRYPOINT ["dotnet", "test", "WileyWidget.Tests/WileyWidget.Tests.csproj", "--configuration", "Release", "--logger", "trx", "--results-directory", "/test-results", "--no-build", "--verbosity", "normal"]

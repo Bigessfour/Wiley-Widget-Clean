@@ -48,7 +48,9 @@
     <PackageReference Include="Microsoft.CodeAnalysis.Common" />
     <PackageReference Include="Microsoft.CodeAnalysis.VisualBasic" />
     <PackageReference Include="Prism.Core" />
-    <PackageReference Include="Prism.DryIoc" />
+    <PackageReference Include="Prism.Unity" />
+    <PackageReference Include="Prism.Wpf" />
+    <PackageReference Include="Unity.Container" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
@@ -65,7 +67,6 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
   <PackageReference Include="Microsoft.Extensions.Http" />
     <PackageReference Include="Microsoft.Extensions.Logging" />
-    <PackageReference Include="Prism.Wpf" />
     <PackageReference Include="Serilog" />
     <PackageReference Include="Serilog.Enrichers.Environment" />
     <PackageReference Include="Serilog.Enrichers.Process" />

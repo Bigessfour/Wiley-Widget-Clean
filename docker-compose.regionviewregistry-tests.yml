@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  regionviewregistry-tests:
+    build:
+      context: .
+      dockerfile: Dockerfile.regionviewregistry-tests
+      target: test
+    container_name: wiley-regionviewregistry-tests
+    volumes:
+      # Mount test results directory to host
+      - ./TestResults/RegionViewRegistry:/testresults
+    environment:
+      - DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
+      - TZ=America/Chicago
+    networks:
+      - test-network
+
+  regionviewregistry-tests-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.regionviewregistry-tests
+      target: test-volume
+    container_name: wiley-regionviewregistry-tests-dev
+    volumes:
+      # Mount entire test project for live editing
+      - ./WileyWidget.Tests:/src/WileyWidget.Tests:ro
+      - ./TestResults/RegionViewRegistry:/testresults
+    environment:
+      - DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
+      - TZ=America/Chicago
+    networks:
+      - test-network
+
+networks:
+  test-network:
+    driver: bridge

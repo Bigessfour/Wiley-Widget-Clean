@@ -1,0 +1,166 @@
+name: RegionViewRegistry Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'WileyWidget.Tests/Regions/**'
+      - 'src/Regions/**'
+      - 'Dockerfile.regionviewregistry-tests'
+      - 'docker-compose.regionviewregistry-tests.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'WileyWidget.Tests/Regions/**'
+      - 'src/Regions/**'
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: '9.0.x'
+  TEST_RESULTS_PATH: './TestResults/RegionViewRegistry'
+
+jobs:
+  test-regionviewregistry:
+    name: Run RegionViewRegistry Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+    
+    - name: Restore dependencies
+      run: dotnet restore WileyWidget.Tests/WileyWidget.Tests.csproj
+    
+    - name: Build test project
+      run: dotnet build WileyWidget.Tests/WileyWidget.Tests.csproj --configuration Release --no-restore
+    
+    - name: Run RegionViewRegistry tests
+      run: |
+        dotnet test WileyWidget.Tests/WileyWidget.Tests.csproj \
+          --configuration Release \
+          --no-build \
+          --no-restore \
+          --logger "trx;LogFileName=regionviewregistry-tests.trx" \
+          --logger "console;verbosity=detailed" \
+          --filter "FullyQualifiedName~RegionViewRegistryTests" \
+          --results-directory ${{ env.TEST_RESULTS_PATH }} \
+          --collect "XPlat Code Coverage" \
+          -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
+    
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: regionviewregistry-test-results
+        path: ${{ env.TEST_RESULTS_PATH }}/*.trx
+        retention-days: 30
+    
+    - name: Upload coverage reports
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: regionviewregistry-coverage
+        path: ${{ env.TEST_RESULTS_PATH }}/**/coverage.cobertura.xml
+        retention-days: 30
+    
+    - name: Generate coverage report
+      uses: danielpalme/ReportGenerator-GitHub-Action@5.3.11
+      if: always()
+      with:
+        reports: '${{ env.TEST_RESULTS_PATH }}/**/coverage.cobertura.xml'
+        targetdir: '${{ env.TEST_RESULTS_PATH }}/coveragereport'
+        reporttypes: 'Html;Badges'
+        assemblyfilters: '+WileyWidget.Tests'
+    
+    - name: Upload coverage HTML report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: regionviewregistry-coverage-report
+        path: ${{ env.TEST_RESULTS_PATH }}/coveragereport
+        retention-days: 30
+    
+    - name: Publish test summary
+      uses: EnricoMi/publish-unit-test-result-action@v2
+      if: always()
+      with:
+        files: ${{ env.TEST_RESULTS_PATH }}/*.trx
+        check_name: 'RegionViewRegistry Test Results'
+        comment_title: 'RegionViewRegistry Test Results'
+    
+    - name: Comment coverage on PR
+      if: github.event_name == 'pull_request'
+      uses: 5monkeys/cobertura-action@v14
+      with:
+        path: ${{ env.TEST_RESULTS_PATH }}/**/coverage.cobertura.xml
+        minimum_coverage: 90
+        show_line: true
+        show_branch: true
+        show_missing: true
+
+  test-regionviewregistry-docker:
+    name: Run RegionViewRegistry Tests (Docker)
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Build test image
+      run: |
+        docker build \
+          -f Dockerfile.regionviewregistry-tests \
+          --target test \
+          -t wiley-regionviewregistry-tests:${{ github.sha }} \
+          .
+    
+    - name: Run tests in Docker
+      run: |
+        docker run --rm \
+          -v $(pwd)/${{ env.TEST_RESULTS_PATH }}:/testresults \
+          wiley-regionviewregistry-tests:${{ github.sha }}
+    
+    - name: Upload Docker test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: regionviewregistry-docker-results
+        path: ${{ env.TEST_RESULTS_PATH }}
+        retention-days: 30
+
+  validate-coverage:
+    name: Validate Coverage Threshold
+    needs: test-regionviewregistry
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Download coverage artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: regionviewregistry-coverage
+        path: ./coverage
+    
+    - name: Check coverage threshold
+      run: |
+        # Extract coverage percentage from cobertura.xml
+        COVERAGE=$(grep -oP 'line-rate="\K[0-9.]+' ./coverage/**/coverage.cobertura.xml | head -1)
+        COVERAGE_PCT=$(echo "$COVERAGE * 100" | bc)
+        
+        echo "Coverage: ${COVERAGE_PCT}%"
+        
+        if (( $(echo "$COVERAGE_PCT < 90" | bc -l) )); then
+          echo "❌ Coverage below 90% threshold: ${COVERAGE_PCT}%"
+          exit 1
+        else
+          echo "✅ Coverage meets 90% threshold: ${COVERAGE_PCT}%"
+        fi
