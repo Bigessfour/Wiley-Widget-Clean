@@ -33,6 +33,16 @@ public class RefreshDataMessage
 }
 
 /// <summary>
+/// Message sent to navigate to a specific view
+/// </summary>
+public class NavigationMessage
+{
+    public string TargetView { get; set; } = string.Empty;
+    public object? Parameter { get; set; }
+    public DateTime Timestamp { get; } = DateTime.UtcNow;
+}
+
+/// <summary>
 /// Type of change made to an entity
 /// </summary>
 public enum ChangeType

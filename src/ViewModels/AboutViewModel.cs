@@ -4,6 +4,7 @@ using System;
 using System.Reflection;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.Logging;
 using WileyWidget.Services;
 using WileyWidget.Services.Threading;
 using WileyWidget.ViewModels.Base;
@@ -62,6 +63,11 @@ public class AboutViewModel : AsyncViewModelBase
     public ICommand CloseCommand { get; }
 
     /// <summary>
+    /// Gets the command to open URLs
+    /// </summary>
+    public ICommand OpenUrlCommand { get; }
+
+    /// <summary>
     /// Gets or sets the action to close the window
     /// </summary>
     public Action? CloseAction { get; set; }
@@ -75,6 +81,7 @@ public class AboutViewModel : AsyncViewModelBase
         : base(dispatcherHelper, logger)
     {
         CloseCommand = new RelayCommand(Close);
+        OpenUrlCommand = new RelayCommand<string>(OpenUrl);
 
         // Initialize with assembly information
         var assembly = Assembly.GetExecutingAssembly();
@@ -89,5 +96,24 @@ public class AboutViewModel : AsyncViewModelBase
     private void Close()
     {
         CloseAction?.Invoke();
+    }
+
+    private void OpenUrl(string? url)
+    {
+        if (!string.IsNullOrEmpty(url))
+        {
+            try
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = url,
+                    UseShellExecute = true
+                });
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Failed to open URL: {Url}", url);
+            }
+        }
     }
 }

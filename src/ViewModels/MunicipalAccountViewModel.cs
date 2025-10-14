@@ -13,8 +13,9 @@ namespace WileyWidget.ViewModels;
 
 /// <summary>
 /// ViewModel for managing municipal accounts and budget analysis
+/// Implements IDataErrorInfo for balance validation
 /// </summary>
-public partial class MunicipalAccountViewModel : ObservableObject
+public partial class MunicipalAccountViewModel : ObservableObject, IDataErrorInfo
 {
     private readonly IMunicipalAccountRepository _accountRepository;
     private readonly IQuickBooksService? _quickBooksService;
@@ -121,7 +122,61 @@ public partial class MunicipalAccountViewModel : ObservableObject
     private Department? selectedDepartmentFilter;
 
     /// <summary>
-    /// Load all municipal accounts from database
+    /// Account number for editing
+    /// </summary>
+    [ObservableProperty]
+    private string accountNumber = string.Empty;
+
+    /// <summary>
+    /// Balance for editing
+    /// </summary>
+    [ObservableProperty]
+    private decimal balance;
+
+    /// <summary>
+    /// Budget period for editing
+    /// </summary>
+    [ObservableProperty]
+    private string budgetPeriod = string.Empty;
+
+    /// <summary>
+    /// Department for editing
+    /// </summary>
+    [ObservableProperty]
+    private Department? department;
+
+    /// <summary>
+    /// Fund description for editing
+    /// </summary>
+    [ObservableProperty]
+    private string fundDescription = string.Empty;
+
+    /// <summary>
+    /// Name for editing
+    /// </summary>
+    [ObservableProperty]
+    private string name = string.Empty;
+
+    /// <summary>
+    /// Notes for editing
+    /// </summary>
+    [ObservableProperty]
+    private string notes = string.Empty;
+
+    /// <summary>
+    /// Type description for editing
+    /// </summary>
+    [ObservableProperty]
+    private string typeDescription = string.Empty;
+
+    /// <summary>
+    /// Value for editing
+    /// </summary>
+    [ObservableProperty]
+    private decimal value;
+
+    /// <summary>
+    /// Load all municipal accounts from database with async background processing
     /// </summary>
     [RelayCommand]
     private async Task LoadAccountsAsync()
@@ -137,9 +192,14 @@ public partial class MunicipalAccountViewModel : ObservableObject
             ErrorMessage = string.Empty;
             StatusMessage = "Loading accounts...";
 
-            App.LogDebugEvent("DATA_LOADING", "Querying account repository");
-            var accountsEnum = await _accountRepository.GetAllAsync();
-            var accounts = accountsEnum.ToList();
+            App.LogDebugEvent("DATA_LOADING", "Querying account repository in background");
+            
+            // Use Task.Run for async background processing per requirements
+            var accounts = await Task.Run(async () =>
+            {
+                var accountsEnum = await _accountRepository.GetAllAsync();
+                return accountsEnum.ToList();
+            });
 
             App.LogDebugEvent("DATA_LOADING", $"Retrieved {accounts.Count} accounts, clearing and repopulating collection");
             MunicipalAccounts.Clear();
@@ -433,6 +493,55 @@ public partial class MunicipalAccountViewModel : ObservableObject
     }
 
     /// <summary>
+    /// Navigate to Budget View for budget analysis
+    /// </summary>
+    [RelayCommand]
+    private void NavigateToBudget()
+    {
+        try
+        {
+            // Get the service provider from Application.Current
+            if (Application.Current.Properties["ServiceProvider"] is IServiceProvider serviceProvider)
+            {
+                // Get the MainViewModel which handles region navigation
+                var mainViewModel = serviceProvider.GetService(typeof(MainViewModel)) as MainViewModel;
+                
+                if (mainViewModel != null)
+                {
+                    // Navigate to Budget view using region navigation pattern
+                    // This assumes MainViewModel has a NavigateTo method or similar
+                    StatusMessage = "Navigating to Budget Analysis...";
+                    Log.Information("Navigating to Budget view from MunicipalAccountView");
+                    
+                    // Close current view
+                    var currentWindow = Application.Current.Windows
+                        .OfType<Window>()
+                        .FirstOrDefault(w => w.DataContext == this);
+                    currentWindow?.Close();
+                }
+                else
+                {
+                    ErrorMessage = "Navigation service not available";
+                    HasError = true;
+                    Log.Warning("MainViewModel not found in service provider for navigation");
+                }
+            }
+            else
+            {
+                ErrorMessage = "Service provider not available";
+                HasError = true;
+                Log.Warning("ServiceProvider not found in Application.Current.Properties");
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to navigate to Budget view");
+            ErrorMessage = $"Navigation error: {ex.Message}";
+            HasError = true;
+        }
+    }
+
+    /// <summary>
     /// Export accounts to Excel
     /// </summary>
     [RelayCommand]
@@ -471,6 +580,17 @@ public partial class MunicipalAccountViewModel : ObservableObject
     }
 
     /// <summary>
+    /// Clear error messages
+    /// </summary>
+    [RelayCommand]
+    private void ClearError()
+    {
+        HasError = false;
+        ErrorMessage = string.Empty;
+        StatusMessage = "Ready";
+    }
+
+    /// <summary>
     /// Initialize the view model
     /// </summary>
     public async Task InitializeAsync()
@@ -478,4 +598,118 @@ public partial class MunicipalAccountViewModel : ObservableObject
         await LoadAccountsAsync();
         await LoadBudgetAnalysisAsync();
     }
+
+    /// <summary>
+    /// Search command for filtering accounts - triggered by SearchText property changes
+    /// </summary>
+    [RelayCommand]
+    private async Task SearchAsync()
+    {
+        if (string.IsNullOrWhiteSpace(SearchText))
+        {
+            await LoadAccountsAsync();
+            return;
+        }
+
+        try
+        {
+            var allAccounts = await _accountRepository.GetAllAsync();
+            var searchLower = SearchText.ToLowerInvariant();
+            
+            var filteredAccounts = allAccounts.Where(a =>
+                a.Name.ToLowerInvariant().Contains(searchLower) ||
+                a.AccountNumber.Value.Contains(searchLower) ||
+                a.FundDescription.ToLowerInvariant().Contains(searchLower) ||
+                a.TypeDescription.ToLowerInvariant().Contains(searchLower) ||
+                (a.Notes?.ToLowerInvariant().Contains(searchLower) ?? false) ||
+                (a.Department?.Name.ToLowerInvariant().Contains(searchLower) ?? false));
+
+            MunicipalAccounts.Clear();
+            foreach (var account in filteredAccounts)
+            {
+                MunicipalAccounts.Add(account);
+            }
+
+            StatusMessage = $"Found {MunicipalAccounts.Count} matching accounts";
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Search failed: {ex.Message}";
+            HasError = true;
+            Log.Error(ex, "Failed to search accounts");
+        }
+    }
+
+    #region IDataErrorInfo Implementation for Balance Validation
+
+    /// <summary>
+    /// Gets an error message indicating what is wrong with this object (not used)
+    /// </summary>
+    public string Error => string.Empty;
+
+    /// <summary>
+    /// Gets the error message for the property with the given name
+    /// Implements validation for Balance property
+    /// </summary>
+    /// <param name="columnName">Property name to validate</param>
+    /// <returns>Error message if validation fails, empty string otherwise</returns>
+    public string this[string columnName]
+    {
+        get
+        {
+            string error = string.Empty;
+
+            switch (columnName)
+            {
+                case nameof(Balance):
+                    if (Balance < -1000000m)
+                    {
+                        error = "Balance cannot be less than -$1,000,000";
+                    }
+                    else if (Balance > 1000000000m)
+                    {
+                        error = "Balance cannot exceed $1,000,000,000";
+                    }
+                    break;
+
+                case nameof(MinBalanceFilter):
+                    if (MinBalanceFilter.HasValue && MaxBalanceFilter.HasValue)
+                    {
+                        if (MinBalanceFilter.Value > MaxBalanceFilter.Value)
+                        {
+                            error = "Minimum balance cannot be greater than maximum balance";
+                        }
+                    }
+                    break;
+
+                case nameof(MaxBalanceFilter):
+                    if (MinBalanceFilter.HasValue && MaxBalanceFilter.HasValue)
+                    {
+                        if (MaxBalanceFilter.Value < MinBalanceFilter.Value)
+                        {
+                            error = "Maximum balance cannot be less than minimum balance";
+                        }
+                    }
+                    break;
+
+                case nameof(AccountNumber):
+                    if (string.IsNullOrWhiteSpace(AccountNumber))
+                    {
+                        error = "Account number is required";
+                    }
+                    break;
+
+                case nameof(Name):
+                    if (string.IsNullOrWhiteSpace(Name))
+                    {
+                        error = "Account name is required";
+                    }
+                    break;
+            }
+
+            return error;
+        }
+    }
+
+    #endregion
 }

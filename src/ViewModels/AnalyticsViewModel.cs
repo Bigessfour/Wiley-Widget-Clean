@@ -71,6 +71,53 @@ public class AnalyticsViewModel : AsyncViewModelBase
         set => SetProperty(ref _isDataLoaded, value);
     }
 
+    private DateTime? _startDate;
+    private DateTime? _endDate;
+    private string? _enterpriseId;
+    private string? _filter;
+    private ObservableCollection<string> _filterOptions = new();
+
+    /// <summary>
+    /// Gets or sets the start date for analytics filtering
+    /// </summary>
+    public DateTime? StartDate
+    {
+        get => _startDate;
+        set => SetProperty(ref _startDate, value);
+    }
+
+    /// <summary>
+    /// Gets or sets the end date for analytics filtering
+    /// </summary>
+    public DateTime? EndDate
+    {
+        get => _endDate;
+        set => SetProperty(ref _endDate, value);
+    }
+
+    /// <summary>
+    /// Gets or sets the selected enterprise ID for filtering
+    /// </summary>
+    public string? EnterpriseId
+    {
+        get => _enterpriseId;
+        set => SetProperty(ref _enterpriseId, value);
+    }
+
+    /// <summary>
+    /// Gets or sets the current filter text
+    /// </summary>
+    public string? Filter
+    {
+        get => _filter;
+        set => SetProperty(ref _filter, value);
+    }
+
+    /// <summary>
+    /// Gets the collection of available filter options
+    /// </summary>
+    public ObservableCollection<string> FilterOptions => _filterOptions;
+
     /// <summary>
     /// Gets the command to load analytics data
     /// </summary>
@@ -85,6 +132,16 @@ public class AnalyticsViewModel : AsyncViewModelBase
     /// Gets the command to export the current chart
     /// </summary>
     public IAsyncRelayCommand ExportChartCommand { get; }
+
+    /// <summary>
+    /// Gets the command to drill down into analytics data
+    /// </summary>
+    public IAsyncRelayCommand DrillDownCommand { get; }
+
+    /// <summary>
+    /// Gets the command to refresh analytics data
+    /// </summary>
+    public IAsyncRelayCommand RefreshAnalyticsCommand { get; }
 
     /// <summary>
     /// Event raised when analytics data has been loaded
@@ -102,6 +159,8 @@ public class AnalyticsViewModel : AsyncViewModelBase
         LoadDataCommand = new AsyncRelayCommand(LoadAnalyticsDataAsync, CanLoadData);
         RefreshDataCommand = new AsyncRelayCommand(RefreshAnalyticsDataAsync, CanRefreshData);
         ExportChartCommand = new AsyncRelayCommand(ExportChartAsync, CanExportChart);
+        DrillDownCommand = new AsyncRelayCommand(DrillDownAsync, CanDrillDown);
+        RefreshAnalyticsCommand = new AsyncRelayCommand(RefreshAnalyticsDataAsync, CanRefreshData);
     }
 
     private bool CanLoadData()
@@ -150,6 +209,20 @@ public class AnalyticsViewModel : AsyncViewModelBase
             // TODO: Implement actual chart export logic
             await Task.Delay(1000); // Simulate export time
         }, "Exporting chart...");
+    }
+
+    private bool CanDrillDown()
+    {
+        return IsDataLoaded && !IsBusy;
+    }
+
+    private async Task DrillDownAsync()
+    {
+        await ExecuteAsync(async () =>
+        {
+            // TODO: Implement drill down logic
+            await Task.Delay(800); // Simulate drill down time
+        }, "Drilling down into data...");
     }
 
         private void RaiseDataLoaded()

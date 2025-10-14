@@ -17,57 +17,6 @@ namespace WileyWidget.ViewModels;
 /// </summary>
 public partial class BudgetViewModel
 {
-    /// <summary>
-    /// Hierarchical collection of budget accounts with parent-child relationships
-    /// </summary>
-    public ObservableCollection<BudgetAccount> BudgetAccounts { get; } = new();
-
-    /// <summary>
-    /// Collection of available fund types for dropdown editors
-    /// </summary>
-    public ObservableCollection<BudgetFundType> FundTypes { get; } = BudgetFundType.GetStandardFundTypes();
-
-    /// <summary>
-    /// Collection of fiscal years for selection
-    /// </summary>
-    public ObservableCollection<string> FiscalYears { get; } = new()
-    {
-        "FY 2023", "FY 2024", "FY 2025", "FY 2026"
-    };
-
-    /// <summary>
-    /// Currently selected fiscal year
-    /// </summary>
-    [ObservableProperty]
-    private string selectedFiscalYear = "FY 2025";
-
-    /// <summary>
-    /// Total budgeted amount across all accounts
-    /// </summary>
-    [ObservableProperty]
-    private decimal totalBudget;
-
-    /// <summary>
-    /// Total actual expenses across all accounts
-    /// </summary>
-    [ObservableProperty]
-    private decimal totalActual;
-
-    /// <summary>
-    /// Total variance (Budget - Actual)
-    /// </summary>
-    [ObservableProperty]
-    private decimal totalVariance;
-
-    /// <summary>
-    /// Budget distribution data for pie chart
-    /// </summary>
-    public ObservableCollection<BudgetDistributionData> BudgetDistributionData { get; } = new();
-
-    /// <summary>
-    /// Budget comparison data for bar chart
-    /// </summary>
-    public ObservableCollection<BudgetComparisonData> BudgetComparisonData { get; } = new();
 
     /// <summary>
     /// Import budget data from Excel file

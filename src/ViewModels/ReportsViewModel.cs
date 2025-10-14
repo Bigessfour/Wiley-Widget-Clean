@@ -9,6 +9,7 @@ using CommunityToolkit.Mvvm.Input;
 using WileyWidget.Services;
 using WileyWidget.Services.Threading;
 using WileyWidget.ViewModels.Base;
+using WileyWidget.Models;
 
 namespace WileyWidget.ViewModels;
 
@@ -22,6 +23,12 @@ public class ReportsViewModel : AsyncViewModelBase
     private DateTime? _startDate;
     private DateTime? _endDate;
     private bool _includeCharts;
+    private int _enterpriseId;
+    private ObservableCollection<Enterprise> _enterprises = new();
+    private string _filter = string.Empty;
+    private double _progressPercentage;
+    private ObservableCollection<object> _reportItems = new();
+    private string _statusMessage = "Ready";
 
     /// <summary>
     /// Gets the collection of available report types
@@ -111,6 +118,52 @@ public class ReportsViewModel : AsyncViewModelBase
     /// Gets the command to export reports
     /// </summary>
     public IAsyncRelayCommand<string> ExportCommand { get; }
+
+    /// <summary>
+    /// Gets or sets the selected enterprise ID for filtering reports
+    /// </summary>
+    public int EnterpriseId
+    {
+        get => _enterpriseId;
+        set => SetProperty(ref _enterpriseId, value);
+    }
+
+    /// <summary>
+    /// Gets the collection of available enterprises for filtering
+    /// </summary>
+    public ObservableCollection<Enterprise> Enterprises => _enterprises;
+
+    /// <summary>
+    /// Gets or sets the filter text for reports
+    /// </summary>
+    public string Filter
+    {
+        get => _filter;
+        set => SetProperty(ref _filter, value);
+    }
+
+    /// <summary>
+    /// Gets or sets the progress percentage for report generation
+    /// </summary>
+    public double ProgressPercentage
+    {
+        get => _progressPercentage;
+        set => SetProperty(ref _progressPercentage, value);
+    }
+
+    /// <summary>
+    /// Gets the collection of report items for display
+    /// </summary>
+    public ObservableCollection<object> ReportItems => _reportItems;
+
+    /// <summary>
+    /// Gets or sets the status message for report operations
+    /// </summary>
+    public string StatusMessage
+    {
+        get => _statusMessage;
+        set => SetProperty(ref _statusMessage, value);
+    }
 
     /// <summary>
     /// Event raised when report data has been loaded

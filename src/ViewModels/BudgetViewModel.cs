@@ -1,4 +1,7 @@
 using System.Collections.ObjectModel;
+using System.Windows;
+using System.Windows.Threading;
+using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
@@ -14,11 +17,13 @@ namespace WileyWidget.ViewModels;
 /// <summary>
 /// View model for budget analysis and reporting
 /// Provides comprehensive budget insights and financial analysis
-/// Implements messaging, busy states, and input validation
+/// Implements messaging, busy states, input validation, and IDataErrorInfo
 /// </summary>
-public partial class BudgetViewModel : ObservableObject, IDisposable
+public partial class BudgetViewModel : ObservableObject, IDisposable, IDataErrorInfo
 {
     private readonly IEnterpriseRepository _enterpriseRepository;
+    private readonly IBudgetRepository _budgetRepository;
+    private readonly DispatcherTimer _refreshTimer;
     private bool _disposed;
 
     /// <summary>
@@ -105,12 +110,133 @@ public partial class BudgetViewModel : ObservableObject, IDisposable
     private string progressText = string.Empty;
 
     /// <summary>
+    /// Budget items collection
+    /// </summary>
+    public ObservableCollection<BudgetDetailItem> BudgetItems { get; } = new();
+
+    /// <summary>
+    /// Budget performance data
+    /// </summary>
+    public ObservableCollection<BudgetPerformanceData> BudgetPerformanceData { get; } = new();
+
+    /// <summary>
+    /// Budget variance data
+    /// </summary>
+    [ObservableProperty]
+    private decimal budgetVariance;
+
+    /// <summary>
+    /// Loading state
+    /// </summary>
+    [ObservableProperty]
+    private bool isLoading;
+
+    /// <summary>
+    /// Net income
+    /// </summary>
+    [ObservableProperty]
+    private decimal netIncome;
+
+    /// <summary>
+    /// Projected rate data
+    /// </summary>
+    public ObservableCollection<ProjectedRateData> ProjectedRateData { get; } = new();
+
+    /// <summary>
+    /// Rate trend data
+    /// </summary>
+    public ObservableCollection<RateTrendData> RateTrendData { get; } = new();
+
+    /// <summary>
+    /// Hierarchical collection of budget accounts with parent-child relationships
+    /// </summary>
+    public ObservableCollection<BudgetAccount> BudgetAccounts { get; } = new();
+
+    /// <summary>
+    /// Collection of available fund types for dropdown editors
+    /// </summary>
+    public ObservableCollection<BudgetFundType> FundTypes { get; } = BudgetFundType.GetStandardFundTypes();
+
+    /// <summary>
+    /// Collection of fiscal years for selection
+    /// </summary>
+    public ObservableCollection<string> FiscalYears { get; } = new()
+    {
+        "FY 2023", "FY 2024", "FY 2025", "FY 2026"
+    };
+
+    /// <summary>
+    /// Currently selected fiscal year
+    /// </summary>
+    [ObservableProperty]
+    private string selectedFiscalYear = "FY 2025";
+
+    /// <summary>
+    /// Total budgeted amount across all accounts
+    /// </summary>
+    [ObservableProperty]
+    private decimal totalBudget;
+
+    /// <summary>
+    /// Total actual expenses across all accounts
+    /// </summary>
+    [ObservableProperty]
+    private decimal totalActual;
+
+    /// <summary>
+    /// Total variance (Budget - Actual)
+    /// </summary>
+    [ObservableProperty]
+    private decimal totalVariance;
+
+    /// <summary>
+    /// Budget distribution data for pie chart
+    /// </summary>
+    public ObservableCollection<BudgetDistributionData> BudgetDistributionData { get; } = new();
+
+    /// <summary>
+    /// Budget comparison data for bar chart
+    /// </summary>
+    public ObservableCollection<BudgetComparisonData> BudgetComparisonData { get; } = new();
+
+    /// <summary>
+    /// Foreground color (for UI binding)
+    /// </summary>
+    [ObservableProperty]
+    private string foreground = "#000000";
+
+    /// <summary>
+    /// Whether budget is over budget
+    /// </summary>
+    [ObservableProperty]
+    private bool isOverBudget;
+
+    /// <summary>
+    /// Percentage value
+    /// </summary>
+    [ObservableProperty]
+    private decimal percentage;
+
+    /// <summary>
+    /// Self-reference for DataContext binding
+    /// </summary>
+    public BudgetViewModel ViewModel => this;
+
+    /// <summary>
     /// Constructor with dependency injection
     /// Subscribes to enterprise change messages for automatic refresh
     /// </summary>
-    public BudgetViewModel(IEnterpriseRepository enterpriseRepository)
+    public BudgetViewModel(IEnterpriseRepository enterpriseRepository, IBudgetRepository budgetRepository)
     {
         _enterpriseRepository = enterpriseRepository ?? throw new ArgumentNullException(nameof(enterpriseRepository));
+        _budgetRepository = budgetRepository ?? throw new ArgumentNullException(nameof(budgetRepository));
+
+        // Initialize live update timer (refresh every 5 minutes)
+        _refreshTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromMinutes(5)
+        };
+        _refreshTimer.Tick += async (s, e) => await RefreshBudgetsAsync();
 
         // Subscribe to enterprise change messages
         WeakReferenceMessenger.Default.Register<EnterpriseChangedMessage>(this, (recipient, message) =>
@@ -120,6 +246,279 @@ public partial class BudgetViewModel : ObservableObject, IDisposable
                 message.EnterpriseName, message.ChangeType);
             _ = RefreshBudgetDataAsync();
         });
+    }
+
+    /// <summary>
+    /// Starts the live update timer
+    /// </summary>
+    public void StartLiveUpdates()
+    {
+        if (!_refreshTimer.IsEnabled)
+        {
+            _refreshTimer.Start();
+            Log.Information("Started budget live updates with 5-minute interval");
+        }
+    }
+
+    /// <summary>
+    /// Stops the live update timer
+    /// </summary>
+    public void StopLiveUpdates()
+    {
+        if (_refreshTimer.IsEnabled)
+        {
+            _refreshTimer.Stop();
+            Log.Information("Stopped budget live updates");
+        }
+    }
+
+    /// <summary>
+    /// Async load budgets for selected fiscal year using Task.Run
+    /// </summary>
+    private async Task LoadBudgetsAsync()
+    {
+        try
+        {
+            IsBusy = true;
+            ProgressText = $"Loading budgets for {SelectedFiscalYear}...";
+
+            // Extract year from "FY 2025" format
+            var yearStr = SelectedFiscalYear.Replace("FY", "").Trim();
+            if (!int.TryParse(yearStr, out var fiscalYear))
+            {
+                throw new InvalidOperationException($"Invalid fiscal year format: {SelectedFiscalYear}");
+            }
+
+            // Use Task.Run for async data loading to avoid UI thread blocking
+            var budgets = await Task.Run(() => _budgetRepository.GetBudgetHierarchyAsync(fiscalYear));
+
+            // Update UI on dispatcher thread
+            Application.Current?.Dispatcher.Invoke(() =>
+            {
+                BudgetAccounts.Clear();
+                foreach (var budget in budgets)
+                {
+                    // Convert BudgetEntry to BudgetAccount
+                    var account = new BudgetAccount
+                    {
+                        Id = budget.Id,
+                        AccountNumber = budget.AccountNumber,
+                        Description = budget.Description,
+                        FundType = budget.FundType.ToString(),
+                        BudgetAmount = budget.BudgetedAmount,
+                        ActualAmount = budget.ActualAmount,
+                        ParentId = budget.ParentId ?? -1
+                    };
+                    BudgetAccounts.Add(account);
+                }
+
+                UpdateTotalsAndCharts();
+            });
+
+            ProgressText = $"Loaded {BudgetAccounts.Count} budget accounts";
+            Log.Information("Successfully loaded {Count} budget accounts for {Year}", BudgetAccounts.Count, fiscalYear);
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Failed to load budgets: {ex.Message}";
+            HasError = true;
+            AnalysisStatus = $"Error: {ex.Message}";
+            Log.Error(ex, "Failed to load budgets for {Year}", SelectedFiscalYear);
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    /// <summary>
+    /// Refreshes budget data (called by timer)
+    /// </summary>
+    private async Task RefreshBudgetsAsync()
+    {
+        await LoadBudgetsAsync();
+    }
+
+    /// <summary>
+    /// Toggle fiscal year command
+    /// </summary>
+    [RelayCommand]
+    private async Task ToggleFiscalYearAsync()
+    {
+        // Find next year in the list
+        var currentIndex = FiscalYears.IndexOf(SelectedFiscalYear);
+        var nextIndex = (currentIndex + 1) % FiscalYears.Count;
+        SelectedFiscalYear = FiscalYears[nextIndex];
+
+        await LoadBudgetsAsync();
+        Log.Information("Toggled fiscal year to {Year}", SelectedFiscalYear);
+    }
+
+    /// <summary>
+    /// Save confirmation command with MessageBox
+    /// </summary>
+    [RelayCommand]
+    private async Task SaveConfirmationAsync()
+    {
+        if (BudgetAccounts.Any(a => a.IsOverBudget))
+        {
+            var result = MessageBox.Show(
+                "Some accounts are over budget. Are you sure you want to save?",
+                "Budget Overrun Warning",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning);
+
+            if (result != MessageBoxResult.Yes)
+            {
+                Log.Information("User canceled save due to budget overruns");
+                return;
+            }
+        }
+
+        try
+        {
+            IsBusy = true;
+            ProgressText = "Saving budget changes...";
+
+            // Save logic here (update repository)
+            await Task.Run(async () =>
+            {
+                foreach (var account in BudgetAccounts)
+                {
+                    // Convert back to BudgetEntry and update
+                    var entry = new BudgetEntry
+                    {
+                        Id = account.Id,
+                        AccountNumber = account.AccountNumber,
+                        Description = account.Description,
+                        FundType = Enum.TryParse<WileyWidget.Models.Entities.FundType>(account.FundType, out var fundType) 
+                            ? fundType 
+                            : WileyWidget.Models.Entities.FundType.GeneralFund,
+                        BudgetedAmount = account.BudgetAmount,
+                        ActualAmount = account.ActualAmount,
+                        ParentId = account.ParentId == -1 ? null : account.ParentId
+                    };
+                    await _budgetRepository.UpdateAsync(entry);
+                }
+            });
+
+            MessageBox.Show("Budget saved successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            ProgressText = "Budget saved successfully";
+            Log.Information("Budget saved successfully");
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Failed to save budget: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            ErrorMessage = $"Failed to save: {ex.Message}";
+            HasError = true;
+            Log.Error(ex, "Failed to save budget");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    /// <summary>
+    /// Navigate to Municipal Account View
+    /// </summary>
+    [RelayCommand]
+    private void NavigateToMunicipalAccount()
+    {
+        // Send navigation message to MainViewModel
+        WeakReferenceMessenger.Default.Send(new NavigationMessage
+        {
+            TargetView = "MunicipalAccountView"
+        });
+        Log.Information("Navigating to MunicipalAccountView");
+    }
+
+    /// <summary>
+    /// Updates totals and chart data
+    /// </summary>
+    private void UpdateTotalsAndCharts()
+    {
+        TotalBudget = BudgetAccounts.Sum(a => a.BudgetAmount);
+        TotalActual = BudgetAccounts.Sum(a => a.ActualAmount);
+        TotalVariance = TotalBudget - TotalActual;
+
+        // Update distribution data
+        BudgetDistributionData.Clear();
+        var fundGroups = BudgetAccounts.GroupBy(a => a.FundType);
+        foreach (var group in fundGroups)
+        {
+            var amount = group.Sum(a => a.BudgetAmount);
+            BudgetDistributionData.Add(new BudgetDistributionData
+            {
+                FundType = group.Key,
+                Amount = amount,
+                Percentage = TotalBudget > 0 ? (double)(amount / TotalBudget) : 0
+            });
+        }
+
+        // Update comparison data
+        BudgetComparisonData.Clear();
+        foreach (var group in fundGroups)
+        {
+            BudgetComparisonData.Add(new BudgetComparisonData
+            {
+                Category = group.Key,
+                BudgetAmount = group.Sum(a => a.BudgetAmount),
+                ActualAmount = group.Sum(a => a.ActualAmount)
+            });
+        }
+    }
+
+    #region IDataErrorInfo Implementation
+
+    /// <summary>
+    /// Gets the error message for the entire object
+    /// </summary>
+    public string Error
+    {
+        get
+        {
+            if (BudgetAccounts.Any(a => a.IsOverBudget))
+            {
+                return "One or more accounts are over budget";
+            }
+            return string.Empty;
+        }
+    }
+
+    /// <summary>
+    /// Gets the error message for a specific property
+    /// </summary>
+    public string this[string columnName]
+    {
+        get
+        {
+            switch (columnName)
+            {
+                case nameof(TotalBudget):
+                    if (TotalBudget <= 0)
+                        return "Total budget must be greater than zero";
+                    break;
+                case nameof(TotalActual):
+                    if (TotalActual > TotalBudget)
+                        return "Total actual expenses exceed total budget";
+                    break;
+            }
+            return string.Empty;
+        }
+    }
+
+    #endregion
+
+    /// <summary>
+    /// Constructor with dependency injection (original signature for backward compatibility)
+    /// </summary>
+    public BudgetViewModel(IEnterpriseRepository enterpriseRepository) 
+        : this(enterpriseRepository, null!)
+    {
+        // Fallback constructor - budget repository will be null
+        // This maintains compatibility with existing tests
+        Log.Warning("BudgetViewModel created without IBudgetRepository - some features will be unavailable");
     }
 
     /// <summary>
@@ -346,16 +745,6 @@ public partial class BudgetViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>
-    /// Exports budget report (placeholder for future implementation)
-    /// </summary>
-    [RelayCommand]
-    private void ExportReport()
-    {
-        // TODO: Implement export functionality
-        AnalysisStatus = "Export functionality not yet implemented";
-    }
-
-    /// <summary>
     /// Clears any error state
     /// </summary>
     private void ClearError()
@@ -404,4 +793,31 @@ public class BudgetDetailItem
     public decimal MonthlyBalance { get; set; }
     public decimal BreakEvenRate { get; set; }
     public string Status { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Data model for budget performance data
+/// </summary>
+public class BudgetPerformanceData
+{
+    public string Category { get; set; } = string.Empty;
+    public decimal Value { get; set; }
+}
+
+/// <summary>
+/// Data model for projected rate data
+/// </summary>
+public class ProjectedRateData
+{
+    public string Period { get; set; } = string.Empty;
+    public decimal Rate { get; set; }
+}
+
+/// <summary>
+/// Data model for rate trend data
+/// </summary>
+public class RateTrendData
+{
+    public string Period { get; set; } = string.Empty;
+    public decimal Trend { get; set; }
 }

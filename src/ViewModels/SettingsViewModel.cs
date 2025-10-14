@@ -9,6 +9,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
+using WileyWidget.Business.Interfaces;
 using WileyWidget.Data;
 using WileyWidget.Services;
 using Syncfusion.SfSkinManager;
@@ -23,8 +24,9 @@ namespace WileyWidget.ViewModels
         private readonly ILogger<SettingsViewModel> _logger;
         private readonly IOptions<AppOptions> _appOptions;
         private readonly IOptionsMonitor<AppOptions> _appOptionsMonitor;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly AppDbContext _dbContext;
-    private readonly ISecretVaultService _secretVaultService;
+        private readonly ISecretVaultService _secretVaultService;
         private readonly IQuickBooksService _quickBooksService;
         private readonly ISyncfusionLicenseService _syncfusionLicenseService;
         private readonly IAIService _aiService;
@@ -69,13 +71,33 @@ namespace WileyWidget.ViewModels
 
         // General Settings
         [ObservableProperty]
+        [property: Category("Appearance")]
+        [property: DisplayName("Available Themes")]
+        [property: Description("List of available application themes")]
         private ObservableCollection<string> availableThemes = new() { "FluentDark", "FluentLight" };
 
         [ObservableProperty]
+        [property: Category("Appearance")]
+        [property: DisplayName("Selected Theme")]
+        [property: Description("Currently selected application theme")]
         private string selectedTheme = "FluentDark";
 
         [ObservableProperty]
+        [property: Category("Appearance")]
+        [property: DisplayName("Dark Mode")]
+        [property: Description("Whether dark mode is currently enabled")]
         private bool isDarkMode;
+
+        [ObservableProperty]
+        [property: Category("System")]
+        [property: Browsable(false)]
+        private bool isLoading;
+
+        [ObservableProperty]
+        [property: Category("System")]
+        [property: DisplayName("Status Message")]
+        [property: Description("Current operation status message")]
+        private string statusMessage = "Ready";
 
         partial void OnWindowWidthChanged(int value)
         {
@@ -124,116 +146,224 @@ namespace WileyWidget.ViewModels
         }
 
         [ObservableProperty]
+        [property: Category("General")]
+        [property: DisplayName("Window Width")]
+        [property: Description("Default window width in pixels (800-3840)")]
+        [property: Range(800, 3840)]
         private int windowWidth = 1200;
 
         [ObservableProperty]
+        [property: Category("General")]
+        [property: DisplayName("Window Height")]
+        [property: Description("Default window height in pixels (600-2160)")]
+        [property: Range(600, 2160)]
         private int windowHeight = 800;
 
         [ObservableProperty]
+        [property: Category("General")]
+        [property: DisplayName("Maximize on Startup")]
+        [property: Description("Maximize the window when the application starts")]
         private bool maximizeOnStartup;
 
         [ObservableProperty]
+        [property: Category("General")]
+        [property: DisplayName("Show Splash Screen")]
+        [property: Description("Display the splash screen during application startup")]
         private bool showSplashScreen = true;
 
         // Database Settings
         [ObservableProperty]
+        [property: Category("Database")]
+        [property: DisplayName("Connection String")]
+        [property: Description("Database connection string (read-only)")]
+        [property: ReadOnly(true)]
         private string databaseConnectionString;
 
         [ObservableProperty]
+        [property: Category("Database")]
+        [property: DisplayName("Status")]
+        [property: Description("Current database connection status")]
+        [property: ReadOnly(true)]
         private string databaseStatus = "Checking...";
 
         [ObservableProperty]
+        [property: Category("Database")]
+        [property: Browsable(false)]
         private Brush databaseStatusColor = Brushes.Orange;
 
         // QuickBooks Settings
         [ObservableProperty]
+        [property: Category("QuickBooks")]
+        [property: DisplayName("Client ID")]
+        [property: Description("QuickBooks OAuth2 Client ID from Intuit Developer Portal")]
         private string quickBooksClientId;
 
         [ObservableProperty]
+        [property: Category("QuickBooks")]
+        [property: DisplayName("Client Secret")]
+        [property: Description("QuickBooks OAuth2 Client Secret (securely stored)")]
+        [property: PasswordPropertyText(true)]
         private string quickBooksClientSecret;
 
         [ObservableProperty]
+        [property: Category("QuickBooks")]
+        [property: DisplayName("Redirect URI")]
+        [property: Description("OAuth2 redirect URI (e.g., https://localhost:5001/callback)")]
         private string quickBooksRedirectUri;
 
         [ObservableProperty]
+        [property: Category("QuickBooks")]
+        [property: Browsable(false)]
         private ObservableCollection<string> quickBooksEnvironments = new() { "Sandbox", "Production" };
 
         [ObservableProperty]
+        [property: Category("QuickBooks")]
+        [property: DisplayName("Environment")]
+        [property: Description("Select Sandbox for testing or Production for live data")]
         private string selectedQuickBooksEnvironment = "Sandbox";
 
         [ObservableProperty]
+        [property: Category("QuickBooks")]
+        [property: DisplayName("Connection Status")]
+        [property: Description("Current QuickBooks connection status")]
+        [property: ReadOnly(true)]
         private string quickBooksConnectionStatus = "Not Connected";
 
         [ObservableProperty]
+        [property: Category("QuickBooks")]
+        [property: Browsable(false)]
         private Brush quickBooksStatusColor = Brushes.Red;
 
         // Syncfusion License
         [ObservableProperty]
+        [property: Category("Syncfusion")]
+        [property: DisplayName("License Key")]
+        [property: Description("Syncfusion license key (get from syncfusion.com/account)")]
+        [property: PasswordPropertyText(true)]
         private string syncfusionLicenseKey;
 
         [ObservableProperty]
+        [property: Category("Syncfusion")]
+        [property: DisplayName("License Status")]
+        [property: Description("Current license validation status")]
+        [property: ReadOnly(true)]
         private string syncfusionLicenseStatus = "Checking...";
 
         [ObservableProperty]
+        [property: Category("Syncfusion")]
+        [property: Browsable(false)]
         private Brush syncfusionLicenseStatusColor = Brushes.Orange;
 
         // XAI Settings
         [ObservableProperty]
+        [property: Category("XAI")]
+        [property: DisplayName("API Key")]
+        [property: Description("XAI API key for AI functionality (format: xai-xxxxxxxx)")]
+        [property: PasswordPropertyText(true)]
         private string xaiApiKey;
 
         [ObservableProperty]
+        [property: Category("XAI")]
+        [property: DisplayName("Base URL")]
+        [property: Description("XAI API base URL (default: https://api.x.ai/v1/)")]
         private string xaiBaseUrl = "https://api.x.ai/v1/";
 
         [ObservableProperty]
+        [property: Category("XAI")]
+        [property: DisplayName("Timeout (seconds)")]
+        [property: Description("Maximum time to wait for AI responses (5-300 seconds)")]
+        [property: Range(5, 300)]
         private int xaiTimeoutSeconds = 15;
 
         [ObservableProperty]
+        [property: Category("XAI")]
+        [property: Browsable(false)]
         private ObservableCollection<string> availableModels = new() { "grok-4-0709", "grok-beta", "grok-1" };
 
         [ObservableProperty]
+        [property: Category("XAI")]
+        [property: Browsable(false)]
         private ObservableCollection<string> availableResponseStyles = new() { "Balanced", "Creative", "Precise", "Concise" };
 
         [ObservableProperty]
+        [property: Category("XAI")]
+        [property: Browsable(false)]
         private ObservableCollection<string> availablePersonalities = new() { "Professional", "Friendly", "Technical", "Casual" };
 
         [ObservableProperty]
+        [property: Category("XAI")]
+        [property: DisplayName("Model")]
+        [property: Description("AI model to use (grok-4-0709 recommended)")]
         private string xaiModel = "grok-4-0709";
 
         [ObservableProperty]
+        [property: Category("XAI")]
+        [property: DisplayName("Response Style")]
+        [property: Description("How detailed and structured AI responses should be")]
         private string responseStyle = "Balanced";
 
         [ObservableProperty]
+        [property: Category("XAI")]
+        [property: DisplayName("Personality")]
+        [property: Description("Communication style for AI responses")]
         private string personality = "Professional";
 
         [ObservableProperty]
+        [property: Category("XAI")]
+        [property: DisplayName("Context Window Size")]
+        [property: Description("Maximum tokens AI can process (1024-32768)")]
+        [property: Range(1024, 32768)]
         private int contextWindowSize = 4096;
 
         [ObservableProperty]
+        [property: Category("XAI")]
+        [property: DisplayName("Enable Safety Filters")]
+        [property: Description("Enable content safety filtering")]
         private bool enableSafetyFilters = true;
 
         [ObservableProperty]
+        [property: Category("XAI")]
+        [property: DisplayName("Temperature")]
+        [property: Description("Response randomness (0.0-2.0, lower = more focused)")]
+        [property: Range(0.0, 2.0)]
         private double temperature = 0.7;
 
         [ObservableProperty]
+        [property: Category("XAI")]
+        [property: DisplayName("Max Tokens")]
+        [property: Description("Maximum tokens in response (1-4096)")]
+        [property: Range(1, 4096)]
         private int maxTokens = 2048;
 
         [ObservableProperty]
+        [property: Category("XAI")]
+        [property: DisplayName("Enable Streaming")]
+        [property: Description("Stream responses in real-time")]
         private bool enableStreaming = false;
 
         [ObservableProperty]
+        [property: Browsable(false)]
         private string temperatureValidation = string.Empty;
 
         [ObservableProperty]
+        [property: Browsable(false)]
         private string maxTokensValidation = string.Empty;
 
         [ObservableProperty]
+        [property: Category("XAI")]
+        [property: DisplayName("Connection Status")]
+        [property: Description("Current XAI connection status")]
+        [property: ReadOnly(true)]
         private string xaiConnectionStatus = "Not Configured";
 
         [ObservableProperty]
+        [property: Browsable(false)]
         private Brush xaiStatusColor = Brushes.Orange;
 
         // Fiscal Year Settings
         [ObservableProperty]
+        [property: Category("Fiscal Year")]
+        [property: Browsable(false)]
         private ObservableCollection<MonthOption> fiscalYearMonths = new()
         {
             new MonthOption { Name = "January", Value = 1 },
@@ -251,43 +381,86 @@ namespace WileyWidget.ViewModels
         };
 
         [ObservableProperty]
+        [property: Category("Fiscal Year")]
+        [property: DisplayName("Start Month")]
+        [property: Description("Month when fiscal year begins (1-12)")]
+        [property: Range(1, 12)]
         private int fiscalYearStartMonth = 7; // Default to July
 
         [ObservableProperty]
+        [property: Category("Fiscal Year")]
+        [property: DisplayName("Start Day")]
+        [property: Description("Day of month when fiscal year begins (1-31)")]
+        [property: Range(1, 31)]
         private int fiscalYearStartDay = 1;
 
         [ObservableProperty]
+        [property: Category("Fiscal Year")]
+        [property: DisplayName("Current Fiscal Year")]
+        [property: Description("Current fiscal year period")]
+        [property: ReadOnly(true)]
         private string currentFiscalYearDisplay = "Loading...";
 
         [ObservableProperty]
+        [property: Category("Fiscal Year")]
+        [property: DisplayName("Fiscal Year Period")]
+        [property: Description("Date range of current fiscal year")]
+        [property: ReadOnly(true)]
         private string fiscalYearPeriodDisplay = "Loading...";
 
         [ObservableProperty]
+        [property: Category("Fiscal Year")]
+        [property: DisplayName("Days Remaining")]
+        [property: Description("Days remaining in current fiscal year")]
+        [property: ReadOnly(true)]
         private int daysRemainingInFiscalYear;
 
         [ObservableProperty]
+        [property: Category("Fiscal Year")]
+        [property: Browsable(false)]
         private ObservableCollection<string> availableFiscalYears = new();
 
         // Advanced Settings
         [ObservableProperty]
+        [property: Category("Advanced")]
+        [property: DisplayName("Enable Dynamic Columns")]
+        [property: Description("Enable dynamic column generation in data grids")]
         private bool enableDynamicColumns = true;
 
         [ObservableProperty]
+        [property: Category("Advanced")]
+        [property: DisplayName("Enable Data Caching")]
+        [property: Description("Cache data to improve performance")]
         private bool enableDataCaching = true;
 
         [ObservableProperty]
+        [property: Category("Advanced")]
+        [property: DisplayName("Cache Expiration (minutes)")]
+        [property: Description("How long to keep cached data (1-1440 minutes)")]
+        [property: Range(1, 1440)]
         private int cacheExpirationMinutes = 30;
 
         [ObservableProperty]
+        [property: Category("Advanced")]
+        [property: Browsable(false)]
         private ObservableCollection<string> logLevels = new() { "Debug", "Information", "Warning", "Error", "Critical" };
 
         [ObservableProperty]
+        [property: Category("Advanced")]
+        [property: DisplayName("Log Level")]
+        [property: Description("Minimum log level (Debug for dev, Information for prod)")]
         private string selectedLogLevel = "Information";
 
         [ObservableProperty]
+        [property: Category("Advanced")]
+        [property: DisplayName("Enable File Logging")]
+        [property: Description("Write logs to file")]
         private bool enableFileLogging = true;
 
         [ObservableProperty]
+        [property: Category("Advanced")]
+        [property: DisplayName("Log File Path")]
+        [property: Description("Path to the log file")]
         private string logFilePath = "logs/wiley-widget.log";
 
         // Status
@@ -326,26 +499,33 @@ namespace WileyWidget.ViewModels
         private string quickBooksClientIdValidation = string.Empty;
 
         [ObservableProperty]
+        [property: Browsable(false)]
         private string quickBooksClientSecretValidation = string.Empty;
 
         [ObservableProperty]
+        [property: Browsable(false)]
         private string quickBooksRedirectUriValidation = string.Empty;
 
         [ObservableProperty]
+        [property: Browsable(false)]
         private string syncfusionLicenseKeyValidation = string.Empty;
 
         // UI State
         [ObservableProperty]
+        [property: Browsable(false)]
         private bool isBusy;
 
         [ObservableProperty]
+        [property: Browsable(false)]
         private string busyMessage;
 
         // Search and Filter
         [ObservableProperty]
+        [property: Browsable(false)]
         private string searchText = string.Empty;
 
         [ObservableProperty]
+        [property: Browsable(false)]
         private bool showAdvancedSettings = true;
 
         public bool HasUnsavedChanges { get; private set; }
@@ -354,6 +534,7 @@ namespace WileyWidget.ViewModels
             ILogger<SettingsViewModel> logger,
             IOptions<AppOptions> appOptions,
             IOptionsMonitor<AppOptions> appOptionsMonitor,
+            IUnitOfWork unitOfWork,
             AppDbContext dbContext,
             ISecretVaultService secretVaultService,
             IQuickBooksService quickBooksService,
@@ -365,6 +546,7 @@ namespace WileyWidget.ViewModels
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _appOptions = appOptions ?? throw new ArgumentNullException(nameof(appOptions));
             _appOptionsMonitor = appOptionsMonitor ?? throw new ArgumentNullException(nameof(appOptionsMonitor));
+            _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
             _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
             _secretVaultService = secretVaultService ?? throw new ArgumentNullException(nameof(secretVaultService));
             _quickBooksService = quickBooksService ?? throw new ArgumentNullException(nameof(quickBooksService));
@@ -664,10 +846,8 @@ namespace WileyWidget.ViewModels
                 IsBusy = true;
                 BusyMessage = "Saving settings...";
 
-                // Use transaction for database operations
-                using var transaction = await _dbContext.Database.BeginTransactionAsync();
-
-                try
+                // Use UnitOfWork transaction pattern for database operations
+                await _unitOfWork.ExecuteInTransactionAsync(async () =>
                 {
                     // Save to secure storage and configuration
                     await SaveGeneralSettingsAsync();
@@ -675,22 +855,13 @@ namespace WileyWidget.ViewModels
                     await SaveSyncfusionSettingsAsync();
                     await SaveXaiSettingsAsync();
                     await SaveAdvancedSettingsAsync();
+                });
 
-                    // Commit transaction
-                    await transaction.CommitAsync();
+                SettingsStatus = "Settings saved successfully";
+                HasUnsavedChanges = false;
+                LastSaved = DateTime.Now.ToString("g");
 
-                    SettingsStatus = "Settings saved successfully";
-                    HasUnsavedChanges = false;
-                    LastSaved = DateTime.Now.ToString("g");
-
-                    _logger.LogInformation("Settings saved successfully");
-                }
-                catch
-                {
-                    // Rollback transaction on error
-                    await transaction.RollbackAsync();
-                    throw;
-                }
+                _logger.LogInformation("Settings saved successfully");
             }
             catch (Exception ex)
             {
@@ -710,30 +881,33 @@ namespace WileyWidget.ViewModels
         {
             try
             {
-                // Save general settings to database
-                var settings = await _dbContext.AppSettings.FindAsync(1);
-
-                if (settings == null)
+                // Save general settings to database using async operation
+                await Task.Run(async () =>
                 {
-                    settings = new Models.AppSettings
+                    var settings = await _dbContext.AppSettings.FindAsync(1);
+
+                    if (settings == null)
                     {
-                        Id = 1,
-                        Theme = SelectedTheme,
-                        WindowWidth = WindowWidth,
-                        WindowHeight = WindowHeight,
-                        WindowMaximized = MaximizeOnStartup
-                    };
-                    _dbContext.AppSettings.Add(settings);
-                }
-                else
-                {
-                    settings.Theme = SelectedTheme;
-                    settings.WindowWidth = WindowWidth;
-                    settings.WindowHeight = WindowHeight;
-                    settings.WindowMaximized = MaximizeOnStartup;
-                }
+                        settings = new Models.AppSettings
+                        {
+                            Id = 1,
+                            Theme = SelectedTheme,
+                            WindowWidth = WindowWidth,
+                            WindowHeight = WindowHeight,
+                            WindowMaximized = MaximizeOnStartup
+                        };
+                        _dbContext.AppSettings.Add(settings);
+                    }
+                    else
+                    {
+                        settings.Theme = SelectedTheme;
+                        settings.WindowWidth = WindowWidth;
+                        settings.WindowHeight = WindowHeight;
+                        settings.WindowMaximized = MaximizeOnStartup;
+                    }
 
-                await _dbContext.SaveChangesAsync();
+                    await _unitOfWork.SaveChangesAsync();
+                });
             }
             catch (Exception ex)
             {
@@ -783,34 +957,37 @@ namespace WileyWidget.ViewModels
         {
             try
             {
-                // Save advanced settings to database
-                var settings = await _dbContext.AppSettings.FindAsync(1);
-
-                if (settings == null)
+                // Save advanced settings to database using async operation
+                await Task.Run(async () =>
                 {
-                    settings = new Models.AppSettings
+                    var settings = await _dbContext.AppSettings.FindAsync(1);
+
+                    if (settings == null)
                     {
-                        Id = 1,
-                        UseDynamicColumns = EnableDynamicColumns,
-                        EnableDataCaching = EnableDataCaching,
-                        CacheExpirationMinutes = CacheExpirationMinutes,
-                        SelectedLogLevel = SelectedLogLevel,
-                        EnableFileLogging = EnableFileLogging,
-                        LogFilePath = LogFilePath
-                    };
-                    _dbContext.AppSettings.Add(settings);
-                }
-                else
-                {
-                    settings.UseDynamicColumns = EnableDynamicColumns;
-                    settings.EnableDataCaching = EnableDataCaching;
-                    settings.CacheExpirationMinutes = CacheExpirationMinutes;
-                    settings.SelectedLogLevel = SelectedLogLevel;
-                    settings.EnableFileLogging = EnableFileLogging;
-                    settings.LogFilePath = LogFilePath;
-                }
+                        settings = new Models.AppSettings
+                        {
+                            Id = 1,
+                            UseDynamicColumns = EnableDynamicColumns,
+                            EnableDataCaching = EnableDataCaching,
+                            CacheExpirationMinutes = CacheExpirationMinutes,
+                            SelectedLogLevel = SelectedLogLevel,
+                            EnableFileLogging = EnableFileLogging,
+                            LogFilePath = LogFilePath
+                        };
+                        _dbContext.AppSettings.Add(settings);
+                    }
+                    else
+                    {
+                        settings.UseDynamicColumns = EnableDynamicColumns;
+                        settings.EnableDataCaching = EnableDataCaching;
+                        settings.CacheExpirationMinutes = CacheExpirationMinutes;
+                        settings.SelectedLogLevel = SelectedLogLevel;
+                        settings.EnableFileLogging = EnableFileLogging;
+                        settings.LogFilePath = LogFilePath;
+                    }
 
-                await _dbContext.SaveChangesAsync();
+                    await _unitOfWork.SaveChangesAsync();
+                });
             }
             catch (Exception ex)
             {
@@ -975,28 +1152,32 @@ namespace WileyWidget.ViewModels
             {
                 SettingsStatus = "Saving fiscal year settings...";
 
-                // Update FiscalYearSettings in database
-                var fySettings = await _dbContext.FiscalYearSettings.FindAsync(1);
-                
-                if (fySettings == null)
+                // Update FiscalYearSettings in database using async operation
+                await Task.Run(async () =>
                 {
-                    fySettings = new Models.FiscalYearSettings
+                    var fySettings = await _dbContext.FiscalYearSettings.FindAsync(1);
+                    
+                    if (fySettings == null)
                     {
-                        Id = 1,
-                        FiscalYearStartMonth = FiscalYearStartMonth,
-                        FiscalYearStartDay = FiscalYearStartDay,
-                        LastModified = DateTime.UtcNow
-                    };
-                    _dbContext.FiscalYearSettings.Add(fySettings);
-                }
-                else
-                {
-                    fySettings.FiscalYearStartMonth = FiscalYearStartMonth;
-                    fySettings.FiscalYearStartDay = FiscalYearStartDay;
-                    fySettings.LastModified = DateTime.UtcNow;
-                }
+                        fySettings = new Models.FiscalYearSettings
+                        {
+                            Id = 1,
+                            FiscalYearStartMonth = FiscalYearStartMonth,
+                            FiscalYearStartDay = FiscalYearStartDay,
+                            LastModified = DateTime.UtcNow
+                        };
+                        _dbContext.FiscalYearSettings.Add(fySettings);
+                    }
+                    else
+                    {
+                        fySettings.FiscalYearStartMonth = FiscalYearStartMonth;
+                        fySettings.FiscalYearStartDay = FiscalYearStartDay;
+                        fySettings.LastModified = DateTime.UtcNow;
+                    }
 
-                await _dbContext.SaveChangesAsync();
+                    await _unitOfWork.SaveChangesAsync();
+                });
+                
                 await LoadFiscalYearDisplayAsync();
 
                 SettingsStatus = "Fiscal year settings saved successfully";

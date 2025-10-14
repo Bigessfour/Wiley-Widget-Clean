@@ -3,9 +3,11 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Data;
 using System.Windows.Media;
 using WileyWidget.Models;
 using WileyWidget.Business.Interfaces;
@@ -13,7 +15,7 @@ using WileyWidget.Services;
 
 namespace WileyWidget.ViewModels
 {
-    public partial class DashboardViewModel : ObservableObject
+    public partial class DashboardViewModel : ObservableObject, IDataErrorInfo
     {
         private readonly ILogger<DashboardViewModel> _logger;
         private readonly IEnterpriseRepository _enterpriseRepository;
@@ -117,6 +119,22 @@ namespace WileyWidget.ViewModels
         [ObservableProperty]
         private string statusMessage = "Ready";
 
+        // Missing properties for view bindings
+        [ObservableProperty]
+        private string currentTheme = "Light";
+
+        [ObservableProperty]
+        private ObservableCollection<BudgetUtilizationData> budgetUtilizationData = new();
+
+        [ObservableProperty]
+        private decimal progressPercentage;
+
+        [ObservableProperty]
+        private decimal remainingBudget;
+
+        [ObservableProperty]
+        private decimal spentAmount;
+
         // Growth scenario properties
         [ObservableProperty]
         private decimal payRaisePercentage;
@@ -148,6 +166,36 @@ namespace WileyWidget.ViewModels
 
         [ObservableProperty]
         private ObservableCollection<Enterprise> filteredEnterprises = new();
+
+        // Error handling
+        [ObservableProperty]
+        private string errorMessage = string.Empty;
+
+        // IDataErrorInfo implementation for validation
+        public string Error => string.Empty;
+
+        public string this[string columnName]
+        {
+            get
+            {
+                switch (columnName)
+                {
+                    case nameof(TotalBudget):
+                        if (TotalBudget < 0)
+                            return "Total budget cannot be negative";
+                        break;
+                    case nameof(TotalEnterprises):
+                        if (TotalEnterprises < 0)
+                            return "Total enterprises cannot be negative";
+                        break;
+                    case nameof(ActiveProjects):
+                        if (ActiveProjects < 0)
+                            return "Active projects cannot be negative";
+                        break;
+                }
+                return string.Empty;
+            }
+        }
 
         public DashboardViewModel(
             ILogger<DashboardViewModel> logger,
@@ -227,8 +275,12 @@ namespace WileyWidget.ViewModels
         {
             try
             {
+                ErrorMessage = string.Empty;
                 Enterprises.Clear();
-                var enterprises = await Task.Run(() => _enterpriseRepository.GetAllAsync());
+                
+                // Use Task.Run for async data loading to avoid blocking UI
+                var enterprises = await Task.Run(async () => await _enterpriseRepository.GetAllAsync());
+                
                 foreach (var enterprise in enterprises)
                 {
                     Enterprises.Add(enterprise);
@@ -243,6 +295,7 @@ namespace WileyWidget.ViewModels
             }
             catch (Exception ex)
             {
+                ErrorMessage = $"Failed to load enterprises: {ex.Message}";
                 _logger.LogError(ex, "Error loading enterprises");
             }
         }
@@ -705,6 +758,12 @@ namespace WileyWidget.ViewModels
         {
             FilterEnterprises();
         }
+
+        [RelayCommand]
+        private void ClearSearch()
+        {
+            SearchText = string.Empty;
+        }
     }
 
     // Data models for dashboard
@@ -739,5 +798,13 @@ namespace WileyWidget.ViewModels
         public string Message { get; set; }
         public DateTime Timestamp { get; set; }
         public Brush PriorityColor { get; set; }
+    }
+
+    public class BudgetUtilizationData
+    {
+        public string Category { get; set; }
+        public decimal Budgeted { get; set; }
+        public decimal Actual { get; set; }
+        public decimal UtilizationPercent { get; set; }
     }
 }

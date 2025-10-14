@@ -11,6 +11,7 @@ using System.Globalization;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Linq;
 using Syncfusion.UI.Xaml.Chat;
 
 namespace WileyWidget.ViewModels;
@@ -23,6 +24,24 @@ public partial class AIAssistViewModel : ObservableObject
     private readonly IAIService _aiService;
 
     public ObservableCollection<ChatMessage> ChatMessages { get; } = new();
+
+    /// <summary>
+    /// Responses collection for chat UI binding (chat history)
+    /// Notifies on collection changes for auto-scroll
+    /// </summary>
+    private ObservableCollection<object> _responses = new();
+    public ObservableCollection<object> Responses
+    {
+        get => _responses;
+        private set
+        {
+            if (SetProperty(ref _responses, value))
+            {
+                // Subscribe to collection changes for notifications
+                _responses.CollectionChanged += (s, e) => OnPropertyChanged(nameof(Responses));
+            }
+        }
+    }
 
     [ObservableProperty]
     private string messageText = string.Empty;
@@ -38,6 +57,12 @@ public partial class AIAssistViewModel : ObservableObject
 
     [ObservableProperty]
     private bool isTyping = false;
+
+    /// <summary>
+    /// Error message for service failures
+    /// </summary>
+    [ObservableProperty]
+    private string errorMessage = string.Empty;
 
     /// <summary>
     /// Available conversation modes
@@ -125,6 +150,36 @@ public partial class AIAssistViewModel : ObservableObject
     public ObservableCollection<string> ConversationHistory { get; } = new() { "Budget Analysis - Q1", "Rate Increase Scenario", "Reserve Fund Planning" };
 
     /// <summary>
+    /// Enable proactive monitoring feature
+    /// </summary>
+    [ObservableProperty]
+    private bool enableProactiveMonitoring;
+
+    /// <summary>
+    /// Threshold for proactive alerts
+    /// </summary>
+    [ObservableProperty]
+    private decimal proactiveAlertThreshold = 80;
+
+    /// <summary>
+    /// Current value for what-if scenarios
+    /// </summary>
+    [ObservableProperty]
+    private decimal whatIfNewValue;
+
+    /// <summary>
+    /// Selected what-if scenario
+    /// </summary>
+    [ObservableProperty]
+    private string whatIfScenario = string.Empty;
+
+    /// <summary>
+    /// Variable being analyzed in what-if scenario
+    /// </summary>
+    [ObservableProperty]
+    private string whatIfVariable = string.Empty;
+
+    /// <summary>
     /// Service charge calculator service
     /// </summary>
     private readonly IChargeCalculatorService _chargeCalculator;
@@ -143,12 +198,161 @@ public partial class AIAssistViewModel : ObservableObject
         _chargeCalculator = chargeCalculator ?? throw new ArgumentNullException(nameof(chargeCalculator));
         _scenarioEngine = scenarioEngine ?? throw new ArgumentNullException(nameof(scenarioEngine));
 
+        // Initialize Responses collection with notification
+        Responses = new ObservableCollection<object>();
+        Responses.CollectionChanged += (s, e) => OnPropertyChanged(nameof(Responses));
+
         // Set default mode to General Assistant
         SetConversationMode("General");
     }
 
     /// <summary>
-    /// Send message command
+    /// Send command - Processes query with IChargeCalculatorService and populates Responses collection
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanSend))]
+    private async Task Send()
+    {
+        if (string.IsNullOrWhiteSpace(QueryText))
+        {
+            ErrorMessage = "Please enter a query.";
+            return;
+        }
+
+        var userQuery = QueryText.Trim();
+        QueryText = string.Empty;
+        ErrorMessage = string.Empty;
+
+        // Add user message to Responses
+        Responses.Add(new ChatMessage
+        {
+            Author = CurrentUser,
+            Text = userQuery,
+            DateTime = DateTime.Now
+        });
+
+        // Show typing indicator and processing
+        IsTyping = true;
+        IsProcessing = true;
+
+        try
+        {
+            // Parse enterprise ID from query (e.g., "Calculate charge for Enterprise 1")
+            var enterpriseId = ExtractEnterpriseId(userQuery);
+
+            // Execute charge calculation asynchronously
+            var recommendation = await Task.Run(async () =>
+            {
+                if (enterpriseId.HasValue)
+                {
+                    return await _chargeCalculator.CalculateRecommendedChargeAsync(enterpriseId.Value);
+                }
+                else
+                {
+                    // Default to enterprise ID 1 for testing
+                    return await _chargeCalculator.CalculateRecommendedChargeAsync(1);
+                }
+            });
+
+            // Format response message
+            var responseText = FormatServiceChargeResponse(recommendation);
+
+            // Add AI response to Responses
+            Responses.Add(new ChatMessage
+            {
+                Author = new Author { Name = "AI Assistant" },
+                Text = responseText,
+                DateTime = DateTime.Now
+            });
+
+            Log.Information("Service charge calculation completed for enterprise {EnterpriseId}", enterpriseId ?? 1);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error processing query: {Query}", userQuery);
+            ErrorMessage = $"Error: {ex.Message}";
+
+            // Add error message to chat
+            Responses.Add(new ChatMessage
+            {
+                Author = new Author { Name = "AI Assistant" },
+                Text = $"I encountered an error processing your request: {ex.Message}\n\nPlease try again or rephrase your query.",
+                DateTime = DateTime.Now
+            });
+        }
+        finally
+        {
+            IsTyping = false;
+            IsProcessing = false;
+        }
+    }
+
+    private bool CanSend() => !string.IsNullOrWhiteSpace(QueryText) && !IsProcessing;
+
+    /// <summary>
+    /// Clear responses command
+    /// </summary>
+    [RelayCommand]
+    private void ClearResponses()
+    {
+        Responses.Clear();
+        ErrorMessage = string.Empty;
+        Log.Information("Chat responses cleared");
+    }
+
+    /// <summary>
+    /// Extract enterprise ID from query string
+    /// </summary>
+    private int? ExtractEnterpriseId(string query)
+    {
+        // Look for patterns like "Enterprise 1", "enterprise id 2", "ID:3", etc.
+        var match = Regex.Match(query, @"(?:enterprise|id)[:\s]+(\d+)", RegexOptions.IgnoreCase);
+        if (match.Success && int.TryParse(match.Groups[1].Value, out int id))
+        {
+            return id;
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Format service charge recommendation into readable response
+    /// </summary>
+    private string FormatServiceChargeResponse(ServiceChargeRecommendation recommendation)
+    {
+        var response = new System.Text.StringBuilder();
+        response.AppendLine($"📊 **Service Charge Analysis for Enterprise {recommendation.EnterpriseId}**");
+        response.AppendLine($"**{recommendation.EnterpriseName}**");
+        response.AppendLine();
+        response.AppendLine($"**Recommended Rate:** ${recommendation.RecommendedRate:N2}/month");
+        response.AppendLine($"**Current Rate:** ${recommendation.CurrentRate:N2}/month");
+        response.AppendLine();
+        response.AppendLine($"**Financial Details:**");
+        response.AppendLine($"- Total Monthly Expenses: ${recommendation.TotalMonthlyExpenses:N2}");
+        response.AppendLine($"- Monthly Revenue at Recommended: ${recommendation.MonthlyRevenueAtRecommended:N2}");
+        response.AppendLine($"- Monthly Surplus: ${recommendation.MonthlySurplus:N2}");
+        response.AppendLine($"- Reserve Allocation: ${recommendation.ReserveAllocation:N2}");
+        response.AppendLine();
+        response.AppendLine($"**Break-Even Analysis:**");
+        response.AppendLine($"- Break-Even Rate: ${recommendation.BreakEvenAnalysis.BreakEvenRate:N2}");
+        response.AppendLine($"- Current Surplus/Deficit: ${recommendation.BreakEvenAnalysis.CurrentSurplusDeficit:N2}");
+        response.AppendLine($"- Required Rate Increase: {recommendation.BreakEvenAnalysis.RequiredRateIncrease:F1}%");
+        response.AppendLine($"- Coverage Ratio: {recommendation.BreakEvenAnalysis.CoverageRatio:F2}");
+        response.AppendLine();
+        if (recommendation.Assumptions.Any())
+        {
+            response.AppendLine($"**Assumptions:**");
+            foreach (var assumption in recommendation.Assumptions)
+            {
+                response.AppendLine($"- {assumption}");
+            }
+            response.AppendLine();
+        }
+        response.AppendLine($"*Analysis generated on {recommendation.CalculationDate:g}*");
+
+        return response.ToString();
+    }
+
+    /// <summary>
+    /// Send message command (legacy - for ChatMessages collection)
     /// </summary>
     [RelayCommand(CanExecute = nameof(CanSendMessage))]
     private async Task SendMessage()
