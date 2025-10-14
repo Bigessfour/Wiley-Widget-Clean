@@ -56,19 +56,19 @@ public static class DatabaseConfiguration
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        // Use Microsoft's built-in AddDbContextFactory for proper factory registration
-        // This automatically registers both DbContext (scoped) and IDbContextFactory<TContext> (singleton)
-        services.AddDbContextFactory<AppDbContext>((sp, options) =>
+        // EF Core DI Lifetime Fix: Use AddDbContext with Scoped lifetime (WPF pattern)
+        // This avoids the captive dependency issue where Singleton factory consumes Scoped options
+        services.AddDbContext<AppDbContext>((sp, options) =>
         {
-            options.UseApplicationServiceProvider(sp);
             ConfigureAppDbContext(sp, options);
-        });
+        }, ServiceLifetime.Scoped);
 
-        // Provide scoped DbContext instances for services that require direct context injection
-        services.AddScoped<AppDbContext>(sp =>
+        // For repositories using factory pattern: create scoped factory wrapper
+        // This ensures all DB access is properly scoped and no captive dependencies
+        services.AddScoped<IDbContextFactory<AppDbContext>>(sp =>
         {
-            var factory = sp.GetRequiredService<IDbContextFactory<AppDbContext>>();
-            return factory.CreateDbContext();
+            var dbContext = sp.GetRequiredService<AppDbContext>();
+            return new ScopedDbContextFactory(dbContext);
         });
 
         // Add enterprise health checks
@@ -327,21 +327,20 @@ public static class DatabaseConfiguration
             {
                 var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
                 return new XAIService(httpClientFactory, configuration, sp.GetRequiredService<ILogger<XAIService>>(), xaiApiKey);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Failed to initialize XAIService. Falling back to DevNullAIService");
-                return new DevNullAIService();
-            }
-        });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to initialize XAIService. Falling back to DevNullAIService");
+            return new DevNullAIService();
+        }
+    });
 
-        services.TryAddSingleton<IChargeCalculatorService, ServiceChargeCalculatorService>();
-        services.TryAddSingleton<IWhatIfScenarioEngine, WhatIfScenarioEngine>();
+    // Register as Scoped (not Singleton) to avoid lifetime conflicts with scoped dependencies
+    services.TryAddScoped<IChargeCalculatorService, ServiceChargeCalculatorService>();
+    services.TryAddScoped<IWhatIfScenarioEngine, WhatIfScenarioEngine>();
 
-        // Register FiscalYearSettings as singleton (configuration data)
-        services.AddSingleton<FiscalYearSettings>();
-
-        // Register Unit of Work (Clean Architecture - UI only depends on Business layer)
+    // Register FiscalYearSettings as singleton (configuration data)
+    services.AddSingleton<FiscalYearSettings>();        // Register Unit of Work (Clean Architecture - UI only depends on Business layer)
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         // Register health check configuration (service lifetime singleton)
@@ -448,6 +447,25 @@ public static class DatabaseConfiguration
                 }
 
                 logger.LogInformation("{DatabaseType} database connection verified - applying migrations", databaseType);
+
+                // Check for pending model changes (EF Core 8.0+)
+                // This helps detect when migrations are needed but not yet created
+                try
+                {
+                    var hasPendingChanges = context.Database.HasPendingModelChanges();
+                    if (hasPendingChanges)
+                    {
+                        logger.LogWarning("⚠️ Pending model changes detected! The model has changed since the last migration. Run 'dotnet ef migrations add <MigrationName>' to create a new migration.");
+                    }
+                    else
+                    {
+                        logger.LogInformation("✓ No pending model changes - database schema is up to date with the model");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(ex, "Unable to check for pending model changes - this may indicate a migration issue");
+                }
 
                 // Apply migrations
                 await context.Database.MigrateAsync();
@@ -820,3 +838,25 @@ public class SqlServerHealthCheck : Microsoft.Extensions.Diagnostics.HealthCheck
     }
 }
 
+/// <summary>
+/// Scoped wrapper for IDbContextFactory that ensures proper lifetime management.
+/// This prevents captive dependency issues by providing a scoped factory implementation.
+/// </summary>
+internal sealed class ScopedDbContextFactory : IDbContextFactory<AppDbContext>
+{
+    private readonly AppDbContext _context;
+
+    public ScopedDbContextFactory(AppDbContext context)
+    {
+        _context = context ?? throw new ArgumentNullException(nameof(context));
+    }
+
+    /// <summary>
+    /// Returns the scoped DbContext instance.
+    /// In a scoped factory, we return the same instance that was injected.
+    /// </summary>
+    public AppDbContext CreateDbContext()
+    {
+        return _context;
+    }
+}

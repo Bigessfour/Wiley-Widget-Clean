@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Windows;
 using Microsoft.EntityFrameworkCore;
@@ -91,7 +92,7 @@ public static class WpfHostingExtensions
         // Add user secrets in development
         if (builder.Environment.IsDevelopment())
         {
-            builder.Configuration.AddUserSecrets<App>();
+            builder.Configuration.AddUserSecrets<WileyWidget.App>();
             Log.Debug("🔧 User secrets added for development environment");
         }
 
@@ -136,6 +137,24 @@ public static class WpfHostingExtensions
         var firstSinkName = builder.Configuration["Serilog:WriteTo:0:Name"];
         Log.Debug("[Bootstrap] Serilog configuration section found: {Exists}", serilogSection.Exists());
         Log.Debug("[Bootstrap] Serilog WriteTo[0] Name from configuration: {FirstSinkName}", firstSinkName);
+
+        // Diagnostic: Log all WriteTo sinks to verify Email is not present
+        var writeTo = builder.Configuration.GetSection("Serilog:WriteTo").GetChildren();
+        var sinkNames = string.Join(", ", writeTo.Select(s => $"{s.Key}={s["Name"]}"));
+        Log.Debug("[Bootstrap] All configured WriteTo sinks: {SinkNames}", sinkNames);
+
+        // Diagnostic: Check if Email sink exists anywhere
+        var emailSink = writeTo.FirstOrDefault(s => s["Name"]?.Equals("Email", StringComparison.OrdinalIgnoreCase) == true);
+        if (emailSink != null)
+        {
+            Log.Error("[Bootstrap] ⚠️ EMAIL SINK DETECTED! This should not exist. Section path: {Path}", emailSink.Path);
+            Log.Error("[Bootstrap] Email sink config: {EmailConfig}", string.Join(", ", 
+                emailSink.GetSection("Args").GetChildren().Select(c => $"{c.Key}={c.Value}")));
+        }
+        else
+        {
+            Log.Information("[Bootstrap] ✅ Email sink NOT found - configuration is correct");
+        }
 
         if (!serilogSection.Exists() || string.IsNullOrWhiteSpace(firstSinkName))
         {
@@ -213,15 +232,18 @@ public static class WpfHostingExtensions
 
         // Critical services - load immediately
     services.AddSingleton<AuthenticationService>();
-    services.AddSingleton<ISyncfusionLicenseService, SyncfusionLicenseService>();
+        services.AddSingleton<ISyncfusionLicenseService, SyncfusionLicenseService>();
     services.AddSingleton<ApplicationMetricsService>();
     services.AddSingleton<SettingsService>();
     services.AddSingleton<ISettingsService>(sp => sp.GetRequiredService<SettingsService>());
         services.AddSingleton(ErrorReportingService.Instance);
         services.AddSingleton<LocalizationService>();
         services.AddSingleton<SyncfusionLicenseState>();
-        services.AddSingleton<IStartupProgressReporter>(_ => App.StartupProgress);
-        services.AddSingleton<IViewManager, ViewManager>();
+        services.AddSingleton<IStartupProgressReporter>(sp => (IStartupProgressReporter)WileyWidget.App.StartupProgress);
+        
+        // ViewManager removed - MainWindow handles all child view navigation via DockingManager
+        // MainWindow lifecycle now handled directly in App.xaml.cs OnStartup
+        
     services.AddSingleton<ThemeManager>();
     services.AddSingleton<IThemeManager>(sp => sp.GetRequiredService<ThemeManager>());
         services.AddSingleton<ISecretVaultService, LocalSecretVaultService>();
@@ -271,8 +293,12 @@ public static class WpfHostingExtensions
     {
         services.TryAddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IMunicipalAccountRepository, MunicipalAccountRepository>();
-        services.AddScoped<MainViewModel>();
-        services.AddTransient<MainWindow>();
+    services.AddTransient<MainViewModel>();
+        
+        // CRITICAL: MainWindow must be Singleton to prevent duplicate window instances
+        // MainWindow lifecycle now handled directly in App.xaml.cs OnStartup
+        services.AddSingleton<MainWindow>();
+        
         services.AddSingleton<SplashScreenWindow>(sp => SplashScreenFactory.Create(sp));
         services.AddTransient<AboutWindow>();
 
@@ -287,6 +313,7 @@ public static class WpfHostingExtensions
         services.AddTransient<ToolsViewModel>();
         services.AddTransient<ProgressViewModel>();
         services.AddTransient<MunicipalAccountViewModel>();
+        services.AddTransient<UtilityCustomerViewModel>();
     }
 
     private static void ConfigureHostedServices(IServiceCollection services)
@@ -294,7 +321,6 @@ public static class WpfHostingExtensions
         // Defer heavy background services to reduce startup time
         services.AddSingleton<BackgroundInitializationService>();
         // Only start critical hosted services immediately
-        services.AddHostedService<HostedWpfApplication>();
         services.AddHostedService<StartupTaskRunner>();
 
         // Defer non-critical services to background initialization
@@ -411,7 +437,7 @@ public static class WpfHostingExtensions
     {
         public static SplashScreenWindow Create(IServiceProvider serviceProvider)
         {
-            if (App.SplashScreenInstance is { } existing)
+            if (WileyWidget.App.SplashScreenInstance is SplashScreenWindow existing)
             {
                 return existing;
             }
@@ -422,7 +448,7 @@ public static class WpfHostingExtensions
             {
                 var created = ActivatorUtilities.CreateInstance<SplashScreenWindow>(serviceProvider);
                 splash = created;
-                App.SetSplashScreenInstance(created);
+                WileyWidget.App.SetSplashScreenInstance(created);
             }
 
             if (Application.Current?.Dispatcher?.CheckAccess() == true)

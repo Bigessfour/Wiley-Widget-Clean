@@ -150,44 +150,23 @@ public static class Program
             var appCreationStopwatch = System.Diagnostics.Stopwatch.StartNew();
 
             // Create and run the WPF application with proper STA threading
-            // Add specific exception handling around App instantiation per Microsoft WPF best practices
-            using (App app = new App())
-            {
-                appCreationStopwatch.Stop();
-                Log.Information("WPF Application instance created successfully in {ElapsedMs}ms - Session: {StartupId}",
-                    appCreationStopwatch.ElapsedMilliseconds, startupId);
+            // Prism applications don't need InitializeComponent() when using code-only setup
+            var app = new App();
+            appCreationStopwatch.Stop();
+            Log.Information("WPF Application instance created successfully in {ElapsedMs}ms - Session: {StartupId}",
+                appCreationStopwatch.ElapsedMilliseconds, startupId);
 
-                Log.Debug("Calling app.InitializeComponent() - Session: {StartupId}", startupId);
-                var initStopwatch = System.Diagnostics.Stopwatch.StartNew();
-                try
-                {
-                    app.InitializeComponent();
-                    initStopwatch.Stop();
-                    Log.Information("Application components initialized successfully in {ElapsedMs}ms - Session: {StartupId}",
-                        initStopwatch.ElapsedMilliseconds, startupId);
-                }
-                catch (Exception initEx)
-                {
-                    initStopwatch.Stop();
-                    Log.Fatal(initEx, "CRITICAL: Failed to initialize application components after {ElapsedMs}ms - Session: {StartupId}. Exception Type: {ExceptionType}",
-                        initStopwatch.ElapsedMilliseconds, startupId, initEx.GetType().Name);
-                    Log.Fatal("InitializeComponent failure details - InnerException: {InnerException}, StackTrace: {StackTrace}",
-                        initEx.InnerException?.Message ?? "None", initEx.StackTrace);
-                    throw; // Re-throw to be caught by outer exception handler
-                }
+            // Start the application - Prism will handle initialization
+            Log.Information("Starting WPF application run loop - Session: {StartupId}", startupId);
+            startupStopwatch.Stop();
+            Log.Information("Total startup preparation completed in {TotalElapsedMs}ms - Session: {StartupId}",
+                startupStopwatch.ElapsedMilliseconds, startupId);
 
-                // Start the application - this will handle the Generic Host initialization
-                Log.Information("Starting WPF application run loop - Session: {StartupId}", startupId);
-                startupStopwatch.Stop();
-                Log.Information("Total startup preparation completed in {TotalElapsedMs}ms - Session: {StartupId}",
-                    startupStopwatch.ElapsedMilliseconds, startupId);
+            var exitCode = app.Run();
 
-                var exitCode = app.Run();
-
-                Log.Information("Application exited with code: {ExitCode} - Session: {StartupId}", exitCode, startupId);
-                Log.Information("=== Application Shutdown Complete - Session: {StartupId} ===", startupId);
-                return exitCode;
-            }
+            Log.Information("Application exited with code: {ExitCode} - Session: {StartupId}", exitCode, startupId);
+            Log.Information("=== Application Shutdown Complete - Session: {StartupId} ===", startupId);
+            return exitCode;
         }
         catch (Exception ex)
         {

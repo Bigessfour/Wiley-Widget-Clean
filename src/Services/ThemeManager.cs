@@ -25,7 +25,16 @@ public class ThemeManager : IThemeManager
     {
         get
         {
-            var provider = App.ServiceProvider;
+            IServiceProvider? provider = null;
+            try
+            {
+                provider = App.GetActiveServiceProvider();
+            }
+            catch (InvalidOperationException)
+            {
+                provider = App.ServiceProvider;
+            }
+
             if (provider != null)
             {
                 try
