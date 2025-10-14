@@ -1,5 +1,6 @@
 using System;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Threading;
 using WileyWidget.ViewModels;
 using Syncfusion.SfSkinManager;
@@ -14,113 +15,47 @@ namespace WileyWidget
     /// <summary>
     /// Interaction logic for DashboardView.xaml
     /// </summary>
-    public partial class DashboardView : Window
+    public partial class DashboardView : UserControl
     {
-        private readonly DashboardViewModel _viewModel;
         private DispatcherTimer _refreshTimer;
 
         public DashboardView()
         {
             InitializeComponent();
 
-            // Note: Theme is now applied declaratively in XAML to prevent loading crashes
+            // Note: ViewModel is now auto-wired by Prism ViewModelLocator
+            // Theme is applied declaratively in XAML to prevent loading crashes
 
-            // Get the ViewModel from the service provider
-            DashboardViewModel? resolvedViewModel = null;
-            try
+            // Set up auto-refresh timer if ViewModel is available
+            if (DataContext is DashboardViewModel viewModel)
             {
-                var provider = App.GetActiveServiceProvider();
-                resolvedViewModel = provider.GetService(typeof(DashboardViewModel)) as DashboardViewModel;
-            }
-            catch (InvalidOperationException)
-            {
-                resolvedViewModel = null;
+                SetupAutoRefreshTimer(viewModel);
             }
 
-            if (resolvedViewModel != null)
-            {
-                _viewModel = resolvedViewModel;
-                DataContext = _viewModel;
-
-                // Set up auto-refresh timer
-                SetupAutoRefreshTimer();
-            }
-            else
-            {
-                // For testing purposes, allow view to load without ViewModel
-                _viewModel = null;
-                DataContext = null;
-            }
-
-            // Load dashboard data when window opens
+            // Load dashboard data when control loads
             Loaded += DashboardView_Loaded;
-            Closing += DashboardView_Closing;
-            StateChanged += DashboardView_StateChanged;
         }
 
         private async void DashboardView_Loaded(object sender, RoutedEventArgs e)
         {
-            if (_viewModel != null)
-                await _viewModel.LoadDashboardDataAsync();
-        }
-
-        private void DashboardView_StateChanged(object sender, EventArgs e)
-        {
-            if (_refreshTimer == null) return;
-
-            if (WindowState == WindowState.Minimized)
+            if (DataContext is DashboardViewModel viewModel)
             {
-                // Pause timer when window is minimized to save resources
-                _refreshTimer.Stop();
-                Log.Debug("Dashboard auto-refresh paused due to window minimization");
-            }
-            else if (WindowState == WindowState.Normal || WindowState == WindowState.Maximized)
-            {
-                // Resume timer when window is restored
-                if (_viewModel.AutoRefreshEnabled)
-                {
-                    _refreshTimer.Start();
-                    Log.Debug("Dashboard auto-refresh resumed after window restoration");
-                }
+                await viewModel.LoadDashboardDataAsync();
             }
         }
 
-        private void DashboardView_Closing(object sender, System.ComponentModel.CancelEventArgs e)
-        {
-            // Clean up timer
-            if (_refreshTimer != null)
-            {
-                _refreshTimer.Stop();
-                _refreshTimer = null;
-            }
-        }
-
-        private void SetupAutoRefreshTimer()
+        private void SetupAutoRefreshTimer(DashboardViewModel viewModel)
         {
             _refreshTimer = new DispatcherTimer();
             _refreshTimer.Tick += async (s, e) =>
             {
-                if (_viewModel.AutoRefreshEnabled)
+                if (viewModel.AutoRefreshEnabled)
                 {
-                    await _viewModel.RefreshDashboardDataAsync();
+                    await viewModel.RefreshDashboardDataAsync();
                 }
             };
-            _refreshTimer.Interval = TimeSpan.FromMinutes(_viewModel.RefreshIntervalMinutes);
+            _refreshTimer.Interval = TimeSpan.FromMinutes(viewModel.RefreshIntervalMinutes);
             _refreshTimer.Start();
-        }
-
-        public static void ShowDashboardWindow()
-        {
-            var dashboardWindow = new DashboardView();
-            dashboardWindow.Show();
-        }
-
-        /// <summary>
-        /// Attempt to apply a Syncfusion theme; falls back to Fluent Light if requested theme fails.
-        /// </summary>
-        private void TryApplyTheme(string themeName)
-        {
-            Services.ThemeUtility.TryApplyTheme(this, themeName);
         }
     }
 }

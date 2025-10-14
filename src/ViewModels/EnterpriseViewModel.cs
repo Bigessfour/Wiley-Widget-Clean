@@ -11,6 +11,8 @@ using System.Threading;
 using System.Globalization;
 using System.Diagnostics;
 using System.ComponentModel;
+using Prism.Events;
+using WileyWidget.ViewModels.Messages;
 
 namespace WileyWidget.ViewModels;
 
@@ -21,6 +23,7 @@ namespace WileyWidget.ViewModels;
 public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataErrorInfo
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IEventAggregator _eventAggregator;
 
     /// <summary>
     /// Collection of all enterprises for data binding
@@ -493,9 +496,10 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
     /// <summary>
     /// Constructor with dependency injection
     /// </summary>
-    public EnterpriseViewModel(IUnitOfWork unitOfWork)
+    public EnterpriseViewModel(IUnitOfWork unitOfWork, IEventAggregator eventAggregator)
     {
         _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
+        _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
     }
 
     /// <summary>
@@ -941,5 +945,56 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
         {
             _loadSemaphore?.Dispose();
         }
+    }
+
+    // Prism Navigation Implementation
+    public void OnNavigatedTo(NavigationContext navigationContext)
+    {
+        Log.Information("EnterpriseViewModel navigated to");
+        
+        // Handle navigation parameters
+        if (navigationContext?.Parameters != null)
+        {
+            // Check for enterprise ID parameter to select specific enterprise
+            if (navigationContext.Parameters.ContainsKey("enterpriseId"))
+            {
+                var enterpriseId = navigationContext.Parameters["enterpriseId"];
+                if (enterpriseId is int id)
+                {
+                    // Select the enterprise with the specified ID
+                    var enterprise = EnterpriseList.FirstOrDefault(e => e.Id == id);
+                    if (enterprise != null)
+                    {
+                        SelectedEnterprise = enterprise;
+                    }
+                }
+            }
+        }
+        
+        // Load enterprises if not already loaded
+        _ = LoadEnterprisesAsync();
+    }
+
+    public void OnNavigatedFrom(NavigationContext navigationContext)
+    {
+        Log.Information("EnterpriseViewModel navigated from");
+        
+        // Cleanup if needed
+    }
+
+    public bool IsNavigationTarget(NavigationContext navigationContext)
+    {
+        // Always allow navigation to enterprises view
+        return true;
+    }
+
+    // Event Handlers for EventAggregator
+    private void OnEnterpriseChanged(EnterpriseChangedMessage message)
+    {
+        Log.Information("Enterprise changed notification received: {EnterpriseName} ({ChangeType})", 
+            message.EnterpriseName, message.ChangeType);
+        
+        // Refresh enterprise list when changes occur
+        _ = LoadEnterprisesAsync();
     }
 }

@@ -1,12 +1,14 @@
 #nullable enable
 
+using Prism.Events;
+
 namespace WileyWidget.ViewModels.Messages;
 
 /// <summary>
 /// Message sent when an enterprise is changed (created, updated, deleted)
-/// Used for cross-ViewModel communication via WeakReferenceMessenger
+/// Used for cross-ViewModel communication via Prism EventAggregator
 /// </summary>
-public class EnterpriseChangedMessage
+public class EnterpriseChangedMessage : PubSubEvent<EnterpriseChangedMessage>
 {
     public int EnterpriseId { get; set; }
     public string EnterpriseName { get; set; } = string.Empty;
@@ -17,7 +19,7 @@ public class EnterpriseChangedMessage
 /// <summary>
 /// Message sent when a budget is updated
 /// </summary>
-public class BudgetUpdatedMessage
+public class BudgetUpdatedMessage : PubSubEvent<BudgetUpdatedMessage>
 {
     public string Context { get; set; } = string.Empty;
     public DateTime Timestamp { get; } = DateTime.UtcNow;
@@ -26,7 +28,7 @@ public class BudgetUpdatedMessage
 /// <summary>
 /// Message sent when data refresh is needed
 /// </summary>
-public class RefreshDataMessage
+public class RefreshDataMessage : PubSubEvent<RefreshDataMessage>
 {
     public string ViewName { get; set; } = string.Empty;
     public DateTime Timestamp { get; } = DateTime.UtcNow;
@@ -35,7 +37,7 @@ public class RefreshDataMessage
 /// <summary>
 /// Message sent to navigate to a specific view
 /// </summary>
-public class NavigationMessage
+public class NavigationMessage : PubSubEvent<NavigationMessage>
 {
     public string TargetView { get; set; } = string.Empty;
     public object? Parameter { get; set; }

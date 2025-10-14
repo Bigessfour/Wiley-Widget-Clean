@@ -10,7 +10,7 @@
              xmlns:models="clr-namespace:WileyWidget.Models;assembly=WileyWidget.Models"
              mc:Ignorable="d"
              d:DesignHeight="800"
-             d:DesignWidth="1400">
+             d:DesignWidth="1400" xmlns:prism="http://prismlibrary.com/" prism:ViewModelLocator.AutoWireViewModel="True">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
         <ObjectDataProvider x:Key="FundTypeValues" MethodName="GetValues" ObjectType="{x:Type sys:Enum}">
@@ -117,3 +117,4 @@
         </DockPanel>
     </Grid>
 </UserControl>
+

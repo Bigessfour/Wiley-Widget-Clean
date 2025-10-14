@@ -3,8 +3,10 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
         xmlns:viewModels="clr-namespace:WileyWidget.ViewModels"
+        xmlns:prism="http://prismlibrary.com/"
         Title="About Wiley Widget" SizeToContent="WidthAndHeight" WindowStartupLocation="CenterOwner"
-        ResizeMode="NoResize" Width="600" Height="500">
+        ResizeMode="NoResize" Width="600" Height="500"
+        prism:ViewModelLocator.AutoWireViewModel="True">
     <Window.Resources>
         <Style x:Key="HeaderTextStyle" TargetType="TextBlock" BasedOn="{StaticResource WileyHeaderStyle}" />
         <Style x:Key="SubHeaderTextStyle" TargetType="TextBlock" BasedOn="{StaticResource WileySubHeaderStyle}" />

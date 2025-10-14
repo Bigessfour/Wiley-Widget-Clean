@@ -1,29 +1,22 @@
-<Window x:Class="WileyWidget.Views.MunicipalAccountView"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
-        xmlns:syncfusionskin="clr-namespace:Syncfusion.SfSkinManager;assembly=Syncfusion.SfSkinManager.WPF"
-        xmlns:notification="clr-namespace:Syncfusion.Windows.Controls.Notification;assembly=Syncfusion.SfBusyIndicator.WPF"
-        xmlns:sys="clr-namespace:System;assembly=mscorlib"
-        xmlns:models="clr-namespace:WileyWidget.Models;assembly=WileyWidget.Models"
-        xmlns:viewmodels="clr-namespace:WileyWidget.ViewModels"
-        xmlns:views="clr-namespace:WileyWidget.Views"
-        xmlns:converters="clr-namespace:WileyWidget.Converters"
-        syncfusionskin:SfSkinManager.Theme="{syncfusionskin:SkinManagerExtension ThemeName=FluentDark}"
-        mc:Ignorable="d"
-        Title="Municipal Account Management" 
-        Height="900" 
-        Width="1600"
-        WindowStartupLocation="CenterScreen"
-        WindowState="Maximized">
-    
-    <Window.DataContext>
-        <viewmodels:MunicipalAccountViewModel />
-    </Window.DataContext>
-    
-    <Window.Resources>
+<UserControl x:Class="WileyWidget.Views.MunicipalAccountView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
+             xmlns:syncfusionskin="clr-namespace:Syncfusion.SfSkinManager;assembly=Syncfusion.SfSkinManager.WPF"
+             xmlns:notification="clr-namespace:Syncfusion.Windows.Controls.Notification;assembly=Syncfusion.SfBusyIndicator.WPF"
+             xmlns:sys="clr-namespace:System;assembly=mscorlib"
+             xmlns:models="clr-namespace:WileyWidget.Models;assembly=WileyWidget.Models"
+             xmlns:viewmodels="clr-namespace:WileyWidget.ViewModels"
+             xmlns:views="clr-namespace:WileyWidget.Views"
+             xmlns:converters="clr-namespace:WileyWidget.Converters"
+             xmlns:prism="http://prismlibrary.com/"
+             syncfusionskin:SfSkinManager.Theme="{syncfusionskin:SkinManagerExtension ThemeName=FluentDark}"
+             prism:ViewModelLocator.AutoWireViewModel="True"
+             mc:Ignorable="d">
+
+    <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
         <views:BalanceColorConverter x:Key="BalanceColorConverter" />
         <views:UniqueDepartmentsConverter x:Key="UniqueDepartmentsConverter" />
@@ -75,10 +68,8 @@
             <Setter Property="Margin" Value="0,0,6,0" />
             <Setter Property="Fill" Value="#FF4ADE80" />
         </Style>
-        
-    </Window.Resources>
-    
-    <Grid Background="#FF0F1724">
+
+    </UserControl.Resources>    <Grid Background="#FF0F1724">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -785,4 +776,4 @@
         </Border>
         
     </Grid>
-</Window>
+</UserControl>

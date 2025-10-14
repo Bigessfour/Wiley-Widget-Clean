@@ -41,7 +41,8 @@ public partial class EnterprisePanelView : UserControl
         {
             _viewScope = provider.CreateScope();
             var unitOfWork = _viewScope.ServiceProvider.GetRequiredService<BusinessInterfaces.IUnitOfWork>();
-            DataContext = new EnterpriseViewModel(unitOfWork);
+            var eventAggregator = _viewScope.ServiceProvider.GetRequiredService<Prism.Events.IEventAggregator>();
+            DataContext = new EnterpriseViewModel(unitOfWork, eventAggregator);
 
             // Dispose the scope when the control is unloaded
             this.Unloaded += (_, _) => { try { _viewScope.Dispose(); } catch { } };

@@ -1,7 +1,7 @@
 using System;
 using System.Windows;
+using System.Windows.Controls;
 using WileyWidget.ViewModels;
-using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 
 namespace WileyWidget.Views;
@@ -9,64 +9,29 @@ namespace WileyWidget.Views;
 /// <summary>
 /// Interaction logic for MunicipalAccountView.xaml
 /// </summary>
-public partial class MunicipalAccountView : Window
+public partial class MunicipalAccountView : UserControl
 {
-    private readonly MunicipalAccountViewModel _viewModel;
-
     /// <summary>
     /// Initializes a new instance of the MunicipalAccountView
     /// </summary>
     public MunicipalAccountView()
     {
         InitializeComponent();
-        
-        try
-        {
-            // Get ViewModel from DI container or create new instance
-            var provider = App.GetActiveServiceProvider();
-            _viewModel = provider.GetRequiredService<MunicipalAccountViewModel>();
-            
-            DataContext = _viewModel;
-            
-            Log.Information("MunicipalAccountView initialized successfully");
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Failed to initialize MunicipalAccountView");
-            MessageBox.Show(
-                $"Failed to initialize Municipal Account View: {ex.Message}",
-                "Initialization Error",
-                MessageBoxButton.OK,
-                MessageBoxImage.Error);
-        }
+
+        // ViewModel is auto-wired by Prism ViewModelLocator
+        // Load data when control is loaded
+        Loaded += MunicipalAccountView_Loaded;
     }
 
-    /// <summary>
-    /// Initializes a new instance with dependency injection
-    /// </summary>
-    /// <param name="viewModel">The view model to use</param>
-    public MunicipalAccountView(MunicipalAccountViewModel viewModel)
+    private async void MunicipalAccountView_Loaded(object sender, RoutedEventArgs e)
     {
-        InitializeComponent();
-        
-        _viewModel = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
-        DataContext = _viewModel;
-        
-        Log.Information("MunicipalAccountView initialized with injected ViewModel");
-    }
-
-    /// <summary>
-    /// Handle window loaded event
-    /// </summary>
-    protected override async void OnContentRendered(EventArgs e)
-    {
-        base.OnContentRendered(e);
-
         try
         {
-            // Initialize data asynchronously
-            await _viewModel.InitializeAsync();
-            Log.Information("MunicipalAccountView data initialized");
+            if (DataContext is MunicipalAccountViewModel viewModel)
+            {
+                await viewModel.InitializeAsync();
+                Log.Information("MunicipalAccountView data initialized");
+            }
         }
         catch (Exception ex)
         {
@@ -76,29 +41,6 @@ public partial class MunicipalAccountView : Window
                 "Data Loading Error",
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
-        }
-    }
-
-    /// <summary>
-    /// Handle window closing event
-    /// </summary>
-    protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
-    {
-        base.OnClosing(e);
-        
-        try
-        {
-            Log.Information("MunicipalAccountView closing");
-            
-            // Cleanup if needed
-            if (_viewModel != null)
-            {
-                // Any cleanup operations here
-            }
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Error during MunicipalAccountView cleanup");
         }
     }
 }

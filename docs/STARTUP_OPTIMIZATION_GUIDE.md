@@ -1,5 +1,63 @@
 # WileyWidget Startup Performance Optimization Guide
 
+## 🏗️ Architecture: Prism Module System
+
+**Startup Architecture:** WileyWidget uses Prism's modular initialization system for clean separation of concerns and proper dependency management.
+
+### **Official Prism Documentation References:**
+
+- **Prism Module Loading**: https://prismlibrary.com/docs/modularity.html
+- **Dependency Injection**: https://prismlibrary.com/docs/dependency-injection.html
+- **Bootstrapper Pattern**: https://prismlibrary.com/docs/bootstrapper.html
+- **Async Initialization**: https://prismlibrary.com/docs/initialization.html
+
+### **Module Initialization Order:**
+
+1. **DiagnosticsModule** - Captures startup diagnostics (no dependencies)
+2. **SyncfusionModule** - Registers Syncfusion licenses early (no dependencies)
+3. **SettingsModule** - Loads application settings (no dependencies)
+4. **QuickBooksModule** - Initializes QuickBooks Online (depends on SettingsModule)
+
+### **Key Benefits:**
+- ✅ **Declarative Dependencies**: Modules specify their dependencies explicitly using `DependsOn`
+- ✅ **Parallel Initialization**: Prism handles parallel module loading automatically
+- ✅ **Clean Separation**: Each module handles one concern with proper initialization
+- ✅ **Testability**: Modules can be tested independently
+- ✅ **Maintainability**: Easy to add/remove/reorder startup operations
+
+### **Module Implementation Pattern:**
+```csharp
+public class ExampleModule : IModule
+{
+    public void OnInitialized(IContainerProvider containerProvider)
+    {
+        // Perform synchronous initialization here
+        // Services are guaranteed to be available
+    }
+
+    public void RegisterTypes(IContainerRegistry containerRegistry)
+    {
+        // Register services in the container
+    }
+}
+```
+
+### **Async Initialization (Prism 9+):**
+```csharp
+protected override async Task InitializeModulesAsync()
+{
+    await base.InitializeModulesAsync();
+    // Perform async initialization
+}
+```
+
+## 📚 Additional Prism Resources
+
+- **Prism GitHub**: https://github.com/PrismLibrary/Prism
+- **Prism Samples**: https://github.com/PrismLibrary/Prism-Samples-Wpf
+- **Region Navigation**: https://prismlibrary.com/docs/regions.html
+- **Custom Region Adapters**: https://prismlibrary.com/docs/regions.html#custom-region-adapters
+
 ## 🚀 Current Intensive Startup Processes Analysis
 
 ### **Critical Path Operations (In Order of Execution):**
@@ -42,7 +100,7 @@
    - Concurrent health checks with Polly circuit breakers
 
 2. **🔧 Enhancements Added:**
-   - **ParallelStartupService**: 3-phase parallel execution
+   - **Prism Module System**: Declarative module initialization with dependency management
    - **StartupCacheService**: Thread-safe caching with concurrent operations
    - **LimitedConcurrencyLevelTaskScheduler**: Optimized for hyperthreading
 
@@ -164,8 +222,10 @@ var licenseKey = await _cacheService.GetOrSetConfigurationAsync(
 
 2. **🔧 Background Initialization**
    ```csharp
-   // Move heavy operations to background threads
-   services.AddHostedService<ParallelStartupService>();
+   // Prism modules handle initialization with proper sequencing
+   moduleCatalog.AddModule<SyncfusionModule>(InitializationMode.WhenAvailable);
+   moduleCatalog.AddModule<QuickBooksModule>(InitializationMode.WhenAvailable,
+       typeof(SettingsModule)); // Declarative dependencies
    ```
 
 3. **🔧 Connection Pooling**
@@ -234,9 +294,10 @@ var assessment = totalStartupTimeMs switch
 1. ✅ Enable ReadyToRun publishing
 2. ✅ Configure Font Cache auto-start
 3. ✅ Implement basic configuration caching
+4. ✅ **Migrate to Prism Module System** (COMPLETED)
 
 ### **Phase 2: Threading Optimization (Next Week)**
-1. 🔧 Implement ParallelStartupService
+1. 🔧 Optimize Prism module initialization order
 2. 🔧 Add comprehensive startup caching
 3. 🔧 Optimize thread pool settings
 

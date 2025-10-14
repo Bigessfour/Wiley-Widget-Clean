@@ -9,7 +9,7 @@
         Height="900"
         Width="1400"
         WindowStartupLocation="CenterScreen"
-        FontFamily="Segoe UI">
+        FontFamily="Segoe UI" xmlns:prism="http://prismlibrary.com/" prism:ViewModelLocator.AutoWireViewModel="True">
     <syncfusion:SfSkinManager.Theme>
         <syncfusion:Theme ThemeName="FluentLight" />
     </syncfusion:SfSkinManager.Theme>
@@ -136,3 +136,4 @@
         </syncfusion:TileViewControl>
     </Grid>
 </Window>
+

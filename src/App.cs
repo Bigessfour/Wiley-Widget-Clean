@@ -1,21 +1,24 @@
 using Prism.Ioc;
 using Serilog;
-using Syncfusion.SfSkinManager;
 using System;
 using System.Windows;
-using WileyWidget.Services;
-using WileyWidget.ViewModels;
-using WileyWidget.Views;
-using Prism.DryIoc;
+using WileyWidget.Startup;
 
 namespace WileyWidget
 {
-    public class App : Prism.DryIoc.PrismApplication
+    /// <summary>
+    /// WPF Application class using Prism Bootstrapper pattern.
+    /// Application initialization is delegated to WileyWidgetBootstrapper.
+    /// </summary>
+    public class App : Application
     {
-        private Window _splashScreen;
+        private WileyWidgetBootstrapper _bootstrapper;
 
         // Static property for backwards compatibility with views
         public static IContainerProvider CurrentContainer { get; private set; }
+
+        // Splash screen instance for bootstrapper access
+        public static Window? SplashScreenInstance { get; set; }
 
         // Helper method for views that need service resolution
         public static IServiceProvider GetActiveServiceProvider()
@@ -32,66 +35,61 @@ namespace WileyWidget
         public static IServiceProvider ServiceProvider => GetActiveServiceProvider();
         public static void LogDebugEvent(string category, string message) => Log.Debug("[{Category}] {Message}", category, message);
         public static void LogStartupTiming(string message, TimeSpan elapsed) => Log.Debug("{Message} completed in {Ms}ms", message, elapsed.TotalMilliseconds);
-        public static Window SplashScreenInstance { get; set; }
         public static void SetSplashScreenInstance(Window window) => SplashScreenInstance = window;
         public static object StartupProgress { get; set; }
         public static void UpdateLatestHealthReport(object report) { /* Stub */ }
 
-        protected override Window CreateShell()
-        {
-            _splashScreen = new SplashScreenWindow();
-            _splashScreen.Show();
-            Log.Information("Splash screen shown");
-            
-            // Store container reference for static access
-            CurrentContainer = Container;
-            
-            return Container.Resolve<MainWindow>();
-        }
-
-        protected override void RegisterTypes(IContainerRegistry containerRegistry)
-        {
-            containerRegistry.RegisterSingleton<SettingsService>();
-            containerRegistry.RegisterSingleton<MainViewModel>();
-            containerRegistry.Register<DashboardViewModel>();
-            containerRegistry.Register<MunicipalAccountViewModel>();
-            containerRegistry.RegisterForNavigation<DashboardView, DashboardViewModel>();
-            containerRegistry.RegisterForNavigation<MunicipalAccountView, MunicipalAccountViewModel>();
-        }
-
-        protected override void OnInitialized()
-        {
-            base.OnInitialized();
-            
-            // Apply theme to main window after it's created
-            var mainWindow = MainWindow;
-            if (mainWindow != null)
-            {
-                SfSkinManager.SetTheme(mainWindow, new Syncfusion.SfSkinManager.Theme("FluentDark"));
-                Log.Information("Applied FluentDark theme");
-            }
-
-            var regionManager = Container.Resolve<IRegionManager>();
-            regionManager.RequestNavigate("MainRegion", "DashboardView");
-            Log.Information("Navigated to DashboardView");
-
-            _splashScreen.Close();
-            _splashScreen = null;
-            Log.Information("Splash screen closed");
-        }
-
         protected override void OnStartup(StartupEventArgs e)
         {
+            base.OnStartup(e);
+
+            // Configure Serilog before bootstrapper initialization
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Information()
-                .WriteTo.File("logs/wiley-widget-.log", rollingInterval: RollingInterval.Day)
+                .Enrich.WithMachineName()
+                .Enrich.WithProcessId()
+                .Enrich.WithThreadId()
+                .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss.fff}] [{Level:u3}] {Message:lj}{NewLine}{Exception}")
+                .WriteTo.File("logs/wiley-widget-.log", 
+                    rollingInterval: RollingInterval.Day,
+                    retainedFileCountLimit: 7,
+                    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
                 .CreateLogger();
 
-            base.OnStartup(e);
+            Log.Information("=== WileyWidget Application Starting (Bootstrapper Pattern) ===");
+
+            try
+            {
+                // Show splash screen before bootstrapper initialization
+                var splashScreen = new SplashScreenWindow();
+                splashScreen.Show();
+                SplashScreenInstance = splashScreen; // Store reference for bootstrapper
+                Log.Information("Splash screen displayed before bootstrapper initialization");
+
+                // Create and run the bootstrapper
+                _bootstrapper = new WileyWidgetBootstrapper();
+                _bootstrapper.Run();
+
+                // Store container reference for backwards compatibility
+                CurrentContainer = _bootstrapper.Container;
+
+                Log.Information("Bootstrapper initialization completed successfully");
+            }
+            catch (Exception ex)
+            {
+                Log.Fatal(ex, "Failed to initialize application bootstrapper");
+                MessageBox.Show(
+                    $"Failed to start application: {ex.Message}",
+                    "Startup Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+                Shutdown(1);
+            }
         }
 
         protected override void OnExit(ExitEventArgs e)
         {
+            Log.Information("Application shutting down");
             Log.CloseAndFlush();
             base.OnExit(e);
         }

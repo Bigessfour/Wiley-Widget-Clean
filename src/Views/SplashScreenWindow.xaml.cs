@@ -16,6 +16,7 @@ using System.Windows.Input;
 using WileyWidget.Services;
 using Serilog;
 using Microsoft.Extensions.Logging;
+using Prism.Events;
 
 namespace WileyWidget;
 
@@ -24,6 +25,12 @@ namespace WileyWidget;
 /// </summary>
 public partial class SplashScreenWindow : Window, INotifyPropertyChanged, IDisposable
 {
+    /// <summary>
+    /// Event published when splash screen close is requested
+    /// </summary>
+    public class SplashScreenCloseRequestedEvent : PubSubEvent
+    {
+    }
     private string _statusText = "Initializing application...";
     private double _progressValue = 0;
     private bool _isIndeterminate = false;
@@ -49,6 +56,7 @@ public partial class SplashScreenWindow : Window, INotifyPropertyChanged, IDispo
     private readonly System.Threading.CancellationTokenSource _lifetimeCts = new();
 
     private readonly ILogger<SplashScreenWindow> _logger;
+    private readonly IEventAggregator _eventAggregator;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -171,9 +179,10 @@ public partial class SplashScreenWindow : Window, INotifyPropertyChanged, IDispo
         set => ProgressValue = value;
     }
 
-    public SplashScreenWindow(ILogger<SplashScreenWindow>? logger = null)
+    public SplashScreenWindow(ILogger<SplashScreenWindow>? logger = null, IEventAggregator? eventAggregator = null)
     {
         _logger = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<SplashScreenWindow>.Instance;
+        _eventAggregator = eventAggregator ?? new EventAggregator();
         InitializeComponent();
         DataContext = this;
 
@@ -455,18 +464,23 @@ public partial class SplashScreenWindow : Window, INotifyPropertyChanged, IDispo
     /// </summary>
     public async Task HideAsync()
     {
-        // Kept for backward-compatibility; prefer FadeOutAndCloseAsync()
-        await FadeOutAndCloseAsync();
+        // Kept for backward-compatibility; prefer RequestCloseAsync()
+        await RequestCloseAsync();
     }
 
     /// <summary>
-    /// Fades out the splash and closes the window with smooth professional transition
+    /// Requests splash screen close with smooth professional transition
+    /// Publishes event for Bootstrapper to handle the actual closing
     /// </summary>
-    public async Task FadeOutAndCloseAsync()
+    public async Task RequestCloseAsync()
     {
         try
         {
-            _logger.LogInformation("Fading out splash screen with smooth transition");
+            _logger.LogInformation("Requesting splash screen close with smooth transition");
+            
+            // Publish event to notify Bootstrapper that splash screen is ready to close
+            _eventAggregator.GetEvent<SplashScreenCloseRequestedEvent>().Publish();
+            
             // Perform smooth fade-out animation
             var fadeOut = new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(600))
             {
@@ -494,32 +508,16 @@ public partial class SplashScreenWindow : Window, INotifyPropertyChanged, IDispo
             // Wait for animations to complete
             await Task.Delay(700);
 
-            if (Application.Current?.Dispatcher.CheckAccess() == false)
-            {
-                await Application.Current.Dispatcher.InvokeAsync(() => Close());
-            }
-            else
-            {
-                Close();
-            }
-            _logger.LogInformation("Splash screen closed with smooth transition");
+            // Publish final close event
+            _eventAggregator.GetEvent<SplashScreenCloseRequestedEvent>().Publish();
+            
+            _logger.LogInformation("Splash screen close requested with smooth transition");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to fade out and close splash screen smoothly, using immediate close");
-            // Fallback to immediate close
-            try
-            {
-                if (Application.Current?.Dispatcher.CheckAccess() == false)
-                {
-                    await Application.Current.Dispatcher.InvokeAsync(() => Close());
-                }
-                else
-                {
-                    Close();
-                }
-            }
-            catch { /* Ignore */ }
+            _logger.LogError(ex, "Failed to request splash screen close smoothly");
+            // Publish event anyway for fallback handling
+            _eventAggregator.GetEvent<SplashScreenCloseRequestedEvent>().Publish();
         }
     }
 
@@ -596,7 +594,7 @@ public partial class SplashScreenWindow : Window, INotifyPropertyChanged, IDispo
                 });
                 // Attempt close soon after
                 await Task.Delay(1000, _lifetimeCts.Token);
-                await FadeOutAndCloseAsync();
+                await RequestCloseAsync();
             }
         }
         catch (TaskCanceledException) { /* normal */ }

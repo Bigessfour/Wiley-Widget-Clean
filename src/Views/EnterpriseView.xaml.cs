@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Markup;
 using System.Windows.Media;
 using WileyWidget.Services;
@@ -13,20 +14,16 @@ using BusinessInterfaces = WileyWidget.Business.Interfaces;
 namespace WileyWidget;
 
 /// <summary>
-/// Enterprise Management Window - Provides full CRUD interface for municipal enterprises
+/// Enterprise Management UserControl - Provides full CRUD interface for municipal enterprises
 /// </summary>
-public partial class EnterpriseView : Window
+public partial class EnterpriseView : UserControl
 {
-    private readonly IServiceScope? _viewScope;
-
+    private IServiceScope? _viewScope;
     public EnterpriseView()
     {
         InitializeComponent();
 
         EnsureNamedElementsAreDiscoverable();
-
-        // Apply current theme
-        TryApplyTheme(SettingsService.Instance.Current.Theme);
 
         // Create a scope for the view and resolve the repository from the scope
         IServiceProvider? provider = null;
@@ -43,10 +40,11 @@ public partial class EnterpriseView : Window
         {
             _viewScope = provider.CreateScope();
             var unitOfWork = _viewScope.ServiceProvider.GetRequiredService<BusinessInterfaces.IUnitOfWork>();
-            DataContext = new EnterpriseViewModel(unitOfWork);
+            var eventAggregator = _viewScope.ServiceProvider.GetRequiredService<Prism.Events.IEventAggregator>();
+            DataContext = new EnterpriseViewModel(unitOfWork, eventAggregator);
 
-            // Dispose the scope when the window is closed
-            this.Closed += (_, _) => { try { _viewScope.Dispose(); } catch { } };
+            // Dispose the scope when the control is unloaded
+            Unloaded += (_, _) => { try { _viewScope.Dispose(); } catch { } };
         }
         else
         {
@@ -112,24 +110,6 @@ public partial class EnterpriseView : Window
         }
     }
 
-    /// <summary>
-    /// Show the Enterprise Management window
-    /// </summary>
-    public static void ShowEnterpriseWindow()
-    {
-        var window = new EnterpriseView();
-        window.Show();
-    }
-
-    /// <summary>
-    /// Show the Enterprise Management window as dialog
-    /// </summary>
-    public static bool? ShowEnterpriseDialog()
-    {
-        var window = new EnterpriseView();
-        return window.ShowDialog();
-    }
-
     public new object? FindName(string name)
     {
         return name switch
@@ -158,14 +138,6 @@ public partial class EnterpriseView : Window
         return Content is DependencyObject dependencyObject
             ? FindVisualChildByName<FrameworkElement>(dependencyObject, name)
             : null;
-    }
-
-    /// <summary>
-    /// Attempt to apply a Syncfusion theme; falls back to Fluent Light if requested theme fails.
-    /// </summary>
-    private void TryApplyTheme(string themeName)
-    {
-        Services.ThemeUtility.TryApplyTheme(this, themeName);
     }
 
     /// <summary>

@@ -9,7 +9,7 @@
              xmlns:sfchart="clr-namespace:Syncfusion.UI.Xaml.Charts;assembly=Syncfusion.SfChart.WPF"
              xmlns:sfgrid="clr-namespace:Syncfusion.UI.Xaml.Grid;assembly=Syncfusion.SfGrid.WPF"
              mc:Ignorable="d"
-             d:DesignHeight="700" d:DesignWidth="900">
+             d:DesignHeight="700" d:DesignWidth="900" xmlns:prism="http://prismlibrary.com/" prism:ViewModelLocator.AutoWireViewModel="True">
     <UserControl.Resources>
         <local:ComparisonConverter x:Key="ComparisonConverter"/>
         <converters:BalanceColorConverter x:Key="BalanceColorConverter"/>

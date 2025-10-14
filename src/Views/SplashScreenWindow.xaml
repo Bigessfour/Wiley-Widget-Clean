@@ -21,7 +21,7 @@
         UseLayoutRounding="True"
         SnapsToDevicePixels="True"
         RenderOptions.EdgeMode="Aliased"
-        RenderOptions.BitmapScalingMode="HighQuality">
+        RenderOptions.BitmapScalingMode="HighQuality" xmlns:prism="http://prismlibrary.com/" prism:ViewModelLocator.AutoWireViewModel="True">
     <Window.Resources>
         <!-- Smooth progress transition with enhanced easing -->
         <Storyboard x:Key="ProgressTransition">

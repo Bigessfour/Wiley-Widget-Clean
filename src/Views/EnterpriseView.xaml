@@ -1,19 +1,19 @@
-<Window x:Class="WileyWidget.EnterpriseView"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:WileyWidget"
-        xmlns:views="clr-namespace:WileyWidget.Views"
-        xmlns:converters="clr-namespace:WileyWidget.Converters"
-        xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
-        xmlns:notification="http://schemas.syncfusion.com/wpf"
-        xmlns:syncfusionskin="clr-namespace:Syncfusion.SfSkinManager;assembly=Syncfusion.SfSkinManager.WPF"
-        syncfusionskin:SfSkinManager.Theme="{syncfusionskin:SkinManagerExtension ThemeName=FluentDark}"
-        mc:Ignorable="d"
-        Title="Enterprise Management" Height="700" Width="1200"
-        WindowStartupLocation="CenterScreen">
-    <Window.Resources>
+<UserControl x:Class="WileyWidget.EnterpriseView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:local="clr-namespace:WileyWidget"
+             xmlns:views="clr-namespace:WileyWidget.Views"
+             xmlns:converters="clr-namespace:WileyWidget.Converters"
+             xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
+             xmlns:notification="http://schemas.syncfusion.com/wpf"
+             xmlns:syncfusionskin="clr-namespace:Syncfusion.SfSkinManager;assembly=Syncfusion.SfSkinManager.WPF"
+             xmlns:prism="http://prismlibrary.com/"
+             syncfusionskin:SfSkinManager.Theme="{syncfusionskin:SkinManagerExtension ThemeName=FluentDark}"
+             prism:ViewModelLocator.AutoWireViewModel="True"
+             mc:Ignorable="d">
+    <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
         <views:BalanceColorConverter x:Key="BalanceColorConverter" />
         <views:StatusColorConverter x:Key="StatusColorConverter" />
@@ -62,12 +62,12 @@
         <DataTemplate x:Key="StatusCellTemplate">
             <Border Background="{Binding Enterprise.Status, Converter={StaticResource StatusColorConverter}, ConverterParameter=Light}" 
                     Padding="4,2" CornerRadius="2">
-                <TextBlock Text="{Binding Enterprise.Status}" 
+                <TextBlock Text="{Binding Enterprise.Status}"
                           FontWeight="SemiBold"
                           Foreground="{Binding Enterprise.Status, Converter={StaticResource StatusColorConverter}}"/>
             </Border>
         </DataTemplate>
-    </Window.Resources>
+    </UserControl.Resources>
 
     <Grid>
     <DockPanel>
@@ -555,4 +555,4 @@
         </StatusBar>
     </DockPanel>
     </Grid>
-</Window>
+</UserControl>

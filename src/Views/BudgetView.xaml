@@ -11,7 +11,7 @@
         xmlns:syncfusionskin="clr-namespace:Syncfusion.SfSkinManager;assembly=Syncfusion.SfSkinManager.WPF"
         mc:Ignorable="d"
         d:DesignHeight="900" d:DesignWidth="1200"
-        Loaded="BudgetView_Loaded">
+        Loaded="BudgetView_Loaded" xmlns:prism="http://prismlibrary.com/" prism:ViewModelLocator.AutoWireViewModel="True">
     <!-- GASB-Compliant Municipal Budget Management UserControl -->
     <!-- DataContext set programmatically: {Binding BudgetViewModel} -->
     <!-- Theme: FluentDark with FluentLight fallback via SfSkinManager -->
@@ -432,3 +432,4 @@
         </Grid>
     </Grid>
 </UserControl>
+

@@ -1,13 +1,11 @@
 using System;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Serilog;
+using Serilog.Core;
+using Serilog.Events;
+using WileyWidget;
 
 namespace WileyWidget;
 

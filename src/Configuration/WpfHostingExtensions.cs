@@ -20,7 +20,6 @@ using WileyWidget.Services;
 using WileyWidget.Services.Excel;
 using WileyWidget.Services.Hosting;
 using WileyWidget.Services.Threading;
-using WileyWidget.Startup;
 using WileyWidget.ViewModels;
 
 namespace WileyWidget.Configuration;
@@ -64,9 +63,6 @@ public static class WpfHostingExtensions
         ConfigureHostedServices(builder.Services);
 
         // Database integration
-
-        // Startup pipeline helpers
-        RegisterStartupPipeline(builder.Services);
 
         return builder;
     }
@@ -249,7 +245,6 @@ public static class WpfHostingExtensions
         services.AddSingleton<ISecretVaultService, LocalSecretVaultService>();
         services.AddMemoryCache();
         services.AddSingleton<IDispatcherHelper, DispatcherHelper>();
-        services.AddTransient<IProgressReporter, ProgressReporter>();
 
         // Lazy-loaded services - defer heavy initialization
         services.AddTransient<IExcelReaderService, ExcelReaderService>();
@@ -319,21 +314,14 @@ public static class WpfHostingExtensions
     private static void ConfigureHostedServices(IServiceCollection services)
     {
         // Defer heavy background services to reduce startup time
-        services.AddSingleton<BackgroundInitializationService>();
+        // BackgroundInitializationService removed - now using Prism modules
         // Only start critical hosted services immediately
-        services.AddHostedService<StartupTaskRunner>();
 
         // Defer non-critical services to background initialization
         services.AddSingleton<HealthCheckHostedService>();
     }
 
-    private static void RegisterStartupPipeline(IServiceCollection services)
-    {
-        services.AddSingleton<StartupTaskRunner>();
-        services.AddSingleton<IStartupTask, SettingsStartupTask>();
-        services.AddSingleton<IStartupTask, DiagnosticsStartupTask>();
-        services.AddSingleton<IStartupTask, QuickBooksStartupTask>();
-    }
+
 
     private static string GetApiKeySource(string? apiKey)
     {

@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
+using Prism.Events;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -12,19 +13,20 @@ using System.Windows.Media;
 using WileyWidget.Models;
 using WileyWidget.Business.Interfaces;
 using WileyWidget.Services;
+using WileyWidget.ViewModels.Messages;
 
 namespace WileyWidget.ViewModels
 {
     public partial class DashboardViewModel : ObservableObject, IDataErrorInfo
     {
-        private readonly ILogger<DashboardViewModel> _logger;
-        private readonly IEnterpriseRepository _enterpriseRepository;
-        private readonly IWhatIfScenarioEngine _whatIfScenarioEngine;
-        private readonly IUtilityCustomerRepository _utilityCustomerRepository;
-        private readonly IMunicipalAccountRepository _municipalAccountRepository;
-        private readonly FiscalYearSettings _fiscalYearSettings;
-
-        // KPI Properties
+    private readonly ILogger<DashboardViewModel> _logger;
+    private readonly IEnterpriseRepository _enterpriseRepository;
+    private readonly IWhatIfScenarioEngine _whatIfScenarioEngine;
+    private readonly IUtilityCustomerRepository _utilityCustomerRepository;
+    private readonly IMunicipalAccountRepository _municipalAccountRepository;
+    private readonly FiscalYearSettings _fiscalYearSettings;
+    private readonly IEventAggregator _eventAggregator;
+    private readonly IRegionManager _regionManager;        // KPI Properties
         [ObservableProperty]
         private int totalEnterprises;
 
@@ -197,23 +199,29 @@ namespace WileyWidget.ViewModels
             }
         }
 
-        public DashboardViewModel(
-            ILogger<DashboardViewModel> logger,
-            IEnterpriseRepository enterpriseRepository,
-            IWhatIfScenarioEngine whatIfScenarioEngine,
-            IUtilityCustomerRepository utilityCustomerRepository,
-            IMunicipalAccountRepository municipalAccountRepository,
-            FiscalYearSettings fiscalYearSettings)
-        {
-            _logger = logger;
-            _enterpriseRepository = enterpriseRepository;
-            _whatIfScenarioEngine = whatIfScenarioEngine;
-            _utilityCustomerRepository = utilityCustomerRepository;
-            _municipalAccountRepository = municipalAccountRepository;
-            _fiscalYearSettings = fiscalYearSettings;
-        }
+    public DashboardViewModel(
+        ILogger<DashboardViewModel> logger,
+        IEnterpriseRepository enterpriseRepository,
+        IWhatIfScenarioEngine whatIfScenarioEngine,
+        IUtilityCustomerRepository utilityCustomerRepository,
+        IMunicipalAccountRepository municipalAccountRepository,
+        FiscalYearSettings fiscalYearSettings,
+        IEventAggregator eventAggregator,
+        IRegionManager regionManager)
+    {
+        _logger = logger;
+        _enterpriseRepository = enterpriseRepository;
+        _whatIfScenarioEngine = whatIfScenarioEngine;
+        _utilityCustomerRepository = utilityCustomerRepository;
+        _municipalAccountRepository = municipalAccountRepository;
+        _fiscalYearSettings = fiscalYearSettings;
+        _eventAggregator = eventAggregator;
+        _regionManager = regionManager;
 
-        public async Task LoadDashboardDataAsync()
+        // Subscribe to events
+        _eventAggregator.GetEvent<RefreshDataMessage>().Subscribe(OnRefreshDataRequested);
+        _eventAggregator.GetEvent<EnterpriseChangedMessage>().Subscribe(OnEnterpriseChanged);
+    }        public async Task LoadDashboardDataAsync()
         {
             try
             {
@@ -548,12 +556,6 @@ namespace WileyWidget.ViewModels
         }
 
         [RelayCommand]
-        private void OpenEnterpriseManagement()
-        {
-            EnterpriseView.ShowEnterpriseWindow();
-        }
-
-        [RelayCommand]
         private void OpenBudgetAnalysis()
         {
             BudgetView.ShowBudgetWindow();
@@ -763,6 +765,103 @@ namespace WileyWidget.ViewModels
         private void ClearSearch()
         {
             SearchText = string.Empty;
+        }
+
+        // Navigation commands for testing journaling
+        [RelayCommand]
+        private void NavigateToAccounts()
+        {
+            _regionManager.RequestNavigate("MainRegion", "MunicipalAccountView");
+        }
+
+        [RelayCommand]
+        private void NavigateBack()
+        {
+            var region = _regionManager.Regions["MainRegion"];
+            if (region.NavigationService.Journal.CanGoBack)
+            {
+                region.NavigationService.Journal.GoBack();
+            }
+        }
+
+        [RelayCommand]
+        private void NavigateForward()
+        {
+            var region = _regionManager.Regions["MainRegion"];
+            if (region.NavigationService.Journal.CanGoForward)
+            {
+                region.NavigationService.Journal.GoForward();
+            }
+        }
+
+        // Event Handlers for EventAggregator
+        private void OnRefreshDataRequested(RefreshDataMessage message)
+        {
+            _logger.LogInformation("Refresh data requested for view: {ViewName}", message.ViewName);
+            
+            if (string.IsNullOrEmpty(message.ViewName) || message.ViewName == "Dashboard")
+            {
+                _ = LoadDashboardDataAsync();
+            }
+        }
+
+        private void OnEnterpriseChanged(EnterpriseChangedMessage message)
+        {
+            _logger.LogInformation("Enterprise changed: {EnterpriseName} ({ChangeType})", 
+                message.EnterpriseName, message.ChangeType);
+            
+            // Refresh dashboard data when enterprise changes
+            _ = LoadDashboardDataAsync();
+        }
+
+        // Prism Navigation Implementation
+        public void OnNavigatedTo(NavigationContext navigationContext)
+        {
+            _logger.LogInformation("DashboardViewModel navigated to with context: {Context}", navigationContext?.ToString() ?? "null");
+            
+            // Handle navigation parameters
+            if (navigationContext?.Parameters != null)
+            {
+                // Check for refresh parameter
+                if (navigationContext.Parameters.ContainsKey("refresh"))
+                {
+                    var refresh = navigationContext.Parameters["refresh"];
+                    if (refresh is bool refreshBool && refreshBool)
+                    {
+                        _ = LoadDashboardDataAsync();
+                    }
+                }
+
+                // Check for filter parameter
+                if (navigationContext.Parameters.ContainsKey("filter"))
+                {
+                    var filter = navigationContext.Parameters["filter"];
+                    if (filter is string filterString)
+                    {
+                        // SearchText = filterString; // Will be available once properties are generated
+                        _logger.LogInformation("Filter parameter received: {Filter}", filterString);
+                    }
+                }
+            }
+            else
+            {
+                // Default behavior - load dashboard data
+                _ = LoadDashboardDataAsync();
+            }
+        }
+
+        public void OnNavigatedFrom(NavigationContext navigationContext)
+        {
+            _logger.LogInformation("DashboardViewModel navigated from");
+            
+            // Cleanup if needed
+            // Cancel any ongoing operations, save state, etc.
+        }
+
+        public bool IsNavigationTarget(NavigationContext navigationContext)
+        {
+            // Always allow navigation to dashboard
+            return true;
         }
     }
 
