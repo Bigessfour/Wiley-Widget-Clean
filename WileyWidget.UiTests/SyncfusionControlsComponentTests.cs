@@ -68,6 +68,9 @@ namespace WileyWidget.UiTests.ComponentTests
                 var state = DockingManager.GetState(widgetsPanel);
                 Assert.Equal(DockState.Document, state);
 
+                // Verify DockingManager renders correctly using FlaUI
+                await UiTestHelpers.VerifyVisualRenderingAsync(window, dockingManager, "DockingManager Layout");
+
                 window.Close();
             });
         }
@@ -273,6 +276,39 @@ namespace WileyWidget.UiTests.ComponentTests
                                 tb.Text.Contains("Monthly Expenses"))
                     .ToList();
                 Assert.True(summaryTextBlocks.Count >= 4); // Should have all summary labels
+
+                window.Close();
+            });
+        }
+
+        [StaFact]
+        public async Task MainWindow_Navigation_UserControls_ShouldRenderCorrectly()
+        {
+            var window = await CreateViewWithFullLifecycleAsync<MainWindow>();
+            await RunOnUIThreadAsync(async () =>
+            {
+                window.Show();
+                window.UpdateLayout();
+
+                // Test navigation panel UserControls using FindAndVerifyVisualChildrenAsync
+                var widgetsPanel = window.FindName("WidgetsPanel") as ContentControl;
+                Assert.NotNull(widgetsPanel);
+
+                // Find and verify child UserControls in the main content panel
+                var userControls = await UiTestHelpers.FindAndVerifyVisualChildrenAsync<UserControl>(
+                    widgetsPanel, expectedMin: 1, description: "Navigation UserControls");
+
+                // Verify at least one UserControl is present and properly rendered
+                Assert.True(userControls.Count >= 1, "Should have at least one UserControl in navigation panel");
+
+                // Test that UserControls have proper DataContext binding
+                foreach (var userControl in userControls)
+                {
+                    Assert.NotNull(userControl.DataContext, $"UserControl {userControl.Name} should have DataContext");
+                    Assert.True(userControl.IsVisible, $"UserControl {userControl.Name} should be visible");
+                    Assert.True(userControl.ActualWidth > 0 && userControl.ActualHeight > 0,
+                               $"UserControl {userControl.Name} should have valid dimensions");
+                }
 
                 window.Close();
             });

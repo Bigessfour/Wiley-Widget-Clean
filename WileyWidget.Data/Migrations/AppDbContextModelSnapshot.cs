@@ -95,7 +95,7 @@ namespace WileyWidget.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("AppSettings", (string)null);
+                    b.ToTable("AppSettings");
                 });
 
             modelBuilder.Entity("WileyWidget.Models.BudgetEntry", b =>
@@ -191,7 +191,7 @@ namespace WileyWidget.Data.Migrations
                     b.HasIndex("AccountNumber", "FiscalYear")
                         .IsUnique();
 
-                    b.ToTable("BudgetEntries", null, t =>
+                    b.ToTable("BudgetEntries", t =>
                         {
                             t.HasCheckConstraint("CK_Budget_Positive", "[BudgetedAmount] > 0");
                         });
@@ -209,6 +209,9 @@ namespace WileyWidget.Data.Migrations
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
+
+                    b.Property<int?>("EnterpriseId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("InteractionDate")
                         .HasColumnType("datetime2");
@@ -236,11 +239,13 @@ namespace WileyWidget.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("EnterpriseId");
+
                     b.HasIndex("PrimaryEnterpriseId");
 
                     b.HasIndex("SecondaryEnterpriseId");
 
-                    b.ToTable("BudgetInteraction", (string)null);
+                    b.ToTable("BudgetInteraction");
                 });
 
             modelBuilder.Entity("WileyWidget.Models.BudgetPeriod", b =>
@@ -276,7 +281,7 @@ namespace WileyWidget.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("BudgetPeriod", (string)null);
+                    b.ToTable("BudgetPeriod");
                 });
 
             modelBuilder.Entity("WileyWidget.Models.Department", b =>
@@ -307,7 +312,7 @@ namespace WileyWidget.Data.Migrations
 
                     b.HasIndex("ParentId");
 
-                    b.ToTable("Departments", (string)null);
+                    b.ToTable("Departments");
                 });
 
             modelBuilder.Entity("WileyWidget.Models.Enterprise", b =>
@@ -397,7 +402,7 @@ namespace WileyWidget.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Enterprises", (string)null);
+                    b.ToTable("Enterprises");
                 });
 
             modelBuilder.Entity("WileyWidget.Models.Entities.Fund", b =>
@@ -423,7 +428,7 @@ namespace WileyWidget.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Funds", (string)null);
+                    b.ToTable("Funds");
                 });
 
             modelBuilder.Entity("WileyWidget.Models.FiscalYearSettings", b =>
@@ -451,7 +456,7 @@ namespace WileyWidget.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("FiscalYearSettings", (string)null);
+                    b.ToTable("FiscalYearSettings");
                 });
 
             modelBuilder.Entity("WileyWidget.Models.Invoice", b =>
@@ -494,7 +499,7 @@ namespace WileyWidget.Data.Migrations
 
                     b.HasIndex("VendorId");
 
-                    b.ToTable("Invoice", (string)null);
+                    b.ToTable("Invoice");
                 });
 
             modelBuilder.Entity("WileyWidget.Models.MunicipalAccount", b =>
@@ -562,7 +567,7 @@ namespace WileyWidget.Data.Migrations
 
                     b.HasIndex("ParentAccountId");
 
-                    b.ToTable("MunicipalAccounts", (string)null);
+                    b.ToTable("MunicipalAccounts");
                 });
 
             modelBuilder.Entity("WileyWidget.Models.Transaction", b =>
@@ -609,7 +614,7 @@ namespace WileyWidget.Data.Migrations
 
                     b.HasIndex("TransactionDate");
 
-                    b.ToTable("Transactions", null, t =>
+                    b.ToTable("Transactions", t =>
                         {
                             t.HasCheckConstraint("CK_Transaction_NonZero", "[Amount] != 0");
                         });
@@ -746,7 +751,7 @@ namespace WileyWidget.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("UtilityCustomers", (string)null);
+                    b.ToTable("UtilityCustomers");
                 });
 
             modelBuilder.Entity("WileyWidget.Models.Vendor", b =>
@@ -771,7 +776,7 @@ namespace WileyWidget.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Vendor", (string)null);
+                    b.ToTable("Vendor");
                 });
 
             modelBuilder.Entity("WileyWidget.Models.BudgetEntry", b =>
@@ -805,6 +810,10 @@ namespace WileyWidget.Data.Migrations
 
             modelBuilder.Entity("WileyWidget.Models.BudgetInteraction", b =>
                 {
+                    b.HasOne("WileyWidget.Models.Enterprise", null)
+                        .WithMany("BudgetInteractions")
+                        .HasForeignKey("EnterpriseId");
+
                     b.HasOne("WileyWidget.Models.Enterprise", "PrimaryEnterprise")
                         .WithMany()
                         .HasForeignKey("PrimaryEnterpriseId")
@@ -879,7 +888,7 @@ namespace WileyWidget.Data.Migrations
 
                             b1.HasKey("MunicipalAccountId");
 
-                            b1.ToTable("MunicipalAccounts", (string)null);
+                            b1.ToTable("MunicipalAccounts");
 
                             b1.WithOwner()
                                 .HasForeignKey("MunicipalAccountId");
@@ -927,6 +936,11 @@ namespace WileyWidget.Data.Migrations
                     b.Navigation("BudgetEntries");
 
                     b.Navigation("Children");
+                });
+
+            modelBuilder.Entity("WileyWidget.Models.Enterprise", b =>
+                {
+                    b.Navigation("BudgetInteractions");
                 });
 
             modelBuilder.Entity("WileyWidget.Models.Entities.Fund", b =>

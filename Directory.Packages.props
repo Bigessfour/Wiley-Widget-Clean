@@ -25,11 +25,13 @@
     <PackageVersion Include="Microsoft.Identity.Client.Broker" Version="4.77.0" />
     <PackageVersion Include="Microsoft.Identity.Client" Version="4.77.0" />
     <PackageVersion Include="Microsoft.Graph" Version="5.67.0" />
+    <PackageVersion Include="Prism.Unity" Version="9.0.537" />
     <!-- Serilog -->
     <PackageVersion Include="Serilog" Version="4.2.0" />
     <PackageVersion Include="Serilog.Enrichers.Environment" Version="3.0.1" />
     <PackageVersion Include="Serilog.Enrichers.Process" Version="3.0.0" />
     <PackageVersion Include="Serilog.Enrichers.Thread" Version="4.0.0" />
+    <PackageVersion Include="Serilog.Settings.Configuration" Version="9.0.0" />
     <PackageVersion Include="Serilog.Sinks.Async" Version="2.0.0" />
     <PackageVersion Include="Serilog.Sinks.Email" Version="3.0.0" />
     <PackageVersion Include="Serilog.Sinks.File" Version="7.0.0" />

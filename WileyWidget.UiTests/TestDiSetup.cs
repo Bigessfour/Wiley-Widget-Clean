@@ -6,10 +6,12 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.EntityFrameworkCore;
+using Moq;
 using WileyWidget.Configuration;
 using WileyWidget.Services;
 using WileyWidget.ViewModels;
 using WileyWidget.Data;
+using WileyWidget.Business.Interfaces;
 
 namespace WileyWidget.UiTests;
 
@@ -71,6 +73,211 @@ public static class TestDiSetup
 
             // Configure the application (this sets up all services)
             hostBuilder.ConfigureWpfApplication();
+
+            // Mock IUnitOfWork for testing
+            var mockUnitOfWork = new Mock<IUnitOfWork>();
+            
+            // Setup SaveChangesAsync to return success
+            mockUnitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<System.Threading.CancellationToken>()))
+                .ReturnsAsync(1);
+            
+            // Setup transaction methods
+            mockUnitOfWork.Setup(u => u.BeginTransactionAsync(It.IsAny<System.Threading.CancellationToken>()))
+                .ReturnsAsync(new Mock<Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction>().Object);
+            
+            mockUnitOfWork.Setup(u => u.CommitTransactionAsync(It.IsAny<System.Threading.CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            
+            mockUnitOfWork.Setup(u => u.RollbackTransactionAsync(It.IsAny<System.Threading.CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            
+            // Setup ExecuteInTransactionAsync to execute the operation
+            mockUnitOfWork.Setup(u => u.ExecuteInTransactionAsync(It.IsAny<Func<Task>>(), It.IsAny<System.Threading.CancellationToken>()))
+                .Returns<Func<Task>, System.Threading.CancellationToken>((operation, ct) => operation());
+            
+            mockUnitOfWork.Setup(u => u.ExecuteInTransactionAsync<It.IsAnyType>(It.IsAny<Func<Task<It.IsAnyType>>>(), It.IsAny<System.Threading.CancellationToken>()))
+                .Returns<Func<Task<It.IsAnyType>>, System.Threading.CancellationToken>((operation, ct) => operation());
+            
+            // Setup mock to return empty collections or test data as needed
+            hostBuilder.Services.AddScoped<IUnitOfWork>(sp => mockUnitOfWork.Object);
+
+            // Mock IEnterpriseRepository for Dashboard testing with sample data
+            var mockEnterpriseRepo = new Mock<IEnterpriseRepository>();
+            var sampleEnterprises = new List<WileyWidget.Models.Enterprise>
+            {
+                new WileyWidget.Models.Enterprise
+                {
+                    Id = 1,
+                    Name = "Water Department",
+                    Type = "Water",
+                    Description = "Municipal water services",
+                    TotalBudget = 500000m,
+                    CurrentRate = 25.00m,
+                    MonthlyExpenses = 35000m,
+                    CitizenCount = 1500,
+                    Status = WileyWidget.Models.EnterpriseStatus.Active,
+                    LastModified = DateTime.Now.AddDays(-5)
+                },
+                new WileyWidget.Models.Enterprise
+                {
+                    Id = 2,
+                    Name = "Sewer Department",
+                    Type = "Sewer",
+                    Description = "Wastewater management",
+                    TotalBudget = 350000m,
+                    CurrentRate = 20.00m,
+                    MonthlyExpenses = 25000m,
+                    CitizenCount = 1400,
+                    Status = WileyWidget.Models.EnterpriseStatus.Active,
+                    LastModified = DateTime.Now.AddDays(-10)
+                },
+                new WileyWidget.Models.Enterprise
+                {
+                    Id = 3,
+                    Name = "Trash Collection",
+                    Type = "Sanitation",
+                    Description = "Solid waste disposal",
+                    TotalBudget = 200000m,
+                    CurrentRate = 15.00m,
+                    MonthlyExpenses = 18000m,
+                    CitizenCount = 1600,
+                    Status = WileyWidget.Models.EnterpriseStatus.Active,
+                    LastModified = DateTime.Now.AddDays(-2)
+                }
+            };
+            mockEnterpriseRepo.Setup(x => x.GetAllAsync()).ReturnsAsync(sampleEnterprises);
+            mockEnterpriseRepo.Setup(x => x.GetCountAsync()).ReturnsAsync(sampleEnterprises.Count);
+            mockEnterpriseRepo.Setup(x => x.GetByIdAsync(It.IsAny<int>()))
+                .ReturnsAsync((int id) => sampleEnterprises.FirstOrDefault(e => e.Id == id));
+            mockEnterpriseRepo.Setup(x => x.AddAsync(It.IsAny<WileyWidget.Models.Enterprise>()))
+                .ReturnsAsync((WileyWidget.Models.Enterprise e) => 
+                {
+                    e.Id = sampleEnterprises.Max(x => x.Id) + 1;
+                    sampleEnterprises.Add(e);
+                    return e;
+                });
+            mockEnterpriseRepo.Setup(x => x.UpdateAsync(It.IsAny<WileyWidget.Models.Enterprise>()))
+                .ReturnsAsync((WileyWidget.Models.Enterprise e) => e);
+            mockEnterpriseRepo.Setup(x => x.DeleteAsync(It.IsAny<int>()))
+                .ReturnsAsync((int id) => 
+                {
+                    var enterprise = sampleEnterprises.FirstOrDefault(e => e.Id == id);
+                    if (enterprise != null)
+                    {
+                        sampleEnterprises.Remove(enterprise);
+                        return true;
+                    }
+                    return false;
+                });
+            hostBuilder.Services.AddScoped<IEnterpriseRepository>(sp => mockEnterpriseRepo.Object);
+
+            // Mock IChargeCalculatorService for AI Assist testing with static responses
+            var mockChargeCalculator = new Mock<IChargeCalculatorService>();
+            mockChargeCalculator.Setup(x => x.CalculateRecommendedChargeAsync(It.IsAny<int>()))
+                .ReturnsAsync((int enterpriseId) => new WileyWidget.Models.ServiceChargeRecommendation
+                {
+                    EnterpriseId = enterpriseId,
+                    RecommendedMonthlyCharge = 42000m,
+                    CurrentMonthlyCharge = 35000m,
+                    MonthlyShortfall = -7000m,
+                    AnnualizedShortfall = -84000m,
+                    RecommendedRateIncrease = 20.0m,
+                    TotalExpenses = 420000m,
+                    ReserveAllocation = 42000m,
+                    CitizenCount = 1500,
+                    Recommendation = "Increase monthly service charge by $7,000 (20%) to cover expenses and maintain reserves.",
+                    AnalysisTimestamp = DateTime.Now
+                });
+            mockChargeCalculator.Setup(x => x.GenerateChargeScenarioAsync(It.IsAny<int>(), It.IsAny<decimal>(), It.IsAny<decimal>()))
+                .ReturnsAsync((int enterpriseId, decimal rateIncrease, decimal expenseChange) => new WileyWidget.Models.WhatIfScenario
+                {
+                    ScenarioName = $"Rate Increase {rateIncrease}%",
+                    CurrentRate = 25.00m,
+                    ProposedRate = 25.00m * (1 + rateIncrease / 100),
+                    CurrentRevenue = 35000m,
+                    ProjectedRevenue = 35000m * (1 + rateIncrease / 100),
+                    CurrentExpenses = 42000m,
+                    ProjectedExpenses = 42000m + expenseChange,
+                    NetImpact = (35000m * (1 + rateIncrease / 100)) - (42000m + expenseChange),
+                    RevenueChange = 35000m * (rateIncrease / 100),
+                    Recommendation = rateIncrease > 0 ? "Rate increase will improve financial position." : "Consider alternative cost reduction strategies."
+                });
+            hostBuilder.Services.AddScoped<IChargeCalculatorService>(sp => mockChargeCalculator.Object);
+
+            // Mock IMunicipalAccountRepository for MunicipalAccountView testing with sample data
+            var mockMunicipalAccountRepo = new Mock<IMunicipalAccountRepository>();
+            var sampleAccounts = new List<WileyWidget.Models.MunicipalAccount>
+            {
+                new WileyWidget.Models.MunicipalAccount
+                {
+                    Id = 1,
+                    AccountNumber = new WileyWidget.Models.AccountNumber("101-1000"),
+                    Name = "General Fund - Cash",
+                    Type = WileyWidget.Models.AccountType.Asset,
+                    Fund = WileyWidget.Models.MunicipalFundType.General,
+                    Balance = 125000.00m,
+                    IsActive = true,
+                    FundDescription = "General operating fund",
+                    TypeDescription = "Asset account",
+                    Notes = "Primary operating cash account"
+                },
+                new WileyWidget.Models.MunicipalAccount
+                {
+                    Id = 2,
+                    AccountNumber = new WileyWidget.Models.AccountNumber("201-2000"),
+                    Name = "Water Fund - Revenue",
+                    Type = WileyWidget.Models.AccountType.Revenue,
+                    Fund = WileyWidget.Models.MunicipalFundType.Water,
+                    Balance = 45000.00m,
+                    IsActive = true,
+                    FundDescription = "Water utility fund",
+                    TypeDescription = "Revenue account",
+                    Notes = "Water service charges"
+                },
+                new WileyWidget.Models.MunicipalAccount
+                {
+                    Id = 3,
+                    AccountNumber = new WileyWidget.Models.AccountNumber("301-3000"),
+                    Name = "Sewer Fund - Expenses",
+                    Type = WileyWidget.Models.AccountType.Expense,
+                    Fund = WileyWidget.Models.MunicipalFundType.Sewer,
+                    Balance = -22500.00m,
+                    IsActive = true,
+                    FundDescription = "Sewer utility fund",
+                    TypeDescription = "Expense account",
+                    Notes = "Sewer maintenance costs"
+                }
+            };
+            mockMunicipalAccountRepo.Setup(x => x.GetAllAsync()).ReturnsAsync(sampleAccounts);
+            mockMunicipalAccountRepo.Setup(x => x.GetByIdAsync(It.IsAny<int>()))
+                .ReturnsAsync((int id) => sampleAccounts.FirstOrDefault(a => a.Id == id));
+            mockMunicipalAccountRepo.Setup(x => x.GetByAccountNumberAsync(It.IsAny<string>()))
+                .ReturnsAsync((string accountNumber) => sampleAccounts.FirstOrDefault(a => a.AccountNumber.Value == accountNumber));
+            mockMunicipalAccountRepo.Setup(x => x.GetByFundAsync(It.IsAny<WileyWidget.Models.MunicipalFundType>()))
+                .ReturnsAsync((WileyWidget.Models.MunicipalFundType fund) => sampleAccounts.Where(a => a.Fund == fund));
+            mockMunicipalAccountRepo.Setup(x => x.GetByTypeAsync(It.IsAny<WileyWidget.Models.AccountType>()))
+                .ReturnsAsync((WileyWidget.Models.AccountType type) => sampleAccounts.Where(a => a.Type == type));
+            mockMunicipalAccountRepo.Setup(x => x.AddAsync(It.IsAny<WileyWidget.Models.MunicipalAccount>()))
+                .ReturnsAsync((WileyWidget.Models.MunicipalAccount a) => 
+                {
+                    a.Id = sampleAccounts.Max(x => x.Id) + 1;
+                    sampleAccounts.Add(a);
+                    return a;
+                });
+            mockMunicipalAccountRepo.Setup(x => x.UpdateAsync(It.IsAny<WileyWidget.Models.MunicipalAccount>()))
+                .ReturnsAsync((WileyWidget.Models.MunicipalAccount a) => a);
+            mockMunicipalAccountRepo.Setup(x => x.DeleteAsync(It.IsAny<int>()))
+                .ReturnsAsync((int id) => 
+                {
+                    var account = sampleAccounts.FirstOrDefault(a => a.Id == id);
+                    if (account != null)
+                    {
+                        sampleAccounts.Remove(account);
+                        return true;
+                    }
+                    return false;
+                });
+            hostBuilder.Services.AddScoped<IMunicipalAccountRepository>(sp => mockMunicipalAccountRepo.Object);
 
             // Build the host
             var host = hostBuilder.Build();
