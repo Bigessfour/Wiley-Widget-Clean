@@ -29,7 +29,8 @@ namespace WileyWidget.UiTests.ComponentTests
         {
             RunOnUIThread(() =>
             {
-                var window = new EnterpriseView();
+                var view = new EnterpriseView();
+                var window = new Window { Content = view, Title = "Enterprise Management" };
                 window.Show();
 
                 // Verify window properties
@@ -54,7 +55,8 @@ namespace WileyWidget.UiTests.ComponentTests
         {
             RunOnUIThread(() =>
             {
-                var window = new EnterpriseView();
+                var view = new EnterpriseView();
+                var window = new Window { Content = view };
                 window.Show();
 
                 // Find SfDataGrid - primary control for enterprise data
@@ -80,8 +82,9 @@ namespace WileyWidget.UiTests.ComponentTests
         {
             RunOnUIThread(() =>
             {
-                var window = new EnterpriseView();
-                var viewModel = window.DataContext as EnterpriseViewModel;
+                var view = new EnterpriseView();
+                var window = new Window { Content = view };
+                var viewModel = view.DataContext as EnterpriseViewModel;
                 Assert.NotNull(viewModel);
 
                 // Test enterprise data properties
@@ -103,8 +106,9 @@ namespace WileyWidget.UiTests.ComponentTests
         {
             RunOnUIThread(() =>
             {
-                var window = new EnterpriseView();
-                var viewModel = window.DataContext as EnterpriseViewModel;
+                var view = new EnterpriseView();
+                var window = new Window { Content = view };
+                var viewModel = view.DataContext as EnterpriseViewModel;
 
                 // Test command availability
                 Assert.True(viewModel.AddEnterpriseCommand.CanExecute(null));
@@ -128,7 +132,8 @@ namespace WileyWidget.UiTests.ComponentTests
         {
             RunOnUIThread(() =>
             {
-                var window = new EnterpriseView();
+                var view = new EnterpriseView();
+                var window = new Window { Content = view };
                 window.Show();
 
                 var dataGrids = FindVisualChildren<SfDataGrid>(window);
@@ -152,7 +157,8 @@ namespace WileyWidget.UiTests.ComponentTests
         {
             RunOnUIThread(() =>
             {
-                var window = new EnterpriseView();
+                var view = new EnterpriseView();
+                var window = new Window { Content = view };
                 window.Show();
 
                 var dockPanel = window.Content as DockPanel;
@@ -180,7 +186,8 @@ namespace WileyWidget.UiTests.ComponentTests
         {
             RunOnUIThread(() =>
             {
-                var window = new EnterpriseView();
+                var view = new EnterpriseView();
+                var window = new Window { Content = view };
                 window.Show();
 
                 var dataGrids = FindVisualChildren<SfDataGrid>(window);
@@ -206,7 +213,8 @@ namespace WileyWidget.UiTests.ComponentTests
         {
             RunOnUIThread(() =>
             {
-                var window = new EnterpriseView();
+                var view = new EnterpriseView();
+                var window = new Window { Content = view, Title = "Enterprise Management" };
                 window.Show();
 
                 // Test window accessibility
@@ -247,7 +255,8 @@ namespace WileyWidget.UiTests.ComponentTests
             {
                 var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
-                var window = new EnterpriseView();
+                var view = new EnterpriseView();
+                var window = new Window { Content = view };
                 window.Show();
 
                 // Force layout update
@@ -271,8 +280,9 @@ namespace WileyWidget.UiTests.ComponentTests
         {
             RunOnUIThread(() =>
             {
-                var window = new EnterpriseView();
-                var viewModel = window.DataContext as EnterpriseViewModel;
+                var view = new EnterpriseView();
+                var window = new Window { Content = view };
+                var viewModel = view.DataContext as EnterpriseViewModel;
 
                 // Test error handling when data loading fails
                 // This would test view model's error handling for database issues

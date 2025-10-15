@@ -28,6 +28,11 @@
         "-File",
         "${workspaceFolder}/scripts/incremental-build.ps1"
       ],
+      "options": {
+        "env": {
+          "POWERSHELL_EXE": "C:/Program Files/PowerShell/7/pwsh.exe"
+        }
+      },
       "problemMatcher": "$msCompile",
       "group": "build",
       "presentation": {
@@ -49,6 +54,11 @@
         "-Iterations",
         "3"
       ],
+      "options": {
+        "env": {
+          "POWERSHELL_EXE": "C:/Program Files/PowerShell/7/pwsh.exe"
+        }
+      },
       "group": "test",
       "presentation": {
         "echo": true,
@@ -68,6 +78,11 @@
         "${workspaceFolder}/scripts/manage-build-cache.ps1",
         "-Stats"
       ],
+      "options": {
+        "env": {
+          "POWERSHELL_EXE": "C:/Program Files/PowerShell/7/pwsh.exe"
+        }
+      },
       "group": "build",
       "presentation": {
         "echo": true,
@@ -87,6 +102,11 @@
         "${workspaceFolder}/scripts/manage-build-cache.ps1",
         "-Clear"
       ],
+      "options": {
+        "env": {
+          "POWERSHELL_EXE": "C:/Program Files/PowerShell/7/pwsh.exe"
+        }
+      },
       "group": "build",
       "presentation": {
         "echo": true,
@@ -282,6 +302,11 @@
         "-Verbosity",
         "normal"
       ],
+      "options": {
+        "env": {
+          "POWERSHELL_EXE": "C:/Program Files/PowerShell/7/pwsh.exe"
+        }
+      },
       "group": "test",
       "presentation": {
         "echo": true,
@@ -302,6 +327,11 @@
         "${workspaceFolder}/scripts/test-stafact-phase2.ps1",
         "-Quick"
       ],
+      "options": {
+        "env": {
+          "POWERSHELL_EXE": "C:/Program Files/PowerShell/7/pwsh.exe"
+        }
+      },
       "group": "test",
       "presentation": {
         "echo": true,
@@ -347,8 +377,17 @@
         "-Project",
         "${workspaceFolder}/WileyWidget.UiTests/WileyWidget.UiTests.csproj",
         "-Verbosity",
-        "normal"
+        "normal",
+        "-Filter",
+        "FullyQualifiedName=WileyWidget.UiTests.EndToEndStartupTests.E2E_01_FullApplicationStartup_WithTiming",
+        ">",
+        "${workspaceFolder}/logs/test-ui.log"
       ],
+      "options": {
+        "env": {
+          "POWERSHELL_EXE": "C:/Program Files/PowerShell/7/pwsh.exe"
+        }
+      },
       "group": "test",
       "presentation": {
         "echo": true,
@@ -379,22 +418,6 @@
         "focus": false,
         "panel": "shared"
       }
-    },
-    {
-      "label": "ef-migrations",
-      "command": "dotnet",
-      "type": "process",
-      "args": ["ef", "migrations", "add", "${input:migrationName}"],
-      "problemMatcher": "$msCompile",
-      "group": "build"
-    },
-    {
-      "label": "ef-update",
-      "command": "dotnet",
-      "type": "process",
-      "args": ["ef", "database", "update"],
-      "problemMatcher": "$msCompile",
-      "group": "build"
     },
     {
       "label": "debug-startup-debugpy",
@@ -431,18 +454,70 @@
       "problemMatcher": []
     },
     {
-      "label": "verify-cicd-tools",
+      "label": "update-ps-modules",
       "type": "shell",
-      "command": "python",
-      "args": ["${workspaceFolder}/scripts/verify-cicd-tools.py"],
+      "command": "pwsh",
+      "args": ["-c", "Update-Module -Force"],
+      "options": {
+        "env": {
+          "POWERSHELL_EXE": "C:/Program Files/PowerShell/7/pwsh.exe"
+        }
+      },
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "verify-ps75",
+      "type": "shell",
+      "command": "pwsh",
+      "args": ["-c", "$PSVersionTable.PSVersion"],
+      "options": {
+        "env": {
+          "POWERSHELL_EXE": "C:/Program Files/PowerShell/7/pwsh.exe"
+        }
+      },
       "group": "test",
       "presentation": {
         "echo": true,
         "reveal": "always",
         "focus": false,
         "panel": "shared"
-      },
-      "problemMatcher": []
+      }
+    },
+    {
+      "label": "view-coverage",
+      "type": "shell",
+      "command": "python",
+      "args": [
+        "-m",
+        "http.server",
+        "8000",
+        "--directory",
+        "${workspaceFolder}/coverage"
+      ],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "grok-test-syncfusion",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-c",
+        "dotnet test WileyWidget.UiTests --filter SfDataGrid; if ($LASTEXITCODE -ne 0) { code --wait .; }"
+      ],
+      "group": "test",
+      "presentation": { "reveal": "always" }
     }
   ],
   "inputs": [

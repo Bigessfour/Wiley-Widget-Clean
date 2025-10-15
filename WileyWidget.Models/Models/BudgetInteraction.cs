@@ -73,7 +73,7 @@ public class BudgetInteraction
     /// Notes about this interaction
     /// </summary>
     [StringLength(300, ErrorMessage = "Notes cannot exceed 300 characters")]
-    public string? Notes { get; set; }
+    public string? Notes { get; set; } = string.Empty;
 
     /// <summary>
     /// Navigation property to primary enterprise

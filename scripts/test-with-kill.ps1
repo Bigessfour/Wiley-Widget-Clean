@@ -1,11 +1,12 @@
-# UI Test Runner with Process Cleanup
+﻿# UI Test Runner with Process Cleanup
 # Runs UI tests with automatic cleanup of lingering processes
 
 param(
     [Parameter(Mandatory=$true)]
     [string]$Project,
     [string]$Verbosity = "normal",
-    [int]$TimeoutMinutes = 5
+    [int]$TimeoutMinutes = 5,
+    [string]$Filter
 )
 
 Write-Output "🚀 UI Test Runner with Process Cleanup"
@@ -65,6 +66,10 @@ try {
         "console;verbosity=$Verbosity"
     )
 
+    if ($Filter) {
+        $testArgs += "--filter", $Filter
+    }
+
     # Add timeout (convert minutes to milliseconds for blame-hang-timeout)
     $timeoutMs = $TimeoutMinutes * 60 * 1000
     $testArgs += "--blame-hang-timeout", "$timeoutMs"
@@ -73,13 +78,73 @@ try {
     Write-Output ""
 
     $startTime = Get-Date
-    & dotnet $testArgs
+
+    # Capture the output
+    $testOutput = & dotnet $testArgs 2>&1
     $exitCode = $LASTEXITCODE
+
     $endTime = Get-Date
     $duration = $endTime - $startTime
 
     Write-Output ""
     Write-Output "⏱️  UI Testing completed in $($duration.TotalSeconds.ToString("F1")) seconds"
+
+    # Process test output for error file
+    $errorFile = "$PSScriptRoot\..\test-error.txt"
+    $errors = $testOutput | Where-Object { $_ -match "error|Error|ERROR|Failed|FAILED" -or $_.ToString().Contains("Exception") }
+
+    if ($errors) {
+        Write-Output "📝 Writing errors to $errorFile..."
+
+        # Extract errors with file paths and sort by file
+        $fileErrors = @()
+        foreach ($line in $errors) {
+            if ($line -match "(.+?\.cs|\.vb|\.fs|\.xaml|\.cshtml|\.vbhtml|\.razor)\((\d+),(\d+)\):\s*(.+)$") {
+                $file = $matches[1]
+                $lineNum = $matches[2]
+                $colNum = $matches[3]
+                $message = $matches[4]
+                $fileErrors += [PSCustomObject]@{
+                    File = $file
+                    Line = [int]$lineNum
+                    Column = [int]$colNum
+                    Message = $message
+                    FullLine = $line
+                }
+            } elseif ($line -match "(.+?\.cs|\.vb|\.fs|\.xaml|\.cshtml|\.vbhtml|\.razor)[^(]*:\s*(.+)$") {
+                $file = $matches[1]
+                $message = $matches[2]
+                $fileErrors += [PSCustomObject]@{
+                    File = $file
+                    Line = 0
+                    Column = 0
+                    Message = $message
+                    FullLine = $line
+                }
+            } else {
+                $fileErrors += [PSCustomObject]@{
+                    File = "Unknown"
+                    Line = 0
+                    Column = 0
+                    Message = $line
+                    FullLine = $line
+                }
+            }
+        }
+
+        # Sort by file name, then by line number
+        $sortedErrors = $fileErrors | Sort-Object File, Line
+
+        # Write to file
+        $sortedErrors | ForEach-Object {
+            "$($_.File)($($_.Line),$($_.Column)): $($_.Message)" | Out-File -FilePath $errorFile -Append
+        }
+
+        Write-Output "📄 Errors sorted and saved to test-error.txt"
+    } else {
+        # Clear the error file if no errors
+        "" | Out-File -FilePath $errorFile
+    }
 
     if ($exitCode -eq 0) {
         Write-Output "✅ All UI tests passed!"

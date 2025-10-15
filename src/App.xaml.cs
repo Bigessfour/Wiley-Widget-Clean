@@ -2,6 +2,7 @@ using System.Windows;
 using Prism.Unity;
 using Prism.Modularity;
 using Unity;
+using Unity.Resolution;
 using Syncfusion.SfSkinManager;
 using Syncfusion.Licensing;
 using WileyWidget.Views;
@@ -20,6 +21,7 @@ using WileyWidget.Services.Threading;
 using WileyWidget.ViewModels;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics.CodeAnalysis;
+using Azure.Identity;
 
 namespace WileyWidget
 {
@@ -43,7 +45,12 @@ namespace WileyWidget
         }
 
         // Stub methods for backwards compatibility (will be removed during full refactor)
-        public static IServiceProvider ServiceProvider => GetActiveServiceProvider();
+        private static IServiceProvider _serviceProvider;
+        public static IServiceProvider ServiceProvider
+        {
+            get => _serviceProvider ?? GetActiveServiceProvider();
+            set => _serviceProvider = value;
+        }
         public static void LogDebugEvent(string category, string message) => Log.Debug("[{Category}] {Message}", category, message);
         public static void LogStartupTiming(string message, TimeSpan elapsed) => Log.Debug("{Message} completed in {Ms}ms", message, elapsed.TotalMilliseconds);
         public static void SetSplashScreenInstance(Window window) => SplashScreenInstance = window;
@@ -62,7 +69,10 @@ namespace WileyWidget
 
         protected override Window CreateShell()
         {
-            return new MainWindow();
+            // CRITICAL: Set CurrentContainer BEFORE resolving shell to ensure views can access it
+            CurrentContainer = Container;
+            
+            return Container.Resolve<MainWindow>();
         }
 
         protected override void InitializeShell(Window shell)
@@ -99,7 +109,7 @@ namespace WileyWidget
             containerRegistry.RegisterSingleton<ISettingsService>(provider => provider.Resolve<SettingsService>());
             containerRegistry.RegisterSingleton<ThemeManager>();
             containerRegistry.RegisterSingleton<IThemeManager>(provider => provider.Resolve<ThemeManager>());
-            containerRegistry.RegisterSingleton<IDispatcherHelper, DispatcherHelper>();
+            containerRegistry.RegisterSingleton<IDispatcherHelper>(provider => new DispatcherHelper());
             
             // Register data repositories
             containerRegistry.Register<IEnterpriseRepository, WileyWidget.Data.EnterpriseRepository>();
@@ -128,7 +138,31 @@ namespace WileyWidget
             containerRegistry.RegisterSingleton<Prism.Dialogs.IDialogService, Prism.Dialogs.DialogService>();
             
             // Register ViewModels
-            containerRegistry.RegisterSingleton<MainViewModel>();
+            containerRegistry.RegisterSingleton<MainViewModel>(provider => new MainViewModel(provider.Resolve<IRegionManager>(), provider.Resolve<IDispatcherHelper>(), provider.Resolve<ILogger<MainViewModel>>()));
+            containerRegistry.Register<AnalyticsViewModel>();
+            containerRegistry.Register<DashboardViewModel>();
+            containerRegistry.Register<EnterpriseViewModel>();
+            containerRegistry.Register<BudgetViewModel>();
+            containerRegistry.Register<MunicipalAccountViewModel>();
+            containerRegistry.Register<UtilityCustomerViewModel>();
+            containerRegistry.Register<ReportsViewModel>();
+
+            // Register Views for navigation
+            containerRegistry.RegisterForNavigation<AnalyticsView>();
+            containerRegistry.RegisterForNavigation<DashboardView>();
+
+            // CRITICAL: Set CurrentContainer immediately after all registrations are complete
+            // This ensures services like ThemeManager and SettingsService can access the container
+            // during their construction, preventing "Application container not initialized" errors
+            CurrentContainer = containerRegistry as IContainerProvider;
+        }
+
+        protected override void ConfigureRegionAdapterMappings(RegionAdapterMappings regionAdapterMappings)
+        {
+            base.ConfigureRegionAdapterMappings(regionAdapterMappings);
+            // Custom adapter for Syncfusion controls (e.g., DockingManager)
+            // Note: DockingManagerRegionAdapter needs to be implemented or imported
+            // regionAdapterMappings.RegisterMapping(typeof(Syncfusion.Windows.Tools.Controls.DockingManager), Container.Resolve<DockingManagerRegionAdapter>());
         }
 
         protected override void ConfigureModuleCatalog(IModuleCatalog moduleCatalog)
@@ -142,7 +176,8 @@ namespace WileyWidget
         {
             base.OnInitialized();
 
-            CurrentContainer = Container;
+            // CurrentContainer is already set in CreateShell()
+            // This ensures it's available during shell construction
 
             Application.Current.MainWindow?.Show();
 
@@ -154,9 +189,9 @@ namespace WileyWidget
 
             try
             {
-                var regionManager = Container.Resolve<IRegionManager>();
-                regionManager.RequestNavigate("MainRegion", "DashboardView");
-                Log.Information("Navigated to DashboardView during application initialization");
+                // var regionManager = Container.Resolve<IRegionManager>();
+                // regionManager.RequestNavigate("MainRegion", "DashboardView");
+                // Log.Information("Navigated to DashboardView during application initialization");
             }
             catch (Exception ex)
             {
@@ -195,8 +230,7 @@ namespace WileyWidget
                 .AddEnvironmentVariables()
                 .AddUserSecrets<App>(optional: true);
 
-            var config = builder.Build();
-            return config;
+            return builder.Build();
         }
     }
 }

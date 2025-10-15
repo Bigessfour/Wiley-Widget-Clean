@@ -81,6 +81,7 @@
     <!-- Test Packages -->
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageVersion Include="xunit" Version="2.9.2" />
+    <PackageVersion Include="xunit.extensibility.core" Version="2.9.2" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2" />
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
     <PackageVersion Include="FluentAssertions" Version="7.0.0" />
@@ -98,6 +99,10 @@
     <PackageVersion Include="Prism.Core" Version="9.0.537" />
     <PackageVersion Include="Prism.Wpf" Version="9.0.537" />
     <PackageVersion Include="Prism.Unity" Version="9.0.537" />
+    <PackageVersion Include="Prism.Regions" Version="9.0.537" />
     <PackageVersion Include="Unity.Container" Version="5.11.11" />
+    <!-- Azure Configuration Packages -->
+    <PackageVersion Include="Azure.Extensions.AspNetCore.Configuration.Secrets" Version="1.3.2" />
+    <PackageVersion Include="Azure.Identity" Version="1.13.1" />
   </ItemGroup>
 </Project>

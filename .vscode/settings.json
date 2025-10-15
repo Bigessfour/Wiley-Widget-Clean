@@ -1,14 +1,16 @@
 {
-  // Azure Theme Configuration for Database Development
+  // Database Development Theme Configuration
   "workbench.colorTheme": "Default Dark Modern",
   "workbench.colorCustomizations": {
     "[Default Dark Modern]": {
-      // Azure-inspired color scheme for database development
+      // Dark theme optimized for database development
       "editor.background": "#0f0f23",
       "editor.foreground": "#cccccc",
       "editor.lineHighlightBackground": "#1e1e2e",
       "editor.selectionBackground": "#264f78",
-      "editor.inactiveSelectionBackground": "#3a3d4100"
+      "editor.inactiveSelectionBackground": "#3a3d4100",
+      "editorSuggestWidget.foreground": "#CCCCCC",
+      "copilotEditor.background": "#1E1E2E"
     }
   },
   "editor.tokenColorCustomizations": {
@@ -46,7 +48,6 @@
   "workbench.editor.tabCloseButton": "left",
   "workbench.tree.indent": 20,
   "cSpell.words": [
-    "AZURECONNECTION",
     "biges",
     "BSTR",
     "CONNECTIONSTRING",
@@ -77,35 +78,39 @@
     "Xfinity"
   ],
   // PowerShell Extension v2025.4.0 configuration (per https://learn.microsoft.com/en-us/powershell/scripting/dev-cross-plat/vscode/using-vscode)
-  "powershell.powerShellDefaultVersion": "Workspace PowerShell v2025.4.0",
-  "powershell.powerShellExePath": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+  "powershell.powerShellDefaultVersion": "PowerShell 7.5.3",
+  "powershell.powerShellExePath": "C:/Program Files/PowerShell/7/pwsh.exe",
   "powershell.powerShellAdditionalExePaths": {
-    "Workspace PowerShell v2025.4.0": "C:/Program Files/PowerShell/7/pwsh.exe"
+    "PowerShell 7.5.3": "C:/Program Files/PowerShell/7/pwsh.exe"
   },
   "powershell.enableProfileLoading": true,
-  "powershell.enableReferencesCodeLens": false,
-  "powershell.enableScriptAnalysis": false, // Disabled for performance
+  "powershell.enableReferencesCodeLens": true,
+  "powershell.enableScriptAnalysis": true, // Re-enabled for script analysis
   "powershell.enableSignatureHelp": false, // Disabled for performance
   "powershell.scriptAnalysis.settingsPath": ".vscode\\PSScriptAnalyzerSettings.psd1",
   "powershell.codeFormatting.preset": "OTBS",
   "powershell.codeFormatting.autoCorrectAliases": false, // Disabled for performance
   "powershell.codeFormatting.useCorrectCasing": false, // Disabled for performance
-  "powershell.integratedConsole.showOnStartup": false,
+  "powershell.integratedConsole.showOnStartup": true,
   "powershell.integratedConsole.focusConsoleOnExecute": false,
   // GitHub Copilot Configuration
   "github.copilot.enable": {
     "*": true,
+    "csharp": true,
+    "xaml": true,
+    "python": true,
     "powershell": true,
     "plaintext": false,
     "markdown": true,
     "scminput": false
   },
   "github.copilot.advanced": {
-    "debug.overrideEngine": "gpt-4o",
-    "debug.overrideModel": "gpt-4o",
-    "length": 500,
-    "temperature": 0.1
+    "debug.overrideModel": "grok-code-fast-1",
+    "length": 1500,
+    "temperature": 0.15
   },
+  "copilot.model": "grok-code-fast-1",
+  "kilocode.model": "grok-code-fast-1",
   // File Associations for PowerShell
   "files.associations": {
     "*.ps1": "powershell",
@@ -118,78 +123,42 @@
     "editor.formatOnSave": true,
     "editor.formatOnType": true
   },
-  // MCP (Model Context Protocol) Configuration
-  "mcp": {
-    "servers": {
-      "github": {
-        "url": "wss://mcp-github.example.com/github",
-        "headers": {
-          "Authorization": "Bearer ${env:GITHUB_PERSONAL_ACCESS_TOKEN}"
-        },
-        "reconnect": true,
-        "reconnectInterval": 5000,
-        "timeout": 30000
-      },
-      "microsoft-docs": {
-        "url": "https://mcp-microsoft-docs.example.com/docs",
-        "headers": {
-          "Authorization": "Bearer ${env:MICROSOFT_DOCS_TOKEN}"
-        },
-        "timeout": 30000
-      }
-    }
-  },
-
-  // Azure MCP Service Principal Authentication
-  // IMPORTANT: Do not store secrets in repo. Configure these in your OS/user environment or .env (untracked).
-  // Example (PowerShell):
-  //   $env:AZURE_CLIENT_ID = "<guid>"
-  //   $env:AZURE_CLIENT_SECRET = "<secret>"
-  //   $env:AZURE_TENANT_ID = "<guid>"
-  // If you need to inject env vars into the integrated terminal, do it locally via user settings, not workspace.
-  // "terminal.integrated.env.windows": { }
-
-  // Azure MCP Extension Settings
-  "azureMcp.serverMode": "namespace",
-  "azureMcp.enabledServices": ["storage", "keyvault"],
-  "azureMcp.readOnly": false,
+  "[csharp]": { "editor.suggest.showSnippets": true },
+  "[xaml]": { "editor.formatOnSave": true },
+  // MCP (Model Context Protocol) Configuration - Commented out placeholder servers
+  // "mcp": {
+  //   "servers": {
+  //     "github": {
+  //       "url": "wss://mcp-github.example.com/github",
+  //       "headers": {
+  //         "Authorization": "Bearer ${env:GITHUB_PERSONAL_ACCESS_TOKEN}"
+  //       },
+  //       "reconnect": true,
+  //       "reconnectInterval": 5000,
+  //       "timeout": 30000
+  //     },
+  //     "microsoft-docs": {
+  //       "url": "https://mcp-microsoft-docs.example.com/docs",
+  //       "headers": {
+  //         "Authorization": "Bearer ${env:MICROSOFT_DOCS_TOKEN}"
+  //       },
+  //       "timeout": 30000
+  //     }
+  //   }
+  // },
 
   // Enhanced context for C# development
   "dotnet.completion.showCompletionItemsFromUnimportedNamespaces": true,
   "omnisharp.enableEditorConfigSupport": true,
   "omnisharp.enableRoslynAnalyzers": true,
 
-  // Azure Development Settings
-  "azureFunctions.deploySubpath": ".",
-  "azureFunctions.postDeployTask": "npm prune",
-  "azureFunctions.preDeployTask": "npm run build",
-  "azureFunctions.projectLanguage": "C#",
-  "azureFunctions.projectRuntime": "~4",
-  "azureFunctions.templateFilter": "Verified",
-
-  // Azure SQL Database Settings
-  "sql.databaseConnections": [
-    {
-      "connectionString": "Server=tcp:${env:AZURE_SQL_SERVER},1433;Database=${env:AZURE_SQL_DATABASE};User ID=${env:AZURE_SQL_USER};Password=${env:AZURE_SQL_PASSWORD};Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;",
-      "name": "Azure SQL Database",
-      "providerName": "MSSQL"
-    }
-  ],
-
-  // SQL Server Extension Settings (ms-mssql.mssql)
+  // SQL Server Extension Settings (ms-mssql.mssql) - Migrated to local development
+  // Removed: Azure SQL connections deprecated with Azure Account retirement Jan 2025
   "mssql.connections": [
     {
-      "id": "azure-sql-database",
-      "server": "${env:AZURE_SQL_SERVER},1433",
-      "database": "${env:AZURE_SQL_DATABASE}",
-      "authenticationType": "SqlLogin",
-      "user": "${env:AZURE_SQL_USER}",
-      "password": "",
-      "savePassword": true,
-      "profileName": "Azure SQL Database",
-      "encrypt": "Mandatory",
-      "trustServerCertificate": false,
-      "connectTimeout": 30
+      "server": "(localdb)\\mssqllocaldb",
+      "database": "WileyWidgetDb",
+      "authenticationType": "Integrated"
     }
   ],
   "mssql.saveAsCsv.includeHeaders": true,
@@ -206,38 +175,8 @@
   "mssql.intelliSense.enableQuickInfo": true,
   "mssql.intelliSense.lowerCaseSuggestions": false,
 
-  // Azure Resource Manager Template Settings
-  "azureResourceManagerTools.enableCodeLens": true,
-  "azureResourceManagerTools.enableParameterFileCodeLens": true,
-
-  // Azure Storage Settings
-  "azureStorage.accountFilter": [],
-  "azureStorage.containerFilter": [],
-  "azureStorage.resourceGroupFilter": "",
-
-  // Azure App Service Settings
-  "appService.defaultWebAppToDeploy": "",
-  "appService.deploySubpath": ".",
-  "appService.showBuildDuringDeployPrompt": true,
-
   // PowerShell formatting
   "powershell.codeFormatting.openBraceOnSameLine": true,
-
-  // PowerShell Pro Tools Configuration (Official Features)
-  "powershellProTools.formDesigner.enabled": true,
-  "powershellProTools.variableExplorer.enabled": true,
-  "powershellProTools.performanceProfiler.enabled": true,
-  "powershellProTools.codeLens.enabled": true,
-  "powershellProTools.debugger.enhanced": true,
-  "powershellProTools.intelliSense.enhanced": true,
-  "powershellProTools.overrideDefaultFormatter": true,
-  "powershellProTools.astExplorer.enabled": true,
-  "powershellProTools.moduleExplorer.enabled": true,
-  "powershellProTools.scriptPackaging.enabled": true,
-  "powershellProTools.formGenerator.enabled": true,
-  "powershellProTools.oneClickAttach.enabled": true,
-  "powershellProTools.codeConversion.enabled": true,
-  "powershellProTools.rapidSense.enabled": true,
 
   // Terminal Shell Integration (VS Code 1.74+)
   "terminal.integrated.shellIntegration.enabled": true,
@@ -246,6 +185,7 @@
   "terminal.integrated.shellIntegration.history": 100,
   "terminal.integrated.shellIntegration.showCommandGuide": true,
   "terminal.integrated.stickyScroll.enabled": true,
+  "terminal.integrated.scrollback": 5000,
 
   // XAML formatting
   "xml.format.splitAttributes": "splitNewLine",
@@ -260,7 +200,7 @@
   "git.confirmSync": false,
   "git.enableSmartCommit": true,
   "mcp.autoApprove": true,
-  "mcp.servers.github.autoApprove": true,
+  // "mcp.servers.github.autoApprove": true, // Removed: MCP github server commented out
   "terminal.integrated.confirmOnExit": "never",
   "terminal.integrated.confirmOnKill": "never",
 
@@ -292,16 +232,15 @@
 
   // Memory optimization settings
   "editor.largeFileOptimizations": true,
-  "files.maxMemoryForLargeFilesMB": 4096,
+  "files.maxMemoryForLargeFilesMB": 10240,
   "search.maxResults": 10000,
   "search.followSymlinks": false,
   "git.enabled": true,
   "git.autorefresh": false,
+  "workbench.editor.wrapWord": "on",
 
   // Python Configuration
-  // Note: Using system Python since virtual environment setup is incomplete
-  // Consider setting up virtual environment with: python -m venv .venv
-  // Then update this path to: "${workspaceFolder}/.venv/Scripts/python.exe"
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/Scripts/python.exe",
   "python.terminal.activateEnvironment": true,
   "python.linting.enabled": true,
   "python.linting.pylintEnabled": false,
@@ -315,6 +254,7 @@
     "**/node_modules/**": true
   },
   "python.analysis.logLevel": "Error",
+  "python.analysis.extraPaths": ["${workspaceFolder}/scripts"],
 
   // Testing Configuration
   "testing.autoRun.mode": "rerun",
@@ -338,6 +278,7 @@
   ],
   "coverage-gutters.coverageBaseDir": "${workspaceFolder}",
   "coverage-gutters.coverageFileExtension": ".xml,.json,.info",
+  "coverage-gutters.partialHighlightBackground": "#FF000055",
 
   // Python Testing Configuration
   "python.testing.pytestEnabled": true,

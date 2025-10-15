@@ -34,7 +34,26 @@ public class MunicipalAccountIntegrationTests : IDisposable
     [Fact]
     public async Task MunicipalAccountRepository_AddAccount_Succeeds()
     {
-        // Arrange
+        // Arrange - Create required entities first
+        var department = new Department
+        {
+            Name = "Finance Department",
+            DepartmentCode = "FIN"
+        };
+        _context.Departments.Add(department);
+
+        var budgetPeriod = new BudgetPeriod
+        {
+            Year = 2025,
+            Name = "2025 Budget Period",
+            Status = BudgetStatus.Adopted,
+            StartDate = new DateTime(2025, 1, 1),
+            EndDate = new DateTime(2025, 12, 31),
+            IsActive = true
+        };
+        _context.BudgetPeriods.Add(budgetPeriod);
+        await _context.SaveChangesAsync();
+
         var account = new MunicipalAccount
         {
             AccountNumber = new AccountNumber("101-1000"),
@@ -42,6 +61,8 @@ public class MunicipalAccountIntegrationTests : IDisposable
             Type = AccountType.Asset,
             Fund = MunicipalFundType.General,
             FundClass = FundClass.Governmental,
+            DepartmentId = department.Id,
+            BudgetPeriodId = budgetPeriod.Id,
             Balance = 50000.00m,
             BudgetAmount = 55000.00m,
             IsActive = true
@@ -52,7 +73,7 @@ public class MunicipalAccountIntegrationTests : IDisposable
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal("101-1000", result.AccountNumber.ToString());
+        Assert.Equal("101-1000", result.AccountNumber!.ToString());
         Assert.Equal(AccountType.Asset, result.Type);
         Assert.Equal(MunicipalFundType.General, result.Fund);
     }
@@ -60,7 +81,26 @@ public class MunicipalAccountIntegrationTests : IDisposable
     [Fact]
     public async Task MunicipalAccountRepository_GetAllAccounts_ReturnsAllAccounts()
     {
-        // Arrange
+        // Arrange - Create required entities first
+        var department = new Department
+        {
+            Name = "Finance Department",
+            DepartmentCode = "FIN"
+        };
+        _context.Departments.Add(department);
+
+        var budgetPeriod = new BudgetPeriod
+        {
+            Year = 2025,
+            Name = "2025 Budget Period",
+            Status = BudgetStatus.Adopted,
+            StartDate = new DateTime(2025, 1, 1),
+            EndDate = new DateTime(2025, 12, 31),
+            IsActive = true
+        };
+        _context.BudgetPeriods.Add(budgetPeriod);
+        await _context.SaveChangesAsync();
+
         var account1 = new MunicipalAccount
         {
             AccountNumber = new AccountNumber("101-1000"),
@@ -68,6 +108,8 @@ public class MunicipalAccountIntegrationTests : IDisposable
             Type = AccountType.Asset,
             Fund = MunicipalFundType.General,
             FundClass = FundClass.Governmental,
+            DepartmentId = department.Id,
+            BudgetPeriodId = budgetPeriod.Id,
             Balance = 50000.00m,
             BudgetAmount = 55000.00m,
             IsActive = true
@@ -80,6 +122,8 @@ public class MunicipalAccountIntegrationTests : IDisposable
             Type = AccountType.Expense,
             Fund = MunicipalFundType.General,
             FundClass = FundClass.Governmental,
+            DepartmentId = department.Id,
+            BudgetPeriodId = budgetPeriod.Id,
             Balance = 0.00m,
             BudgetAmount = 45000.00m,
             IsActive = true
@@ -93,14 +137,33 @@ public class MunicipalAccountIntegrationTests : IDisposable
 
         // Assert
         Assert.Equal(2, accounts.Count());
-        Assert.Contains(accounts, a => a.AccountNumber.ToString() == "101-1000");
-        Assert.Contains(accounts, a => a.AccountNumber.ToString() == "201-2000");
+        Assert.Contains(accounts, a => a.AccountNumber!.ToString() == "101-1000");
+        Assert.Contains(accounts, a => a.AccountNumber!.ToString() == "201-2000");
     }
 
     [Fact]
     public async Task MunicipalAccountRepository_GetByFund_ReturnsFilteredAccounts()
     {
-        // Arrange
+        // Arrange - Create required entities first
+        var department = new Department
+        {
+            Name = "Finance Department",
+            DepartmentCode = "FIN"
+        };
+        _context.Departments.Add(department);
+
+        var budgetPeriod = new BudgetPeriod
+        {
+            Year = 2025,
+            Name = "2025 Budget Period",
+            Status = BudgetStatus.Adopted,
+            StartDate = new DateTime(2025, 1, 1),
+            EndDate = new DateTime(2025, 12, 31),
+            IsActive = true
+        };
+        _context.BudgetPeriods.Add(budgetPeriod);
+        await _context.SaveChangesAsync();
+
         var generalFundAccount = new MunicipalAccount
         {
             AccountNumber = new AccountNumber("101-1000"),
@@ -108,6 +171,8 @@ public class MunicipalAccountIntegrationTests : IDisposable
             Type = AccountType.Asset,
             Fund = MunicipalFundType.General,
             FundClass = FundClass.Governmental,
+            DepartmentId = department.Id,
+            BudgetPeriodId = budgetPeriod.Id,
             Balance = 50000.00m,
             BudgetAmount = 55000.00m,
             IsActive = true
@@ -120,6 +185,8 @@ public class MunicipalAccountIntegrationTests : IDisposable
             Type = AccountType.Asset,
             Fund = MunicipalFundType.Enterprise,
             FundClass = FundClass.Proprietary,
+            DepartmentId = department.Id,
+            BudgetPeriodId = budgetPeriod.Id,
             Balance = 25000.00m,
             BudgetAmount = 30000.00m,
             IsActive = true
@@ -133,7 +200,7 @@ public class MunicipalAccountIntegrationTests : IDisposable
 
         // Assert
         Assert.Single(generalFundAccounts);
-        Assert.Equal("101-1000", generalFundAccounts.First().AccountNumber.ToString());
+        Assert.Equal("101-1000", generalFundAccounts.First().AccountNumber!.ToString());
         Assert.Equal(MunicipalFundType.General, generalFundAccounts.First().Fund);
     }
 

@@ -6,27 +6,35 @@
     xmlns:controls="clr-namespace:WileyWidget.Controls"
     xmlns:syncfusion="http://schemas.syncfusion.com/wpf">
 
-    <!-- ✅ REFACTORED RESOURCE DICTIONARY -->
-    <!-- Now merges structured resources and defines only unique items -->
-    <!-- References centralized resources from Resources/ folder -->
+    <!-- Simplified Generic Theme Resources -->
+    <!-- Contains basic styling and theming for the Wiley Widget application -->
 
-    <ResourceDictionary.MergedDictionaries>
-        <!-- Import all structured resources -->
-        <ResourceDictionary Source="/WileyWidget;component/Resources/Colors.xaml" />
-        <ResourceDictionary Source="/WileyWidget;component/Resources/Brushes.xaml" />
-        <ResourceDictionary Source="/WileyWidget;component/Resources/Converters.xaml" />
-        <ResourceDictionary Source="/WileyWidget;component/Resources/CommonStyles.xaml" />
-        <ResourceDictionary Source="/WileyWidget;component/Resources/ButtonStyles.xaml" />
-        <ResourceDictionary Source="/WileyWidget;component/Resources/DataGridStyles.xaml" />
-    </ResourceDictionary.MergedDictionaries>
+    <!-- Basic Colors -->
+    <Color x:Key="PrimaryColor">#2E8B57</Color>
+    <Color x:Key="SecondaryColor">#4682B4</Color>
+    <Color x:Key="AccentColor">#FFD700</Color>
+    <Color x:Key="BackgroundColor">#FFFFFF</Color>
+    <Color x:Key="ForegroundColor">#000000</Color>
+    <Color x:Key="MutedTextColor">#666666</Color>
 
-    <!-- ============================================== -->
-    <!-- LEGACY/UNIQUE RESOURCES - Only items not in structured files -->
-    <!-- ============================================== -->
-
-    <!-- Additional Text Brushes (if needed beyond CommonStyles) -->
+    <!-- Basic Brushes -->
+    <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource PrimaryColor}" />
+    <SolidColorBrush x:Key="SecondaryBrush" Color="{StaticResource SecondaryColor}" />
+    <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}" />
+    <SolidColorBrush x:Key="BackgroundBrush" Color="{StaticResource BackgroundColor}" />
+    <SolidColorBrush x:Key="ForegroundBrush" Color="{StaticResource ForegroundColor}" />
     <SolidColorBrush x:Key="CaptionTextBrush" Color="{StaticResource MutedTextColor}" />
 
-    <!-- Any additional unique resources can go here -->
+    <!-- Basic Styles -->
+    <Style x:Key="BaseTextBlockStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="Segoe UI" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Foreground" Value="{StaticResource ForegroundBrush}" />
+    </Style>
+
+    <Style x:Key="HeaderTextBlockStyle" TargetType="TextBlock" BasedOn="{StaticResource BaseTextBlockStyle}">
+        <Setter Property="FontSize" Value="16" />
+        <Setter Property="FontWeight" Value="Bold" />
+    </Style>
 
 </ResourceDictionary>

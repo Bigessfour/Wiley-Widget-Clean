@@ -27,6 +27,7 @@ public class EnterpriseRepository : IEnterpriseRepository
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
         return await context.Enterprises
+            .Where(e => !e.IsDeleted)
             .AsNoTracking()
             .OrderBy(e => e.Name)
             .ToListAsync();
@@ -72,7 +73,7 @@ public class EnterpriseRepository : IEnterpriseRepository
     /// </summary>
     public async Task<Enterprise> AddAsync(Enterprise enterprise)
     {
-        await using var context = await _contextFactory.CreateDbContextAsync();
+        var context = await _contextFactory.CreateDbContextAsync();
         context.Enterprises.Add(enterprise);
         await context.SaveChangesAsync();
         return enterprise;
@@ -83,7 +84,12 @@ public class EnterpriseRepository : IEnterpriseRepository
     /// </summary>
     public async Task<Enterprise> UpdateAsync(Enterprise enterprise)
     {
-        await using var context = await _contextFactory.CreateDbContextAsync();
+        var context = await _contextFactory.CreateDbContextAsync();
+        
+        // Set audit fields
+        enterprise.ModifiedDate = DateTime.UtcNow;
+        enterprise.ModifiedBy = enterprise.ModifiedBy ?? "System";
+        
         context.Enterprises.Update(enterprise);
         try
         {
@@ -153,12 +159,13 @@ public class EnterpriseRepository : IEnterpriseRepository
 
         foreach (var kvp in headerValueMap)
         {
-            var key = kvp.Key.ToLowerInvariant();
+            var key = kvp.Key.ToLowerInvariant().Replace(" ", "");
             var value = kvp.Value?.Trim();
 
             switch (key)
             {
                 case "name":
+                case "enterprisename":
                     if (!string.IsNullOrEmpty(value))
                         enterprise.Name = value;
                     break;
@@ -189,6 +196,11 @@ public class EnterpriseRepository : IEnterpriseRepository
                     if (!string.IsNullOrEmpty(value))
                         enterprise.Notes = value;
                     break;
+                case "totalbudget":
+                case "budget":
+                    if (decimal.TryParse(value, out var budget))
+                        enterprise.TotalBudget = budget;
+                    break;
             }
         }
 
@@ -213,7 +225,7 @@ public class EnterpriseRepository : IEnterpriseRepository
         {
             query = query.Where(e => e.Id != excludeId.Value);
         }
-        return await query.AnyAsync(e => e.Name == name);
+        return await query.AnyAsync(e => string.Equals(e.Name, name, StringComparison.OrdinalIgnoreCase));
     }
 
     /// <summary>
@@ -228,18 +240,20 @@ public class EnterpriseRepository : IEnterpriseRepository
 
         enterprise.IsDeleted = true;
         enterprise.DeletedDate = DateTime.UtcNow;
+        enterprise.DeletedBy = "System"; // TODO: Get from current user context
         await context.SaveChangesAsync();
         return true;
     }
 
     /// <summary>
-    /// Gets all enterprises including their budget interactions
+    /// Gets all enterprises with their budget interactions
     /// </summary>
     public async Task<IEnumerable<Enterprise>> GetWithInteractionsAsync()
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
         return await context.Enterprises
             .Include(e => e.BudgetInteractions)
+            .OrderBy(e => e.Name)
             .AsNoTracking()
             .ToListAsync();
     }
@@ -257,7 +271,12 @@ public class EnterpriseRepository : IEnterpriseRepository
                 Id = e.Id,
                 Name = e.Name,
                 CurrentRate = e.CurrentRate,
-                CitizenCount = e.CitizenCount
+                CitizenCount = e.CitizenCount,
+                MonthlyRevenue = e.CitizenCount * e.CurrentRate,
+                MonthlyExpenses = e.MonthlyExpenses,
+                MonthlyBalance = (e.CitizenCount * e.CurrentRate) - e.MonthlyExpenses,
+                Status = ((e.CitizenCount * e.CurrentRate) - e.MonthlyExpenses) > 0 ? "Surplus" :
+                         ((e.CitizenCount * e.CurrentRate) - e.MonthlyExpenses) < 0 ? "Deficit" : "Break-even"
             })
             .ToListAsync();
     }
@@ -276,7 +295,12 @@ public class EnterpriseRepository : IEnterpriseRepository
                 Id = e.Id,
                 Name = e.Name,
                 CurrentRate = e.CurrentRate,
-                CitizenCount = e.CitizenCount
+                CitizenCount = e.CitizenCount,
+                MonthlyRevenue = e.CitizenCount * e.CurrentRate,
+                MonthlyExpenses = e.MonthlyExpenses,
+                MonthlyBalance = (e.CitizenCount * e.CurrentRate) - e.MonthlyExpenses,
+                Status = ((e.CitizenCount * e.CurrentRate) - e.MonthlyExpenses) > 0 ? "Surplus" :
+                         ((e.CitizenCount * e.CurrentRate) - e.MonthlyExpenses) < 0 ? "Deficit" : "Break-even"
             })
             .ToListAsync();
     }
@@ -293,6 +317,7 @@ public class EnterpriseRepository : IEnterpriseRepository
 
         enterprise.IsDeleted = false;
         enterprise.DeletedDate = null;
+        enterprise.DeletedBy = null;
         await context.SaveChangesAsync();
         return true;
     }

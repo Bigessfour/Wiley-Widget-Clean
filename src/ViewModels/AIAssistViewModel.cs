@@ -43,55 +43,95 @@ public partial class AIAssistViewModel : ObservableObject
         }
     }
 
-    [ObservableProperty]
-    private string messageText = string.Empty;
-
-    [ObservableProperty]
     private string queryText = string.Empty;
 
-    [ObservableProperty]
+    public string QueryText
+    {
+        get => queryText;
+        set => SetProperty(ref queryText, value);
+    }
+
+    private string messageText = string.Empty;
+
+    public string MessageText
+    {
+        get => messageText;
+        set => SetProperty(ref messageText, value);
+    }
+
     private string response = string.Empty;
+    public string Response
+    {
+        get => response;
+        set => SetProperty(ref response, value);
+    }
 
     [ObservableProperty]
     private string selectedHistoryItem;
 
-    [ObservableProperty]
     private bool isTyping = false;
+    public bool IsTyping
+    {
+        get => isTyping;
+        set => SetProperty(ref isTyping, value);
+    }
 
-    /// <summary>
-    /// Error message for service failures
-    /// </summary>
-    [ObservableProperty]
     private string errorMessage = string.Empty;
+    public string ErrorMessage
+    {
+        get => errorMessage;
+        set => SetProperty(ref errorMessage, value);
+    }
 
     /// <summary>
     /// Available conversation modes
     /// </summary>
     public List<ConversationMode> AvailableModes { get; } = new()
     {
-        new ConversationMode { Name = "General", Description = "General questions and analysis", Icon = "🤖" },
-        new ConversationMode { Name = "WhatIf", Description = "Plan financial scenarios and upgrades", Icon = "🔮" },
-        new ConversationMode { Name = "Advisory", Description = "Anticipate needs and provide insights", Icon = "🎯" }
+        new ConversationMode { Name = "General Assistant", Description = "General questions and analysis", Icon = "🤖" },
+        new ConversationMode { Name = "Service Charge Calculator", Description = "Calculate service charges and fees", Icon = "💰" },
+        new ConversationMode { Name = "What-If Planner", Description = "Plan financial scenarios and upgrades", Icon = "🔮" },
+        new ConversationMode { Name = "Proactive Advisor", Description = "Anticipate needs and provide insights", Icon = "🎯" }
     };
 
     /// <summary>
     /// Currently selected conversation mode
     /// </summary>
-    [ObservableProperty]
     private ConversationMode selectedMode;
+    public ConversationMode SelectedMode
+    {
+        get => selectedMode;
+        set => SetProperty(ref selectedMode, value);
+    }
 
     // Conversation mode properties
-    [ObservableProperty]
     private bool isGeneralMode = true;
+    public bool IsGeneralMode
+    {
+        get => isGeneralMode;
+        set => SetProperty(ref isGeneralMode, value);
+    }
 
-    [ObservableProperty]
     private bool isServiceChargeMode = false;
+    public bool IsServiceChargeMode
+    {
+        get => isServiceChargeMode;
+        set => SetProperty(ref isServiceChargeMode, value);
+    }
 
-    [ObservableProperty]
     private bool isWhatIfMode = false;
+    public bool IsWhatIfMode
+    {
+        get => isWhatIfMode;
+        set => SetProperty(ref isWhatIfMode, value);
+    }
 
-    [ObservableProperty]
     private bool isProactiveMode = false;
+    public bool IsProactiveMode
+    {
+        get => isProactiveMode;
+        set => SetProperty(ref isProactiveMode, value);
+    }
 
     // Financial input properties
     [ObservableProperty]
@@ -113,8 +153,12 @@ public partial class AIAssistViewModel : ObservableObject
     private decimal reserveAllocationPercentage = 15;
 
     // UI visibility properties
-    [ObservableProperty]
     private bool showFinancialInputs;
+    public bool ShowFinancialInputs
+    {
+        get => showFinancialInputs;
+        set => SetProperty(ref showFinancialInputs, value);
+    }
 
     /// <summary>
     /// Loading state for UI feedback

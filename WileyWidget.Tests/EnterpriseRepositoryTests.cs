@@ -43,6 +43,10 @@ public class EnterpriseRepositoryTests : IDisposable
     [Fact]
     public async Task GetAllAsync_EmptyDatabase_ReturnsEmptyCollection()
     {
+        // Arrange - Clear seeded data
+        using var context = _contextFactory.CreateDbContext();
+        context.Database.ExecuteSqlRaw("DELETE FROM Enterprises");
+
         // Act
         var result = await _repository.GetAllAsync();
 
@@ -282,6 +286,10 @@ public class EnterpriseRepositoryTests : IDisposable
     [Fact]
     public async Task GetCountAsync_EmptyDatabase_ReturnsZero()
     {
+        // Arrange - Clear seeded data
+        using var context = _contextFactory.CreateDbContext();
+        context.Database.ExecuteSqlRaw("DELETE FROM Enterprises");
+
         // Act
         var result = await _repository.GetCountAsync();
 
@@ -313,6 +321,10 @@ public class EnterpriseRepositoryTests : IDisposable
     [Fact]
     public async Task GetWithInteractionsAsync_EmptyDatabase_ReturnsEmptyCollection()
     {
+        // Arrange - Clear seeded data
+        using var context = _contextFactory.CreateDbContext();
+        context.Database.ExecuteSqlRaw("DELETE FROM Enterprises");
+
         // Act
         var result = await _repository.GetWithInteractionsAsync();
 
@@ -473,7 +485,7 @@ public class EnterpriseRepositoryTests : IDisposable
         // Assert
         Assert.NotNull(result);
         Assert.Equal(string.Empty, result.Name); // Empty string is still valid for string properties
-        Assert.Equal(string.Empty, result.Description);
+        Assert.Null(result.Description); // Whitespace-only values are treated as null
         Assert.Equal(15.00m, result.CurrentRate);
     }
 

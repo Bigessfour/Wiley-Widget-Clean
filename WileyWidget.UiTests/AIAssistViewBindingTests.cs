@@ -11,17 +11,19 @@ public class AIAssistViewBindingTests : UiTestApplication
     public void Changing_Mode_Updates_FinancialInputs_Visibility()
     {
         WileyWidget.AIAssistView view = null;
+        Window window = null;
         RunOnUIThread(() =>
         {
             view = new WileyWidget.AIAssistView();
-            view.Show();
-            view.UpdateLayout();
+            window = new Window { Content = view };
+            window.Show();
+            window.UpdateLayout();
         });
 
         Assert.NotNull(view);
 
         // Initially in General mode - financial inputs should be hidden
-        var doublesInitial = UiTestHelpers.FindVisualChildrenWithRetry<Syncfusion.Windows.Shared.DoubleTextBox>(view, expectedMin: 1);
+        var doublesInitial = UiTestHelpers.FindVisualChildrenWithRetry<Syncfusion.Windows.Shared.DoubleTextBox>(window, expectedMin: 1);
         Assert.True(doublesInitial.Count > 0);
         Assert.True(doublesInitial.All(d => d.IsVisible == false));
 
@@ -35,10 +37,10 @@ public class AIAssistViewBindingTests : UiTestApplication
 
         // Allow UI to update and re-query
         UiTestHelpers.DoEvents();
-        var doublesAfter = UiTestHelpers.FindVisualChildrenWithRetry<Syncfusion.Windows.Shared.DoubleTextBox>(view, expectedMin: 1);
+        var doublesAfter = UiTestHelpers.FindVisualChildrenWithRetry<Syncfusion.Windows.Shared.DoubleTextBox>(window, expectedMin: 1);
         Assert.Contains(doublesAfter, d => d.IsVisible);
 
         // Cleanup
-        RunOnUIThread(() => view.Close());
+        RunOnUIThread(() => window.Close());
     }
 }

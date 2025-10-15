@@ -176,9 +176,16 @@ public class UnitOfWork : IUnitOfWork
         }
         finally
         {
-            if (_currentTransaction != null)
+            try
             {
                 await _currentTransaction.DisposeAsync();
+            }
+            catch
+            {
+                // Ignore dispose errors
+            }
+            finally
+            {
                 _currentTransaction = null;
             }
         }
@@ -199,6 +206,11 @@ public class UnitOfWork : IUnitOfWork
             await _currentTransaction.RollbackAsync(cancellationToken);
             Log.Debug("Transaction rolled back: {TransactionId}", _currentTransaction.TransactionId);
         }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("completed"))
+        {
+            // Transaction already completed, ignore
+            Log.Debug("Transaction already completed, ignoring rollback");
+        }
         catch (Exception ex)
         {
             Log.Error(ex, "Error rolling back transaction");
@@ -206,9 +218,16 @@ public class UnitOfWork : IUnitOfWork
         }
         finally
         {
-            if (_currentTransaction != null)
+            try
             {
                 await _currentTransaction.DisposeAsync();
+            }
+            catch
+            {
+                // Ignore dispose errors
+            }
+            finally
+            {
                 _currentTransaction = null;
             }
         }
@@ -226,7 +245,7 @@ public class UnitOfWork : IUnitOfWork
             throw new ArgumentNullException(nameof(operation));
         }
 
-        await using var transaction = await BeginTransactionAsync(cancellationToken);
+        await BeginTransactionAsync(cancellationToken);
         try
         {
             var result = await operation();
@@ -252,7 +271,7 @@ public class UnitOfWork : IUnitOfWork
             throw new ArgumentNullException(nameof(operation));
         }
 
-        await using var transaction = await BeginTransactionAsync(cancellationToken);
+        await BeginTransactionAsync(cancellationToken);
         try
         {
             await operation();

@@ -2,10 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
-using Microsoft.Extensions.DependencyInjection;
+using System.Windows.Controls;
 using Syncfusion.UI.Xaml.Charts;
-//using Syncfusion.UI.Xaml.Gauges;
-//using WileyWidget.Services;
 using WileyWidget.ViewModels;
 
 namespace WileyWidget;
@@ -13,49 +11,42 @@ namespace WileyWidget;
 /// <summary>
 /// High-impact analytics dashboard wiring Syncfusion visuals to Grok output.
 /// </summary>
-public partial class AnalyticsView : Window
+public partial class AnalyticsView : UserControl
 {
-    private readonly IServiceScope _viewScope;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="AnalyticsView"/> class.
+    /// Parameterless constructor for XAML designer and Prism region navigation.
     /// </summary>
-    public AnalyticsView()
+    public AnalyticsView() : this(null)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AnalyticsView"/> class with dependency injection.
+    /// </summary>
+    /// <param name="viewModel">The analytics view model injected by the container.</param>
+    public AnalyticsView(AnalyticsViewModel viewModel)
     {
         InitializeComponent();
 
-        IServiceProvider? provider = null;
-        try
-        {
-            provider = App.GetActiveServiceProvider();
-        }
-        catch (InvalidOperationException)
-        {
-            provider = Application.Current?.Properties["ServiceProvider"] as IServiceProvider;
-        }
+        // AnalyticsChart is available as a XAML-generated field
 
-        if (provider is null)
+        if (viewModel != null)
         {
-            throw new InvalidOperationException("ServiceProvider is not available for AnalyticsView");
+            DataContext = viewModel;
+            viewModel.DataLoaded += OnAnalyticsLoaded!;
         }
-
-        _viewScope = provider.CreateScope();
-        var viewModel = _viewScope.ServiceProvider.GetRequiredService<AnalyticsViewModel>();
-        DataContext = viewModel;
-
-        viewModel.DataLoaded += OnAnalyticsLoaded!;
+        
+        // Clean up when the control is unloaded
+        Unloaded += AnalyticsView_Unloaded;
     }
 
-    /// <inheritdoc />
-    protected override void OnClosed(EventArgs e)
+    private void AnalyticsView_Unloaded(object sender, RoutedEventArgs e)
     {
         if (DataContext is AnalyticsViewModel viewModel)
         {
             viewModel.DataLoaded -= OnAnalyticsLoaded!;
         }
-
-        _viewScope.Dispose();
-        base.OnClosed(e);
     }
 
     private void OnAnalyticsLoaded(object? sender, EventArgs e)

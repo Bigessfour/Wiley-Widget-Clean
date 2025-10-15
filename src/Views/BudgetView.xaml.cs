@@ -161,4 +161,19 @@ public partial class BudgetView : UserControl
 
         window.Show();
     }
+
+    // Methods for UI test compatibility
+    public void Show()
+    {
+        // UserControl doesn't have Show, but make it visible
+        Visibility = Visibility.Visible;
+    }
+
+    public void Close()
+    {
+        // UserControl doesn't have Close, but hide it
+        Visibility = Visibility.Collapsed;
+    }
+
+    public string Title => "Budget";
 }

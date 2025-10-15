@@ -52,8 +52,11 @@ public class AccountNumber
     /// </summary>
     public AccountNumber(string value)
     {
-        if (string.IsNullOrWhiteSpace(value))
+        if (string.IsNullOrEmpty(value))
             throw new ArgumentException("Account number cannot be null or empty");
+
+        if (value.Length > 20)
+            throw new ArgumentException("Account number cannot exceed 20 characters");
 
         if (!Regex.IsMatch(value, @"^\d+([.-]\d+)*$"))
             throw new ArgumentException("Invalid account number format. Must be numeric with optional separators (dots or hyphens) (e.g., 405, 405.1, 410.2.1, 101-1000-000)");
@@ -105,6 +108,14 @@ public class MunicipalAccount : INotifyPropertyChanged
     }
 
     /// <summary>
+    /// Default constructor with sensible defaults
+    /// </summary>
+    public MunicipalAccount()
+    {
+        _type = AccountType.Asset;
+    }
+
+    /// <summary>
     /// Unique identifier for the municipal account
     /// </summary>
     [Key]
@@ -122,12 +133,12 @@ public class MunicipalAccount : INotifyPropertyChanged
     /// Hierarchical account number following municipal accounting standards (e.g., "405", "405.1", "410.2.1")
     /// </summary>
     [Required(ErrorMessage = "Account number is required")]
-    public required AccountNumber AccountNumber
+    public AccountNumber? AccountNumber
     {
-        get => _accountNumber!;
+        get => _accountNumber;
         set
         {
-            if (_accountNumber != value)
+            if (!Equals(_accountNumber, value))
             {
                 _accountNumber = value;
                 OnPropertyChanged(nameof(AccountNumber), nameof(DisplayName));
@@ -138,7 +149,6 @@ public class MunicipalAccount : INotifyPropertyChanged
     /// <summary>
     /// Fund class for GASB compliance
     /// </summary>
-    [Required]
     public FundClass? FundClass { get; set; }
 
     /// <summary>
@@ -228,10 +238,6 @@ public class MunicipalAccount : INotifyPropertyChanged
 
     private MunicipalFundType _fund;
 
-    /// <summary>
-    /// Fund type for governmental fund accounting
-    /// </summary>
-    [Required]
     public MunicipalFundType Fund
     {
         get => _fund;
@@ -240,6 +246,14 @@ public class MunicipalAccount : INotifyPropertyChanged
             if (_fund != value)
             {
                 _fund = value;
+                // Set FundClass based on Fund type
+                // FundClass = value switch
+                // {
+                //     MunicipalFundType.General or MunicipalFundType.SpecialRevenue or MunicipalFundType.CapitalProjects or MunicipalFundType.DebtService => FundClass.Governmental,
+                //     MunicipalFundType.Enterprise or MunicipalFundType.InternalService => FundClass.Proprietary,
+                //     MunicipalFundType.Trust or MunicipalFundType.Agency => FundClass.Fiduciary,
+                //     _ => FundClass.Governmental // Default for additional funds
+                // };
                 OnPropertyChanged(nameof(Fund), nameof(FundDescription));
             }
         }
@@ -342,7 +356,7 @@ public class MunicipalAccount : INotifyPropertyChanged
     /// Display name combining account number and name
     /// </summary>
     [NotMapped]
-    public string DisplayName => $"{AccountNumber} - {Name}";
+    public string DisplayName => $"{AccountNumber?.ToString() ?? ""} - {Name}";
 
     /// <summary>
     /// Human-readable account type description

@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using Xunit;
 using WileyWidget.Services;
@@ -11,7 +12,7 @@ namespace WileyWidget.Tests;
 public sealed class SettingsServiceTests : IDisposable
 {
     private readonly string _testDirectory;
-    private readonly string _originalRoot;
+    private readonly SettingsService _testInstance;
 
     public SettingsServiceTests()
     {
@@ -19,22 +20,20 @@ public sealed class SettingsServiceTests : IDisposable
         _testDirectory = Path.Combine(Path.GetTempPath(), "WileyWidgetTest");
         Directory.CreateDirectory(_testDirectory);
 
-        // Store original root and set test root
-        _originalRoot = typeof(SettingsService)
-            .GetField("_root", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
-            .GetValue(SettingsService.Instance) as string ?? "";
+        // Create a test instance directly instead of using the singleton
+        _testInstance = new SettingsService();
 
-        // Use reflection to set the test directory
+        // Use reflection to set the test directory on our test instance
         typeof(SettingsService)
             .GetField("_root", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
-            .SetValue(SettingsService.Instance, _testDirectory);
+            .SetValue(_testInstance, _testDirectory);
 
         // Also set the file path to point to the test directory
         var fileField = typeof(SettingsService)
             .GetField("_file", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
         if (fileField != null)
         {
-            fileField.SetValue(SettingsService.Instance, Path.Combine(_testDirectory, "settings.json"));
+            fileField.SetValue(_testInstance, Path.Combine(_testDirectory, "settings.json"));
         }
     }
 
@@ -111,13 +110,13 @@ public sealed class SettingsServiceTests : IDisposable
         File.WriteAllText(filePath, json);
 
         // Act - Reset and load
-        SettingsService.Instance.ResetForTests();
-        SettingsService.Instance.Load();
+        _testInstance.ResetForTests();
+        _testInstance.Load();
 
         // Assert
-        Assert.Equal("Light", SettingsService.Instance.Current.Theme);
-        Assert.Equal(1024, SettingsService.Instance.Current.WindowWidth);
-        Assert.Equal(768, SettingsService.Instance.Current.WindowHeight);
+        Assert.Equal("Light", _testInstance.Current.Theme);
+        Assert.Equal(1024, _testInstance.Current.WindowWidth);
+        Assert.Equal(768, _testInstance.Current.WindowHeight);
     }
 
     [Fact]
@@ -201,11 +200,6 @@ public sealed class SettingsServiceTests : IDisposable
         {
             Directory.Delete(_testDirectory, true);
         }
-
-        // Restore original root
-        typeof(SettingsService)
-            .GetField("_root", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
-            .SetValue(SettingsService.Instance, _originalRoot);
 
         GC.SuppressFinalize(this);
     }

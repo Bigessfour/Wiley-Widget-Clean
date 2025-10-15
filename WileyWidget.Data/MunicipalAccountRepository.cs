@@ -26,7 +26,7 @@ namespace WileyWidget.Data
         {
             using var context = await _contextFactory.CreateDbContextAsync();
             return await context.MunicipalAccounts
-                .OrderBy(ma => ma.AccountNumber.Value)
+                .OrderBy(ma => ma.AccountNumber!.Value)
                 .ToListAsync();
         }
 
@@ -35,7 +35,7 @@ namespace WileyWidget.Data
             using var context = await _contextFactory.CreateDbContextAsync();
             return await context.MunicipalAccounts
                 .Where(ma => ma.IsActive)
-                .OrderBy(ma => ma.AccountNumber.Value)
+                .OrderBy(ma => ma.AccountNumber!.Value)
                 .ToListAsync();
         }
 
@@ -44,7 +44,7 @@ namespace WileyWidget.Data
             using var context = await _contextFactory.CreateDbContextAsync();
             return await context.MunicipalAccounts
         .Where(ma => ma.Fund == fund && ma.IsActive)
-                .OrderBy(ma => ma.AccountNumber.Value)
+                .OrderBy(ma => ma.AccountNumber!.Value)
                 .ToListAsync();
         }
 
@@ -53,7 +53,7 @@ namespace WileyWidget.Data
             using var context = await _contextFactory.CreateDbContextAsync();
             return await context.MunicipalAccounts
         .Where(ma => ma.Type == type && ma.IsActive)
-                .OrderBy(ma => ma.AccountNumber.Value)
+                .OrderBy(ma => ma.AccountNumber!.Value)
                 .ToListAsync();
         }
 
@@ -69,7 +69,7 @@ namespace WileyWidget.Data
             // SQLite can't translate AccountNumber.Value in LINQ
             // Load all accounts and filter in memory (acceptable for unit tests with small datasets)
             var accounts = await context.MunicipalAccounts.ToListAsync();
-            return accounts.FirstOrDefault(ma => ma.AccountNumber.Value == accountNumber);
+            return accounts.FirstOrDefault(ma => ma.AccountNumber!.Value == accountNumber);
         }
 
         public async Task<IEnumerable<MunicipalAccount>> GetByDepartmentAsync(int departmentId)
@@ -119,8 +119,8 @@ namespace WileyWidget.Data
                 return new List<MunicipalAccount>();
                 
             return await context.MunicipalAccounts
-                .Where(ma => ma.AccountNumber.Value.StartsWith(rootAccount.AccountNumber.Value) && ma.IsActive)
-                .OrderBy(ma => ma.AccountNumber.Value)
+                .Where(ma => ma.AccountNumber!.Value.StartsWith(rootAccount.AccountNumber!.Value) && ma.IsActive)
+                .OrderBy(ma => ma.AccountNumber!.Value)
                 .ToListAsync();
         }
 
@@ -129,14 +129,14 @@ namespace WileyWidget.Data
             using var context = await _contextFactory.CreateDbContextAsync();
             return await context.MunicipalAccounts
                 .Where(ma => ma.Name.Contains(searchTerm) && ma.IsActive)
-                .OrderBy(ma => ma.AccountNumber.Value)
+                .OrderBy(ma => ma.AccountNumber!.Value)
                 .ToListAsync();
         }
 
         public async Task<bool> AccountNumberExistsAsync(string accountNumber, int? excludeId = null)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
-            var query = context.MunicipalAccounts.Where(ma => ma.AccountNumber.Value == accountNumber);
+            var query = context.MunicipalAccounts.Where(ma => ma.AccountNumber!.Value == accountNumber);
             
             if (excludeId.HasValue)
                 query = query.Where(ma => ma.Id != excludeId.Value);
@@ -226,7 +226,7 @@ namespace WileyWidget.Data
             foreach (var qbAccount in qbAccounts)
             {
                 var existingAccount = await context.MunicipalAccounts
-                    .FirstOrDefaultAsync(ma => ma.AccountNumber.Value == (qbAccount.AcctNum ?? string.Empty));
+                    .FirstOrDefaultAsync(ma => ma.AccountNumber!.Value == (qbAccount.AcctNum ?? string.Empty));
 
                 if (existingAccount == null)
                 {
@@ -276,7 +276,7 @@ namespace WileyWidget.Data
         /// <summary>
         /// Get accounts with budget data for specific fiscal year
         /// </summary>
-        public async Task<IEnumerable<MunicipalAccount>> GetAccountsWithBudgetByFiscalYearAsync(DateTime fiscalYearStart, DateTime fiscalYearEnd)
+        public async Task<IEnumerable<MunicipalAccount>> GetBudgetAccountsAsync()
         {
             
             using var context = await _contextFactory.CreateDbContextAsync();
@@ -284,7 +284,7 @@ namespace WileyWidget.Data
             // Get accounts that have budget entries for this fiscal year
             var accounts = await context.MunicipalAccounts
                 .Where(ma => ma.IsActive && ma.BudgetAmount != 0)
-                .OrderBy(ma => ma.AccountNumber.Value)
+                .OrderBy(ma => ma.AccountNumber!.Value)
                 .ToListAsync();
             
             return accounts;
@@ -295,7 +295,7 @@ namespace WileyWidget.Data
             using var context = await _contextFactory.CreateDbContextAsync();
             var accounts = await context.MunicipalAccounts
                 .Where(ma => ma.IsActive && ma.BudgetAmount != 0)
-                .OrderBy(ma => ma.AccountNumber.Value)
+                .OrderBy(ma => ma.AccountNumber!.Value)
                 .ToListAsync();
             return accounts;
         }
@@ -304,8 +304,8 @@ namespace WileyWidget.Data
         {
             using var context = await _contextFactory.CreateDbContextAsync();
             return await context.MunicipalAccounts
-                .Where(ma => ma.IsActive && ma.BudgetAmount != 0)
-                .OrderBy(ma => ma.AccountNumber.Value)
+                .Where(ma => ma.IsActive && ma.BudgetAmount != 0 && ma.AccountNumber != null)
+                .OrderBy(static ma => ma.AccountNumber!.Value)
                 .ToListAsync();
         }
 

@@ -26,11 +26,12 @@ public class XAIService : IAIService, IDisposable
     /// <summary>
     /// Constructor with dependency injection
     /// </summary>
-    public XAIService(IHttpClientFactory httpClientFactory, IConfiguration configuration, ILogger<XAIService> logger, string apiKey)
+    public XAIService(IHttpClientFactory httpClientFactory, IConfiguration configuration, ILogger<XAIService> logger)
     {
         _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _apiKey = apiKey ?? throw new ArgumentNullException(nameof(apiKey));
+        
+        _apiKey = configuration["XAI:ApiKey"] ?? throw new ArgumentNullException("XAI:ApiKey", "XAI API key not configured");
 
         var baseUrl = configuration["XAI:BaseUrl"] ?? "https://api.x.ai/v1/";
         var timeoutSeconds = double.Parse(configuration["XAI:TimeoutSeconds"] ?? "15");
@@ -38,7 +39,7 @@ public class XAIService : IAIService, IDisposable
         // Validate API key format (basic check)
         if (_apiKey.Length < 20)
         {
-            throw new ArgumentException("API key appears to be invalid (too short)", nameof(apiKey));
+            throw new ArgumentException("API key appears to be invalid (too short)", "XAI:ApiKey");
         }
 
         _httpClient = httpClientFactory.CreateClient("AIServices");

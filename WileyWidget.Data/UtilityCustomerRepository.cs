@@ -108,6 +108,15 @@ public class UtilityCustomerRepository : IUtilityCustomerRepository
     public async Task<IEnumerable<UtilityCustomer>> SearchAsync(string searchTerm)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
+        
+        // If search term is empty or null, return all customers
+        if (string.IsNullOrEmpty(searchTerm))
+        {
+            return await context.UtilityCustomers
+                .AsNoTracking()
+                .ToListAsync();
+        }
+        
         return await context.UtilityCustomers
             .Where(c => (c.CompanyName != null && c.CompanyName.Contains(searchTerm)) || 
                        ((c.FirstName + " " + c.LastName).Contains(searchTerm)) || 
@@ -122,6 +131,9 @@ public class UtilityCustomerRepository : IUtilityCustomerRepository
     public async Task<UtilityCustomer> AddAsync(UtilityCustomer customer)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
+        var now = DateTime.Now;
+        customer.CreatedDate = now;
+        customer.LastModifiedDate = now;
         context.UtilityCustomers.Add(customer);
         await context.SaveChangesAsync();
         return customer;
@@ -133,6 +145,7 @@ public class UtilityCustomerRepository : IUtilityCustomerRepository
     public async Task<UtilityCustomer> UpdateAsync(UtilityCustomer customer)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
+        customer.LastModifiedDate = DateTime.Now;
         context.UtilityCustomers.Update(customer);
         await context.SaveChangesAsync();
         return customer;

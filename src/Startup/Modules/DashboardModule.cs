@@ -20,40 +20,67 @@ namespace WileyWidget.Startup.Modules
         {
             Log.Information("Initializing DashboardModule");
 
-            var regionManager = containerProvider.Resolve<IRegionManager>();
+            if (containerProvider == null)
+            {
+                Log.Warning("ContainerProvider is null, skipping DashboardModule initialization");
+                return;
+            }
 
-            // Register DashboardView with MainRegion as the default view
-            // If this fails, let the exception propagate to indicate module initialization failure
-            regionManager.RegisterViewWithRegion("MainRegion", typeof(DashboardView));
-
-            Log.Information("DashboardView registered with MainRegion");
-
-            // Force activation of the view in the region to ensure it's visible
-            // This addresses the "MainRegion has no views" issue
+            IRegionManager regionManager;
             try
             {
-                var region = regionManager.Regions["MainRegion"];
-                if (region != null && region.Views.Any())
-                {
-                    var view = region.Views.FirstOrDefault();
-                    if (view != null)
-                    {
-                        region.Activate(view);
-                        Log.Information("DashboardView activated in MainRegion");
-                    }
-                    else
-                    {
-                        Log.Warning("MainRegion has no views to activate");
-                    }
-                }
-                else
-                {
-                    Log.Warning("MainRegion not found or has no views after registration");
-                }
+                regionManager = containerProvider.Resolve<IRegionManager>();
+                Log.Information("Successfully resolved IRegionManager from container");
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Failed to activate DashboardView in MainRegion");
+                Log.Error(ex, "Failed to resolve IRegionManager from container");
+                return;
+            }
+
+            // Log current region manager state for diagnostics
+            Log.Information("Current region count: {RegionCount}", regionManager.Regions.Count());
+            foreach (var region in regionManager.Regions)
+            {
+                Log.Debug("Available region: {RegionName}", region.Name);
+            }
+
+            // Check if MainRegion exists and log its status
+            if (regionManager.Regions.ContainsRegionWithName("MainRegion"))
+            {
+                Log.Information("MainRegion found in region manager");
+
+                // Use RequestNavigate to navigate to DashboardView with fallback handling
+                try
+                {
+                    regionManager.RequestNavigate("MainRegion", "DashboardView", (result) =>
+                    {
+                        if (result.Success)
+                        {
+                            Log.Information("Successfully navigated to DashboardView in MainRegion");
+                        }
+                        else
+                        {
+                            Log.Warning("Navigation to DashboardView in MainRegion failed: {Exception}", result.Exception?.Message ?? "Navigation failed without specific error");
+                        }
+                    });
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Failed to request navigation to DashboardView in MainRegion");
+                }
+            }
+            else
+            {
+                Log.Error("MainRegion not found in region manager. Cannot navigate to DashboardView. Ensure MainRegion is defined in MainWindow XAML with RegionName=\"MainRegion\".");
+                Log.Information("Available regions at this time: [{AvailableRegions}]", 
+                    string.Join(", ", regionManager.Regions.Select(r => r.Name)));
+                
+                // Log suggestions for troubleshooting
+                Log.Information("Troubleshooting suggestions:");
+                Log.Information("1. Check MainWindow.xaml for: prism:RegionManager.RegionName=\"MainRegion\"");
+                Log.Information("2. Verify MainWindow is loaded before DashboardModule initialization");
+                Log.Information("3. Consider using delayed navigation or region creation events");
             }
 
             Log.Information("DashboardModule initialization completed");

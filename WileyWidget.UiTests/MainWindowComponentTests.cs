@@ -12,6 +12,7 @@ using Syncfusion.Windows.Tools.Controls;
 using Xunit;
 using WileyWidget.Tests;
 using WileyWidget.ViewModels;
+using WileyWidget.Views;
 
 namespace WileyWidget.UiTests.ComponentTests
 {

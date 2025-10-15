@@ -42,6 +42,29 @@ public class UtilityCustomer : INotifyPropertyChanged, IValidatableObject
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
     /// <summary>
+    /// Default constructor
+    /// </summary>
+    public UtilityCustomer()
+    {
+        // Ensure string properties are initialized to empty strings
+        _accountNumber = string.Empty;
+        _firstName = string.Empty;
+        _lastName = string.Empty;
+        _companyName = string.Empty;
+        _serviceAddress = string.Empty;
+        _serviceCity = string.Empty;
+        _serviceState = string.Empty;
+        _serviceZipCode = string.Empty;
+        _mailingAddress = string.Empty;
+        _mailingCity = string.Empty;
+        _mailingState = string.Empty;
+        _mailingZipCode = string.Empty;
+        _phoneNumber = string.Empty;
+        _emailAddress = string.Empty;
+        _notes = string.Empty;
+    }
+
+    /// <summary>
     /// Unique identifier for the customer
     /// </summary>
     [Key]

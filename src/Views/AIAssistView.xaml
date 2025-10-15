@@ -45,7 +45,7 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <syncfusion:SfTextBoxExt x:Name="MessageInput"
+                <syncfusion:SfTextBoxExt 
                                        Text="{Binding QueryText, UpdateSourceTrigger=PropertyChanged}"
                                        Watermark="Ask about budgets, rates, or financial scenarios..."
                                        ToolTip="Enter query for AI analysis (e.g., 'Calculate recommended service charge for Enterprise 1')"

@@ -18,39 +18,27 @@ namespace WileyWidget;
 /// </summary>
 public partial class EnterpriseView : UserControl
 {
-    private IServiceScope? _viewScope;
-    public EnterpriseView()
+    /// <summary>
+    /// Initializes a new instance of the <see cref="EnterpriseView"/> class.
+    /// Parameterless constructor for XAML designer and Prism region navigation.
+    /// </summary>
+    public EnterpriseView() : this(null)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="EnterpriseView"/> class with dependency injection.
+    /// </summary>
+    /// <param name="viewModel">The enterprise view model injected by the container.</param>
+    public EnterpriseView(EnterpriseViewModel? viewModel)
     {
         InitializeComponent();
 
         EnsureNamedElementsAreDiscoverable();
 
-        // Create a scope for the view and resolve the repository from the scope
-        IServiceProvider? provider = null;
-        try
+        if (viewModel != null)
         {
-            provider = App.GetActiveServiceProvider();
-        }
-        catch (InvalidOperationException)
-        {
-            provider = Application.Current?.Properties["ServiceProvider"] as IServiceProvider;
-        }
-
-        if (provider != null)
-        {
-            _viewScope = provider.CreateScope();
-            var unitOfWork = _viewScope.ServiceProvider.GetRequiredService<BusinessInterfaces.IUnitOfWork>();
-            var eventAggregator = _viewScope.ServiceProvider.GetRequiredService<Prism.Events.IEventAggregator>();
-            DataContext = new EnterpriseViewModel(unitOfWork, eventAggregator);
-
-            // Dispose the scope when the control is unloaded
-            Unloaded += (_, _) => { try { _viewScope.Dispose(); } catch { } };
-        }
-        else
-        {
-            // For testing purposes, allow view to load without ViewModel
-            _viewScope = null;
-            DataContext = null;
+            DataContext = viewModel;
         }
 
         // Load enterprises when window opens

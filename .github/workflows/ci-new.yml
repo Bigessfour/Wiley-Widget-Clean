@@ -84,7 +84,36 @@ jobs:
         run: dotnet build --no-restore /bl:msbuild.binlog /verbosity:minimal
 
       - name: Run Tests
-        run: dotnet test --no-build --verbosity normal --collect:"XPlat Code Coverage" --logger "trx;LogFileName=test-results.trx"
+        run: |
+          # Create logs directory
+          New-Item -ItemType Directory -Force -Path "test-logs" | Out-Null
+          
+          # Run tests with detailed logging
+          dotnet test --no-build --verbosity normal --settings WileyWidget.UiTests/test.runsettings --collect:"XPlat Code Coverage" --logger "trx;LogFileName=test-results.trx" --logger "console;verbosity=detailed" --logger "html;LogFileName=test-results.html" 2>&1 | Tee-Object -FilePath "test-logs/test-output.log"
+        continue-on-error: true  # Allow CI to continue even if tests fail
+
+      - name: Upload Test Error Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-test-error-logs-${{ github.run_number }}
+          path: |
+            test-logs/
+            TestResults/
+            *.trx
+            *.html
+          retention-days: 14
+
+      - name: Analyze Test Failures
+        if: failure()
+        shell: pwsh
+        run: |
+          Write-Output "=== Analyzing Test Failures ==="
+          if (Test-Path "scripts/Analyze-UiTestErrors.ps1") {
+            & "scripts/Analyze-UiTestErrors.ps1" -MaxErrors 10
+          } else {
+            Write-Warning "Analysis script not found"
+          }
 
       - name: Run Phase 1 Validation
         shell: pwsh

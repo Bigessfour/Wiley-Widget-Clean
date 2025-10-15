@@ -1,0 +1,223 @@
+using System;
+using System.Collections.Generic;
+using Microsoft.Extensions.Logging;
+using Prism.Navigation.Regions;
+using Serilog;
+using WileyWidget.Views;
+
+namespace WileyWidget.Services
+{
+    /// <summary>
+    /// Service for managing Prism region view registrations
+    /// Provides centralized registration and validation of views with regions
+    /// </summary>
+    public interface IViewRegistrationService
+    {
+        /// <summary>
+        /// Registers all views with their appropriate regions
+        /// </summary>
+        void RegisterAllViews();
+
+        /// <summary>
+        /// Registers a specific view with a region
+        /// </summary>
+        /// <param name="regionName">Target region name</param>
+        /// <param name="viewType">View type to register</param>
+        bool RegisterView(string regionName, Type viewType);
+
+        /// <summary>
+        /// Checks if a view is registered for navigation
+        /// </summary>
+        /// <param name="viewName">View name to check</param>
+        /// <returns>True if registered</returns>
+        bool IsViewRegistered(string viewName);
+
+        /// <summary>
+        /// Gets all registered views for a region
+        /// </summary>
+        /// <param name="regionName">Region name</param>
+        /// <returns>Collection of registered view types</returns>
+        IEnumerable<Type> GetRegisteredViews(string regionName);
+
+        /// <summary>
+        /// Validates that all required regions exist
+        /// </summary>
+        /// <returns>Validation result with missing regions</returns>
+        RegionValidationResult ValidateRegions();
+    }
+
+    /// <summary>
+    /// Implementation of the view registration service
+    /// </summary>
+    public class ViewRegistrationService : IViewRegistrationService
+    {
+        private readonly IRegionManager _regionManager;
+        private readonly Dictionary<string, List<Type>> _registeredViews;
+
+        public ViewRegistrationService(IRegionManager regionManager)
+        {
+            _regionManager = regionManager ?? throw new ArgumentNullException(nameof(regionManager));
+            _registeredViews = new Dictionary<string, List<Type>>();
+        }
+
+        public void RegisterAllViews()
+        {
+            Log.Information("Starting comprehensive view registration");
+
+            try
+            {
+                // Document regions (main content areas)
+                RegisterView("DashboardRegion", typeof(DashboardView));
+                RegisterView("EnterpriseRegion", typeof(EnterpriseView));
+                RegisterView("BudgetRegion", typeof(BudgetView));
+                RegisterView("MunicipalAccountRegion", typeof(MunicipalAccountView));
+                RegisterView("UtilityCustomerRegion", typeof(UtilityCustomerView));
+                RegisterView("ReportsRegion", typeof(ReportsView));
+                RegisterView("AnalyticsRegion", typeof(AnalyticsView));
+
+                // Panel regions (side/auxiliary panels)
+                RegisterView("LeftPanelRegion", typeof(DashboardPanelView));
+                RegisterView("RightPanelRegion", typeof(SettingsPanelView));
+                RegisterView("BottomPanelRegion", typeof(ToolsPanelView));
+
+                // Additional specialized views
+                RegisterView("AIAssistRegion", typeof(AIAssistView));
+                RegisterView("SettingsRegion", typeof(SettingsView));
+
+                Log.Information("View registration completed successfully. Total regions: {RegionCount}", _registeredViews.Count);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Failed to register all views");
+                throw;
+            }
+        }
+
+        public bool RegisterView(string regionName, Type viewType)
+        {
+            if (string.IsNullOrEmpty(regionName))
+                throw new ArgumentException("Region name cannot be null or empty", nameof(regionName));
+
+            if (viewType == null)
+                throw new ArgumentNullException(nameof(viewType));
+
+            try
+            {
+                // Check if region exists before registering
+                if (!_regionManager.Regions.ContainsRegionWithName(regionName))
+                {
+                    Log.Warning("Region '{RegionName}' not found during view registration - will register when region becomes available", regionName);
+                }
+
+                // Register with Prism region manager
+                _regionManager.RegisterViewWithRegion(regionName, viewType);
+
+                // Track registration internally
+                if (!_registeredViews.ContainsKey(regionName))
+                    _registeredViews[regionName] = new List<Type>();
+
+                if (!_registeredViews[regionName].Contains(viewType))
+                {
+                    _registeredViews[regionName].Add(viewType);
+                }
+
+                Log.Debug("Successfully registered {ViewType} with region {RegionName}", viewType.Name, regionName);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Failed to register {ViewType} with region {RegionName}", viewType.Name, regionName);
+                return false;
+            }
+        }
+
+        public bool IsViewRegistered(string viewName)
+        {
+            if (string.IsNullOrEmpty(viewName))
+                return false;
+
+            foreach (var regionViews in _registeredViews.Values)
+            {
+                foreach (var viewType in regionViews)
+                {
+                    if (viewType.Name.Equals(viewName, StringComparison.OrdinalIgnoreCase) ||
+                        viewType.Name.Replace("View", "").Equals(viewName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        public IEnumerable<Type> GetRegisteredViews(string regionName)
+        {
+            if (string.IsNullOrEmpty(regionName) || !_registeredViews.ContainsKey(regionName))
+                return new List<Type>();
+
+            return _registeredViews[regionName];
+        }
+
+        public RegionValidationResult ValidateRegions()
+        {
+            Log.Information("Validating region configuration");
+
+            var result = new RegionValidationResult();
+            var requiredRegions = new[]
+            {
+                "DashboardRegion", "EnterpriseRegion", "BudgetRegion", 
+                "MunicipalAccountRegion", "UtilityCustomerRegion", 
+                "ReportsRegion", "AnalyticsRegion",
+                "LeftPanelRegion", "RightPanelRegion", "BottomPanelRegion"
+            };
+
+            foreach (var regionName in requiredRegions)
+            {
+                if (_regionManager.Regions.ContainsRegionWithName(regionName))
+                {
+                    var region = _regionManager.Regions[regionName];
+                    result.ValidRegions.Add(regionName);
+                    result.RegionViewCounts[regionName] = region.Views?.Count() ?? 0;
+                }
+                else
+                {
+                    result.MissingRegions.Add(regionName);
+                }
+            }
+
+            result.TotalRegions = requiredRegions.Length;
+            result.ValidRegionsCount = result.ValidRegions.Count;
+            result.IsValid = result.MissingRegions.Count == 0;
+
+            Log.Information("Region validation complete: {ValidCount}/{TotalCount} regions valid", 
+                result.ValidRegionsCount, result.TotalRegions);
+
+            if (!result.IsValid)
+            {
+                Log.Warning("Missing regions: [{MissingRegions}]", 
+                    string.Join(", ", result.MissingRegions));
+            }
+
+            return result;
+        }
+    }
+
+    /// <summary>
+    /// Result of region validation operation
+    /// </summary>
+    public class RegionValidationResult
+    {
+        public bool IsValid { get; set; }
+        public int TotalRegions { get; set; }
+        public int ValidRegionsCount { get; set; }
+        public List<string> ValidRegions { get; set; } = new List<string>();
+        public List<string> MissingRegions { get; set; } = new List<string>();
+        public Dictionary<string, int> RegionViewCounts { get; set; } = new Dictionary<string, int>();
+
+        public override string ToString()
+        {
+            return $"RegionValidation: {ValidRegionsCount}/{TotalRegions} valid, IsValid: {IsValid}";
+        }
+    }
+}

@@ -4,13 +4,20 @@ Wiley Widget Development Startup Script with debugpy Remote Debugging
 This version includes debugpy for advanced debugging capabilities
 """
 
-import os
-import time
-import subprocess
 import argparse
+import logging
+import os
+import subprocess
+import time
 
 # Import debugpy for remote debugging
 import debugpy
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
 
 def setup_debugpy(port=5678, wait_for_client=True):
     """Setup debugpy for remote debugging with port conflict handling"""
@@ -77,13 +84,13 @@ def cleanup_dotnet_processes():
             print(f"Found {len(processes)} .NET processes to clean up:")
             for name, pid in processes:
                 print(f"  - {name} (PID: {pid})")
-                
+
             # Debug breakpoint before killing processes
             debugpy.breakpoint()
-            
+
             for name, pid in processes:
                 try:
-                    subprocess.run(['taskkill', '/F', '/PID', pid], 
+                    subprocess.run(['taskkill', '/F', '/PID', pid],
                                  capture_output=True, check=True)
                     print(f"  ✅ Killed {name} (PID: {pid})")
                 except subprocess.CalledProcessError as e:
@@ -100,16 +107,16 @@ def cleanup_dotnet_artifacts():
     debugpy.breakpoint()  # Debug breakpoint
 
     cleanup_dirs = ['bin', 'obj', 'TestResults']
-    
+
     for dir_name in cleanup_dirs:
         if os.path.exists(dir_name):
             print(f"  🗑️  Removing {dir_name}/")
             try:
                 # Debug breakpoint before deletion
                 debugpy.breakpoint()
-                
+
                 if os.name == 'nt':  # Windows
-                    subprocess.run(['rmdir', '/S', '/Q', dir_name], 
+                    subprocess.run(['rmdir', '/S', '/Q', dir_name],
                                  shell=True, check=True)
                 else:  # Unix-like
                     subprocess.run(['rm', '-rf', dir_name], check=True)
@@ -128,16 +135,24 @@ def build_application(incremental=True):
         if not incremental:
             # Clean first (only for full rebuilds)
             print("  🧹 Cleaning project...")
-            result = subprocess.run(['dotnet', 'clean', 'WileyWidget.csproj'],
-                                  capture_output=True, text=True, check=True)
-            print("  ✅ Project cleaned")
+            try:
+                result = subprocess.run(['dotnet', 'clean', 'WileyWidget.csproj'],
+                                      capture_output=True, text=True, check=True)
+                print("  ✅ Project cleaned")
+            except subprocess.CalledProcessError as e:
+                logging.error(f"Failed to clean WileyWidget.csproj: {e}", exc_info=True)
+                raise
 
         # For incremental builds, ensure packages are restored if needed
         if incremental and not os.path.exists('obj/project.assets.json'):
             print("  📦 Restoring packages for incremental build...")
-            result = subprocess.run(['dotnet', 'restore', 'WileyWidget.csproj'],
-                                  capture_output=True, text=True, check=True)
-            print("  ✅ Packages restored")
+            try:
+                result = subprocess.run(['dotnet', 'restore', 'WileyWidget.csproj'],
+                                      capture_output=True, text=True, check=True)
+                print("  ✅ Packages restored")
+            except subprocess.CalledProcessError as e:
+                logging.error(f"Failed to restore packages for WileyWidget.csproj: {e}", exc_info=True)
+                raise
 
         # Debug breakpoint before build
         debugpy.breakpoint()
@@ -145,12 +160,16 @@ def build_application(incremental=True):
         # Build (incremental by default)
         build_type = "incrementally" if incremental else "from scratch"
         print(f"  🔨 Building project {build_type}...")
-        result = subprocess.run(['dotnet', 'build', 'WileyWidget.csproj', '--no-restore'],
-                              capture_output=True, text=True, check=True)
-        print("  ✅ Build successful")
+        try:
+            result = subprocess.run(['dotnet', 'build', 'WileyWidget.csproj', '--no-restore'],
+                                  capture_output=True, text=True, check=True)
+            print("  ✅ Build successful")
 
-        if result.stdout:
-            print(f"Build output:\n{result.stdout}")
+            if result.stdout:
+                print(f"Build output:\n{result.stdout}")
+        except subprocess.CalledProcessError as e:
+            logging.error(f"Failed to build WileyWidget.csproj: {e}", exc_info=True)
+            raise
 
     except subprocess.CalledProcessError as e:
         print(f"  ❌ Build failed: {e}")
@@ -159,7 +178,7 @@ def build_application(incremental=True):
         if e.stderr:
             print(f"STDERR:\n{e.stderr}")
         return False
-    
+
     return True
 
 def run_application(debug_mode=False):
@@ -169,7 +188,7 @@ def run_application(debug_mode=False):
 
     try:
         cmd = ['dotnet', 'run', '--project', 'WileyWidget.csproj']
-        
+
         if debug_mode:
             # Add debug configuration if needed
             print("  🐛 Running in debug mode...")
@@ -180,12 +199,16 @@ def run_application(debug_mode=False):
         debugpy.breakpoint()
 
         # Run the application
-        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, 
-                                 stderr=subprocess.PIPE, text=True)
-        
+        try:
+            process = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                                     stderr=subprocess.PIPE, text=True)
+        except Exception as e:
+            logging.error(f"Failed to launch WileyWidget.exe: {e}", exc_info=True)
+            raise
+
         print(f"  ✅ Application started (PID: {process.pid})")
         print("     Press Ctrl+C to stop")
-        
+
         # Monitor the process
         try:
             stdout, stderr = process.communicate(timeout=5)
@@ -196,7 +219,7 @@ def run_application(debug_mode=False):
         except subprocess.TimeoutExpired:
             print("  ⏳ Application is running...")
             return process
-            
+
     except Exception as e:
         print(f"  ❌ Failed to run application: {e}")
         return None
@@ -205,40 +228,40 @@ def monitor_startup_timing(skip_cleanup=False):
     """Monitor startup timing with debugging"""
     print("\n=== Startup Timing Analysis ===")
     debugpy.breakpoint()  # Debug breakpoint
-    
+
     start_time = time.time()
-    
+
     # Measure each phase
     phases = []
-    
+
     # Phase 1: Process cleanup (optional)
     if not skip_cleanup:
         phase_start = time.time()
         cleanup_dotnet_processes()
         phases.append(("Process Cleanup", time.time() - phase_start))
-    
+
     # Phase 2: Artifact cleanup (optional)
     if not skip_cleanup:
         phase_start = time.time()
         cleanup_dotnet_artifacts()
         phases.append(("Artifact Cleanup", time.time() - phase_start))
-    
+
     # Phase 3: Build
     phase_start = time.time()
     build_success = build_application(incremental=True)
     phases.append(("Build", time.time() - phase_start))
-    
+
     if build_success:
         # Phase 4: Application startup
         phase_start = time.time()
         run_application()
         phases.append(("Application Start", time.time() - phase_start))
-    
+
     total_time = time.time() - start_time
-    
+
     # Debug breakpoint for timing analysis
     debugpy.breakpoint()
-    
+
     print("\n=== Timing Report ===")
     for phase, duration in phases:
         print(f"  {phase}: {duration:.2f}s")
@@ -257,19 +280,19 @@ def main():
                        help='Skip cleanup steps for faster development iterations')
     parser.add_argument('--skip-debugpy', action='store_true',
                        help='Skip debugpy setup and run normally')
-    
+
     args = parser.parse_args()
-    
+
     print("🚀 Wiley Widget Development Startup (debugpy enabled)")
     print("=" * 50)
-    
+
     # Setup debugpy unless skipped
     if not args.skip_debugpy:
         setup_debugpy(port=args.debug_port, wait_for_client=not args.no_wait)
-    
+
     # Main startup logic with debugging
     debugpy.breakpoint()  # Main entry breakpoint
-    
+
     if args.timing:
         monitor_startup_timing(skip_cleanup=args.skip_cleanup)
     else:

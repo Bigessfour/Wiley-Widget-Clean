@@ -19,10 +19,10 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <!-- Theme resources -->
-                <ResourceDictionary Source="/Themes/Generic.xaml"/>
-                <ResourceDictionary Source="/Themes/WileyTheme.xaml"/>
+                <ResourceDictionary Source="../Themes/Generic.xaml"/>
+                <ResourceDictionary Source="../Themes/WileyTheme.xaml"/>
                 <!-- Data templates for ViewModels -->
-                <ResourceDictionary Source="/Resources/DataTemplates.xaml"/>
+                <ResourceDictionary Source="../Resources/DataTemplates.xaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Window.Resources>
@@ -40,20 +40,16 @@
                 <syncfusion:RibbonBar Header="Navigation">
                     <syncfusion:RibbonButton Label="Dashboard"
                                            SizeForm="Large"
-                                           Command="{Binding NavigateToDashboardCommand}"
-                                           LargeIcon="pack://application:,,,/Resources/dashboard-32.png"/>
+                                           Command="{Binding NavigateToDashboardCommand}"/>
                     <syncfusion:RibbonButton Label="Enterprises"
                                            SizeForm="Large"
-                                           Command="{Binding NavigateToEnterprisesCommand}"
-                                           LargeIcon="pack://application:,,,/Resources/enterprise-32.png"/>
+                                           Command="{Binding NavigateToEnterprisesCommand}"/>
                     <syncfusion:RibbonButton Label="Accounts"
                                            SizeForm="Large"
-                                           Command="{Binding NavigateToAccountsCommand}"
-                                           LargeIcon="pack://application:,,,/Resources/account-32.png"/>
+                                           Command="{Binding NavigateToAccountsCommand}"/>
                     <syncfusion:RibbonButton Label="Budget"
                                            SizeForm="Large"
-                                           Command="{Binding NavigateToBudgetCommand}"
-                                           LargeIcon="pack://application:,,,/Resources/budget-32.png"/>
+                                           Command="{Binding NavigateToBudgetCommand}"/>
                 </syncfusion:RibbonBar>
                 <syncfusion:RibbonBar Header="Tools">
                     <syncfusion:RibbonButton Label="Settings"
@@ -138,7 +134,7 @@
             </syncfusion:RibbonTab>
         </syncfusion:Ribbon>
 
-        <!-- DockingManager in Row 1 -->
+        <!-- DockingManager in Row 1 with Advanced Configuration -->
         <syncfusion:DockingManager x:Name="MainDockingManager"
                                  Grid.Row="1"
                                  UseDocumentContainer="True"
@@ -152,56 +148,83 @@
                                  UseLayoutRounding="True"
                                  EnableScrollableSidePanel="True"
                                  IsVS2010DraggingEnabled="True"
-                                 DockStateChanged="DockingManager_DockStateChanged">
+                                 ShowTabItemContextMenu="True"
+                                 CanCreateVerticalTabGroup="True"
+                                 ShowCloseAllTabs="True"
+                                 ShowCloseOtherTabs="True"
+                                 DragProviderStyle="VS2010"
+                                 ShowPin="True"
+                                 ShowTabListContextMenu="True"
+                                 UseNativeFloatWindow="False"
+                                 AnimationDelay="200"
+                                 EnableOfficeLikeTabSwitcher="True"
+                                 syncfusionskin:SfSkinManager.VisualStyle="FluentDark"
+                                 DockStateChanged="DockingManager_DockStateChanged"
+                                 WindowClosing="DockingManager_WindowClosing"
+                                 WindowClosed="DockingManager_WindowClosed">
 
             <!-- Dashboard Region (Main Document Area) -->
             <ContentControl x:Name="DashboardRegion"
                           prism:RegionManager.RegionName="DashboardRegion"
                           syncfusion:DockingManager.State="Document"
                           syncfusion:DockingManager.Header="Dashboard"
-                          syncfusion:DockingManager.CanClose="False"/>
+                          syncfusion:DockingManager.CanClose="False"
+                          syncfusion:DockingManager.CaptionToolTip="Main Dashboard View"
+                          syncfusion:DockingManager.CanSerialize="True"/>
 
             <!-- Enterprise Region -->
             <ContentControl x:Name="EnterpriseRegion"
                           prism:RegionManager.RegionName="EnterpriseRegion"
                           syncfusion:DockingManager.State="Document"
                           syncfusion:DockingManager.Header="Enterprises"
-                          syncfusion:DockingManager.CanClose="True"/>
+                          syncfusion:DockingManager.CanClose="True"
+                          syncfusion:DockingManager.CaptionToolTip="Enterprise Management"
+                          syncfusion:DockingManager.CanSerialize="True"/>
 
             <!-- Budget Region -->
             <ContentControl x:Name="BudgetRegion"
                           prism:RegionManager.RegionName="BudgetRegion"
                           syncfusion:DockingManager.State="Document"
                           syncfusion:DockingManager.Header="Budget"
-                          syncfusion:DockingManager.CanClose="True"/>
+                          syncfusion:DockingManager.CanClose="True"
+                          syncfusion:DockingManager.CaptionToolTip="Budget Management"
+                          syncfusion:DockingManager.CanSerialize="True"/>
 
             <!-- Municipal Accounts Region -->
             <ContentControl x:Name="MunicipalAccountRegion"
                           prism:RegionManager.RegionName="MunicipalAccountRegion"
                           syncfusion:DockingManager.State="Document"
                           syncfusion:DockingManager.Header="Municipal Accounts"
-                          syncfusion:DockingManager.CanClose="True"/>
+                          syncfusion:DockingManager.CanClose="True"
+                          syncfusion:DockingManager.CaptionToolTip="Municipal Account Management"
+                          syncfusion:DockingManager.CanSerialize="True"/>
 
             <!-- Utility Customers Region -->
             <ContentControl x:Name="UtilityCustomerRegion"
                           prism:RegionManager.RegionName="UtilityCustomerRegion"
                           syncfusion:DockingManager.State="Document"
                           syncfusion:DockingManager.Header="Utility Customers"
-                          syncfusion:DockingManager.CanClose="True"/>
+                          syncfusion:DockingManager.CanClose="True"
+                          syncfusion:DockingManager.CaptionToolTip="Utility Customer Management"
+                          syncfusion:DockingManager.CanSerialize="True"/>
 
             <!-- Reports Region -->
             <ContentControl x:Name="ReportsRegion"
                           prism:RegionManager.RegionName="ReportsRegion"
                           syncfusion:DockingManager.State="Document"
                           syncfusion:DockingManager.Header="Reports"
-                          syncfusion:DockingManager.CanClose="True"/>
+                          syncfusion:DockingManager.CanClose="True"
+                          syncfusion:DockingManager.CaptionToolTip="Reports and Analytics"
+                          syncfusion:DockingManager.CanSerialize="True"/>
 
             <!-- Analytics Region -->
             <ContentControl x:Name="AnalyticsRegion"
                           prism:RegionManager.RegionName="AnalyticsRegion"
                           syncfusion:DockingManager.State="Document"
                           syncfusion:DockingManager.Header="Analytics"
-                          syncfusion:DockingManager.CanClose="True"/>
+                          syncfusion:DockingManager.CanClose="True"
+                          syncfusion:DockingManager.CaptionToolTip="Advanced Analytics"
+                          syncfusion:DockingManager.CanSerialize="True"/>
 
             <!-- Left Panel: Navigation/Tree -->
             <ContentControl x:Name="LeftPanelRegion"

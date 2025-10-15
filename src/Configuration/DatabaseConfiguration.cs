@@ -19,8 +19,10 @@ using Polly;
 using Polly.CircuitBreaker;
 using Polly.Retry;
 using WileyWidget.Models;
+using WileyWidget.Models.Entities;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using System.Collections.Generic;
 
 namespace WileyWidget.Configuration;
 
@@ -56,20 +58,15 @@ public static class DatabaseConfiguration
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        // EF Core DI Lifetime Fix: Use AddDbContext with Scoped lifetime (WPF pattern)
-        // This avoids the captive dependency issue where Singleton factory consumes Scoped options
-        services.AddDbContext<AppDbContext>((sp, options) =>
+        // EF Core DI Lifetime Fix: Use AddDbContextFactory with Singleton lifetime for factory
+        // This provides a singleton factory that creates scoped DbContexts
+        services.AddDbContextFactory<AppDbContext>((sp, options) =>
         {
             ConfigureAppDbContext(sp, options);
-        }, ServiceLifetime.Scoped);
+        }, ServiceLifetime.Singleton);
 
-        // For repositories using factory pattern: create scoped factory wrapper
-        // This ensures all DB access is properly scoped and no captive dependencies
-        services.AddScoped<IDbContextFactory<AppDbContext>>(sp =>
-        {
-            var dbContext = sp.GetRequiredService<AppDbContext>();
-            return new ScopedDbContextFactory(dbContext);
-        });
+        // Register DbContext as Scoped for direct injection
+        services.AddScoped<AppDbContext>(sp => sp.GetRequiredService<IDbContextFactory<AppDbContext>>().CreateDbContext());
 
         // Add enterprise health checks
         ConfigureEnterpriseHealthChecks(services, configuration);
@@ -112,7 +109,7 @@ public static class DatabaseConfiguration
         ConfigureEnterpriseDbContextOptions(options, logger);
 
         // Configure EF 9 seeding methods for automatic database initialization
-        ConfigureDatabaseSeeding(options, logger);
+        // ConfigureDatabaseSeeding(options, logger);
     }
 
     /// <summary>
@@ -143,7 +140,8 @@ public static class DatabaseConfiguration
             return true;
         }
 
-        if (normalized.Contains("mode=memory", StringComparison.OrdinalIgnoreCase))
+        if (normalized.Contains("mode=memory", StringComparison.OrdinalIgnoreCase) ||
+            normalized.Contains(":memory:", StringComparison.OrdinalIgnoreCase))
         {
             return true;
         }
@@ -159,6 +157,9 @@ public static class DatabaseConfiguration
     {
         options.UseSqlServer(connectionString, sqlOptions =>
         {
+            // Specify migrations assembly since DbContext is in WileyWidget.Data project
+            sqlOptions.MigrationsAssembly("WileyWidget.Data");
+
             // Development retry configuration
             sqlOptions.EnableRetryOnFailure(
                 maxRetryCount: 3,
@@ -258,8 +259,409 @@ public static class DatabaseConfiguration
     /// </summary>
     private static void ConfigureDatabaseSeeding(DbContextOptionsBuilder options, ILogger logger)
     {
-        // Seeding disabled - use manual seeding or migration scripts for simplified schema
-        logger.LogInformation("Database seeding disabled for simplified budget schema");
+        logger.LogInformation("Configuring EF Core UseSeeding for FY 2026 budget data");
+
+        options.UseSeeding((context, _) =>
+        {
+            var dbContext = (AppDbContext)context;
+
+            // Seed enterprises
+            SeedEnterprises(dbContext);
+
+            // Seed departments
+            SeedDepartments(dbContext);
+
+            // Seed funds
+            SeedFunds(dbContext);
+
+            // Seed FY 2026 budget data
+            SeedBudgetData(dbContext);
+        });
+
+        options.UseAsyncSeeding(async (context, _, cancellationToken) =>
+        {
+            var dbContext = (AppDbContext)context;
+
+            // Seed enterprises
+            SeedEnterprises(dbContext);
+
+            // Seed departments
+            SeedDepartments(dbContext);
+
+            // Seed funds
+            SeedFunds(dbContext);
+
+            // Seed FY 2026 budget data
+            SeedBudgetData(dbContext);
+
+            await Task.CompletedTask;
+        });
+    }
+
+    private static void SeedEnterprises(AppDbContext context)
+    {
+        if (!context.Enterprises.Any())
+        {
+            context.Enterprises.AddRange(
+                new Enterprise
+                {
+                    Id = 1,
+                    Name = "Town of Wiley Water Department",
+                    BudgetAmount = 285755.00m,
+                    CitizenCount = 12500,
+                    CurrentRate = 45.50m,
+                    Type = "Water",
+                    Status = EnterpriseStatus.Active,
+                    CreatedDate = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                    ModifiedDate = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+                },
+                new Enterprise
+                {
+                    Id = 2,
+                    Name = "Town of Wiley Sewer Department",
+                    BudgetAmount = 5879527.00m,
+                    CitizenCount = 12500,
+                    CurrentRate = 125.75m,
+                    Type = "Sewer",
+                    Status = EnterpriseStatus.Active,
+                    CreatedDate = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                    ModifiedDate = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+                },
+                new Enterprise
+                {
+                    Id = 3,
+                    Name = "Town of Wiley Electric Department",
+                    BudgetAmount = 285755.00m,
+                    CitizenCount = 12500,
+                    CurrentRate = 0.12m,
+                    Type = "Electric",
+                    Status = EnterpriseStatus.Active,
+                    CreatedDate = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                    ModifiedDate = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+                }
+            );
+        }
+    }
+
+    private static void SeedDepartments(AppDbContext context)
+    {
+        if (!context.Departments.Any())
+        {
+            context.Departments.AddRange(
+                new Department { Id = 1, Name = "Administration", DepartmentCode = "ADMIN" },
+                new Department { Id = 2, Name = "Public Works", DepartmentCode = "DPW" },
+                new Department { Id = 3, Name = "Culture and Recreation", DepartmentCode = "CULT" },
+                new Department { Id = 4, Name = "Sanitation", DepartmentCode = "SAN", ParentId = 2 },
+                new Department { Id = 5, Name = "Utilities", DepartmentCode = "UTIL" },
+                new Department { Id = 6, Name = "Community Center", DepartmentCode = "COMM" },
+                new Department { Id = 7, Name = "Conservation", DepartmentCode = "CONS" },
+                new Department { Id = 8, Name = "Recreation", DepartmentCode = "REC" }
+            );
+        }
+    }
+
+    private static void SeedFunds(AppDbContext context)
+    {
+        if (!context.Funds.Any())
+        {
+            context.Funds.AddRange(
+                new Fund { Id = 1, FundCode = "100-GEN", Name = "General Fund", Type = FundType.GeneralFund },
+                new Fund { Id = 2, FundCode = "200-ENT", Name = "Enterprise Fund", Type = FundType.EnterpriseFund },
+                new Fund { Id = 3, FundCode = "300-UTIL", Name = "Utility Fund", Type = FundType.EnterpriseFund },
+                new Fund { Id = 4, FundCode = "400-COMM", Name = "Community Center Fund", Type = FundType.SpecialRevenue },
+                new Fund { Id = 5, FundCode = "500-CONS", Name = "Conservation Trust Fund", Type = FundType.PermanentFund },
+                new Fund { Id = 6, FundCode = "600-REC", Name = "Recreation Fund", Type = FundType.SpecialRevenue }
+            );
+        }
+    }
+
+    private static void SeedBudgetData(AppDbContext context)
+    {
+        if (!context.BudgetEntries.Any())
+        {
+            var budgetEntries = new List<BudgetEntry>();
+
+            // === WILEY SANITATION DISTRICT ===
+
+            // General Fund Revenues
+            budgetEntries.AddRange(new[]
+            {
+                new BudgetEntry { Id = 1, AccountNumber = "101", Description = "Property Taxes - General Fund",
+                    BudgetedAmount = 8221.00m, FiscalYear = 2026, FundType = FundType.GeneralFund,
+                    DepartmentId = 4, FundId = 1, ActivityCode = "GOV",
+                    StartPeriod = new DateOnly(2026, 1, 1), EndPeriod = new DateOnly(2026, 12, 31),
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new BudgetEntry { Id = 2, AccountNumber = "102", Description = "Other Revenues - General Fund",
+                    BudgetedAmount = 915.00m, FiscalYear = 2026, FundType = FundType.GeneralFund,
+                    DepartmentId = 4, FundId = 1, ActivityCode = "GOV",
+                    StartPeriod = new DateOnly(2026, 1, 1), EndPeriod = new DateOnly(2026, 12, 31),
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new BudgetEntry { Id = 3, AccountNumber = "103", Description = "Unappropriated Fund Balance Beginning - General Fund",
+                    BudgetedAmount = 14106.00m, FiscalYear = 2026, FundType = FundType.GeneralFund,
+                    DepartmentId = 4, FundId = 1, ActivityCode = "GOV",
+                    StartPeriod = new DateOnly(2026, 1, 1), EndPeriod = new DateOnly(2026, 12, 31),
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
+            });
+
+            // General Fund Expenditures
+            budgetEntries.AddRange(new[]
+            {
+                new BudgetEntry { Id = 4, AccountNumber = "201", Description = "Bank Service Charge",
+                    BudgetedAmount = 50.00m, FiscalYear = 2026, FundType = FundType.GeneralFund,
+                    DepartmentId = 4, FundId = 1, ActivityCode = "GOV",
+                    StartPeriod = new DateOnly(2026, 1, 1), EndPeriod = new DateOnly(2026, 12, 31),
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new BudgetEntry { Id = 5, AccountNumber = "202", Description = "Management Fee",
+                    BudgetedAmount = 5400.00m, FiscalYear = 2026, FundType = FundType.GeneralFund,
+                    DepartmentId = 4, FundId = 1, ActivityCode = "GOV",
+                    StartPeriod = new DateOnly(2026, 1, 1), EndPeriod = new DateOnly(2026, 12, 31),
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new BudgetEntry { Id = 6, AccountNumber = "203", Description = "Miscellaneous Expenses",
+                    BudgetedAmount = 500.00m, FiscalYear = 2026, FundType = FundType.GeneralFund,
+                    DepartmentId = 4, FundId = 1, ActivityCode = "GOV",
+                    StartPeriod = new DateOnly(2026, 1, 1), EndPeriod = new DateOnly(2026, 12, 31),
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new BudgetEntry { Id = 7, AccountNumber = "204", Description = "Office Supplies",
+                    BudgetedAmount = 300.00m, FiscalYear = 2026, FundType = FundType.GeneralFund,
+                    DepartmentId = 4, FundId = 1, ActivityCode = "GOV",
+                    StartPeriod = new DateOnly(2026, 1, 1), EndPeriod = new DateOnly(2026, 12, 31),
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new BudgetEntry { Id = 8, AccountNumber = "205", Description = "Treasurer Fees",
+                    BudgetedAmount = 250.00m, FiscalYear = 2026, FundType = FundType.GeneralFund,
+                    DepartmentId = 4, FundId = 1, ActivityCode = "GOV",
+                    StartPeriod = new DateOnly(2026, 1, 1), EndPeriod = new DateOnly(2026, 12, 31),
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
+            });
+
+            // Enterprise Fund Revenues
+            budgetEntries.AddRange(new[]
+            {
+                new BudgetEntry { Id = 9, AccountNumber = "301", Description = "Other Revenues - Enterprise Fund",
+                    BudgetedAmount = 5879527.00m, FiscalYear = 2026, FundType = FundType.EnterpriseFund,
+                    DepartmentId = 4, FundId = 2, ActivityCode = "BUS",
+                    StartPeriod = new DateOnly(2026, 1, 1), EndPeriod = new DateOnly(2026, 12, 31),
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new BudgetEntry { Id = 10, AccountNumber = "302", Description = "Unappropriated Fund Balance Beginning - Enterprise Fund",
+                    BudgetedAmount = 172542.00m, FiscalYear = 2026, FundType = FundType.EnterpriseFund,
+                    DepartmentId = 4, FundId = 2, ActivityCode = "BUS",
+                    StartPeriod = new DateOnly(2026, 1, 1), EndPeriod = new DateOnly(2026, 12, 31),
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
+            });
+
+            // Enterprise Fund Expenditures (detailed breakdown)
+            budgetEntries.AddRange(new[]
+            {
+                new BudgetEntry { Id = 11, AccountNumber = "401", Description = "Permits and Assessments",
+                    BudgetedAmount = 976.00m, FiscalYear = 2026, FundType = FundType.EnterpriseFund,
+                    DepartmentId = 4, FundId = 2, ActivityCode = "BUS",
+                    StartPeriod = new DateOnly(2026, 1, 1), EndPeriod = new DateOnly(2026, 12, 31),
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new BudgetEntry { Id = 12, AccountNumber = "402", Description = "Bank Service and Interest",
+                    BudgetedAmount = 35.00m, FiscalYear = 2026, FundType = FundType.EnterpriseFund,
+                    DepartmentId = 4, FundId = 2, ActivityCode = "BUS",
+                    StartPeriod = new DateOnly(2026, 1, 1), EndPeriod = new DateOnly(2026, 12, 31),
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new BudgetEntry { Id = 13, AccountNumber = "403", Description = "Outside Service Lab Fees",
+                    BudgetedAmount = 700.00m, FiscalYear = 2026, FundType = FundType.EnterpriseFund,
+                    DepartmentId = 4, FundId = 2, ActivityCode = "BUS",
+                    StartPeriod = new DateOnly(2026, 1, 1), EndPeriod = new DateOnly(2026, 12, 31),
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new BudgetEntry { Id = 14, AccountNumber = "404", Description = "Budget Audit Legal",
+                    BudgetedAmount = 18000.00m, FiscalYear = 2026, FundType = FundType.EnterpriseFund,
+                    DepartmentId = 4, FundId = 2, ActivityCode = "BUS",
+                    StartPeriod = new DateOnly(2026, 1, 1), EndPeriod = new DateOnly(2026, 12, 31),
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new BudgetEntry { Id = 15, AccountNumber = "405", Description = "Supplies and Expenses",
+                    BudgetedAmount = 2000.00m, FiscalYear = 2026, FundType = FundType.EnterpriseFund,
+                    DepartmentId = 4, FundId = 2, ActivityCode = "BUS",
+                    StartPeriod = new DateOnly(2026, 1, 1), EndPeriod = new DateOnly(2026, 12, 31),
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new BudgetEntry { Id = 16, AccountNumber = "406", Description = "Insurance",
+                    BudgetedAmount = 7500.00m, FiscalYear = 2026, FundType = FundType.EnterpriseFund,
+                    DepartmentId = 4, FundId = 2, ActivityCode = "BUS",
+                    StartPeriod = new DateOnly(2026, 1, 1), EndPeriod = new DateOnly(2026, 12, 31),
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new BudgetEntry { Id = 17, AccountNumber = "407", Description = "Sewer Cleaning",
+                    BudgetedAmount = 7600.00m, FiscalYear = 2026, FundType = FundType.EnterpriseFund,
+                    DepartmentId = 4, FundId = 2, ActivityCode = "BUS",
+                    StartPeriod = new DateOnly(2026, 1, 1), EndPeriod = new DateOnly(2026, 12, 31),
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new BudgetEntry { Id = 18, AccountNumber = "408", Description = "Capital Outlay",
+                    BudgetedAmount = 5725427.00m, FiscalYear = 2026, FundType = FundType.EnterpriseFund,
+                    DepartmentId = 4, FundId = 2, ActivityCode = "BUS",
+                    StartPeriod = new DateOnly(2026, 1, 1), EndPeriod = new DateOnly(2026, 12, 31),
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
+            });
+
+            // === TOWN OF WILEY ===
+
+            // General Fund Revenues
+            budgetEntries.AddRange(new[]
+            {
+                new BudgetEntry { Id = 19, AccountNumber = "501", Description = "Property Taxes - General Fund",
+                    BudgetedAmount = 85692.00m, FiscalYear = 2026, FundType = FundType.GeneralFund,
+                    DepartmentId = 1, FundId = 1, ActivityCode = "GOV",
+                    StartPeriod = new DateOnly(2026, 1, 1), EndPeriod = new DateOnly(2026, 12, 31),
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new BudgetEntry { Id = 20, AccountNumber = "502", Description = "Other Revenues - General Fund",
+                    BudgetedAmount = 192683.00m, FiscalYear = 2026, FundType = FundType.GeneralFund,
+                    DepartmentId = 1, FundId = 1, ActivityCode = "GOV",
+                    StartPeriod = new DateOnly(2026, 1, 1), EndPeriod = new DateOnly(2026, 12, 31),
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new BudgetEntry { Id = 21, AccountNumber = "503", Description = "Unappropriated Fund Balance Beginning - General Fund",
+                    BudgetedAmount = 442211.00m, FiscalYear = 2026, FundType = FundType.GeneralFund,
+                    DepartmentId = 1, FundId = 1, ActivityCode = "GOV",
+                    StartPeriod = new DateOnly(2026, 1, 1), EndPeriod = new DateOnly(2026, 12, 31),
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
+            });
+
+            // General Fund Expenditures
+            budgetEntries.AddRange(new[]
+            {
+                new BudgetEntry { Id = 22, AccountNumber = "601", Description = "Administration",
+                    BudgetedAmount = 142618.00m, FiscalYear = 2026, FundType = FundType.GeneralFund,
+                    DepartmentId = 1, FundId = 1, ActivityCode = "GOV",
+                    StartPeriod = new DateOnly(2026, 1, 1), EndPeriod = new DateOnly(2026, 12, 31),
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new BudgetEntry { Id = 23, AccountNumber = "602", Description = "Public Works",
+                    BudgetedAmount = 194500.00m, FiscalYear = 2026, FundType = FundType.GeneralFund,
+                    DepartmentId = 2, FundId = 1, ActivityCode = "GOV",
+                    StartPeriod = new DateOnly(2026, 1, 1), EndPeriod = new DateOnly(2026, 12, 31),
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new BudgetEntry { Id = 24, AccountNumber = "603", Description = "Culture and Recreation",
+                    BudgetedAmount = 7050.00m, FiscalYear = 2026, FundType = FundType.GeneralFund,
+                    DepartmentId = 3, FundId = 1, ActivityCode = "GOV",
+                    StartPeriod = new DateOnly(2026, 1, 1), EndPeriod = new DateOnly(2026, 12, 31),
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
+            });
+
+            // Utility Fund Revenues
+            budgetEntries.AddRange(new[]
+            {
+                new BudgetEntry { Id = 25, AccountNumber = "701", Description = "Other Revenues - Utility Fund",
+                    BudgetedAmount = 285755.00m, FiscalYear = 2026, FundType = FundType.EnterpriseFund,
+                    DepartmentId = 5, FundId = 3, ActivityCode = "BUS",
+                    StartPeriod = new DateOnly(2026, 1, 1), EndPeriod = new DateOnly(2026, 12, 31),
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new BudgetEntry { Id = 26, AccountNumber = "702", Description = "Unappropriated Fund Balance Beginning - Utility Fund",
+                    BudgetedAmount = 71549.00m, FiscalYear = 2026, FundType = FundType.EnterpriseFund,
+                    DepartmentId = 5, FundId = 3, ActivityCode = "BUS",
+                    StartPeriod = new DateOnly(2026, 1, 1), EndPeriod = new DateOnly(2026, 12, 31),
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
+            });
+
+            // Utility Fund Expenditures
+            budgetEntries.AddRange(new[]
+            {
+                new BudgetEntry { Id = 27, AccountNumber = "801", Description = "Utility Fund Expenditures",
+                    BudgetedAmount = 238978.00m, FiscalYear = 2026, FundType = FundType.EnterpriseFund,
+                    DepartmentId = 5, FundId = 3, ActivityCode = "BUS",
+                    StartPeriod = new DateOnly(2026, 1, 1), EndPeriod = new DateOnly(2026, 12, 31),
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
+            });
+
+            // Community Center Fund Revenues
+            budgetEntries.AddRange(new[]
+            {
+                new BudgetEntry { Id = 28, AccountNumber = "901", Description = "Other Revenues - Community Center Fund",
+                    BudgetedAmount = 14740.00m, FiscalYear = 2026, FundType = FundType.SpecialRevenue,
+                    DepartmentId = 6, FundId = 4, ActivityCode = "GOV",
+                    StartPeriod = new DateOnly(2026, 1, 1), EndPeriod = new DateOnly(2026, 12, 31),
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new BudgetEntry { Id = 29, AccountNumber = "902", Description = "Unappropriated Fund Balance Beginning - Community Center Fund",
+                    BudgetedAmount = 26777.00m, FiscalYear = 2026, FundType = FundType.SpecialRevenue,
+                    DepartmentId = 6, FundId = 4, ActivityCode = "GOV",
+                    StartPeriod = new DateOnly(2026, 1, 1), EndPeriod = new DateOnly(2026, 12, 31),
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
+            });
+
+            // Community Center Fund Expenditures
+            budgetEntries.AddRange(new[]
+            {
+                new BudgetEntry { Id = 30, AccountNumber = "1001", Description = "Community Center Fund Expenditures",
+                    BudgetedAmount = 12740.00m, FiscalYear = 2026, FundType = FundType.SpecialRevenue,
+                    DepartmentId = 6, FundId = 4, ActivityCode = "GOV",
+                    StartPeriod = new DateOnly(2026, 1, 1), EndPeriod = new DateOnly(2026, 12, 31),
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
+            });
+
+            // Conservation Trust Fund Revenues
+            budgetEntries.AddRange(new[]
+            {
+                new BudgetEntry { Id = 31, AccountNumber = "1101", Description = "Other Revenues - Conservation Trust Fund",
+                    BudgetedAmount = 5215.00m, FiscalYear = 2026, FundType = FundType.PermanentFund,
+                    DepartmentId = 7, FundId = 5, ActivityCode = "GOV",
+                    StartPeriod = new DateOnly(2026, 1, 1), EndPeriod = new DateOnly(2026, 12, 31),
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new BudgetEntry { Id = 32, AccountNumber = "1102", Description = "Unappropriated Fund Balance Beginning - Conservation Trust Fund",
+                    BudgetedAmount = 40557.00m, FiscalYear = 2026, FundType = FundType.PermanentFund,
+                    DepartmentId = 7, FundId = 5, ActivityCode = "GOV",
+                    StartPeriod = new DateOnly(2026, 1, 1), EndPeriod = new DateOnly(2026, 12, 31),
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
+            });
+
+            // Conservation Trust Fund Expenditures
+            budgetEntries.AddRange(new[]
+            {
+                new BudgetEntry { Id = 33, AccountNumber = "1201", Description = "Conservation Trust Fund Expenditures",
+                    BudgetedAmount = 8500.00m, FiscalYear = 2026, FundType = FundType.PermanentFund,
+                    DepartmentId = 7, FundId = 5, ActivityCode = "GOV",
+                    StartPeriod = new DateOnly(2026, 1, 1), EndPeriod = new DateOnly(2026, 12, 31),
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
+            });
+
+            // Recreation Fund Revenues
+            budgetEntries.AddRange(new[]
+            {
+                new BudgetEntry { Id = 34, AccountNumber = "1301", Description = "Other Revenues - Recreation Fund",
+                    BudgetedAmount = 20325.00m, FiscalYear = 2026, FundType = FundType.SpecialRevenue,
+                    DepartmentId = 8, FundId = 6, ActivityCode = "GOV",
+                    StartPeriod = new DateOnly(2026, 1, 1), EndPeriod = new DateOnly(2026, 12, 31),
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new BudgetEntry { Id = 35, AccountNumber = "1302", Description = "Unappropriated Fund Balance Beginning - Recreation Fund",
+                    BudgetedAmount = 15311.00m, FiscalYear = 2026, FundType = FundType.SpecialRevenue,
+                    DepartmentId = 8, FundId = 6, ActivityCode = "GOV",
+                    StartPeriod = new DateOnly(2026, 1, 1), EndPeriod = new DateOnly(2026, 12, 31),
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
+            });
+
+            // Recreation Fund Expenditures (detailed breakdown)
+            budgetEntries.AddRange(new[]
+            {
+                new BudgetEntry { Id = 36, AccountNumber = "1401", Description = "Baseball/Softball",
+                    BudgetedAmount = 6500.00m, FiscalYear = 2026, FundType = FundType.SpecialRevenue,
+                    DepartmentId = 8, FundId = 6, ActivityCode = "GOV",
+                    StartPeriod = new DateOnly(2026, 1, 1), EndPeriod = new DateOnly(2026, 12, 31),
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new BudgetEntry { Id = 37, AccountNumber = "1402", Description = "Football",
+                    BudgetedAmount = 5000.00m, FiscalYear = 2026, FundType = FundType.SpecialRevenue,
+                    DepartmentId = 8, FundId = 6, ActivityCode = "GOV",
+                    StartPeriod = new DateOnly(2026, 1, 1), EndPeriod = new DateOnly(2026, 12, 31),
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new BudgetEntry { Id = 38, AccountNumber = "1403", Description = "Soccer",
+                    BudgetedAmount = 4000.00m, FiscalYear = 2026, FundType = FundType.SpecialRevenue,
+                    DepartmentId = 8, FundId = 6, ActivityCode = "GOV",
+                    StartPeriod = new DateOnly(2026, 1, 1), EndPeriod = new DateOnly(2026, 12, 31),
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new BudgetEntry { Id = 39, AccountNumber = "1404", Description = "Basketball",
+                    BudgetedAmount = 4000.00m, FiscalYear = 2026, FundType = FundType.SpecialRevenue,
+                    DepartmentId = 8, FundId = 6, ActivityCode = "GOV",
+                    StartPeriod = new DateOnly(2026, 1, 1), EndPeriod = new DateOnly(2026, 12, 31),
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new BudgetEntry { Id = 40, AccountNumber = "1405", Description = "Volleyball",
+                    BudgetedAmount = 1275.00m, FiscalYear = 2026, FundType = FundType.SpecialRevenue,
+                    DepartmentId = 8, FundId = 6, ActivityCode = "GOV",
+                    StartPeriod = new DateOnly(2026, 1, 1), EndPeriod = new DateOnly(2026, 12, 31),
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new BudgetEntry { Id = 41, AccountNumber = "1406", Description = "Wrestling",
+                    BudgetedAmount = 1000.00m, FiscalYear = 2026, FundType = FundType.SpecialRevenue,
+                    DepartmentId = 8, FundId = 6, ActivityCode = "GOV",
+                    StartPeriod = new DateOnly(2026, 1, 1), EndPeriod = new DateOnly(2026, 12, 31),
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
+            });
+
+            context.BudgetEntries.AddRange(budgetEntries);
+        }
     }
 
     /// <summary>
@@ -326,7 +728,7 @@ public static class DatabaseConfiguration
             try
             {
                 var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
-                return new XAIService(httpClientFactory, configuration, sp.GetRequiredService<ILogger<XAIService>>(), xaiApiKey);
+                return new XAIService(httpClientFactory, configuration, sp.GetRequiredService<ILogger<XAIService>>());
         }
         catch (Exception ex)
         {
@@ -335,9 +737,9 @@ public static class DatabaseConfiguration
         }
     });
 
-    // Register as Scoped (not Singleton) to avoid lifetime conflicts with scoped dependencies
-    services.TryAddScoped<IChargeCalculatorService, ServiceChargeCalculatorService>();
-    services.TryAddScoped<IWhatIfScenarioEngine, WhatIfScenarioEngine>();
+    // Register as Singleton for better performance and state management
+    services.TryAddSingleton<IChargeCalculatorService, ServiceChargeCalculatorService>();
+    services.TryAddSingleton<IWhatIfScenarioEngine, WhatIfScenarioEngine>();
 
     // Register FiscalYearSettings as singleton (configuration data)
     services.AddSingleton<FiscalYearSettings>();        // Register Unit of Work (Clean Architecture - UI only depends on Business layer)
@@ -835,28 +1237,5 @@ public class SqlServerHealthCheck : Microsoft.Extensions.Diagnostics.HealthCheck
         }
 
         return (true, string.Empty);
-    }
-}
-
-/// <summary>
-/// Scoped wrapper for IDbContextFactory that ensures proper lifetime management.
-/// This prevents captive dependency issues by providing a scoped factory implementation.
-/// </summary>
-internal sealed class ScopedDbContextFactory : IDbContextFactory<AppDbContext>
-{
-    private readonly AppDbContext _context;
-
-    public ScopedDbContextFactory(AppDbContext context)
-    {
-        _context = context ?? throw new ArgumentNullException(nameof(context));
-    }
-
-    /// <summary>
-    /// Returns the scoped DbContext instance.
-    /// In a scoped factory, we return the same instance that was injected.
-    /// </summary>
-    public AppDbContext CreateDbContext()
-    {
-        return _context;
     }
 }

@@ -11,6 +11,7 @@ using Syncfusion.Windows.Tools.Controls;
 using Xunit;
 using WileyWidget.Tests;
 using WileyWidget.ViewModels;
+using WileyWidget.Views;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace WileyWidget.UiTests.ComponentTests
@@ -29,7 +30,7 @@ namespace WileyWidget.UiTests.ComponentTests
         {
             RunOnUIThread(() =>
             {
-                var window = new SettingsView();
+                var window = new Window { Content = new SettingsView() };
                 window.Show();
 
                 // Verify window properties
@@ -38,7 +39,7 @@ namespace WileyWidget.UiTests.ComponentTests
                 Assert.True(window.Width > 0);
 
                 // Verify main layout elements exist
-                var dockPanel = window.Content as DockPanel;
+                var dockPanel = (window.Content as SettingsView).Content as DockPanel;
                 Assert.NotNull(dockPanel);
 
                 window.Close();
@@ -71,7 +72,7 @@ namespace WileyWidget.UiTests.ComponentTests
         {
             RunOnUIThread(() =>
             {
-                var window = new AIAssistView();
+                var window = new Window { Content = new AIAssistView() };
                 window.Show();
 
                 // Verify window properties
@@ -88,8 +89,8 @@ namespace WileyWidget.UiTests.ComponentTests
         {
             RunOnUIThread(() =>
             {
-                var window = new AIAssistView();
-                var viewModel = window.DataContext as AIAssistViewModel;
+                var window = new Window { Content = new AIAssistView() };
+                var viewModel = (window.Content as AIAssistView).DataContext as AIAssistViewModel;
                 Assert.NotNull(viewModel);
 
                 // Test AI conversation properties
@@ -199,7 +200,7 @@ namespace WileyWidget.UiTests.ComponentTests
         {
             RunOnUIThread(() =>
             {
-                var window = new UtilityCustomerView();
+                var window = new Window { Content = new UtilityCustomerView() };
                 window.Show();
 
                 // Verify window properties
@@ -216,8 +217,8 @@ namespace WileyWidget.UiTests.ComponentTests
         {
             RunOnUIThread(() =>
             {
-                var window = new UtilityCustomerView();
-                var viewModel = window.DataContext as UtilityCustomerViewModel;
+                var window = new Window { Content = new UtilityCustomerView() };
+                var viewModel = (window.Content as UtilityCustomerView).DataContext as UtilityCustomerViewModel;
                 Assert.NotNull(viewModel);
 
                 // Test customer data properties
@@ -262,7 +263,8 @@ namespace WileyWidget.UiTests.ComponentTests
                     {
                         serviceProviderProperty?.SetValue(null, scopedProvider);
                         var dashboardView = new DashboardView();
-                        windows.Add(dashboardView);
+                        var dashboardWindow = new Window { Content = dashboardView };
+                        windows.Add(dashboardWindow);
                     }
                     finally
                     {
@@ -272,13 +274,13 @@ namespace WileyWidget.UiTests.ComponentTests
                 }
 
                 // Other views don't have scoped dependencies
-                windows.Add(new BudgetView());
-                windows.Add(new EnterpriseView());
-                windows.Add(new SettingsView());
-                windows.Add(new AIAssistView());
+                windows.Add(new Window { Content = new BudgetView() });
+                windows.Add(new Window { Content = new EnterpriseView() });
+                windows.Add(new Window { Content = new SettingsView() });
+                windows.Add(new Window { Content = new AIAssistView() });
                 windows.Add(new AboutWindow());
                 windows.Add(new SplashScreenWindow());
-                windows.Add(new UtilityCustomerView());
+                windows.Add(new Window { Content = new UtilityCustomerView() });
 
                 foreach (var window in windows)
                 {
@@ -303,14 +305,14 @@ namespace WileyWidget.UiTests.ComponentTests
                 var windows = new Window[]
                 {
                     new MainWindow(),
-                    new DashboardView(),
-                    new BudgetView(),
-                    new EnterpriseView(),
-                    new SettingsView(),
-                    new AIAssistView(),
+                    new Window { Content = new DashboardView() },
+                    new Window { Content = new BudgetView() },
+                    new Window { Content = new EnterpriseView() },
+                    new Window { Content = new SettingsView() },
+                    new Window { Content = new AIAssistView() },
                     new AboutWindow(),
                     new SplashScreenWindow(),
-                    new UtilityCustomerView()
+                    new Window { Content = new UtilityCustomerView() }
                 };
 
                 foreach (var window in windows)
@@ -340,14 +342,14 @@ namespace WileyWidget.UiTests.ComponentTests
                 var windows = new Window[]
                 {
                     new MainWindow(),
-                    new DashboardView(),
-                    new BudgetView(),
-                    new EnterpriseView(),
-                    new SettingsView(),
-                    new AIAssistView(),
+                    new Window { Content = new DashboardView() },
+                    new Window { Content = new BudgetView() },
+                    new Window { Content = new EnterpriseView() },
+                    new Window { Content = new SettingsView() },
+                    new Window { Content = new AIAssistView() },
                     new AboutWindow(),
                     new SplashScreenWindow(),
-                    new UtilityCustomerView()
+                    new Window { Content = new UtilityCustomerView() }
                 };
 
                 foreach (var window in windows)

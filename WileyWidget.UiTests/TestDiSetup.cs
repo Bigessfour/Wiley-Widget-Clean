@@ -7,9 +7,13 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Moq;
+using Prism.Navigation.Regions;
+using Prism.Events;
+using Serilog;
 using WileyWidget.Configuration;
 using WileyWidget.Services;
 using WileyWidget.ViewModels;
+using WileyWidget.Views;
 using WileyWidget.Data;
 using WileyWidget.Business.Interfaces;
 
@@ -21,37 +25,46 @@ namespace WileyWidget.UiTests;
 /// </summary>
 public static class TestDiSetup
 {
-    private static IServiceProvider _serviceProvider;
-    private static bool _isInitialized;
+    private static readonly object _lock = new object();
+    private static IServiceProvider? _serviceProvider;
 
     /// <summary>
-    /// Ensures the test database is created (for SQLite in-memory, uses EnsureCreated instead of migrations)
+    /// Gets the service provider for tests with thread-safe initialization.
     /// </summary>
-    private static async Task EnsureTestDatabaseCreatedAsync(IServiceProvider serviceProvider)
+    public static IServiceProvider GetServiceProvider()
     {
-        var scopeFactory = serviceProvider.GetRequiredService<IServiceScopeFactory>();
-        using var scope = scopeFactory.CreateScope();
-        var contextFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<AppDbContext>>();
-        await using var context = await contextFactory.CreateDbContextAsync();
-
-        try
+        lock (_lock)
         {
-            // For SQLite in-memory databases, use EnsureCreated instead of migrations
-            // This creates the database schema without requiring migrations
-            await context.Database.EnsureCreatedAsync();
-        }
-        catch (Exception ex)
-        {
-            // Log the error
-            Console.WriteLine($"Database initialization failed: {ex.Message}");
+            if (_serviceProvider != null)
+                return _serviceProvider;
 
-            // For tests, don't crash - just log the error
-            Console.WriteLine("Application will continue without database connectivity.");
-        }
+            try
+            {
+                var services = new ServiceCollection();
+                services.AddDbContext<AppDbContext>(options =>
+                    options.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=WileyWidgetDb;Integrated Security=True")
+                           .UseSeeding(async (context) =>
+                           {
+                               await context.MunicipalAccounts.AddAsync(new MunicipalAccount { Id = 1, Name = "Test Account" });
+                               await context.SaveChangesAsync();
+                           }));
+                services.AddSingleton<ISettingsService, MockSettingsService>();
+                services.AddScoped<MainViewModel>();
+                services.AddScoped<MainWindow>();
+                services.AddScoped<AnalyticsView>();
+                // Mock Syncfusion dependencies
+                services.AddSingleton(provider => Mock.Of<Syncfusion.Windows.Tools.Controls.DockingManager>());
+                _serviceProvider = services.BuildServiceProvider();
+                Log.Information("DI container initialized for UI tests");
+                return _serviceProvider;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Failed to initialize DI container: {Message}", ex.Message);
+                throw;
+            }
     }
-
-    /// <summary>
-    /// Initializes the DI container for UI tests.
+}
     /// This should be called once before running UI tests.
     /// </summary>
     public static void Initialize()
@@ -66,13 +79,21 @@ public static class TestDiSetup
 
             // Set the base path to the UI test directory so it uses the test appsettings.json
             hostBuilder.Configuration.Sources.Clear();
+            var assemblyLocation = typeof(TestDiSetup).Assembly.Location;
+            var basePath = Path.GetDirectoryName(assemblyLocation) ?? AppDomain.CurrentDomain.BaseDirectory;
             hostBuilder.Configuration
-                .SetBasePath(Path.GetDirectoryName(typeof(TestDiSetup).Assembly.Location))
+                .SetBasePath(basePath)
                 .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
                 .AddEnvironmentVariables();
 
             // Configure the application (this sets up all services)
             hostBuilder.ConfigureWpfApplication();
+
+            // Override database connection for tests to use SQL Server LocalDB
+            hostBuilder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["ConnectionStrings:DefaultConnection"] = "Server=(localdb)\\mssqllocaldb;Database=WileyWidgetTestDb;Integrated Security=True"
+            });
 
             // Mock IUnitOfWork for testing
             var mockUnitOfWork = new Mock<IUnitOfWork>();
@@ -95,8 +116,8 @@ public static class TestDiSetup
             mockUnitOfWork.Setup(u => u.ExecuteInTransactionAsync(It.IsAny<Func<Task>>(), It.IsAny<System.Threading.CancellationToken>()))
                 .Returns<Func<Task>, System.Threading.CancellationToken>((operation, ct) => operation());
             
-            mockUnitOfWork.Setup(u => u.ExecuteInTransactionAsync<It.IsAnyType>(It.IsAny<Func<Task<It.IsAnyType>>>(), It.IsAny<System.Threading.CancellationToken>()))
-                .Returns<Func<Task<It.IsAnyType>>, System.Threading.CancellationToken>((operation, ct) => operation());
+            mockUnitOfWork.Setup(u => u.ExecuteInTransactionAsync(It.IsAny<Func<Task<object>>>(), It.IsAny<System.Threading.CancellationToken>()))
+                .Returns<Func<Task<object>>, System.Threading.CancellationToken>((operation, ct) => operation());
             
             // Setup mock to return empty collections or test data as needed
             hostBuilder.Services.AddScoped<IUnitOfWork>(sp => mockUnitOfWork.Object);
@@ -174,35 +195,46 @@ public static class TestDiSetup
             // Mock IChargeCalculatorService for AI Assist testing with static responses
             var mockChargeCalculator = new Mock<IChargeCalculatorService>();
             mockChargeCalculator.Setup(x => x.CalculateRecommendedChargeAsync(It.IsAny<int>()))
-                .ReturnsAsync((int enterpriseId) => new WileyWidget.Models.ServiceChargeRecommendation
+                .ReturnsAsync((int enterpriseId) => new ServiceChargeRecommendation
                 {
                     EnterpriseId = enterpriseId,
-                    RecommendedMonthlyCharge = 42000m,
-                    CurrentMonthlyCharge = 35000m,
-                    MonthlyShortfall = -7000m,
-                    AnnualizedShortfall = -84000m,
-                    RecommendedRateIncrease = 20.0m,
-                    TotalExpenses = 420000m,
+                    EnterpriseName = "Test Enterprise",
+                    CurrentRate = 25.00m,
+                    RecommendedRate = 30.00m,
+                    TotalMonthlyExpenses = 420000m,
+                    MonthlyRevenueAtRecommended = 42000m,
+                    MonthlySurplus = 0m,
                     ReserveAllocation = 42000m,
-                    CitizenCount = 1500,
-                    Recommendation = "Increase monthly service charge by $7,000 (20%) to cover expenses and maintain reserves.",
-                    AnalysisTimestamp = DateTime.Now
+                    CalculationDate = DateTime.Now,
+                    Assumptions = new List<string> { "Test assumption" }
                 });
             mockChargeCalculator.Setup(x => x.GenerateChargeScenarioAsync(It.IsAny<int>(), It.IsAny<decimal>(), It.IsAny<decimal>()))
-                .ReturnsAsync((int enterpriseId, decimal rateIncrease, decimal expenseChange) => new WileyWidget.Models.WhatIfScenario
+                .ReturnsAsync((int enterpriseId, decimal rateIncrease, decimal expenseChange) => new WhatIfScenario
                 {
                     ScenarioName = $"Rate Increase {rateIncrease}%",
                     CurrentRate = 25.00m,
                     ProposedRate = 25.00m * (1 + rateIncrease / 100),
-                    CurrentRevenue = 35000m,
-                    ProjectedRevenue = 35000m * (1 + rateIncrease / 100),
-                    CurrentExpenses = 42000m,
-                    ProjectedExpenses = 42000m + expenseChange,
-                    NetImpact = (35000m * (1 + rateIncrease / 100)) - (42000m + expenseChange),
-                    RevenueChange = 35000m * (rateIncrease / 100),
-                    Recommendation = rateIncrease > 0 ? "Rate increase will improve financial position." : "Consider alternative cost reduction strategies."
+                    CurrentMonthlyExpenses = 42000m,
+                    ProposedMonthlyExpenses = 42000m + expenseChange,
+                    CurrentMonthlyRevenue = 35000m,
+                    ProposedMonthlyRevenue = 35000m * (1 + rateIncrease / 100),
+                    CurrentMonthlyBalance = 35000m - 42000m,
+                    ProposedMonthlyBalance = (35000m * (1 + rateIncrease / 100)) - (42000m + expenseChange),
+                    ImpactAnalysis = rateIncrease > 0 ? "Positive impact" : "Negative impact",
+                    Recommendations = new List<string> { rateIncrease > 0 ? "Rate increase will improve financial position." : "Consider alternative cost reduction strategies." }
                 });
-            hostBuilder.Services.AddScoped<IChargeCalculatorService>(sp => mockChargeCalculator.Object);
+            hostBuilder.Services.AddSingleton<IChargeCalculatorService>(sp => mockChargeCalculator.Object);
+
+            // Mock Prism services that views expect
+            var mockRegionManager = new Mock<IRegionManager>();
+            mockRegionManager.Setup(rm => rm.Regions).Returns((IRegionCollection)null!);
+            hostBuilder.Services.AddSingleton<IRegionManager>(sp => mockRegionManager.Object);
+
+            var mockEventAggregator = new Mock<IEventAggregator>();
+            var mockEventBase = new Mock<EventBase>();
+            mockEventAggregator.Setup(ea => ea.GetEvent<PubSubEvent<string>>())
+                .Returns(new PubSubEvent<string>());
+            hostBuilder.Services.AddSingleton<IEventAggregator>(sp => mockEventAggregator.Object);
 
             // Mock IMunicipalAccountRepository for MunicipalAccountView testing with sample data
             var mockMunicipalAccountRepo = new Mock<IMunicipalAccountRepository>();
@@ -217,8 +249,6 @@ public static class TestDiSetup
                     Fund = WileyWidget.Models.MunicipalFundType.General,
                     Balance = 125000.00m,
                     IsActive = true,
-                    FundDescription = "General operating fund",
-                    TypeDescription = "Asset account",
                     Notes = "Primary operating cash account"
                 },
                 new WileyWidget.Models.MunicipalAccount
@@ -230,8 +260,6 @@ public static class TestDiSetup
                     Fund = WileyWidget.Models.MunicipalFundType.Water,
                     Balance = 45000.00m,
                     IsActive = true,
-                    FundDescription = "Water utility fund",
-                    TypeDescription = "Revenue account",
                     Notes = "Water service charges"
                 },
                 new WileyWidget.Models.MunicipalAccount
@@ -243,8 +271,6 @@ public static class TestDiSetup
                     Fund = WileyWidget.Models.MunicipalFundType.Sewer,
                     Balance = -22500.00m,
                     IsActive = true,
-                    FundDescription = "Sewer utility fund",
-                    TypeDescription = "Expense account",
                     Notes = "Sewer maintenance costs"
                 }
             };
@@ -318,6 +344,11 @@ public static class TestDiSetup
     public static IServiceProvider ServiceProvider => _serviceProvider ?? throw new InvalidOperationException("DI container not initialized. Call Initialize() first.");
 
     /// <summary>
+    /// Gets the service provider for tests (alias for compatibility).
+    /// </summary>
+    public static IServiceProvider GetServiceProvider() => ServiceProvider;
+
+    /// <summary>
     /// Creates a view with proper scoped services and simulates the full WPF lifecycle.
     /// This addresses the critical DataContext initialization gap in UI tests.
     /// </summary>
@@ -362,7 +393,7 @@ public static class TestDiSetup
             mainViewModel.PropertyChanged += (s, e) => { /* Handle property changes */ };
 
             // Load persisted settings (like production)
-            mainViewModel.UseDynamicColumns = SettingsService.Instance.Current.UseDynamicColumns;
+            // mainViewModel.UseDynamicColumns = SettingsService.Instance.Current.UseDynamicColumns;
 
             // Initialize grid columns (like production)
             await Task.Delay(50); // Allow initial render
@@ -371,16 +402,9 @@ public static class TestDiSetup
             var grid = mainWindow.FindName("Grid") as Syncfusion.UI.Xaml.Grid.SfDataGrid;
             if (grid != null)
             {
-                if (mainViewModel.UseDynamicColumns)
-                {
-                    // Would call BuildDynamicColumns() here in production
-                    grid.AutoGenerateColumns = false;
-                }
-                else
-                {
-                    grid.AutoGenerateColumns = false;
-                    // Would call AddStaticColumns() here in production
-                }
+                // Configure grid based on settings
+                grid.AutoGenerateColumns = false;
+                // Would call AddStaticColumns() here in production
             }
         }
         else if (view is BudgetView budgetView)

@@ -29,7 +29,8 @@ namespace WileyWidget.UiTests.ComponentTests
         {
             RunOnUIThread(() =>
             {
-                var window = new DashboardView();
+                var view = new DashboardView();
+                var window = new Window { Content = view, Title = "Dashboard", Height = 700, Width = 1200 };
                 window.Show();
 
                 // Verify window properties

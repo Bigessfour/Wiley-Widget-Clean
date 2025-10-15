@@ -1,0 +1,3 @@
+
+Unknown(0,0): MSBUILD : error MSB4166: Child node "3" exited prematurely. Shutting down. Diagnostic information may be found in files in "C:\Users\biges\AppData\Local\Temp\MSBuildTemp\" and will be named MSBuild_*.failure.txt. This location can be changed by setting the MSBUILDDEBUGPATH environment variable to a different directory.
+Unknown(0,0): MSBUILD : error MSB1009: Project file does not exist.

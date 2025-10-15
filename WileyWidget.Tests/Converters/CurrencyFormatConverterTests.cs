@@ -1,3 +1,4 @@
+using System;
 using System.Globalization;
 using System.Windows.Data;
 using Xunit;
@@ -19,157 +20,148 @@ public class CurrencyFormatConverterTests
     }
 
     [Fact]
-    public void Convert_WithAnyValue_ReturnsEnUsCulture()
+    public void Convert_WithDecimalValue_ReturnsFormattedCurrencyString()
     {
         // Arrange
-        object testValue = "test";
+        decimal testValue = 123.45m;
 
         // Act
-        var result = _converter.Convert(testValue, typeof(CultureInfo), null!, CultureInfo.InvariantCulture);
+        var result = _converter.Convert(testValue, typeof(string), null!, CultureInfo.CurrentCulture);
 
         // Assert
-        Assert.IsType<CultureInfo>(result);
-        var cultureInfo = (CultureInfo)result;
-        Assert.Equal("en-US", cultureInfo.Name);
+        Assert.IsType<string>(result);
+        var formattedString = (string)result;
+        Assert.Contains("$", formattedString);
+        Assert.Contains("123", formattedString);
     }
 
     [Fact]
-    public void Convert_WithNullValue_ReturnsEnUsCulture()
+    public void Convert_WithDoubleValue_ReturnsFormattedCurrencyString()
+    {
+        // Arrange
+        double testValue = 67.89;
+
+        // Act
+        var result = _converter.Convert(testValue, typeof(string), null!, CultureInfo.CurrentCulture);
+
+        // Assert
+        Assert.IsType<string>(result);
+        var formattedString = (string)result;
+        Assert.Contains("$", formattedString);
+        Assert.Contains("67", formattedString);
+    }
+
+    [Fact]
+    public void Convert_WithIntValue_ReturnsFormattedCurrencyString()
+    {
+        // Arrange
+        int testValue = 42;
+
+        // Act
+        var result = _converter.Convert(testValue, typeof(string), null!, CultureInfo.CurrentCulture);
+
+        // Assert
+        Assert.IsType<string>(result);
+        var formattedString = (string)result;
+        Assert.Contains("$", formattedString);
+        Assert.Contains("42", formattedString);
+    }
+
+    [Fact]
+    public void Convert_WithFloatValue_ReturnsFormattedCurrencyString()
+    {
+        // Arrange
+        float testValue = 99.99f;
+
+        // Act
+        var result = _converter.Convert(testValue, typeof(string), null!, CultureInfo.CurrentCulture);
+
+        // Assert
+        Assert.IsType<string>(result);
+        var formattedString = (string)result;
+        Assert.Contains("$", formattedString);
+        Assert.Contains("99", formattedString);
+    }
+
+    [Fact]
+    public void Convert_WithStringValue_ReturnsOriginalString()
+    {
+        // Arrange
+        string testValue = "not a number";
+
+        // Act
+        var result = _converter.Convert(testValue, typeof(string), null!, CultureInfo.CurrentCulture);
+
+        // Assert
+        Assert.IsType<string>(result);
+        Assert.Equal(testValue, result);
+    }
+
+    [Fact]
+    public void Convert_WithNullValue_ReturnsEmptyString()
     {
         // Arrange
         object? nullValue = null;
 
         // Act
-        var result = _converter.Convert(nullValue!, typeof(CultureInfo), null!, CultureInfo.InvariantCulture);
+        var result = _converter.Convert(nullValue!, typeof(string), null!, CultureInfo.CurrentCulture);
 
         // Assert
-        Assert.IsType<CultureInfo>(result);
-        var cultureInfo = (CultureInfo)result;
-        Assert.Equal("en-US", cultureInfo.Name);
+        Assert.IsType<string>(result);
+        Assert.Equal(string.Empty, result);
     }
 
     [Fact]
-    public void Convert_WithStringValue_ReturnsEnUsCulture()
+    public void Convert_WithObjectValue_ReturnsToString()
     {
         // Arrange
-        string stringValue = "currency";
+        object testValue = new object();
 
         // Act
-        var result = _converter.Convert(stringValue, typeof(CultureInfo), null!, CultureInfo.InvariantCulture);
+        var result = _converter.Convert(testValue, typeof(string), null!, CultureInfo.CurrentCulture);
 
         // Assert
-        Assert.IsType<CultureInfo>(result);
-        var cultureInfo = (CultureInfo)result;
-        Assert.Equal("en-US", cultureInfo.Name);
+        Assert.IsType<string>(result);
+        Assert.Equal(testValue.ToString(), result);
     }
 
     [Fact]
-    public void Convert_WithNumericValue_ReturnsEnUsCulture()
+    public void Convert_UsesCurrentCultureForFormatting()
     {
         // Arrange
-        decimal numericValue = 123.45m;
+        decimal testValue = 1234.56m;
+        var originalCulture = CultureInfo.CurrentCulture;
 
-        // Act
-        var result = _converter.Convert(numericValue, typeof(CultureInfo), null!, CultureInfo.InvariantCulture);
-
-        // Assert
-        Assert.IsType<CultureInfo>(result);
-        var cultureInfo = (CultureInfo)result;
-        Assert.Equal("en-US", cultureInfo.Name);
-    }
-
-    [Fact]
-    public void Convert_WithDifferentTargetTypes_ReturnsEnUsCulture()
-    {
-        // Arrange
-        object testValue = "test";
-        var targetTypes = new[] { typeof(string), typeof(object), typeof(CultureInfo) };
-
-        foreach (var targetType in targetTypes)
+        try
         {
-            // Act
-            var result = _converter.Convert(testValue, targetType, null!, CultureInfo.InvariantCulture);
+            // Test with en-US culture
+            CultureInfo.CurrentCulture = new CultureInfo("en-US");
+            var resultEn = _converter.Convert(testValue, typeof(string), null!, CultureInfo.CurrentCulture);
+
+            // Test with fr-FR culture
+            CultureInfo.CurrentCulture = new CultureInfo("fr-FR");
+            var resultFr = _converter.Convert(testValue, typeof(string), null!, CultureInfo.CurrentCulture);
 
             // Assert
-            Assert.IsType<CultureInfo>(result);
-            var cultureInfo = (CultureInfo)result;
-            Assert.Equal("en-US", cultureInfo.Name);
+            Assert.IsType<string>(resultEn);
+            Assert.IsType<string>(resultFr);
+            // The actual formatting will depend on the culture, but both should be strings
         }
-    }
-
-    [Fact]
-    public void Convert_WithDifferentParameterValues_ReturnsEnUsCulture()
-    {
-        // Arrange
-        object testValue = "test";
-        var parameters = new object?[] { null, "param", 123, new object() };
-
-        foreach (var parameter in parameters)
+        finally
         {
-            // Act
-            var result = _converter.Convert(testValue, typeof(CultureInfo), parameter!, CultureInfo.InvariantCulture);
-
-            // Assert
-            Assert.IsType<CultureInfo>(result);
-            var cultureInfo = (CultureInfo)result;
-            Assert.Equal("en-US", cultureInfo.Name);
+            CultureInfo.CurrentCulture = originalCulture;
         }
-    }
-
-    [Fact]
-    public void Convert_WithDifferentCultureInfo_ReturnsEnUsCulture()
-    {
-        // Arrange
-        object testValue = "test";
-        var cultures = new[]
-        {
-            CultureInfo.InvariantCulture,
-            CultureInfo.CurrentCulture,
-            new CultureInfo("fr-FR"),
-            new CultureInfo("de-DE"),
-            new CultureInfo("ja-JP")
-        };
-
-        foreach (var culture in cultures)
-        {
-            // Act
-            var result = _converter.Convert(testValue, typeof(CultureInfo), null!, culture);
-
-            // Assert
-            Assert.IsType<CultureInfo>(result);
-            var cultureInfo = (CultureInfo)result;
-            Assert.Equal("en-US", cultureInfo.Name);
-        }
-    }
-
-    [Fact]
-    public void Convert_ReturnsConsistentCultureInfo()
-    {
-        // Arrange
-        object testValue = "test";
-
-        // Act
-        var result1 = _converter.Convert(testValue, typeof(CultureInfo), null!, CultureInfo.InvariantCulture);
-        var result2 = _converter.Convert(testValue, typeof(CultureInfo), null!, CultureInfo.InvariantCulture);
-
-        // Assert
-        Assert.IsType<CultureInfo>(result1);
-        Assert.IsType<CultureInfo>(result2);
-        var cultureInfo1 = (CultureInfo)result1;
-        var cultureInfo2 = (CultureInfo)result2;
-        Assert.Equal(cultureInfo1.Name, cultureInfo2.Name);
-        Assert.Equal("en-US", cultureInfo1.Name);
     }
 
     [Fact]
     public void ConvertBack_ThrowsNotImplementedException()
     {
         // Arrange
-        var cultureInfo = new CultureInfo("en-US");
+        var value = "any value";
 
         // Act & Assert
         Assert.Throws<NotImplementedException>(() =>
-            _converter.ConvertBack(cultureInfo, typeof(object), null!, CultureInfo.InvariantCulture));
+            _converter.ConvertBack(value, typeof(object), null!, CultureInfo.InvariantCulture));
     }
 
     [Fact]
@@ -187,14 +179,14 @@ public class CurrencyFormatConverterTests
     public void ConvertBack_WithDifferentTargetTypes_ThrowsNotImplementedException()
     {
         // Arrange
-        var cultureInfo = new CultureInfo("en-US");
-        var targetTypes = new[] { typeof(string), typeof(object), typeof(CultureInfo) };
+        var value = "$123.45";
+        var targetTypes = new[] { typeof(string), typeof(object), typeof(decimal) };
 
         foreach (var targetType in targetTypes)
         {
             // Act & Assert
             Assert.Throws<NotImplementedException>(() =>
-                _converter.ConvertBack(cultureInfo, targetType, null!, CultureInfo.InvariantCulture));
+                _converter.ConvertBack(value, targetType, null!, CultureInfo.InvariantCulture));
         }
     }
 }

@@ -15,18 +15,20 @@ public class AIAssistViewParameterizedTests : UiTestApplication
             WileyWidget.Services.SettingsService.Instance.Current.Theme = theme;
 
             WileyWidget.AIAssistView view = null;
+            Window window = null;
             RunOnUIThread(() =>
             {
                 view = new WileyWidget.AIAssistView();
-                view.Show();
-                view.UpdateLayout();
+                window = new Window { Content = view };
+                window.Show();
+                window.UpdateLayout();
             });
 
             Assert.NotNull(view);
-            var doubles = UiTestHelpers.FindVisualChildrenWithRetry<System.Windows.Controls.Control>(view, expectedMin: 1);
+            var doubles = UiTestHelpers.FindVisualChildrenWithRetry<System.Windows.Controls.Control>(window, expectedMin: 1);
             Assert.True(doubles.Count > 0);
 
-            RunOnUIThread(() => view.Close());
+            RunOnUIThread(() => window.Close());
         }
     }
 }

@@ -327,10 +327,10 @@ public class MunicipalAccountTests
         // Arrange
         var account = new MunicipalAccount
         {
-            AccountNumber = new AccountNumber("1010-100"),
             Name = "Cash Account",
             Type = AccountType.Asset,
-            Fund = MunicipalFundType.General
+            Fund = MunicipalFundType.General,
+            FundClass = FundClass.Governmental
         };
 
         // Act

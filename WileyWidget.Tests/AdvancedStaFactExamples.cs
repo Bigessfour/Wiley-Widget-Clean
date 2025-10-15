@@ -158,7 +158,7 @@ namespace WileyWidget.Tests.AdvancedStaFactExamples
                 var dataGrid = new SfDataGrid
                 {
                     ItemsSource = new List<TestItem>(), // Empty data
-                    AutoGenerateColumns = true
+                    AutoGenerateColumns = false
                 };
 
                 window.Content = dataGrid;

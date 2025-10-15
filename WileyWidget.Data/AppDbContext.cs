@@ -7,7 +7,20 @@ using WileyWidget.Models.Entities;
 
 public class AppDbContext : DbContext
 {
-    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
+    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) 
+    {
+        // Initialize DbSets to satisfy nullable reference types
+        MunicipalAccounts = Set<MunicipalAccount>();
+        Departments = Set<Department>();
+        BudgetEntries = Set<BudgetEntry>();
+        Funds = Set<Fund>();
+        Transactions = Set<Transaction>();
+        Enterprises = Set<Enterprise>();
+        AppSettings = Set<AppSettings>();
+        FiscalYearSettings = Set<FiscalYearSettings>();
+        UtilityCustomers = Set<UtilityCustomer>();
+        BudgetPeriods = Set<BudgetPeriod>();
+    }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -29,6 +42,7 @@ public class AppDbContext : DbContext
     public DbSet<AppSettings> AppSettings { get; set; } // New
     public DbSet<FiscalYearSettings> FiscalYearSettings { get; set; } // New
     public DbSet<UtilityCustomer> UtilityCustomers { get; set; } // New
+    public DbSet<BudgetPeriod> BudgetPeriods { get; set; } // New
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -40,7 +54,7 @@ public class AppDbContext : DbContext
             entity.HasOne(e => e.Parent)
                   .WithMany(e => e.Children)
                   .HasForeignKey(e => e.ParentId)
-                  .OnDelete(DeleteBehavior.Cascade);
+                  .OnDelete(DeleteBehavior.Restrict);
             entity.HasIndex(e => e.ParentId);
             entity.HasIndex(e => new { e.AccountNumber, e.FiscalYear }).IsUnique();
             entity.HasIndex(e => e.SourceRowNumber); // New: Excel import queries
@@ -61,6 +75,41 @@ public class AppDbContext : DbContext
                   .HasForeignKey(e => e.ParentId)
                   .OnDelete(DeleteBehavior.Restrict);
             entity.HasIndex(e => e.DepartmentCode).IsUnique(); // New: Unique code
+        });
+
+        // BudgetPeriod configuration
+        modelBuilder.Entity<BudgetPeriod>(entity =>
+        {
+            entity.HasIndex(e => e.Year);
+            entity.HasIndex(e => e.IsActive);
+            entity.HasIndex(e => new { e.Year, e.Status });
+        });
+
+        // MunicipalAccount configuration
+        modelBuilder.Entity<MunicipalAccount>(entity =>
+        {
+            entity.OwnsOne(e => e.AccountNumber, owned =>
+            {
+                owned.Property(a => a.Value).HasColumnName("AccountNumber").HasMaxLength(20).IsRequired();
+            });
+            entity.HasOne(e => e.Department)
+                  .WithMany()
+                  .HasForeignKey(e => e.DepartmentId)
+                  .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(e => e.BudgetPeriod)
+                  .WithMany()
+                  .HasForeignKey(e => e.BudgetPeriodId)
+                  .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(e => e.ParentAccount)
+                  .WithMany(e => e.ChildAccounts)
+                  .HasForeignKey(e => e.ParentAccountId)
+                  .OnDelete(DeleteBehavior.Restrict);
+            entity.HasIndex(e => e.DepartmentId);
+            entity.HasIndex(e => e.BudgetPeriodId);
+            entity.HasIndex(e => e.ParentAccountId);
+            entity.HasIndex(e => new { e.Fund, e.Type });
+            entity.Property(e => e.Balance).HasColumnType("decimal(18,2)");
+            entity.Property(e => e.BudgetAmount).HasColumnType("decimal(18,2)");
         });
 
         // Fund relations
@@ -96,7 +145,7 @@ public class AppDbContext : DbContext
             entity.HasOne(bi => bi.SecondaryEnterprise)
                   .WithMany() // No inverse navigation
                   .HasForeignKey(bi => bi.SecondaryEnterpriseId)
-                  .OnDelete(DeleteBehavior.SetNull);
+                  .OnDelete(DeleteBehavior.Restrict);
             entity.HasIndex(bi => bi.PrimaryEnterpriseId);
             entity.HasIndex(bi => bi.SecondaryEnterpriseId);
             entity.Property(bi => bi.MonthlyAmount).HasColumnType("decimal(18,2)");
@@ -113,19 +162,53 @@ public class AppDbContext : DbContext
             modelBuilder.Entity(entityType.ClrType).Property("UpdatedAt").ValueGeneratedOnAddOrUpdate();
         }
 
-        // Seed sample data (from TOW/WSD Excel structure) - MOVED TO UseSeeding
-        // modelBuilder.Entity<Fund>().HasData(
-        //     new Fund { Id = 1, FundCode = "100", Name = "General Fund", Type = FundType.GeneralFund },
-        //     new Fund { Id = 2, FundCode = "200", Name = "Utility Fund", Type = FundType.EnterpriseFund }
+        // Set all foreign keys to Restrict to avoid SQL Server cascade path issues
+        foreach (var relationship in modelBuilder.Model.GetEntityTypes().SelectMany(e => e.GetForeignKeys()))
+        {
+            relationship.DeleteBehavior = DeleteBehavior.Restrict;
+        }
+
+        // Seed sample enterprise data
+        // modelBuilder.Entity<Enterprise>().HasData(
+        //     new Enterprise 
+        //     { 
+        //         Id = 1, 
+        //         Name = "Town of Wiley Water Department", 
+        //         BudgetAmount = 285755.00m, // Utility Fund revenues
+        //         CitizenCount = 12500,
+        //         CurrentRate = 45.50m,
+        //         Type = "Water",
+        //         Status = EnterpriseStatus.Active,
+        //         CreatedDate = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+        //         ModifiedDate = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+        //     },
+        //     new Enterprise 
+        //     { 
+        //         Id = 2, 
+        //         Name = "Town of Wiley Sewer Department", 
+        //         BudgetAmount = 5879527.00m, // Enterprise Fund revenues
+        //         CitizenCount = 12500,
+        //         CurrentRate = 125.75m,
+        //         Type = "Sewer",
+        //         Status = EnterpriseStatus.Active,
+        //         CreatedDate = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+        //         ModifiedDate = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+        //     },
+        //     new Enterprise 
+        //     { 
+        //         Id = 3, 
+        //         Name = "Town of Wiley Electric Department", 
+        //         BudgetAmount = 285755.00m, // Utility Fund revenues (shared)
+        //         CitizenCount = 12500,
+        //         CurrentRate = 0.12m,
+        //         Type = "Electric",
+        //         Status = EnterpriseStatus.Active,
+        //         CreatedDate = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+        //         ModifiedDate = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+        //     }
         // );
-        // modelBuilder.Entity<Department>().HasData(
-        //     new Department { Id = 1, Name = "Public Works", DepartmentCode = "DPW" },
-        //     new Department { Id = 2, Name = "Sanitation", DepartmentCode = "SAN", ParentId = 1 }
-        // );
-        // modelBuilder.Entity<BudgetEntry>().HasData(
-        //     new BudgetEntry { Id = 1, AccountNumber = "405", Description = "Road Maintenance", BudgetedAmount = 50000, FiscalYear = 2026, DepartmentId = 1, FundId = 1, ActivityCode = "GOV" },
-        //     new BudgetEntry { Id = 2, AccountNumber = "405.1", Description = "Paving", BudgetedAmount = 20000, FiscalYear = 2026, ParentId = 1, DepartmentId = 1, FundId = 1, ActivityCode = "GOV" }
-        // );
+        
+
         // modelBuilder.Entity<Transaction>().HasData(
         //     new Transaction { Id = 1, BudgetEntryId = 1, Amount = 10000, Type = "Payment", TransactionDate = new DateTime(2025, 10, 13, 12, 0, 0, DateTimeKind.Utc), Description = "Initial payment for road work" }
         // );

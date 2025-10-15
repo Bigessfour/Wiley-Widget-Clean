@@ -95,9 +95,9 @@ public sealed class MunicipalAccountRepositoryUnitTests : IDisposable
         // Assert
         Assert.Equal(3, result.Count());
         var resultList = result.ToList();
-        Assert.Equal("101.1000", resultList[0].AccountNumber.ToString());
-        Assert.Equal("301.3000", resultList[1].AccountNumber.ToString());
-        Assert.Equal("501.2000", resultList[2].AccountNumber.ToString());
+        Assert.Equal("101.1000", resultList[0].AccountNumber!.ToString());
+        Assert.Equal("301.3000", resultList[1].AccountNumber!.ToString());
+        Assert.Equal("501.2000", resultList[2].AccountNumber!.ToString());
     }
 
     [Fact]
@@ -118,8 +118,8 @@ public sealed class MunicipalAccountRepositoryUnitTests : IDisposable
         // Assert
         Assert.Equal(2, result.Count());
         Assert.All(result, a => Assert.True(a.IsActive));
-        Assert.Contains(result, a => a.AccountNumber.ToString() == "101.1000");
-        Assert.Contains(result, a => a.AccountNumber.ToString() == "102.1000");
+        Assert.Contains(result, a => a.AccountNumber!.ToString() == "101.1000");
+        Assert.Contains(result, a => a.AccountNumber!.ToString() == "102.1000");
     }
 
     [Fact]
@@ -159,7 +159,7 @@ public sealed class MunicipalAccountRepositoryUnitTests : IDisposable
 
         // Assert
         Assert.Single(result);
-        Assert.Equal("101.1000", result.First().AccountNumber.ToString());
+        Assert.Equal("101.1000", result.First().AccountNumber!.ToString());
     }
 
     [Fact]
@@ -198,7 +198,7 @@ public sealed class MunicipalAccountRepositoryUnitTests : IDisposable
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal("101.1000", result.AccountNumber.ToString());
+        Assert.Equal("101.1000", result!.AccountNumber!.ToString());
         Assert.Equal("Cash Account", result.Name);
     }
 
@@ -231,7 +231,7 @@ public sealed class MunicipalAccountRepositoryUnitTests : IDisposable
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal("101.1000", result.AccountNumber.ToString());
+        Assert.Equal("101.1000", result!.AccountNumber!.ToString());
         Assert.Equal("Cash Account", result.Name);
     }
 
@@ -263,7 +263,7 @@ public sealed class MunicipalAccountRepositoryUnitTests : IDisposable
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal("101.1000", result.AccountNumber.ToString());
+        Assert.Equal("101.1000", result!.AccountNumber!.ToString());
         Assert.Equal("Cash Account", result.Name);
         Assert.Equal(AccountType.Cash, result.Type);
         Assert.Equal(MunicipalFundType.General, result.Fund);
@@ -271,7 +271,7 @@ public sealed class MunicipalAccountRepositoryUnitTests : IDisposable
         // Verify it was added to database
         var savedAccount = await _repository.GetByIdAsync(result.Id);
         Assert.NotNull(savedAccount);
-        Assert.Equal("101.1000", savedAccount.AccountNumber.ToString());
+        Assert.Equal("101.1000", savedAccount!.AccountNumber!.ToString());
     }
 
     [Fact]
@@ -357,8 +357,8 @@ public sealed class MunicipalAccountRepositoryUnitTests : IDisposable
         Assert.Equal(2, result.Count);
         Assert.All(result, a => Assert.True(a.IsActive));
         Assert.All(result, a => Assert.True(a.BudgetAmount != 0));
-        Assert.Contains(result, a => a.AccountNumber.ToString() == "101.1000");
-        Assert.Contains(result, a => a.AccountNumber.ToString() == "501.2000");
+        Assert.Contains(result, a => a.AccountNumber!.ToString() == "101.1000");
+        Assert.Contains(result, a => a.AccountNumber!.ToString() == "501.2000");
     }
 
     [Fact]
@@ -380,8 +380,8 @@ public sealed class MunicipalAccountRepositoryUnitTests : IDisposable
         // Assert
         Assert.Equal(2, result.Count);
         var resultList = result.ToList();
-        Assert.Equal("101.1000", resultList[0].AccountNumber.ToString());
-        Assert.Equal("501.2000", resultList[1].AccountNumber.ToString());
+        Assert.Equal("101.1000", resultList[0].AccountNumber!.ToString());
+        Assert.Equal("501.2000", resultList[1].AccountNumber!.ToString());
     }
 
     [Fact(Skip = "Concurrency tests require database with row versioning - move to integration tests")]

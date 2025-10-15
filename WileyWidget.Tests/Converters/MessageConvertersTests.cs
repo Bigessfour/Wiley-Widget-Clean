@@ -1,3 +1,4 @@
+using System;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
@@ -23,7 +24,7 @@ public class MessageConvertersTests
         // Arrange
         var converter = new UserMessageBackgroundConverter();
         bool isUser = true;
-        var expectedColor = Color.FromRgb(0, 123, 255); // Blue
+        var expectedColor = Color.FromRgb(25, 118, 210); // Blue - matches converter implementation
 
         // Act
         var result = converter.Convert(isUser, typeof(SolidColorBrush), null!, CultureInfo.InvariantCulture);

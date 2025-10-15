@@ -136,6 +136,25 @@ main_window.type_keys("test input")
 # Check application response
 ```
 
+### 4. Debug UI Inspection Script
+
+For debugging Syncfusion WPF control rendering issues (e.g., SfDataGrid, Chart controls):
+
+1. **Set Exception Breakpoints**: In VS Code debugger panel, enable "Python: Uncaught Exceptions" and "Python: Raised Exceptions" in the Breakpoints section
+2. **Run Configuration**: Use VS Code's "Debug UI Inspection Script" launch configuration
+3. **Inspect WPF Rendering**: The script has debugpy breakpoints before subprocess operations to catch:
+   - Syncfusion control initialization failures
+   - Data binding problems
+   - WPF rendering issues
+   - UI thread blocking
+
+```python
+# Run from VS Code debugger to catch WPF rendering issues
+python scripts/quick_ui_inspect.py
+```
+
+**Note**: Exception breakpoints for Python debugging are configured in the VS Code debugger UI, not in launch.json.
+
 ## Common Issues
 
 ### Application Won't Start

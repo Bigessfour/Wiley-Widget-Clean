@@ -56,7 +56,7 @@ public class XAIServiceTests : IDisposable
         _mockHttpHandler.When("https://api.x.ai/v1/chat/completions")
             .Respond("application/json", "{\"choices\":[{\"message\":{\"content\":\"Test AI response\"}}]}");
 
-        using var service = new XAIService(_httpClientFactory, _mockConfiguration.Object, _mockLogger.Object, "test-api-key-12345678901234567890");
+        using var service = new XAIService(_httpClientFactory, _mockConfiguration.Object, _mockLogger.Object);
 
         // Act
         var result = await service.GetInsightsAsync("Test context", "What is 2+2?");
@@ -69,7 +69,7 @@ public class XAIServiceTests : IDisposable
     public async Task GetInsightsAsync_WithEmptyContext_ThrowsArgumentException()
     {
         // Arrange
-        using var service = new XAIService(_httpClientFactory, _mockConfiguration.Object, _mockLogger.Object, "test-api-key-12345678901234567890");
+        using var service = new XAIService(_httpClientFactory, _mockConfiguration.Object, _mockLogger.Object);
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentException>(() =>
@@ -80,7 +80,7 @@ public class XAIServiceTests : IDisposable
     public async Task GetInsightsAsync_WithEmptyQuestion_ThrowsArgumentException()
     {
         // Arrange
-        using var service = new XAIService(_httpClientFactory, _mockConfiguration.Object, _mockLogger.Object, "test-api-key-12345678901234567890");
+        using var service = new XAIService(_httpClientFactory, _mockConfiguration.Object, _mockLogger.Object);
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentException>(() =>
@@ -94,7 +94,7 @@ public class XAIServiceTests : IDisposable
         _mockHttpHandler.When("https://api.x.ai/v1/chat/completions")
             .Respond("application/json", "{\"error\":{\"type\":\"invalid_request\",\"message\":\"Bad request\",\"code\":\"400\"}}");
 
-        using var service = new XAIService(_httpClientFactory, _mockConfiguration.Object, _mockLogger.Object, "test-api-key-12345678901234567890");
+        using var service = new XAIService(_httpClientFactory, _mockConfiguration.Object, _mockLogger.Object);
 
         // Act
         var result = await service.GetInsightsAsync("Test context", "What is 2+2?");
@@ -110,7 +110,7 @@ public class XAIServiceTests : IDisposable
         _mockHttpHandler.When("https://api.x.ai/v1/chat/completions")
             .Respond(HttpStatusCode.Unauthorized);
 
-        using var service = new XAIService(_httpClientFactory, _mockConfiguration.Object, _mockLogger.Object, "test-api-key-12345678901234567890");
+        using var service = new XAIService(_httpClientFactory, _mockConfiguration.Object, _mockLogger.Object);
 
         // Act
         var result = await service.GetInsightsAsync("Test context", "What is 2+2?");
@@ -126,7 +126,7 @@ public class XAIServiceTests : IDisposable
         _mockHttpHandler.When("https://api.x.ai/v1/chat/completions")
             .Respond("application/json", "{\"choices\":[{\"message\":{\"content\":\"Data analysis result\"}}]}");
 
-        using var service = new XAIService(_httpClientFactory, _mockConfiguration.Object, _mockLogger.Object, "test-api-key-12345678901234567890");
+        using var service = new XAIService(_httpClientFactory, _mockConfiguration.Object, _mockLogger.Object);
 
         // Act
         var result = await service.AnalyzeDataAsync("Sample data: 1,2,3,4,5", "basic statistics");
@@ -142,7 +142,7 @@ public class XAIServiceTests : IDisposable
         _mockHttpHandler.When("https://api.x.ai/v1/chat/completions")
             .Respond("application/json", "{\"choices\":[{\"message\":{\"content\":\"Review recommendations\"}}]}");
 
-        using var service = new XAIService(_httpClientFactory, _mockConfiguration.Object, _mockLogger.Object, "test-api-key-12345678901234567890");
+        using var service = new XAIService(_httpClientFactory, _mockConfiguration.Object, _mockLogger.Object);
 
         // Act
         var result = await service.ReviewApplicationAreaAsync("User Interface", "Current UI needs improvement");
@@ -158,7 +158,7 @@ public class XAIServiceTests : IDisposable
         _mockHttpHandler.When("https://api.x.ai/v1/chat/completions")
             .Respond("application/json", "{\"choices\":[{\"message\":{\"content\":\"Mock data suggestions\"}}]}");
 
-        using var service = new XAIService(_httpClientFactory, _mockConfiguration.Object, _mockLogger.Object, "test-api-key-12345678901234567890");
+        using var service = new XAIService(_httpClientFactory, _mockConfiguration.Object, _mockLogger.Object);
 
         // Act
         var result = await service.GenerateMockDataSuggestionsAsync("customer names", "realistic municipal utility customers");
@@ -175,7 +175,7 @@ public class XAIServiceTests : IDisposable
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() =>
-            new XAIService(_httpClientFactory, _mockConfiguration.Object, _mockLogger.Object, "test-api-key-12345678901234567890"));
+            new XAIService(_httpClientFactory, _mockConfiguration.Object, _mockLogger.Object));
     }
 
     [Fact]
@@ -186,7 +186,7 @@ public class XAIServiceTests : IDisposable
 
         // Act & Assert
         Assert.Throws<ArgumentException>(() =>
-            new XAIService(_httpClientFactory, _mockConfiguration.Object, _mockLogger.Object, "test-api-key-12345678901234567890"));
+            new XAIService(_httpClientFactory, _mockConfiguration.Object, _mockLogger.Object));
     }
 
     public void Dispose()

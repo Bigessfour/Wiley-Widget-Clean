@@ -97,7 +97,7 @@ public class WhatIfScenarioEngine : IWhatIfScenarioEngine
                 RequiredRateIncrease = CalculateRequiredRateIncrease(totalMonthlyExpenseIncrease, enterprise.CitizenCount),
                 NewMonthlyRate = enterprise.CurrentRate + CalculateRequiredRateIncrease(totalMonthlyExpenseIncrease, enterprise.CitizenCount),
                 NewMonthlyRevenue = (enterprise.CurrentRate + CalculateRequiredRateIncrease(totalMonthlyExpenseIncrease, enterprise.CitizenCount)) * enterprise.CitizenCount,
-                NewMonthlyBalance = enterprise.MonthlyBalance - totalMonthlyExpenseIncrease
+                NewMonthlyBalance = (enterprise.CurrentRate + CalculateRequiredRateIncrease(totalMonthlyExpenseIncrease, enterprise.CitizenCount)) * enterprise.CitizenCount - (baselineRecommendation.TotalMonthlyExpenses + totalMonthlyExpenseIncrease)
             },
             Recommendations = recommendations,
             RiskAssessment = AssessScenarioRisks(totalExpenseIncrease, baselineRecommendation, enterprise),

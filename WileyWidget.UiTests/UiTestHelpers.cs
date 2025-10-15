@@ -7,6 +7,7 @@ using System.Windows;
 using System.Windows.Media;
 using System.Diagnostics;
 using System.Runtime.Versioning;
+using System.Runtime.InteropServices;
 using FlaUI.Core;
 using FlaUI.Core.AutomationElements;
 using FlaUI.UIA3;
@@ -42,9 +43,9 @@ public static class UiTestHelpers
         List<T> last = new();
         while (DateTime.UtcNow < deadline)
         {
-            if (Application.Current?.Dispatcher != null)
+            if (System.Windows.Application.Current?.Dispatcher != null)
             {
-                last = Application.Current.Dispatcher.Invoke(() => FindVisualChildren<T>(parent).ToList());
+                last = System.Windows.Application.Current.Dispatcher.Invoke(() => FindVisualChildren<T>(parent).ToList());
             }
             else
             {
@@ -105,7 +106,7 @@ public static class UiTestHelpers
     /// Uses FlaUI for pixel-level verification to catch rendering disconnects.
     /// </summary>
     [SupportedOSPlatform("windows")]
-    public static async Task VerifyVisualRenderingAsync(Window window, FrameworkElement control, string controlDescription = "")
+    public static async Task VerifyVisualRenderingAsync(System.Windows.Window window, FrameworkElement control, string controlDescription = "")
     {
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
@@ -113,7 +114,7 @@ public static class UiTestHelpers
         }
 
         using var automation = new UIA3Automation();
-        var app = Application.Attach(Process.GetCurrentProcess());
+        var app = FlaUI.Core.Application.Attach(Process.GetCurrentProcess());
         var mainWindow = app.GetMainWindow(automation);
 
         // Verify window is actually visible
@@ -183,7 +184,7 @@ public static class UiTestHelpers
         // Verify each element is actually rendered
         foreach (var element in elements)
         {
-            Assert.NotNull(element.DataContext, $"Element {element.Name} should have DataContext for {description}");
+            Assert.NotNull(element.DataContext);
             Assert.True(element.IsVisible, $"Element {element.Name} should be visible for {description}");
             Assert.True(element.ActualWidth > 0 && element.ActualHeight > 0,
                        $"Element {element.Name} should have dimensions for {description}");
@@ -191,4 +192,289 @@ public static class UiTestHelpers
 
         return elements;
     }
+    
+    #region FlaUI Retry Helpers
+    
+    /// <summary>
+    /// Finds an element with built-in retry logic for robust element search.
+    /// Polls for the element until found or timeout expires.
+    /// </summary>
+    [SupportedOSPlatform("windows")]
+    public static AutomationElement FindElementWithRetry(
+        AutomationElement scope,
+        Func<FlaUI.Core.Conditions.ConditionFactory, FlaUI.Core.Conditions.ConditionBase> condition,
+        TimeSpan? timeout = null,
+        TimeSpan? interval = null)
+    {
+        var actualTimeout = timeout ?? UiTestConstants.Timeouts.ElementSearch;
+        var actualInterval = interval ?? UiTestConstants.Timeouts.RetryInterval;
+        var deadline = DateTime.UtcNow + actualTimeout;
+        
+        while (DateTime.UtcNow < deadline)
+        {
+            try
+            {
+                var element = scope.FindFirstDescendant(condition);
+                if (element != null && element.IsAvailable)
+                {
+                    return element;
+                }
+            }
+            catch
+            {
+                // Element not found or not accessible yet
+            }
+            
+            Thread.Sleep(actualInterval);
+        }
+        
+        return null;
+    }
+    
+    /// <summary>
+    /// Finds an element by name with retry logic.
+    /// </summary>
+    [SupportedOSPlatform("windows")]
+    public static AutomationElement FindElementByNameWithRetry(
+        AutomationElement scope,
+        string name,
+        TimeSpan? timeout = null)
+    {
+        return FindElementWithRetry(
+            scope,
+            cf => cf.ByName(name),
+            timeout);
+    }
+    
+    /// <summary>
+    /// Finds an element by automation ID with retry logic.
+    /// </summary>
+    [SupportedOSPlatform("windows")]
+    public static AutomationElement FindElementByIdWithRetry(
+        AutomationElement scope,
+        string automationId,
+        TimeSpan? timeout = null)
+    {
+        return FindElementWithRetry(
+            scope,
+            cf => cf.ByAutomationId(automationId),
+            timeout);
+    }
+    
+    /// <summary>
+    /// Finds an element by class name with retry logic.
+    /// </summary>
+    [SupportedOSPlatform("windows")]
+    public static AutomationElement FindElementByClassNameWithRetry(
+        AutomationElement scope,
+        string className,
+        TimeSpan? timeout = null)
+    {
+        return FindElementWithRetry(
+            scope,
+            cf => cf.ByClassName(className),
+            timeout);
+    }
+    
+    /// <summary>
+    /// Waits for an element to become responsive.
+    /// Returns true if element becomes responsive within timeout.
+    /// </summary>
+    [SupportedOSPlatform("windows")]
+    public static bool WaitForElementResponsive(
+        AutomationElement element,
+        TimeSpan? timeout = null)
+    {
+        if (element == null) return false;
+        
+        var actualTimeout = timeout ?? UiTestConstants.Timeouts.ElementResponsive;
+        var deadline = DateTime.UtcNow + actualTimeout;
+        
+        while (DateTime.UtcNow < deadline)
+        {
+            try
+            {
+                // Try to access properties to verify element is responsive
+                if (element.IsAvailable && element.IsEnabled)
+                {
+                    _ = element.Name; // Force property access
+                    return true;
+                }
+            }
+            catch
+            {
+                // Element not responsive yet
+            }
+            
+            Thread.Sleep(100);
+        }
+        
+        return false;
+    }
+    
+    /// <summary>
+    /// Waits for an element matching the condition to be found and responsive.
+    /// Combines finding with responsiveness check for robust element access.
+    /// </summary>
+    [SupportedOSPlatform("windows")]
+    public static async Task<AutomationElement> WaitForElementResponsiveAsync(
+        AutomationElement scope,
+        Func<FlaUI.Core.Conditions.ConditionFactory, FlaUI.Core.Conditions.ConditionBase> condition,
+        TimeSpan? timeout = null)
+    {
+        var actualTimeout = timeout ?? UiTestConstants.Timeouts.ElementSearch;
+        var deadline = DateTime.UtcNow + actualTimeout;
+        
+        while (DateTime.UtcNow < deadline)
+        {
+            var element = FindElementWithRetry(scope, condition, TimeSpan.FromSeconds(2));
+            
+            if (element != null && element.IsAvailable)
+            {
+                if (WaitForElementResponsive(element, TimeSpan.FromSeconds(2)))
+                {
+                    return element;
+                }
+            }
+            
+            await Task.Delay(UiTestConstants.Timeouts.RetryInterval);
+        }
+        
+        return null;
+    }
+    
+    /// <summary>
+    /// Waits for an element to be clickable (enabled, on-screen, responsive).
+    /// </summary>
+    [SupportedOSPlatform("windows")]
+    public static async Task<bool> WaitForElementClickableAsync(
+        AutomationElement element,
+        TimeSpan? timeout = null)
+    {
+        if (element == null) return false;
+        
+        var actualTimeout = timeout ?? UiTestConstants.Timeouts.ElementClickable;
+        var deadline = DateTime.UtcNow + actualTimeout;
+        
+        while (DateTime.UtcNow < deadline)
+        {
+            try
+            {
+                if (element.IsEnabled && !element.IsOffscreen && element.IsAvailable)
+                {
+                    // Verify we can get clickable point
+                    var clickablePoint = element.GetClickablePoint();
+                    if (WaitForElementResponsive(element, TimeSpan.FromSeconds(1)))
+                    {
+                        return true;
+                    }
+                }
+            }
+            catch
+            {
+                // Not clickable yet
+            }
+            
+            await Task.Delay(UiTestConstants.Timeouts.RetryInterval);
+        }
+        
+        return false;
+    }
+    
+    /// <summary>
+    /// Finds multiple elements by name with fallback aliases.
+    /// Useful for navigation items that may have different names across versions.
+    /// </summary>
+    [SupportedOSPlatform("windows")]
+    public static AutomationElement FindElementByNamesWithRetry(
+        AutomationElement scope,
+        string[] names,
+        TimeSpan? timeout = null)
+    {
+        var actualTimeout = timeout ?? UiTestConstants.Timeouts.ElementSearch;
+        
+        foreach (var name in names)
+        {
+            var element = FindElementByNameWithRetry(scope, name, actualTimeout);
+            if (element != null && element.IsAvailable)
+            {
+                return element;
+            }
+        }
+        
+        return null;
+    }
+    
+    /// <summary>
+    /// Checks if any error dialogs are present in the application.
+    /// Returns the error dialog element if found, null otherwise.
+    /// </summary>
+    [SupportedOSPlatform("windows")]
+    public static FlaUI.Core.AutomationElements.Window CheckForErrorDialogs(FlaUI.Core.Application app, AutomationBase automation)
+    {
+        try
+        {
+            var windows = app.GetAllTopLevelWindows(automation);
+            foreach (var window in windows)
+            {
+                var title = window.Title ?? "";
+                if (UiTestConstants.ErrorDialogKeywords.Keywords.Any(keyword =>
+                    title.Contains(keyword, StringComparison.OrdinalIgnoreCase)))
+                {
+                    return window;
+                }
+            }
+        }
+        catch
+        {
+            // Ignore errors during error detection
+        }
+        
+        return null;
+    }
+    
+    /// <summary>
+    /// Dumps the automation element tree for debugging purposes.
+    /// Useful when elements are not found as expected.
+    /// </summary>
+    [SupportedOSPlatform("windows")]
+    public static string DumpElementTree(AutomationElement root, int maxDepth = 3)
+    {
+        var sb = new System.Text.StringBuilder();
+        DumpElementTreeRecursive(root, 0, maxDepth, sb);
+        return sb.ToString();
+    }
+    
+    private static void DumpElementTreeRecursive(
+        AutomationElement element, 
+        int depth, 
+        int maxDepth, 
+        System.Text.StringBuilder sb)
+    {
+        if (element == null || depth > maxDepth) return;
+        
+        var indent = new string(' ', depth * 2);
+        var name = element.Name ?? "(no name)";
+        var automationId = element.Properties.AutomationId.ValueOrDefault ?? "(no ID)";
+        var className = element.Properties.ClassName.ValueOrDefault ?? "(no class)";
+        var controlType = element.Properties.ControlType.ValueOrDefault;
+        
+        sb.AppendLine($"{indent}[{controlType}] Name: {name}, ID: {automationId}, Class: {className}");
+        
+        try
+        {
+            var children = element.FindAllChildren();
+            foreach (var child in children)
+            {
+                DumpElementTreeRecursive(child, depth + 1, maxDepth, sb);
+            }
+        }
+        catch
+        {
+            // Ignore errors when traversing tree
+        }
+    }
+    
+    #endregion
 }
+

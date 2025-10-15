@@ -104,6 +104,9 @@
     <PackageReference Include="Microsoft.Extensions.AI" />
     <PackageReference Include="OpenAI" />
     <PackageReference Include="Microsoft.SemanticKernel" />
+    <!-- Azure Configuration Packages -->
+    <PackageReference Include="Azure.Extensions.AspNetCore.Configuration.Secrets" />
+    <PackageReference Include="Azure.Identity" />
   <!-- No external QuickBooks SDK yet; using raw HTTP + PKCE. Add Intuit packages later if desired. -->
   <!-- QuickBooks SDK packages (Step 2) - modern package IDs differ from older docs -->
     <PackageReference Include="IppOAuth2PlatformSdk" />

@@ -403,6 +403,56 @@ namespace WileyWidget.Data.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Enterprises");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            BudgetAmount = 285755.00m,
+                            CitizenCount = 12500,
+                            CreatedDate = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CurrentRate = 45.50m,
+                            IsDeleted = false,
+                            ModifiedDate = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            MonthlyExpenses = 0m,
+                            Name = "Town of Wiley Water Department",
+                            RowVersion = new byte[0],
+                            Status = 0,
+                            TotalBudget = 0m,
+                            Type = "Water"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            BudgetAmount = 5879527.00m,
+                            CitizenCount = 12500,
+                            CreatedDate = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CurrentRate = 125.75m,
+                            IsDeleted = false,
+                            ModifiedDate = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            MonthlyExpenses = 0m,
+                            Name = "Town of Wiley Sewer Department",
+                            RowVersion = new byte[0],
+                            Status = 0,
+                            TotalBudget = 0m,
+                            Type = "Sewer"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            BudgetAmount = 285755.00m,
+                            CitizenCount = 12500,
+                            CreatedDate = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CurrentRate = 0.12m,
+                            IsDeleted = false,
+                            ModifiedDate = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            MonthlyExpenses = 0m,
+                            Name = "Town of Wiley Electric Department",
+                            RowVersion = new byte[0],
+                            Status = 0,
+                            TotalBudget = 0m,
+                            Type = "Electric"
+                        });
                 });
 
             modelBuilder.Entity("WileyWidget.Models.Entities.Fund", b =>

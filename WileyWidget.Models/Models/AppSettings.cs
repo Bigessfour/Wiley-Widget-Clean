@@ -20,7 +20,7 @@ public class AppSettings
     public double? WindowHeight { get; set; }
     public double? WindowLeft { get; set; }
     public double? WindowTop { get; set; }
-    public bool? WindowMaximized { get; set; } = true;
+    public bool? WindowMaximized { get; set; }
 
     // Grid column preferences
     public bool UseDynamicColumns { get; set; } = false;

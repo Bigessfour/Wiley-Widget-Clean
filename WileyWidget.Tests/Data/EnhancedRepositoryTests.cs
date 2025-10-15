@@ -481,8 +481,9 @@ public class EnhancedRepositoryTests : IDisposable
     [Fact]
     public async Task UnitOfWork_ExecuteInTransaction_CommitsOnSuccess()
     {
-        // Arrange
-        using var uow = new UnitOfWork(_context);
+        var context = _contextFactory.CreateDbContext();
+        context.Database.ExecuteSqlRaw("DELETE FROM Enterprises");
+        using var uow = new UnitOfWork(context);
         var enterprise1 = new Enterprise
         {
             Name = "Enterprise 1",
@@ -506,16 +507,16 @@ public class EnhancedRepositoryTests : IDisposable
         });
 
         // Assert
-        var count = await uow.Enterprises.GetCountAsync();
+        var count = await _repository.GetCountAsync();
         count.Should().BeGreaterOrEqualTo(2);
     }
 
     [Fact]
     public async Task UnitOfWork_ExecuteInTransaction_RollsBackOnFailure()
     {
-        // Arrange
-        using var uow = new UnitOfWork(_context);
-        var initialCount = await uow.Enterprises.GetCountAsync();
+        var context = _contextFactory.CreateDbContext();
+        using var uow = new UnitOfWork(context);
+        var initialCount = await _repository.GetCountAsync();
 
         // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(async () =>
@@ -537,7 +538,7 @@ public class EnhancedRepositoryTests : IDisposable
         });
 
         // Verify rollback
-        var finalCount = await uow.Enterprises.GetCountAsync();
+        var finalCount = await _repository.GetCountAsync();
         finalCount.Should().Be(initialCount);
     }
 

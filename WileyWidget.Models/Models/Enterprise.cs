@@ -45,6 +45,18 @@ public class Enterprise : INotifyPropertyChanged, ISoftDeletable
             OnPropertyChanged(propertyName);
         }
     }
+
+    /// <summary>
+    /// Default constructor
+    /// </summary>
+    public Enterprise()
+    {
+        // Ensure string properties are initialized to empty strings
+        _name = string.Empty;
+        _type = string.Empty;
+        _notes = string.Empty;
+    }
+
     /// <summary>
     /// Unique identifier for the enterprise
     /// </summary>
@@ -215,19 +227,18 @@ public class Enterprise : INotifyPropertyChanged, ISoftDeletable
     /// </summary>
     public DateTime? LastModified { get; set; }
 
-    private string? _type;
+    private string? _type = string.Empty;
 
     /// <summary>
-    /// Type/category of the enterprise
+    /// Type of enterprise (Water, Sewer, etc.)
     /// </summary>
     [StringLength(50, ErrorMessage = "Type cannot exceed 50 characters")]
-    [GridDisplay(2, 100)]
     public string? Type
     {
         get => _type;
         set
         {
-            var sanitized = string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+            var sanitized = string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim();
             if (!string.Equals(_type, sanitized, StringComparison.Ordinal))
             {
                 _type = sanitized;
@@ -236,7 +247,7 @@ public class Enterprise : INotifyPropertyChanged, ISoftDeletable
         }
     }
 
-    private string? _notes;
+    private string? _notes = string.Empty;
 
     /// <summary>
     /// Additional notes about the enterprise
@@ -248,7 +259,7 @@ public class Enterprise : INotifyPropertyChanged, ISoftDeletable
         get => _notes;
         set
         {
-            var sanitized = string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+            var sanitized = string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim();
             if (!string.Equals(_notes, sanitized, StringComparison.Ordinal))
             {
                 _notes = sanitized;

@@ -687,6 +687,20 @@ public partial class BudgetViewModel : ObservableObject, IDisposable, IDataError
     }
 
     /// <summary>
+    /// Export budget report to file
+    /// </summary>
+    [RelayCommand]
+    private void ExportReport()
+    {
+        // Simple implementation - in real app this would export to Excel/CSV
+        Log.Information("ExportReport command executed");
+        MessageBox.Show("Budget report export functionality would be implemented here.",
+                       "Export Report",
+                       MessageBoxButton.OK,
+                       MessageBoxImage.Information);
+    }
+
+    /// <summary>
     /// Generates budget recommendations
     /// </summary>
     private void GenerateRecommendations()

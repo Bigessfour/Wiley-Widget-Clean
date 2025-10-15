@@ -15,6 +15,7 @@ using WileyWidget.Tests;
 using WileyWidget.ViewModels;
 using WileyWidget.Data;
 using WileyWidget.Models;
+using WileyWidget.Business.Interfaces;
 
 namespace WileyWidget.UiTests.ComponentTests
 {
@@ -31,8 +32,9 @@ namespace WileyWidget.UiTests.ComponentTests
         };
 
         public Task<IEnumerable<Enterprise>> GetAllAsync() => Task.FromResult(_enterprises.AsEnumerable());
-        public Task<Enterprise> GetByIdAsync(int id) => Task.FromResult(_enterprises.FirstOrDefault(e => e.Id == id));
-        public Task<Enterprise> GetByNameAsync(string name) => Task.FromResult(_enterprises.FirstOrDefault(e => e.Name == name));
+        public Task<Enterprise?> GetByIdAsync(int id) => Task.FromResult(_enterprises.FirstOrDefault(e => e.Id == id));
+        public Task<Enterprise?> GetByNameAsync(string name) => Task.FromResult(_enterprises.FirstOrDefault(e => e.Name == name));
+        public Task<IEnumerable<Enterprise>> GetByTypeAsync(string type) => Task.FromResult(_enterprises.Where(e => e.Type == type));
         public Task<Enterprise> AddAsync(Enterprise enterprise) { _enterprises.Add(enterprise); return Task.FromResult(enterprise); }
         public Task<Enterprise> UpdateAsync(Enterprise enterprise) { return Task.FromResult(enterprise); }
         public Task<bool> DeleteAsync(int id) { _enterprises.RemoveAll(e => e.Id == id); return Task.FromResult(true); }
@@ -58,7 +60,9 @@ namespace WileyWidget.UiTests.ComponentTests
             RunOnUIThread(() =>
             {
                 var mockRepo = new MockEnterpriseRepository();
-                var window = new BudgetView(mockRepo);
+                var viewModel = new BudgetViewModel(mockRepo);
+                var view = new BudgetView(viewModel);
+                var window = new Window { Content = view, Title = "Budget Analysis & Reporting", Height = 700, Width = 1000 };
                 window.Show();
 
                 // Verify window properties
@@ -84,7 +88,9 @@ namespace WileyWidget.UiTests.ComponentTests
             RunOnUIThread(() =>
             {
                 var mockRepo = new MockEnterpriseRepository();
-                var window = new BudgetView(mockRepo);
+                var viewModel = new BudgetViewModel(mockRepo);
+                var view = new BudgetView(viewModel);
+                var window = new Window { Content = view };
                 window.Show();
                 window.UpdateLayout();
 
@@ -125,8 +131,9 @@ namespace WileyWidget.UiTests.ComponentTests
             RunOnUIThread(() =>
             {
                 var mockRepo = new MockEnterpriseRepository();
-                var window = new BudgetView(mockRepo);
-                var viewModel = window.DataContext as BudgetViewModel;
+                var view = new BudgetView();
+                var window = new Window { Content = view };
+                var viewModel = view.DataContext as BudgetViewModel;
                 Assert.NotNull(viewModel);
 
                 // Test budget data properties
@@ -150,8 +157,9 @@ namespace WileyWidget.UiTests.ComponentTests
             RunOnUIThread(() =>
             {
                 var mockRepo = new MockEnterpriseRepository();
-                var window = new BudgetView(mockRepo);
-                var viewModel = window.DataContext as BudgetViewModel;
+                var view = new BudgetView();
+                var window = new Window { Content = view };
+                var viewModel = view.DataContext as BudgetViewModel;
 
                 // Test calculation properties
                 Assert.True(viewModel.NetBalance >= decimal.MinValue); // Allow any decimal value
@@ -177,8 +185,8 @@ namespace WileyWidget.UiTests.ComponentTests
         {
             RunOnUIThread(() =>
             {
-                var mockRepo = new MockEnterpriseRepository();
-                var window = new BudgetView(mockRepo);
+                var view = new BudgetView();
+                var window = new Window { Content = view };
                 window.Show();
 
                 // Find SfDataGrid controls
@@ -205,8 +213,9 @@ namespace WileyWidget.UiTests.ComponentTests
             RunOnUIThread(() =>
             {
                 var mockRepo = new MockEnterpriseRepository();
-                var window = new BudgetView(mockRepo);
-                var viewModel = window.DataContext as BudgetViewModel;
+                var view = new BudgetView();
+                var window = new Window { Content = view };
+                var viewModel = view.DataContext as BudgetViewModel;
 
                 // Test all analysis commands can execute
                 Assert.True(viewModel.RefreshBudgetDataCommand.CanExecute(null));
@@ -228,15 +237,16 @@ namespace WileyWidget.UiTests.ComponentTests
             RunOnUIThread(() =>
             {
                 var mockRepo = new MockEnterpriseRepository();
-                var window = new BudgetView(mockRepo);
+                var view = new BudgetView();
+                var window = new Window { Content = view };
                 window.Show();
 
                 // Test that balance color converter is available in resources
-                var balanceColorConverter = window.Resources["BalanceColorConverter"];
+                var balanceColorConverter = view.Resources["BalanceColorConverter"];
                 Assert.NotNull(balanceColorConverter);
 
                 // Test other converters
-                var boolToVisConverter = window.Resources["BoolToVis"];
+                var boolToVisConverter = view.Resources["BoolToVis"];
                 Assert.NotNull(boolToVisConverter);
 
                 window.Close();
@@ -248,8 +258,8 @@ namespace WileyWidget.UiTests.ComponentTests
         {
             RunOnUIThread(() =>
             {
-                var mockRepo = new MockEnterpriseRepository();
-                var window = new BudgetView(mockRepo);
+                var view = new BudgetView();
+                var window = new Window { Content = view };
                 window.Show();
                 window.UpdateLayout();
 
@@ -278,7 +288,8 @@ namespace WileyWidget.UiTests.ComponentTests
             RunOnUIThread(() =>
             {
                 var mockRepo = new MockEnterpriseRepository();
-                var window = new BudgetView(mockRepo);
+                var view = new BudgetView();
+                var window = new Window { Content = view, Title = "Budget Analysis & Reporting" };
                 window.Show();
                 window.UpdateLayout();
 
@@ -319,7 +330,8 @@ namespace WileyWidget.UiTests.ComponentTests
                 var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
                 var mockRepo = new MockEnterpriseRepository();
-                var window = new BudgetView(mockRepo);
+                var view = new BudgetView();
+                var window = new Window { Content = view };
                 window.Show();
 
                 // Force layout and data binding update
@@ -344,8 +356,9 @@ namespace WileyWidget.UiTests.ComponentTests
             RunOnUIThread(() =>
             {
                 var mockRepo = new MockEnterpriseRepository();
-                var window = new BudgetView(mockRepo);
-                var viewModel = window.DataContext as BudgetViewModel;
+                var view = new BudgetView();
+                var window = new Window { Content = view };
+                var viewModel = view.DataContext as BudgetViewModel;
 
                 // Test error handling for division by zero, invalid data, etc.
                 // This would test view model's error handling capabilities

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
@@ -166,7 +167,7 @@ namespace WileyWidget.Tests
 
         public override Task<RunSummary> RunAsync(IMessageSink diagnosticMessageSink, IMessageBus messageBus, object[] constructorArguments, ExceptionAggregator aggregator, CancellationTokenSource cancellationTokenSource)
         {
-            // Use the STA thread pool for efficient test execution
+            // Use the STA thread pool for efficient test execution with 30-second timeout per test
             return StaThreadPool.Instance.RunAsync(async () =>
             {
                 // Validate we're running on an STA thread
@@ -187,6 +188,7 @@ namespace WileyWidget.Tests
                     if (Application.Current == null)
                     {
                         var application = new Application();
+                        application.ShutdownMode = ShutdownMode.OnExplicitShutdown; // Prevent auto-shutdown
                         
                         // Register Syncfusion license for test environment
                         RegisterSyncfusionLicenseForTests();
@@ -218,11 +220,29 @@ namespace WileyWidget.Tests
 
                 try
                 {
-                    // Execute the test on the STA thread
-                    return await base.RunAsync(diagnosticMessageSink, messageBus, constructorArguments, aggregator, cancellationTokenSource);
+                    // Create a cancellation token with 30-second timeout for individual test
+                    using var testCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationTokenSource.Token);
+                    testCts.CancelAfter(TimeSpan.FromSeconds(30));
+                    
+                    // Execute the test on the STA thread with timeout
+                    var testTask = base.RunAsync(diagnosticMessageSink, messageBus, constructorArguments, aggregator, testCts);
+                    var completedTask = await Task.WhenAny(testTask, Task.Delay(TimeSpan.FromSeconds(30), testCts.Token));
+                    
+                    if (completedTask != testTask)
+                    {
+                        throw new TimeoutException($"Test '{TestMethod.Method.Name}' exceeded 30-second timeout. This usually indicates a hanging window, infinite dispatcher loop, or unreleased WPF resource.");
+                    }
+                    
+                    // Clean up any open windows after each test
+                    CleanupOpenWindows();
+                    
+                    return await testTask;
                 }
                 catch (Exception ex)
                 {
+                    // Clean up on error too
+                    CleanupOpenWindows();
+                    
                     // Log WPF-specific threading issues
                     if (ex.Message.Contains("thread") || ex.Message.Contains("STA") || ex.Message.Contains("dispatcher"))
                     {
@@ -230,7 +250,42 @@ namespace WileyWidget.Tests
                     }
                     throw;
                 }
-            }, TimeSpan.FromMinutes(5)); // 5 minute timeout for tests
+            }, TimeSpan.FromMinutes(1)); // 1 minute overall timeout including overhead
+        }
+        
+        /// <summary>
+        /// Clean up any windows that tests may have left open
+        /// </summary>
+        private static void CleanupOpenWindows()
+        {
+            try
+            {
+                if (Application.Current != null)
+                {
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        var windows = Application.Current.Windows.Cast<Window>().ToList();
+                        foreach (var window in windows)
+                        {
+                            try
+                            {
+                                if (window.IsLoaded)
+                                {
+                                    window.Close();
+                                }
+                            }
+                            catch
+                            {
+                                // Ignore errors closing windows
+                            }
+                        }
+                    }, DispatcherPriority.Normal, CancellationToken.None, TimeSpan.FromSeconds(2));
+                }
+            }
+            catch
+            {
+                // Ignore cleanup errors
+            }
         }
 
         /// <summary>

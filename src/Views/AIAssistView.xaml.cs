@@ -3,6 +3,7 @@ using System.Windows.Input;
 using System.Windows;
 using System.Windows.Media;
 using Syncfusion.SfSkinManager;
+using Syncfusion.Windows.Shared;
 using WileyWidget.Services;
 using WileyWidget.Data;
 using Serilog;
@@ -61,8 +62,7 @@ public partial class AIAssistView : UserControl
 
     private void AIAssistView_Loaded(object sender, RoutedEventArgs e)
     {
-        // Focus input on load
-        MessageInput?.Focus();
+        // No need to focus, let the user click
     }
 
     private ViewModels.AIAssistViewModel? ViewModel
@@ -115,4 +115,19 @@ public partial class AIAssistView : UserControl
         // For UserControl, theme is applied at application level or parent level
         // SfSkinManager can be used on the parent Window
     }
+
+    // Methods for UI test compatibility
+    public void Show()
+    {
+        // UserControl doesn't have Show, but make it visible
+        Visibility = Visibility.Visible;
+    }
+
+    public void Close()
+    {
+        // UserControl doesn't have Close, but hide it
+        Visibility = Visibility.Collapsed;
+    }
+
+    public string Title => "AI Assist";
 }

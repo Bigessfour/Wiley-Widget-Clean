@@ -40,6 +40,22 @@ public class ComprehensiveDatabaseIntegrationTests : IDisposable
 
     private void SeedTestData()
     {
+        // Create test budget period
+        var budgetPeriod = new BudgetPeriod
+        {
+            Year = 2025,
+            Name = "2025 Budget Period",
+            Status = BudgetStatus.Adopted,
+            StartDate = new DateTime(2025, 1, 1),
+            EndDate = new DateTime(2025, 12, 31),
+            IsActive = true
+        };
+
+        _context.BudgetPeriods.Add(budgetPeriod);
+        _context.SaveChanges();
+
+        var budgetPeriodId = budgetPeriod.Id; // Get the actual ID after save
+
         // Create test enterprises
         var enterprise1 = new Enterprise
         {
@@ -48,7 +64,8 @@ public class ComprehensiveDatabaseIntegrationTests : IDisposable
             MonthlyExpenses = 95000.00m,
             CitizenCount = 15000,
             Type = "Water",
-            Notes = "Primary water service provider"
+            Notes = "Primary water service provider",
+            RowVersion = new byte[8]
         };
 
         var enterprise2 = new Enterprise
@@ -58,7 +75,8 @@ public class ComprehensiveDatabaseIntegrationTests : IDisposable
             MonthlyExpenses = 72000.00m,
             CitizenCount = 14800,
             Type = "Sewer",
-            Notes = "Wastewater management services"
+            Notes = "Wastewater management services",
+            RowVersion = new byte[8]
         };
 
         _context.Enterprises.AddRange(enterprise1, enterprise2);
@@ -85,6 +103,7 @@ public class ComprehensiveDatabaseIntegrationTests : IDisposable
             Fund = MunicipalFundType.General,
             FundClass = FundClass.Governmental,
             DepartmentId = departmentId,
+            BudgetPeriodId = budgetPeriodId, // Current budget period
             Balance = 300000.00m,
             BudgetAmount = 400000.00m,
             IsActive = true
@@ -98,6 +117,7 @@ public class ComprehensiveDatabaseIntegrationTests : IDisposable
             Fund = MunicipalFundType.General,
             FundClass = FundClass.Governmental,
             DepartmentId = departmentId,
+            BudgetPeriodId = budgetPeriodId, // Current budget period
             Balance = 200000.00m,
             BudgetAmount = 300000.00m,
             IsActive = true
@@ -239,7 +259,7 @@ public class ComprehensiveDatabaseIntegrationTests : IDisposable
         // Act - Add account
         var addedAccount = await _municipalAccountRepository.AddAsync(newAccount);
         Assert.NotNull(addedAccount);
-        Assert.Equal("301-3000", addedAccount.AccountNumber.ToString());
+        Assert.Equal("301-3000", addedAccount!.AccountNumber!.ToString());
 
         // Act - Get accounts by fund
         var generalFundAccounts = await _municipalAccountRepository.GetByFundAsync(MunicipalFundType.General);

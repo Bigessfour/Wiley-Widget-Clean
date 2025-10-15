@@ -335,6 +335,40 @@ public class ErrorDialogService
 
 ## Development Workflow
 
+### Python Virtual Environment Setup
+
+To ensure consistent Python development and debugging, set up a virtual environment for the project:
+
+```bash
+# Create virtual environment
+python -m venv .venv
+
+# Activate virtual environment (Windows)
+.venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+pip install -r requirements-test.txt
+
+# For development dependencies
+pip install debugpy pytest pytest-cov black flake8
+```
+
+**VS Code Configuration:**
+- The Python extension is configured to use `${workspaceFolder}/.venv/Scripts/python.exe` as the default interpreter
+- All Python debug configurations in `.vscode/launch.json` are set to use the virtual environment
+- Terminal environment activation is enabled for automatic virtual environment activation
+
+**Debugging Python Scripts:**
+All Python debug configurations now use the virtual environment automatically. Available debug configurations include:
+- Debug Python Startup Script
+- Debug Python Environment Loader
+- Debug Python Cleanup Script
+- Debug All Python Tests
+- Debug Python Tests with Coverage
+- Debug Current Python Test File
+- Debug Startup with debugpy
+
 ### CI/CD Pipeline Enhancements
 ```yaml
 # .github/workflows/ci.yml

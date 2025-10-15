@@ -1,5 +1,6 @@
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
 using Xunit;
@@ -47,7 +48,7 @@ namespace WileyWidget.Tests
         /// Runs an async action on the UI thread.
         /// </summary>
         /// <param name="action">The async action to run on the UI thread.</param>
-        public async Task RunOnUIThreadAsync(Func<Task> action)
+        public Task RunOnUIThreadAsync(Func<Task> action)
         {
             if (_disposed)
                 throw new ObjectDisposedException(nameof(TestApplication));
@@ -55,7 +56,7 @@ namespace WileyWidget.Tests
             if (Application.Current == null)
                 throw new InvalidOperationException("WPF Application context is not available");
 
-            await Application.Current.Dispatcher.InvokeAsync(action);
+            return Application.Current.Dispatcher.InvokeAsync(action).Task;
         }
 
         /// <summary>
