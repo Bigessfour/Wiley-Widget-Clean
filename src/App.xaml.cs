@@ -13,6 +13,7 @@ using Microsoft.Extensions.Logging;
 using Serilog.Extensions.Logging;
 using WileyWidget.Configuration;
 using WileyWidget.Data;
+using WileyWidget.Regions;
 using WileyWidget.Business.Interfaces;
 using WileyWidget.Models;
 using WileyWidget.Services;
@@ -138,7 +139,7 @@ namespace WileyWidget
             containerRegistry.RegisterSingleton<Prism.Dialogs.IDialogService, Prism.Dialogs.DialogService>();
             
             // Register ViewModels
-            containerRegistry.RegisterSingleton<MainViewModel>(provider => new MainViewModel(provider.Resolve<IRegionManager>(), provider.Resolve<IDispatcherHelper>(), provider.Resolve<ILogger<MainViewModel>>()));
+            containerRegistry.RegisterSingleton<MainViewModel>(provider => new MainViewModel(provider.Resolve<IRegionManager>(), provider.Resolve<IDispatcherHelper>(), provider.Resolve<ILogger<MainViewModel>>(), provider.Resolve<IEnterpriseRepository>()));
             containerRegistry.Register<AnalyticsViewModel>();
             containerRegistry.Register<DashboardViewModel>();
             containerRegistry.Register<EnterpriseViewModel>();
@@ -146,6 +147,9 @@ namespace WileyWidget
             containerRegistry.Register<MunicipalAccountViewModel>();
             containerRegistry.Register<UtilityCustomerViewModel>();
             containerRegistry.Register<ReportsViewModel>();
+            
+            // Register Region Adapters
+            containerRegistry.Register<WileyWidget.Regions.DockingManagerRegionAdapter>();
 
             // Register Views for navigation
             containerRegistry.RegisterForNavigation<AnalyticsView>();
@@ -161,8 +165,7 @@ namespace WileyWidget
         {
             base.ConfigureRegionAdapterMappings(regionAdapterMappings);
             // Custom adapter for Syncfusion controls (e.g., DockingManager)
-            // Note: DockingManagerRegionAdapter needs to be implemented or imported
-            // regionAdapterMappings.RegisterMapping(typeof(Syncfusion.Windows.Tools.Controls.DockingManager), Container.Resolve<DockingManagerRegionAdapter>());
+            regionAdapterMappings.RegisterMapping(typeof(Syncfusion.Windows.Tools.Controls.DockingManager), Container.Resolve<WileyWidget.Regions.DockingManagerRegionAdapter>());
         }
 
         protected override void ConfigureModuleCatalog(IModuleCatalog moduleCatalog)

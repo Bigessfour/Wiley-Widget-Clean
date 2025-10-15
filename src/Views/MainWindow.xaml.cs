@@ -16,6 +16,7 @@ namespace WileyWidget.Views
     {
         private readonly IRegionManager _regionManager;
         private readonly MainViewModel _viewModel;
+        private readonly System.Windows.Threading.DispatcherTimer _saveStateTimer;
 
         // Parameterless constructor for test scenarios
         public MainWindow() : this(null, null)
@@ -32,6 +33,13 @@ namespace WileyWidget.Views
             
             _regionManager = regionManager;
             _viewModel = viewModel;
+
+            // Initialize debouncing timer for state saving
+            _saveStateTimer = new System.Windows.Threading.DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(500) // 500ms debounce
+            };
+            _saveStateTimer.Tick += SaveStateTimer_Tick;
             
             InitializeComponent();
             
@@ -41,48 +49,62 @@ namespace WileyWidget.Views
             SizeChanged += MainWindow_SizeChanged;
             Activated += MainWindow_Activated;
             ContentRendered += MainWindow_ContentRendered;
+
+            // Subscribe to ViewModel property changes for theme switching
+            if (_viewModel != null)
+            {
+                _viewModel.PropertyChanged += ViewModel_PropertyChanged;
+            }
             
             Log.Debug("MainWindow: Constructor completed, event handlers attached");
         }
 
-        private void ConfigureDockingManager()
+        private void SaveStateTimer_Tick(object? sender, EventArgs e)
+        {
+            _saveStateTimer.Stop();
+            SaveDockingState();
+        }
+
+        private void ViewModel_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(MainViewModel.CurrentTheme))
+            {
+                ApplyTheme(_viewModel.CurrentTheme);
+            }
+        }
+
+        private void ApplyTheme(string themeName)
         {
             try
             {
-                // Find DockingManager by name since direct reference isn't working
-                var dockingManager = this.FindName("MainDockingManager") as DockingManager;
-                
-                if (dockingManager != null)
+                // Convert string to VisualStyles enum
+                if (Enum.TryParse<Syncfusion.SfSkinManager.VisualStyles>(themeName, out var visualStyle))
                 {
-                    // Set runtime configuration that can't be set in XAML
-                    dockingManager.UseDocumentContainer = true;
-                    dockingManager.PersistState = true; // Enable state persistence
-                    dockingManager.MaximizeButtonEnabled = true;
-                    dockingManager.MinimizeButtonEnabled = true;
-                    dockingManager.IsEnableHotTracking = true;
-                    
-                    // Configure advanced features
-                    dockingManager.EnableScrollableSidePanel = true;
-                    dockingManager.IsVS2010DraggingEnabled = true;
-                    dockingManager.ShowTabItemContextMenu = true;
-                    
-                    Log.Information("DockingManager configured successfully");
+                    // Apply theme to the entire window and its Syncfusion controls
+                    Syncfusion.SfSkinManager.SfSkinManager.SetVisualStyle(this, visualStyle);
+                    Log.Information("Theme changed to: {Theme}", themeName);
                 }
                 else
                 {
-                    Log.Warning("MainDockingManager not found by name - cannot configure");
+                    Log.Warning("Invalid theme name: {Theme}", themeName);
                 }
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Failed to configure DockingManager");
+                Log.Error(ex, "Failed to apply theme: {Theme}", themeName);
             }
         }
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
+            // Memory tracking - before
+            var gcMemoryBefore = GC.GetTotalMemory(forceFullCollection: false);
+            var workingSetBefore = Environment.WorkingSet;
+            
             Log.Information("MainWindow: Loaded event - Size: {Width}x{Height}, Position: ({Left}, {Top}), State: {State}, Visible: {IsVisible}",
                 ActualWidth, ActualHeight, Left, Top, WindowState, IsVisible);
+            Log.Information("Memory Before Load - GC: {GCMemory:N0} bytes, WorkingSet: {WorkingSet:N0} bytes", 
+                gcMemoryBefore, workingSetBefore);
             
             // Step 1: Set DataContext first to ensure ViewModel is available
             if (_viewModel != null)
@@ -99,13 +121,10 @@ namespace WileyWidget.Views
             // Step 2: Initialize Prism regions after DataContext is set
             InitializePrismRegions();
             
-            // Step 3: Configure DockingManager after UI is loaded
-            ConfigureDockingManager();
-            
-            // Step 4: Verify region status and log for diagnostics
+            // Step 3: Verify region status and log for diagnostics
             LogRegionStatus();
             
-            // Step 5: Load docking state with enhanced error handling
+            // Step 4: Load docking state with enhanced error handling
             LoadDockStateWithFallback();
                 
             // Log content control state
@@ -116,6 +135,17 @@ namespace WileyWidget.Views
                     contentControl.ActualWidth, contentControl.ActualHeight, 
                     contentControl.Content?.GetType().Name ?? "null");
             }
+            
+            // Memory tracking - after
+            var gcMemoryAfter = GC.GetTotalMemory(forceFullCollection: false);
+            var workingSetAfter = Environment.WorkingSet;
+            var gcMemoryDelta = gcMemoryAfter - gcMemoryBefore;
+            var workingSetDelta = workingSetAfter - workingSetBefore;
+            
+            Log.Information("Memory After Load - GC: {GCMemory:N0} bytes (+{Delta:N0}), WorkingSet: {WorkingSet:N0} bytes (+{WSDelta:N0})", 
+                gcMemoryAfter, gcMemoryDelta, workingSetAfter, workingSetDelta);
+            Log.Information("Total Memory Impact - GC Delta: {GCDeltaMB:F2} MB, WorkingSet Delta: {WSDeltaMB:F2} MB",
+                gcMemoryDelta / 1024.0 / 1024.0, workingSetDelta / 1024.0 / 1024.0);
         }
 
         private void MainWindow_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -165,8 +195,35 @@ namespace WileyWidget.Views
             // Use Dispatcher to ensure UI updates happen on UI thread
             Dispatcher.Invoke(() =>
             {
+                // Debounce the state saving to avoid too frequent saves
+                _saveStateTimer.Stop();
+                _saveStateTimer.Start();
                 UpdateViewModel();
             }, System.Windows.Threading.DispatcherPriority.Normal);
+        }
+
+        /// <summary>
+        /// Saves the current docking state to IsolatedStorage
+        /// </summary>
+        private void SaveDockingState()
+        {
+            try
+            {
+                var dockingManager = this.FindName("MainDockingManager") as DockingManager;
+                if (dockingManager != null)
+                {
+                    dockingManager.SaveDockState();
+                    Log.Debug("Docking state saved successfully");
+                }
+                else
+                {
+                    Log.Warning("MainDockingManager not found - cannot save docking state");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Failed to save docking state");
+            }
         }
 
         private void DockingManager_ActiveWindowChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -177,10 +234,19 @@ namespace WileyWidget.Views
             Dispatcher.Invoke(() =>
             {
                 var dockingManager = d as DockingManager;
-                if (dockingManager != null && dockingManager.ActiveWindow != null)
+                if (dockingManager != null)
                 {
-                    Log.Information("Active window changed to: {WindowName}", 
-                        dockingManager.ActiveWindow.Name ?? dockingManager.ActiveWindow.GetType().Name);
+                    // Update ViewModel's ActiveWindow property
+                    if (_viewModel != null)
+                    {
+                        _viewModel.ActiveWindow = dockingManager.ActiveWindow;
+                    }
+
+                    if (dockingManager.ActiveWindow != null)
+                    {
+                        Log.Information("Active window changed to: {WindowName}", 
+                            dockingManager.ActiveWindow.Name ?? dockingManager.ActiveWindow.GetType().Name);
+                    }
                 }
                 UpdateViewModel();
             }, System.Windows.Threading.DispatcherPriority.Normal);
@@ -217,171 +283,39 @@ namespace WileyWidget.Views
             }
         }
 
-        /// <summary>
-        /// Loads docking state with filtering of hidden states and fallback handling
-        /// </summary>
         private void LoadDockStateWithFallback()
         {
-            Log.Information("Attempting to load docking state from IsolatedStorage");
-
             try
             {
-                // First, try to load and filter the docking state
-                if (TryLoadFilteredDockState())
+                // Load from IsolatedStorage
+                using (IsolatedStorageFile isoStorage = IsolatedStorageFile.GetUserStoreForAssembly())
                 {
-                    Log.Information("Docking state loaded and filtered successfully");
-                    return;
-                }
-            }
-            catch (InvalidOperationException ex) when (ex.Message.Contains("Hidden state is not allowed"))
-            {
-                Log.Warning(ex, "Hidden state found in docking configuration - attempting to clean and reload");
-                
-                // Try to clean the state and reload
-                if (TryCleanAndReloadDockState())
-                {
-                    Log.Information("Docking state cleaned and reloaded successfully");
-                    return;
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Failed to load docking state from IsolatedStorage");
-            }
-
-            // Fallback to default layout
-            LoadDefaultDockingLayout();
-        }
-
-        /// <summary>
-        /// Attempts to load docking state with hidden state filtering
-        /// </summary>
-        private bool TryLoadFilteredDockState()
-        {
-            try
-            {
-                // Use Syncfusion's standard LoadDockState which reads from IsolatedStorage
-                var dockingManager = this.FindName("MainDockingManager") as DockingManager;
-                if (dockingManager != null)
-                {
-                    dockingManager.LoadDockState();
-                    // If we got here, the load was successful
-                    return true;
-                }
-                else
-                {
-                    Log.Warning("MainDockingManager not found - cannot load docking state");
-                    return false;
-                }
-            }
-            catch (InvalidOperationException ex) when (ex.Message.Contains("Hidden state is not allowed"))
-            {
-                // Re-throw this specific exception to be handled by the caller
-                throw;
-            }
-            catch (Exception ex)
-            {
-                Log.Warning(ex, "Standard docking state load failed");
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// Attempts to clean hidden states from IsolatedStorage and reload
-        /// </summary>
-        private bool TryCleanAndReloadDockState()
-        {
-            try
-            {
-                // Get the IsolatedStorage file
-                using (var store = IsolatedStorageFile.GetUserStoreForAssembly())
-                {
-                    string[] fileNames = store.GetFileNames("*DockState*");
-                    
-                    foreach (string fileName in fileNames)
+                    using (IsolatedStorageFileStream isoStream = new IsolatedStorageFileStream("DockingLayout.xml", FileMode.Open, isoStorage))
                     {
-                        Log.Debug("Found docking state file: {FileName}", fileName);
-                        
-                        if (CleanHiddenStatesFromFile(store, fileName))
+                        XDocument doc = XDocument.Load(isoStream);
+                        // Validate and filter invalid states (per Syncfusion docs)
+                        var invalidStates = doc.Descendants("DockState").Where(e => e.Value == "Hidden");
+                        foreach (var state in invalidStates)
                         {
-                            Log.Information("Cleaned hidden states from {FileName}", fileName);
+                            state.Value = "Dock"; // Fallback to valid state
+                        }
+                        using (var reader = doc.CreateReader())
+                        {
+                            var dockingManager = this.FindName("MainDockingManager") as DockingManager;
+                            if (dockingManager != null)
+                            {
+                                dockingManager.LoadDockState(reader);
+                            }
                         }
                     }
                 }
-
-                // Try to load again after cleaning
-                var dockingManager = this.FindName("MainDockingManager") as DockingManager;
-                if (dockingManager != null)
-                {
-                    dockingManager.LoadDockState();
-                    return true;
-                }
-                else
-                {
-                    Log.Warning("MainDockingManager not found - cannot reload after cleaning");
-                    return false;
-                }
+                Log.Information("Docking state loaded successfully");
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Failed to clean and reload docking state");
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// Cleans hidden states from a docking state file
-        /// </summary>
-        private bool CleanHiddenStatesFromFile(IsolatedStorageFile store, string fileName)
-        {
-            try
-            {
-                XDocument doc;
-                using (var stream = new IsolatedStorageFileStream(fileName, FileMode.Open, store))
-                {
-                    doc = XDocument.Load(stream);
-                }
-
-                // Find and remove or correct hidden dock states
-                bool modified = false;
-                var dockStateElements = doc.Descendants().Where(e => 
-                    e.Name.LocalName.Contains("DockState") || 
-                    e.Attributes().Any(a => a.Name.LocalName == "DockState"));
-
-                foreach (var element in dockStateElements.ToList())
-                {
-                    var dockStateAttr = element.Attributes().FirstOrDefault(a => 
-                        a.Name.LocalName == "DockState" || a.Name.LocalName.Contains("State"));
-                    
-                    if (dockStateAttr != null && dockStateAttr.Value.Equals("Hidden", StringComparison.OrdinalIgnoreCase))
-                    {
-                        Log.Debug("Found hidden dock state in element: {ElementName}", element.Name.LocalName);
-                        
-                        // Change Hidden to Dock (default safe state)
-                        dockStateAttr.Value = "Dock";
-                        modified = true;
-                        
-                        Log.Debug("Changed hidden state to Dock for element: {ElementName}", element.Name.LocalName);
-                    }
-                }
-
-                if (modified)
-                {
-                    // Save the cleaned document back
-                    using (var stream = new IsolatedStorageFileStream(fileName, FileMode.Create, store))
-                    {
-                        doc.Save(stream);
-                    }
-                    Log.Information("Successfully cleaned hidden states from {FileName}", fileName);
-                    return true;
-                }
-
-                return false;
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Failed to clean hidden states from file: {FileName}", fileName);
-                return false;
+                Log.Error(ex, "Failed to load docking state - using default layout");
+                // Apply default layout
+                LoadDefaultDockingLayout();
             }
         }
 

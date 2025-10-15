@@ -1,9 +1,11 @@
 #nullable enable
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
+using Microsoft.Extensions.Logging;
 
 namespace WileyWidget.Services.Threading;
 
@@ -13,6 +15,7 @@ namespace WileyWidget.Services.Threading;
 public class DispatcherHelper : IDispatcherHelper
 {
     private readonly Dispatcher _dispatcher;
+    private readonly ILogger<DispatcherHelper>? _logger;
 
     public DispatcherHelper()
     {
@@ -24,6 +27,12 @@ public class DispatcherHelper : IDispatcherHelper
     public DispatcherHelper(Dispatcher dispatcher)
     {
         _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
+    }
+    
+    public DispatcherHelper(Dispatcher dispatcher, ILogger<DispatcherHelper> logger)
+    {
+        _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
+        _logger = logger;
     }
 
     /// <summary>
@@ -42,12 +51,18 @@ public class DispatcherHelper : IDispatcherHelper
     {
         if (action == null) throw new ArgumentNullException(nameof(action));
 
+        var callingThreadId = Thread.CurrentThread.ManagedThreadId;
+        var uiThreadId = _dispatcher.Thread.ManagedThreadId;
+        
         if (CheckAccess())
         {
+            _logger?.LogTrace("Dispatcher.Invoke - Already on UI thread (ThreadId: {ThreadId})", callingThreadId);
             action();
         }
         else
         {
+            _logger?.LogTrace("Dispatcher.Invoke - Marshalling from ThreadId: {CallingThread} to UI ThreadId: {UIThread}", 
+                callingThreadId, uiThreadId);
             _dispatcher.Invoke(action);
         }
     }
@@ -62,12 +77,18 @@ public class DispatcherHelper : IDispatcherHelper
     {
         if (func == null) throw new ArgumentNullException(nameof(func));
 
+        var callingThreadId = Thread.CurrentThread.ManagedThreadId;
+        var uiThreadId = _dispatcher.Thread.ManagedThreadId;
+        
         if (CheckAccess())
         {
+            _logger?.LogTrace("Dispatcher.Invoke<T> - Already on UI thread (ThreadId: {ThreadId})", callingThreadId);
             return func();
         }
         else
         {
+            _logger?.LogTrace("Dispatcher.Invoke<T> - Marshalling from ThreadId: {CallingThread} to UI ThreadId: {UIThread}", 
+                callingThreadId, uiThreadId);
             return _dispatcher.Invoke(func);
         }
     }
@@ -103,6 +124,12 @@ public class DispatcherHelper : IDispatcherHelper
     {
         if (action == null) throw new ArgumentNullException(nameof(action));
 
+        var callingThreadId = Thread.CurrentThread.ManagedThreadId;
+        var uiThreadId = _dispatcher.Thread.ManagedThreadId;
+        
+        _logger?.LogTrace("Dispatcher.InvokeAsync - Priority: {Priority}, ThreadId: {CallingThread} -> UI ThreadId: {UIThread}", 
+            priority, callingThreadId, uiThreadId);
+
         return _dispatcher.InvokeAsync(action, priority).Task;
     }
 
@@ -116,6 +143,12 @@ public class DispatcherHelper : IDispatcherHelper
     public Task<T> InvokeAsync<T>(Func<T> func, DispatcherPriority priority)
     {
         if (func == null) throw new ArgumentNullException(nameof(func));
+
+        var callingThreadId = Thread.CurrentThread.ManagedThreadId;
+        var uiThreadId = _dispatcher.Thread.ManagedThreadId;
+        
+        _logger?.LogTrace("Dispatcher.InvokeAsync<T> - Priority: {Priority}, ThreadId: {CallingThread} -> UI ThreadId: {UIThread}", 
+            priority, callingThreadId, uiThreadId);
 
         return _dispatcher.InvokeAsync(func, priority).Task;
     }

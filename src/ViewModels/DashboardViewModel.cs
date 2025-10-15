@@ -4,7 +4,10 @@ using Microsoft.Extensions.Logging;
 using Prism.Events;
 using System;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Diagnostics;
+using System.IO.Compression;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
@@ -13,6 +16,7 @@ using System.Windows.Media;
 using WileyWidget.Models;
 using WileyWidget.Business.Interfaces;
 using WileyWidget.Services;
+using WileyWidget.Services.Logging;
 using WileyWidget.ViewModels.Messages;
 
 namespace WileyWidget.ViewModels
@@ -218,16 +222,24 @@ namespace WileyWidget.ViewModels
         _eventAggregator = eventAggregator;
         _regionManager = regionManager;
 
+        // Subscribe to collection change events for detailed logging
+        Enterprises.CollectionChanged += Enterprises_CollectionChanged;
+        FilteredEnterprises.CollectionChanged += FilteredEnterprises_CollectionChanged;
+
         // Subscribe to events
         _eventAggregator.GetEvent<RefreshDataMessage>().Subscribe(OnRefreshDataRequested);
         _eventAggregator.GetEvent<EnterpriseChangedMessage>().Subscribe(OnEnterpriseChanged);
     }        public async Task LoadDashboardDataAsync()
         {
+            using var loggingContext = LoggingContext.BeginOperation("LoadDashboard");
+            var overallStopwatch = Stopwatch.StartNew();
             var hasErrors = false;
+            
             try
             {
                 DashboardStatus = "Loading dashboard data...";
-                _logger.LogInformation("Starting dashboard data load");
+                _logger.LogInformation("Starting dashboard data load - CorrelationId: {CorrelationId}", 
+                    loggingContext.CorrelationId);
 
                 // Load all dashboard data in parallel
                 await Task.WhenAll(
@@ -239,18 +251,21 @@ namespace WileyWidget.ViewModels
                     LoadScenarioInputsAsync()
                 );
 
+                overallStopwatch.Stop();
                 DashboardStatus = "Dashboard loaded successfully";
                 LastUpdated = DateTime.Now.ToString("g");
                 UpdateNextRefreshTime();
 
-                _logger.LogInformation("Dashboard data loaded successfully - {TotalEnterprises} enterprises, ${TotalBudget} total budget", 
-                    TotalEnterprises, TotalBudget);
+                _logger.LogInformation("Dashboard data loaded successfully in {ElapsedMs}ms - {TotalEnterprises} enterprises, ${TotalBudget} total budget - {LogContext}", 
+                    overallStopwatch.ElapsedMilliseconds, TotalEnterprises, TotalBudget, loggingContext);
             }
             catch (Exception ex)
             {
+                overallStopwatch.Stop();
                 hasErrors = true;
                 DashboardStatus = "Error loading dashboard";
-                _logger.LogError(ex, "CRITICAL: Dashboard data load failed - {Message}", ex.Message);
+                _logger.LogError(ex, "CRITICAL: Dashboard data load failed after {ElapsedMs}ms - {Message} - {LogContext}", 
+                    overallStopwatch.ElapsedMilliseconds, ex.Message, loggingContext);
                 
                 // Don't show misleading success message
                 MessageBox.Show($"Error loading dashboard: {ex.Message}\n\nPlease check the logs for details.", "Dashboard Error",
@@ -262,13 +277,15 @@ namespace WileyWidget.ViewModels
             {
                 if (!hasErrors)
                 {
-                    _logger.LogDebug("Dashboard load completed without errors");
+                    _logger.LogDebug("Dashboard load completed without errors in {ElapsedMs}ms - {LogContext}", 
+                        overallStopwatch.ElapsedMilliseconds, loggingContext);
                 }
             }
         }
 
         private async Task LoadKPIsAsync()
         {
+            var stopwatch = Stopwatch.StartNew();
             try
             {
                 // Get enterprise data - await directly, no Task.Run wrapper
@@ -288,18 +305,21 @@ namespace WileyWidget.ViewModels
                 // Calculate changes (simplified - in real app would compare with historical data)
                 CalculateChanges();
                 
-                _logger.LogDebug("KPIs loaded successfully: {TotalEnterprises} enterprises, ${TotalBudget} budget", 
-                    TotalEnterprises, TotalBudget);
+                stopwatch.Stop();
+                _logger.LogDebug("KPIs loaded successfully in {ElapsedMs}ms: {TotalEnterprises} enterprises, ${TotalBudget} budget", 
+                    stopwatch.ElapsedMilliseconds, TotalEnterprises, TotalBudget);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error loading KPIs");
+                stopwatch.Stop();
+                _logger.LogError(ex, "Error loading KPIs after {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
                 throw; // Propagate error to caller
             }
         }
 
         private async Task LoadEnterprisesAsync()
         {
+            var stopwatch = Stopwatch.StartNew();
             try
             {
                 ErrorMessage = string.Empty;
@@ -320,12 +340,15 @@ namespace WileyWidget.ViewModels
                     FilteredEnterprises.Add(enterprise);
                 }
                 
-                _logger.LogDebug("Loaded {Count} enterprises successfully", enterprises.Count());
+                stopwatch.Stop();
+                _logger.LogDebug("Loaded {Count} enterprises successfully in {ElapsedMs}ms", 
+                    enterprises.Count(), stopwatch.ElapsedMilliseconds);
             }
             catch (Exception ex)
             {
+                stopwatch.Stop();
                 ErrorMessage = $"Failed to load enterprises: {ex.Message}";
-                _logger.LogError(ex, "Error loading enterprises");
+                _logger.LogError(ex, "Error loading enterprises after {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
                 throw; // Propagate error to caller
             }
         }
@@ -380,6 +403,7 @@ namespace WileyWidget.ViewModels
 
         private async Task LoadChartDataAsync()
         {
+            var stopwatch = Stopwatch.StartNew();
             try
             {
                 // Load budget trend data (last 6 months)
@@ -422,11 +446,14 @@ namespace WileyWidget.ViewModels
                     });
                 }
                 
-                _logger.LogDebug("Chart data loaded successfully");
+                stopwatch.Stop();
+                _logger.LogDebug("Chart data loaded successfully in {ElapsedMs}ms - {BudgetPoints} budget points, {TypeGroups} type groups", 
+                    stopwatch.ElapsedMilliseconds, BudgetTrendData.Count, EnterpriseTypeData.Count);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error loading chart data");
+                stopwatch.Stop();
+                _logger.LogError(ex, "Error loading chart data after {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
                 throw; // Propagate error to caller
             }
         }
@@ -545,6 +572,10 @@ namespace WileyWidget.ViewModels
         [RelayCommand]
         private async Task RefreshDashboardAsync()
         {
+            using var loggingContext = LoggingContext.BeginOperation("RefreshDashboard");
+            _logger.LogInformation("RefreshDashboard command invoked - IsLoading: {IsLoading} - {LogContext}", 
+                IsLoading, loggingContext);
+            
             IsLoading = true;
             StatusMessage = "Refreshing dashboard...";
             
@@ -552,11 +583,13 @@ namespace WileyWidget.ViewModels
             {
                 await LoadDashboardDataAsync();
                 StatusMessage = "Dashboard refreshed successfully";
+                _logger.LogInformation("RefreshDashboard command completed successfully - {LogContext}", loggingContext);
             }
             catch (Exception ex)
             {
                 StatusMessage = "Error refreshing dashboard";
-                _logger.LogError(ex, "Error refreshing dashboard");
+                _logger.LogError(ex, "RefreshDashboard command failed: {Message} - {LogContext}", 
+                    ex.Message, loggingContext);
                 MessageBox.Show($"Error refreshing dashboard: {ex.Message}", "Refresh Error",
                               MessageBoxButton.OK);
             }
@@ -570,25 +603,110 @@ namespace WileyWidget.ViewModels
         private void ToggleAutoRefresh()
         {
             AutoRefreshEnabled = !AutoRefreshEnabled;
+            _logger.LogInformation("ToggleAutoRefresh command - New state: {AutoRefreshEnabled}, Interval: {RefreshIntervalMinutes} minutes", 
+                AutoRefreshEnabled, RefreshIntervalMinutes);
         }
 
         [RelayCommand]
-        private void ExportDashboard()
+        private async Task ExportDashboardAsync()
         {
-            // TODO: Implement dashboard export functionality
-            MessageBox.Show("Dashboard export functionality will be implemented in a future update.",
-                          "Feature Not Implemented", MessageBoxButton.OK);
+            using var loggingContext = LoggingContext.BeginOperation("ExportDashboard");
+            var stopwatch = Stopwatch.StartNew();
+            
+            _logger.LogInformation("ExportDashboard command invoked - {LogContext}", loggingContext);
+            
+            try
+            {
+                IsLoading = true;
+                StatusMessage = "Exporting dashboard data...";
+                
+                // Create export data
+                var exportData = new
+                {
+                    ExportDate = DateTime.Now,
+                    DashboardData = new
+                    {
+                        TotalEnterprises = TotalEnterprises,
+                        TotalBudget = TotalBudget,
+                        SystemHealthScore = HealthScore,
+                        SystemHealthStatus = SystemHealthStatus,
+                        AutoRefreshEnabled = AutoRefreshEnabled,
+                        RefreshIntervalMinutes = RefreshIntervalMinutes,
+                        LastUpdated = LastUpdated
+                    },
+                    Enterprises = Enterprises.Select(e => new
+                    {
+                        e.Id,
+                        e.Name,
+                        e.Type,
+                        e.Description
+                    }).ToList(),
+                    HistoricalData = HistoricalData.ToList(),
+                    RateTrendData = RateTrendData.ToList(),
+                    EnterpriseTypeData = EnterpriseTypeData.ToList()
+                };
+                
+                // Serialize to JSON
+                var json = System.Text.Json.JsonSerializer.Serialize(exportData, new System.Text.Json.JsonSerializerOptions
+                {
+                    WriteIndented = true
+                });
+                
+                // Show save file dialog
+                var saveFileDialog = new Microsoft.Win32.SaveFileDialog
+                {
+                    Title = "Export Dashboard Data",
+                    Filter = "JSON files (*.json)|*.json|All files (*.*)|*.*",
+                    DefaultExt = ".json",
+                    FileName = $"WileyWidget_Dashboard_{DateTime.Now:yyyyMMdd_HHmmss}.json"
+                };
+                
+                if (saveFileDialog.ShowDialog() == true)
+                {
+                    await System.IO.File.WriteAllTextAsync(saveFileDialog.FileName, json);
+                    StatusMessage = $"Dashboard exported to {System.IO.Path.GetFileName(saveFileDialog.FileName)}";
+                    _logger.LogInformation("Dashboard data exported successfully to {FilePath} - {LogContext}", 
+                        saveFileDialog.FileName, loggingContext);
+                    
+                    MessageBox.Show($"Dashboard data exported successfully to {System.IO.Path.GetFileName(saveFileDialog.FileName)}",
+                                  "Export Complete", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                else
+                {
+                    StatusMessage = "Dashboard export cancelled";
+                    _logger.LogInformation("Dashboard export cancelled by user - {LogContext}", loggingContext);
+                }
+                
+                stopwatch.Stop();
+                _logger.LogInformation("ExportDashboard completed in {ElapsedMs}ms - {LogContext}", 
+                    stopwatch.ElapsedMilliseconds, loggingContext);
+            }
+            catch (Exception ex)
+            {
+                stopwatch.Stop();
+                StatusMessage = "Error exporting dashboard";
+                _logger.LogError(ex, "ExportDashboard failed after {ElapsedMs}ms - {LogContext}", 
+                    stopwatch.ElapsedMilliseconds, loggingContext);
+                MessageBox.Show($"Error exporting dashboard: {ex.Message}", "Export Error",
+                              MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsLoading = false;
+            }
         }
 
         [RelayCommand]
         private void OpenBudgetAnalysis()
         {
+            _logger.LogInformation("OpenBudgetAnalysis command invoked");
             BudgetView.ShowBudgetWindow();
         }
 
         [RelayCommand]
         private void OpenSettings()
         {
+            _logger.LogInformation("OpenSettings command invoked");
             var settingsWindow = new SettingsView
             {
                 Owner = Application.Current.MainWindow
@@ -597,24 +715,329 @@ namespace WileyWidget.ViewModels
         }
 
         [RelayCommand]
-        private void GenerateReport()
+        private async Task GenerateReportAsync()
         {
-            // TODO: Implement report generation
-            MessageBox.Show("Report generation functionality will be implemented in a future update.",
-                          "Feature Not Implemented", MessageBoxButton.OK);
+            using var loggingContext = LoggingContext.BeginOperation("GenerateReport");
+            var stopwatch = Stopwatch.StartNew();
+            
+            _logger.LogInformation("GenerateReport command invoked - {LogContext}", loggingContext);
+            
+            try
+            {
+                IsLoading = true;
+                StatusMessage = "Generating dashboard report...";
+                
+                // Create report data
+                var reportData = new
+                {
+                    ReportTitle = "Wiley Widget Dashboard Report",
+                    GeneratedDate = DateTime.Now,
+                    ReportPeriod = $"{DateTime.Now.AddDays(-30):yyyy-MM-dd} to {DateTime.Now:yyyy-MM-dd}",
+                    Summary = new
+                    {
+                        TotalEnterprises = TotalEnterprises,
+                        TotalBudget = TotalBudget,
+                        SystemHealthScore = HealthScore,
+                        SystemHealthStatus = SystemHealthStatus,
+                        EnterpriseChangeText = EnterprisesChangeText,
+                        BudgetChangeText = BudgetChangeText
+                    },
+                    EnterpriseDetails = Enterprises.Select(e => new
+                    {
+                        e.Id,
+                        e.Name,
+                        e.Type,
+                        e.Description
+                    }).ToList(),
+                    PerformanceMetrics = new
+                    {
+                        DataPoints = HistoricalData.Count,
+                        RateTrends = RateTrendData.Count,
+                        EnterpriseTypes = EnterpriseTypeData.Count
+                    },
+                    Recommendations = new[]
+                    {
+                        "Monitor system health score above 80%",
+                        "Review budget utilization trends",
+                        "Check enterprise performance metrics",
+                        "Consider rate adjustments based on scenario analysis"
+                    }
+                };
+                
+                // Generate HTML report
+                var htmlReport = GenerateHtmlReport(reportData);
+                
+                // Show save file dialog
+                var saveFileDialog = new Microsoft.Win32.SaveFileDialog
+                {
+                    Title = "Save Dashboard Report",
+                    Filter = "HTML files (*.html)|*.html|All files (*.*)|*.*",
+                    DefaultExt = ".html",
+                    FileName = $"WileyWidget_Dashboard_Report_{DateTime.Now:yyyyMMdd_HHmmss}.html"
+                };
+                
+                if (saveFileDialog.ShowDialog() == true)
+                {
+                    await System.IO.File.WriteAllTextAsync(saveFileDialog.FileName, htmlReport);
+                    StatusMessage = $"Report generated: {System.IO.Path.GetFileName(saveFileDialog.FileName)}";
+                    _logger.LogInformation("Dashboard report generated successfully to {FilePath} - {LogContext}", 
+                        saveFileDialog.FileName, loggingContext);
+                    
+                    // Ask if user wants to open the report
+                    var result = MessageBox.Show($"Report generated successfully. Would you like to open it now?\n\nFile: {System.IO.Path.GetFileName(saveFileDialog.FileName)}",
+                                               "Report Generated", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                    
+                    if (result == MessageBoxResult.Yes)
+                    {
+                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                        {
+                            FileName = saveFileDialog.FileName,
+                            UseShellExecute = true
+                        });
+                    }
+                }
+                else
+                {
+                    StatusMessage = "Report generation cancelled";
+                    _logger.LogInformation("Report generation cancelled by user - {LogContext}", loggingContext);
+                }
+                
+                stopwatch.Stop();
+                _logger.LogInformation("GenerateReport completed in {ElapsedMs}ms - {LogContext}", 
+                    stopwatch.ElapsedMilliseconds, loggingContext);
+            }
+            catch (Exception ex)
+            {
+                stopwatch.Stop();
+                StatusMessage = "Error generating report";
+                _logger.LogError(ex, "GenerateReport failed after {ElapsedMs}ms - {LogContext}", 
+                    stopwatch.ElapsedMilliseconds, loggingContext);
+                MessageBox.Show($"Error generating report: {ex.Message}", "Report Generation Error",
+                              MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+        
+        private string GenerateHtmlReport(object reportData)
+        {
+            // Cast to dynamic for HTML generation
+            dynamic data = reportData;
+            return $@"
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{data.ReportTitle}</title>
+    <style>
+        body {{ font-family: Arial, sans-serif; margin: 40px; }}
+        .header {{ background: #2196F3; color: white; padding: 20px; border-radius: 8px; }}
+        .section {{ margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }}
+        .summary {{ background: #f5f5f5; }}
+        .metric {{ display: inline-block; margin: 10px; padding: 10px; background: white; border-radius: 5px; min-width: 150px; }}
+        .recommendations {{ background: #e8f5e8; }}
+        table {{ width: 100%; border-collapse: collapse; margin: 10px 0; }}
+        th, td {{ padding: 8px; text-align: left; border-bottom: 1px solid #ddd; }}
+        th {{ background: #f2f2f2; }}
+    </style>
+</head>
+<body>
+    <div class='header'>
+        <h1>{data.ReportTitle}</h1>
+        <p>Generated: {data.GeneratedDate:yyyy-MM-dd HH:mm:ss}</p>
+        <p>Report Period: {data.ReportPeriod}</p>
+    </div>
+    
+    <div class='section summary'>
+        <h2>Executive Summary</h2>
+        <div class='metric'>
+            <strong>Total Enterprises:</strong> {data.Summary.TotalEnterprises}
+        </div>
+        <div class='metric'>
+            <strong>Total Budget:</strong> {data.Summary.TotalBudget:C0}
+        </div>
+        <div class='metric'>
+            <strong>System Health:</strong> {data.Summary.SystemHealthScore}% ({data.Summary.SystemHealthStatus})
+        </div>
+        <p><strong>Enterprise Changes:</strong> {data.Summary.EnterpriseChangeText}</p>
+        <p><strong>Budget Changes:</strong> {data.Summary.BudgetChangeText}</p>
+    </div>
+    
+    <div class='section'>
+        <h2>Enterprise Details</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                {GenerateEnterpriseTableRows(data.EnterpriseDetails)}
+            </tbody>
+        </table>
+    </div>
+    
+    <div class='section'>
+        <h2>Performance Metrics</h2>
+        <p>Data Points: {data.PerformanceMetrics.DataPoints}</p>
+        <p>Rate Trends: {data.PerformanceMetrics.RateTrends}</p>
+        <p>Enterprise Types: {data.PerformanceMetrics.EnterpriseTypes}</p>
+    </div>
+    
+    <div class='section recommendations'>
+        <h2>Recommendations</h2>
+        <ul>
+            {GenerateRecommendationsList(data.Recommendations)}
+        </ul>
+    </div>
+</body>
+</html>";
+        }
+        
+        private string GenerateEnterpriseTableRows(dynamic enterpriseDetails)
+        {
+            var rows = new System.Collections.Generic.List<string>();
+            foreach (dynamic enterprise in enterpriseDetails)
+            {
+                rows.Add($"<tr><td>{enterprise.Id}</td><td>{enterprise.Name}</td><td>{enterprise.Type}</td><td>{enterprise.Description}</td></tr>");
+            }
+            return string.Join("", rows);
+        }
+        
+        private string GenerateRecommendationsList(dynamic recommendations)
+        {
+            var items = new System.Collections.Generic.List<string>();
+            foreach (string recommendation in recommendations)
+            {
+                items.Add($"<li>{recommendation}</li>");
+            }
+            return string.Join("", items);
         }
 
         [RelayCommand]
-        private void BackupData()
+        private async Task BackupDataAsync()
         {
-            // TODO: Implement data backup
-            MessageBox.Show("Data backup functionality will be implemented in a future update.",
-                          "Feature Not Implemented", MessageBoxButton.OK);
+            using var loggingContext = LoggingContext.BeginOperation("BackupData");
+            var stopwatch = Stopwatch.StartNew();
+            
+            _logger.LogInformation("BackupData command invoked - {LogContext}", loggingContext);
+            
+            try
+            {
+                IsLoading = true;
+                StatusMessage = "Creating data backup...";
+                
+                // Create backup directory if it doesn't exist
+                var backupDir = System.IO.Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                    "WileyWidget",
+                    "Backups"
+                );
+                
+                System.IO.Directory.CreateDirectory(backupDir);
+                
+                // Create backup filename with timestamp
+                var backupFileName = $"WileyWidget_Backup_{DateTime.Now:yyyyMMdd_HHmmss}.json";
+                var backupFilePath = System.IO.Path.Combine(backupDir, backupFileName);
+                
+                // Create backup data
+                var backupData = new
+                {
+                    BackupDate = DateTime.Now,
+                    Version = "1.0",
+                    Application = "Wiley Widget",
+                    DashboardData = new
+                    {
+                        TotalEnterprises = TotalEnterprises,
+                        TotalBudget = TotalBudget,
+                        SystemHealthScore = HealthScore,
+                        SystemHealthStatus = SystemHealthStatus,
+                        AutoRefreshEnabled = AutoRefreshEnabled,
+                        RefreshIntervalMinutes = RefreshIntervalMinutes,
+                        LastUpdated = LastUpdated
+                    },
+                    Enterprises = Enterprises.Select(e => new
+                    {
+                        e.Id,
+                        e.Name,
+                        e.Type,
+                        e.Description,
+                        e.CreatedDate,
+                        e.ModifiedDate
+                    }).ToList(),
+                    HistoricalData = HistoricalData.ToList(),
+                    RateTrendData = RateTrendData.ToList(),
+                    EnterpriseTypeData = EnterpriseTypeData.ToList(),
+                    Settings = new
+                    {
+                        FiscalYearSettings = _fiscalYearSettings,
+                        ApplicationSettings = "Default"
+                    }
+                };
+                
+                // Serialize to JSON
+                var json = System.Text.Json.JsonSerializer.Serialize(backupData, new System.Text.Json.JsonSerializerOptions
+                {
+                    WriteIndented = true
+                });
+                
+                // Write backup file
+                await System.IO.File.WriteAllTextAsync(backupFilePath, json);
+                
+                // Create a compressed archive if possible
+                var zipFilePath = System.IO.Path.Combine(backupDir, $"WileyWidget_Backup_{DateTime.Now:yyyyMMdd_HHmmss}.zip");
+                try
+                {
+                    using (var archive = System.IO.Compression.ZipFile.Open(zipFilePath, System.IO.Compression.ZipArchiveMode.Create))
+                    {
+                        archive.CreateEntryFromFile(backupFilePath, backupFileName);
+                    }
+                    
+                    // Delete the uncompressed file
+                    System.IO.File.Delete(backupFilePath);
+                    backupFilePath = zipFilePath;
+                    backupFileName = System.IO.Path.GetFileName(zipFilePath);
+                }
+                catch
+                {
+                    // If compression fails, keep the JSON file
+                    _logger.LogWarning("Could not create compressed backup, keeping JSON file");
+                }
+                
+                StatusMessage = $"Backup created: {backupFileName}";
+                _logger.LogInformation("Data backup created successfully at {FilePath} - {LogContext}", 
+                    backupFilePath, loggingContext);
+                
+                MessageBox.Show($"Data backup created successfully!\n\nFile: {backupFileName}\nLocation: {backupDir}",
+                              "Backup Complete", MessageBoxButton.OK, MessageBoxImage.Information);
+                
+                stopwatch.Stop();
+                _logger.LogInformation("BackupData completed in {ElapsedMs}ms - {LogContext}", 
+                    stopwatch.ElapsedMilliseconds, loggingContext);
+            }
+            catch (Exception ex)
+            {
+                stopwatch.Stop();
+                StatusMessage = "Error creating backup";
+                _logger.LogError(ex, "BackupData failed after {ElapsedMs}ms - {LogContext}", 
+                    stopwatch.ElapsedMilliseconds, loggingContext);
+                MessageBox.Show($"Error creating backup: {ex.Message}", "Backup Error",
+                              MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsLoading = false;
+            }
         }
 
         [RelayCommand]
         private void Search()
         {
+            _logger.LogDebug("Search command invoked - SearchText: '{SearchText}'", SearchText);
             FilterEnterprises();
         }
 
@@ -648,6 +1071,7 @@ namespace WileyWidget.ViewModels
 
         private async Task LoadScenarioInputsAsync()
         {
+            var stopwatch = Stopwatch.StartNew();
             try
             {
                 // Initialize default values for growth scenario inputs
@@ -664,11 +1088,15 @@ namespace WileyWidget.ViewModels
                     SuggestedRate = await CalculateSuggestedRateAsync(enterpriseId);
                 }
 
+                stopwatch.Stop();
                 ScenarioStatus = "Scenario inputs loaded";
+                _logger.LogDebug("Scenario inputs loaded in {ElapsedMs}ms - EnterpriseId: {EnterpriseId}, SuggestedRate: ${SuggestedRate}", 
+                    stopwatch.ElapsedMilliseconds, enterpriseId, SuggestedRate);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error loading scenario inputs");
+                stopwatch.Stop();
+                _logger.LogError(ex, "Error loading scenario inputs after {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
                 ScenarioStatus = "Error loading scenario inputs";
             }
         }
@@ -732,10 +1160,16 @@ namespace WileyWidget.ViewModels
         [RelayCommand]
         private async Task RunGrowthScenarioAsync(int enterpriseId)
         {
+            using var loggingContext = LoggingContext.BeginOperation("RunGrowthScenario");
+            var stopwatch = Stopwatch.StartNew();
+            
             try
             {
                 IsScenarioRunning = true;
                 ScenarioStatus = "Running growth scenario analysis...";
+                
+                _logger.LogInformation("Starting growth scenario for EnterpriseId: {EnterpriseId} - {LogContext}", 
+                    enterpriseId, loggingContext);
 
                 // Create scenario parameters from user inputs
                 var parameters = new ScenarioParameters
@@ -756,14 +1190,18 @@ namespace WileyWidget.ViewModels
                 // Recalculate suggested rate with new scenario data
                 SuggestedRate = await CalculateSuggestedRateAsync(enterpriseId);
 
+                stopwatch.Stop();
                 ScenarioStatus = $"Scenario '{scenario.ScenarioName}' completed successfully";
 
-                _logger.LogInformation("Growth scenario completed for enterprise {EnterpriseId}", enterpriseId);
+                _logger.LogInformation("Growth scenario completed in {ElapsedMs}ms for enterprise {EnterpriseId} - New Rate: ${SuggestedRate} - {LogContext}", 
+                    stopwatch.ElapsedMilliseconds, enterpriseId, SuggestedRate, loggingContext);
             }
             catch (Exception ex)
             {
+                stopwatch.Stop();
                 ScenarioStatus = $"Error running scenario: {ex.Message}";
-                _logger.LogError(ex, "Error running growth scenario for enterprise {EnterpriseId}", enterpriseId);
+                _logger.LogError(ex, "Error running growth scenario after {ElapsedMs}ms for enterprise {EnterpriseId} - {LogContext}", 
+                    stopwatch.ElapsedMilliseconds, enterpriseId, loggingContext);
             }
             finally
             {
@@ -773,22 +1211,71 @@ namespace WileyWidget.ViewModels
 
         partial void OnAutoRefreshEnabledChanged(bool value)
         {
+            _logger.LogDebug("AutoRefreshEnabled changed to: {Value}", value);
             UpdateNextRefreshTime();
         }
 
         partial void OnRefreshIntervalMinutesChanged(int value)
         {
+            _logger.LogDebug("RefreshIntervalMinutes changed to: {Value}", value);
             UpdateNextRefreshTime();
         }
 
         partial void OnSearchTextChanged(string value)
         {
+            _logger.LogTrace("SearchText changed to: '{Value}'", value);
             FilterEnterprises();
+        }
+        
+        partial void OnTotalEnterprisesChanged(int value)
+        {
+            _logger.LogInformation("TotalEnterprises changed to: {Value}", value);
+        }
+        
+        partial void OnTotalBudgetChanged(decimal value)
+        {
+            _logger.LogInformation("TotalBudget changed to: ${Value:N2}", value);
+        }
+        
+        partial void OnSystemHealthStatusChanged(string value)
+        {
+            _logger.LogInformation("SystemHealthStatus changed to: {Value}, HealthScore: {HealthScore}", value, HealthScore);
+        }
+        
+        partial void OnHealthScoreChanged(int value)
+        {
+            _logger.LogDebug("HealthScore changed to: {Value}", value);
+        }
+        
+        partial void OnActiveProjectsChanged(int value)
+        {
+            _logger.LogDebug("ActiveProjects changed to: {Value}", value);
+        }
+        
+        partial void OnIsLoadingChanged(bool value)
+        {
+            _logger.LogTrace("IsLoading changed to: {Value}", value);
+        }
+        
+        partial void OnDashboardStatusChanged(string value)
+        {
+            _logger.LogDebug("DashboardStatus changed to: '{Value}'", value);
+        }
+        
+        partial void OnSuggestedRateChanged(decimal value)
+        {
+            _logger.LogInformation("SuggestedRate changed to: ${Value:N2}", value);
+        }
+        
+        partial void OnIsScenarioRunningChanged(bool value)
+        {
+            _logger.LogDebug("IsScenarioRunning changed to: {Value}", value);
         }
 
         [RelayCommand]
         private void ClearSearch()
         {
+            _logger.LogDebug("ClearSearch command invoked - Previous SearchText: '{SearchText}'", SearchText);
             SearchText = string.Empty;
         }
 
@@ -796,6 +1283,7 @@ namespace WileyWidget.ViewModels
         [RelayCommand]
         private void NavigateToAccounts()
         {
+            _logger.LogInformation("NavigateToAccounts command invoked - Navigating to MunicipalAccountView");
             _regionManager.RequestNavigate("MainRegion", "MunicipalAccountView");
         }
 
@@ -803,7 +1291,10 @@ namespace WileyWidget.ViewModels
         private void NavigateBack()
         {
             var region = _regionManager.Regions["MainRegion"];
-            if (region.NavigationService.Journal.CanGoBack)
+            var canGoBack = region.NavigationService.Journal.CanGoBack;
+            _logger.LogDebug("NavigateBack command invoked - CanGoBack: {CanGoBack}", canGoBack);
+            
+            if (canGoBack)
             {
                 region.NavigationService.Journal.GoBack();
             }
@@ -813,9 +1304,30 @@ namespace WileyWidget.ViewModels
         private void NavigateForward()
         {
             var region = _regionManager.Regions["MainRegion"];
-            if (region.NavigationService.Journal.CanGoForward)
+            var canGoForward = region.NavigationService.Journal.CanGoForward;
+            _logger.LogDebug("NavigateForward command invoked - CanGoForward: {CanGoForward}", canGoForward);
+            
+            if (canGoForward)
             {
                 region.NavigationService.Journal.GoForward();
+            }
+        }
+
+        [RelayCommand]
+        private void OpenEnterpriseManagement()
+        {
+            _logger.LogInformation("OpenEnterpriseManagement command invoked");
+            try
+            {
+                // Navigate to enterprise management view
+                _regionManager.RequestNavigate("EnterpriseRegion", "EnterpriseView");
+                _logger.LogInformation("Successfully navigated to Enterprise management view");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to open Enterprise management view");
+                MessageBox.Show($"Error opening Enterprise management: {ex.Message}", "Navigation Error",
+                              MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -837,6 +1349,75 @@ namespace WileyWidget.ViewModels
             
             // Refresh dashboard data when enterprise changes
             _ = LoadDashboardDataAsync();
+        }
+
+        // Collection change event handlers
+        private void Enterprises_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            switch (e.Action)
+            {
+                case NotifyCollectionChangedAction.Add:
+                    _logger.LogDebug("Enterprises collection - Added {Count} items at index {Index}", 
+                        e.NewItems?.Count ?? 0, e.NewStartingIndex);
+                    if (e.NewItems != null)
+                    {
+                        foreach (Enterprise enterprise in e.NewItems)
+                        {
+                            _logger.LogTrace("Added Enterprise: Id={Id}, Name={Name}, Type={Type}", 
+                                enterprise.Id, enterprise.Name, enterprise.Type);
+                        }
+                    }
+                    break;
+
+                case NotifyCollectionChangedAction.Remove:
+                    _logger.LogDebug("Enterprises collection - Removed {Count} items at index {Index}", 
+                        e.OldItems?.Count ?? 0, e.OldStartingIndex);
+                    if (e.OldItems != null)
+                    {
+                        foreach (Enterprise enterprise in e.OldItems)
+                        {
+                            _logger.LogTrace("Removed Enterprise: Id={Id}, Name={Name}", 
+                                enterprise.Id, enterprise.Name);
+                        }
+                    }
+                    break;
+
+                case NotifyCollectionChangedAction.Replace:
+                    _logger.LogDebug("Enterprises collection - Replaced {Count} items at index {Index}", 
+                        e.NewItems?.Count ?? 0, e.NewStartingIndex);
+                    break;
+
+                case NotifyCollectionChangedAction.Reset:
+                    _logger.LogDebug("Enterprises collection - Reset (cleared or major change)");
+                    break;
+
+                case NotifyCollectionChangedAction.Move:
+                    _logger.LogDebug("Enterprises collection - Moved item from index {OldIndex} to {NewIndex}", 
+                        e.OldStartingIndex, e.NewStartingIndex);
+                    break;
+            }
+
+            _logger.LogDebug("Enterprises collection now has {Count} items", Enterprises.Count);
+        }
+
+        private void FilteredEnterprises_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            switch (e.Action)
+            {
+                case NotifyCollectionChangedAction.Add:
+                    _logger.LogTrace("FilteredEnterprises - Added {Count} items", e.NewItems?.Count ?? 0);
+                    break;
+
+                case NotifyCollectionChangedAction.Remove:
+                    _logger.LogTrace("FilteredEnterprises - Removed {Count} items", e.OldItems?.Count ?? 0);
+                    break;
+
+                case NotifyCollectionChangedAction.Reset:
+                    _logger.LogTrace("FilteredEnterprises - Reset (filter applied)");
+                    break;
+            }
+
+            _logger.LogTrace("FilteredEnterprises now has {Count} items", FilteredEnterprises.Count);
         }
 
         // Prism Navigation Implementation

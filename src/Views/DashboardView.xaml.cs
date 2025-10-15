@@ -8,6 +8,7 @@ using WileyWidget.ViewModels;
 using Syncfusion.SfSkinManager;
 using Syncfusion.Windows.Shared;
 using WileyWidget.Services;
+using WileyWidget.Services.Logging;
 using Serilog;
 
 #pragma warning disable CS8600, CS8601, CS8602, CS8603, CS8604, CS8618, CS8622, CS8625 // Suppress nullability warnings in WPF application
@@ -77,18 +78,24 @@ namespace WileyWidget
 
         private async void DashboardView_Loaded(object sender, RoutedEventArgs e)
         {
-            Log.Debug("DashboardView: Loaded event fired");
+            using var loggingContext = LoggingContext.BeginOperation("DashboardView_Loaded");
+            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+            
+            Log.Debug("DashboardView: Loaded event fired - {LogContext}", loggingContext);
             Log.Information($"DashboardView: Size - ActualWidth: {ActualWidth}, ActualHeight: {ActualHeight}");
             
             if (DataContext is DashboardViewModel viewModel)
             {
-                Log.Information("DashboardView: Loading dashboard data...");
+                Log.Information("DashboardView: Loading dashboard data... - {LogContext}", loggingContext);
                 await viewModel.LoadDashboardDataAsync();
-                Log.Information("DashboardView: Dashboard data load completed");
+                stopwatch.Stop();
+                Log.Information("DashboardView: Dashboard data load completed in {ElapsedMs}ms - {LogContext}", 
+                    stopwatch.ElapsedMilliseconds, loggingContext);
             }
             else
             {
-                Log.Error("DashboardView: Cannot load data - DataContext is not DashboardViewModel");
+                stopwatch.Stop();
+                Log.Error("DashboardView: Cannot load data - DataContext is not DashboardViewModel - {LogContext}", loggingContext);
             }
         }
         
@@ -140,13 +147,29 @@ namespace WileyWidget
             _refreshTimer = new DispatcherTimer();
             _refreshTimer.Tick += async (s, e) =>
             {
+                using var loggingContext = LoggingContext.BeginOperation("AutoRefresh_Tick");
+                var callingThreadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
+                var uiThreadId = Dispatcher.CurrentDispatcher.Thread.ManagedThreadId;
+                
+                Log.Verbose("DashboardView AutoRefresh timer tick - ThreadId: {CallingThread} -> UI ThreadId: {UIThread} - {LogContext}", 
+                    callingThreadId, uiThreadId, loggingContext);
+                
                 if (viewModel.AutoRefreshEnabled)
                 {
+                    Log.Debug("DashboardView: Executing auto-refresh - {LogContext}", loggingContext);
                     await viewModel.RefreshDashboardDataAsync();
+                    Log.Debug("DashboardView: Auto-refresh completed - {LogContext}", loggingContext);
+                }
+                else
+                {
+                    Log.Verbose("DashboardView: Auto-refresh skipped (disabled) - {LogContext}", loggingContext);
                 }
             };
             _refreshTimer.Interval = TimeSpan.FromMinutes(viewModel.RefreshIntervalMinutes);
             _refreshTimer.Start();
+            
+            Log.Information("DashboardView: Auto-refresh timer started with {IntervalMinutes} minute interval", 
+                viewModel.RefreshIntervalMinutes);
         }
 
         // Methods for UI test compatibility

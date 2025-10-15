@@ -5,8 +5,14 @@
         xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
         xmlns:syncfusionskin="clr-namespace:Syncfusion.SfSkinManager;assembly=Syncfusion.SfSkinManager.WPF"
         xmlns:vm="clr-namespace:WileyWidget.ViewModels"
-        xmlns:views="clr-namespace:WileyWidget.Views"
-        Title="Wiley Widget - Municipal Enterprise Management"
+        xmlns:converters="clr-namespace:WileyWidget.Converters"
+        Title="{Binding CurrentViewTitle, FallbackValue='Wiley Widget - Municipal Enterprise Management'}"
+        AutomationProperties.Name="Main Application Window"
+        xml:lang="en-US"
+        FocusVisualStyle="{DynamicResource {x:Static SystemParameters.FocusVisualStyleKey}}"
+        KeyboardNavigation.TabNavigation="Cycle"
+        KeyboardNavigation.ControlTabNavigation="Cycle"
+        KeyboardNavigation.DirectionalNavigation="Cycle"
         Height="768" Width="1280"
         MinHeight="600" MinWidth="1024"
         WindowState="Maximized"
@@ -24,23 +30,28 @@
                 <!-- Data templates for ViewModels -->
                 <ResourceDictionary Source="../Resources/DataTemplates.xaml"/>
             </ResourceDictionary.MergedDictionaries>
+
+            <!-- Converters -->
+            <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+            <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
+            <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
         </ResourceDictionary>
     </Window.Resources>
 
     <!-- Apply Syncfusion theme at window level -->
-    <Grid syncfusionskin:SfSkinManager.VisualStyle="FluentDark">
+    <Grid syncfusionskin:SfSkinManager.VisualStyle="MaterialDark">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <!-- Main Ribbon in Row 0 -->
         <syncfusion:Ribbon x:Name="MainRibbon" 
                           Grid.Row="0"
-                          syncfusionskin:SfSkinManager.VisualStyle="FluentDark"
-                          EnableKeyTips="True"
-                          IsMinimizeButtonVisible="True"
-                          TouchMode="True">
+                          AutomationProperties.Name="Main Application Ribbon"
+                          AutomationProperties.HelpText="Main navigation and command ribbon"
+                          syncfusionskin:SfSkinManager.VisualStyle="MaterialDark">
             
             <!-- Quick Access Toolbar -->
             <syncfusion:Ribbon.QuickAccessToolBar>
@@ -210,6 +221,8 @@
         <!-- DockingManager in Row 1 with Advanced Configuration -->
         <syncfusion:DockingManager x:Name="MainDockingManager"
                                  Grid.Row="1"
+                                 AutomationProperties.Name="Main Docking Manager"
+                                 AutomationProperties.HelpText="Main content area with dockable panels"
                                  UseDocumentContainer="True"
                                  ContainerMode="TDI"
                                  PersistState="True"
@@ -220,19 +233,14 @@
                                  UseLayoutRounding="True"
                                  UseNativeFloatWindow="False"
                                  AnimationDelay="200"
-                                 EnableAutoAdjustHeight="True"
-                                 EnableDocumentTooltip="True"
-                                 ShowCloseMenuItem="True"
-                                 ShowFloatMenuItem="True"
-                                 ShowHideMenuItem="True"
-                                 ShowRestoreMenuItem="True"
-                                 ShowAutohideMenuItem="True"
-                                 ShowTabbedMenuItem="True"
                                  DockToFill="True"
                                  DockFill="True"
                                  CloseTabOnMiddleClick="False"
                                  SwitchMode="Immediate"
-                                 syncfusionskin:SfSkinManager.VisualStyle="FluentDark"
+                                 EnableScrollableSidePanel="True"
+                                 IsVS2010DraggingEnabled="True"
+                                 ShowTabItemContextMenu="True"
+                                 syncfusionskin:SfSkinManager.VisualStyle="MaterialDark"
                                  DockStateChanged="DockingManager_DockStateChanged"
                                  ActiveWindowChanged="DockingManager_ActiveWindowChanged">
 
@@ -328,7 +336,8 @@
                           syncfusion:DockingManager.Header="Main"
                           syncfusion:DockingManager.CanClose="True"
                           syncfusion:DockingManager.CaptionToolTip="Main Content Area"
-                          syncfusion:DockingManager.CanSerialize="True"/>
+                          syncfusion:DockingManager.CanSerialize="True"
+                          Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=Inverse}"/>
 
             <!-- Left Panel: Navigation/Tree -->
             <ContentControl x:Name="LeftPanelRegion"
@@ -357,5 +366,19 @@
                           syncfusion:DockingManager.Header="System Alerts"
                           syncfusion:DockingManager.CanClose="False"/>
         </syncfusion:DockingManager>
+
+        <!-- Status Bar in Row 2 -->
+        <StatusBar Grid.Row="2"
+                   AutomationProperties.Name="Application Status Bar"
+                   AutomationProperties.HelpText="Application status and current view information">
+            <StatusBarItem>
+                <TextBlock Text="{Binding CurrentViewTitle, StringFormat='Current View: {0}'}"
+                          AutomationProperties.Name="Current View Display"/>
+            </StatusBarItem>
+            <StatusBarItem HorizontalAlignment="Right">
+                <TextBlock Text="{Binding CurrentTheme, StringFormat='Theme: {0}'}"
+                          AutomationProperties.Name="Current Theme Display"/>
+            </StatusBarItem>
+        </StatusBar>
     </Grid>
 </Window>
