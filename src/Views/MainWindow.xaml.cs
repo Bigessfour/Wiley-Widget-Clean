@@ -162,8 +162,28 @@ namespace WileyWidget.Views
         {
             Log.Debug("DockingManager: DockStateChanged event");
             
-            // Update ViewModel
-            UpdateViewModel();
+            // Use Dispatcher to ensure UI updates happen on UI thread
+            Dispatcher.Invoke(() =>
+            {
+                UpdateViewModel();
+            }, System.Windows.Threading.DispatcherPriority.Normal);
+        }
+
+        private void DockingManager_ActiveWindowChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            Log.Debug("DockingManager: ActiveWindowChanged event");
+            
+            // Use Dispatcher to ensure UI updates happen on UI thread
+            Dispatcher.Invoke(() =>
+            {
+                var dockingManager = d as DockingManager;
+                if (dockingManager != null && dockingManager.ActiveWindow != null)
+                {
+                    Log.Information("Active window changed to: {WindowName}", 
+                        dockingManager.ActiveWindow.Name ?? dockingManager.ActiveWindow.GetType().Name);
+                }
+                UpdateViewModel();
+            }, System.Windows.Threading.DispatcherPriority.Normal);
         }
 
         private void DockingManager_WindowClosing(object sender, System.ComponentModel.CancelEventArgs e)
@@ -179,7 +199,10 @@ namespace WileyWidget.Views
             Log.Information("DockingManager: Window closed");
             
             // Handle window closed event - update region states
-            UpdateViewModel();
+            Dispatcher.Invoke(() =>
+            {
+                UpdateViewModel();
+            }, System.Windows.Threading.DispatcherPriority.Normal);
         }
 
         private void UpdateViewModel()
@@ -425,7 +448,7 @@ namespace WileyWidget.Views
                 Log.Information("Available regions from XAML: [{Regions}]", string.Join(", ", availableRegions));
                 
                 // Use ViewRegistrationService for comprehensive registration
-                var viewRegistrationService = new WileyWidget.Services.ViewRegistrationService(_regionManager);
+                var viewRegistrationService = new ViewRegistrationService(_regionManager);
                 viewRegistrationService.RegisterAllViews();
 
                 // Validate regions after registration

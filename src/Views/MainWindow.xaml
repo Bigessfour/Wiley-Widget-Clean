@@ -35,101 +35,174 @@
         </Grid.RowDefinitions>
 
         <!-- Main Ribbon in Row 0 -->
-        <syncfusion:Ribbon x:Name="MainRibbon" Grid.Row="0">
+        <syncfusion:Ribbon x:Name="MainRibbon" 
+                          Grid.Row="0"
+                          syncfusionskin:SfSkinManager.VisualStyle="FluentDark"
+                          EnableKeyTips="True"
+                          IsMinimizeButtonVisible="True"
+                          TouchMode="True">
+            
+            <!-- Quick Access Toolbar -->
+            <syncfusion:Ribbon.QuickAccessToolBar>
+                <syncfusion:QuickAccessToolBar>
+                    <syncfusion:RibbonButton Label="Save" 
+                                           SizeForm="ExtraSmall"
+                                           ToolTip="Save current work (Ctrl+S)"/>
+                    <syncfusion:RibbonButton Label="Refresh" 
+                                           SizeForm="ExtraSmall"
+                                           Command="{Binding RefreshAllCommand}"
+                                           ToolTip="Refresh all data (F5)"/>
+                </syncfusion:QuickAccessToolBar>
+            </syncfusion:Ribbon.QuickAccessToolBar>
+
             <syncfusion:RibbonTab Caption="Home" IsChecked="True">
                 <syncfusion:RibbonBar Header="Navigation">
                     <syncfusion:RibbonButton Label="Dashboard"
                                            SizeForm="Large"
-                                           Command="{Binding NavigateToDashboardCommand}"/>
+                                           Command="{Binding NavigateToDashboardCommand}"
+                                           ToolTip="Navigate to Dashboard (Ctrl+1)"/>
                     <syncfusion:RibbonButton Label="Enterprises"
                                            SizeForm="Large"
-                                           Command="{Binding NavigateToEnterprisesCommand}"/>
+                                           Command="{Binding NavigateToEnterprisesCommand}"
+                                           ToolTip="Navigate to Enterprises (Ctrl+2)"/>
                     <syncfusion:RibbonButton Label="Accounts"
                                            SizeForm="Large"
-                                           Command="{Binding NavigateToAccountsCommand}"/>
+                                           Command="{Binding NavigateToAccountsCommand}"
+                                           ToolTip="Navigate to Municipal Accounts (Ctrl+3)"/>
                     <syncfusion:RibbonButton Label="Budget"
                                            SizeForm="Large"
-                                           Command="{Binding NavigateToBudgetCommand}"/>
+                                           Command="{Binding NavigateToBudgetCommand}"
+                                           ToolTip="Navigate to Budget Management (Ctrl+4)"/>
                 </syncfusion:RibbonBar>
                 <syncfusion:RibbonBar Header="Tools">
                     <syncfusion:RibbonButton Label="Settings"
-                                           Command="{Binding OpenSettingsCommand}"/>
+                                           SizeForm="Small"
+                                           Command="{Binding OpenSettingsCommand}"
+                                           ToolTip="Open application settings"/>
                     <syncfusion:RibbonButton Label="Reports"
-                                           Command="{Binding OpenReportsCommand}"/>
+                                           SizeForm="Small"
+                                           Command="{Binding OpenReportsCommand}"
+                                           ToolTip="View and generate reports"/>
                     <syncfusion:RibbonButton Label="AI Assist"
-                                           Command="{Binding OpenAIAssistCommand}"/>
+                                           SizeForm="Small"
+                                           Command="{Binding OpenAIAssistCommand}"
+                                           ToolTip="Open AI Assistant"/>
                 </syncfusion:RibbonBar>
             </syncfusion:RibbonTab>
             <syncfusion:RibbonTab Caption="Data">
                 <syncfusion:RibbonBar Header="Import/Export">
                     <syncfusion:RibbonButton Label="Import Excel"
-                                           Command="{Binding ImportExcelCommand}"/>
+                                           SizeForm="Large"
+                                           Command="{Binding ImportExcelCommand}"
+                                           ToolTip="Import data from Excel files"/>
                     <syncfusion:RibbonButton Label="Export Data"
-                                           Command="{Binding ExportDataCommand}"/>
+                                           SizeForm="Large"
+                                           Command="{Binding ExportDataCommand}"
+                                           ToolTip="Export data to various formats"/>
                     <syncfusion:RibbonButton Label="Sync QuickBooks"
-                                           Command="{Binding SyncQuickBooksCommand}"/>
+                                           SizeForm="Large"
+                                           Command="{Binding SyncQuickBooksCommand}"
+                                           ToolTip="Synchronize with QuickBooks Online"/>
                 </syncfusion:RibbonBar>
             </syncfusion:RibbonTab>
             <syncfusion:RibbonTab Caption="Dashboard">
                 <syncfusion:RibbonBar Header="Views">
                     <syncfusion:RibbonButton Label="Show Dashboard"
-                                           Command="{Binding ShowDashboardCommand}"/>
+                                           SizeForm="Large"
+                                           Command="{Binding ShowDashboardCommand}"
+                                           ToolTip="Display main dashboard"/>
                     <syncfusion:RibbonButton Label="Analytics"
-                                           Command="{Binding ShowAnalyticsCommand}"/>
+                                           SizeForm="Large"
+                                           Command="{Binding ShowAnalyticsCommand}"
+                                           ToolTip="View advanced analytics"/>
                 </syncfusion:RibbonBar>
                 <syncfusion:RibbonBar Header="Refresh">
                     <syncfusion:RibbonButton Label="Refresh All"
-                                           Command="{Binding RefreshAllCommand}"/>
-                    <!-- <syncfusion:RibbonButton Label="Auto Refresh"
-                                           IsChecked="{Binding IsAutoRefreshEnabled}"/> -->
+                                           SizeForm="Large"
+                                           Command="{Binding RefreshAllCommand}"
+                                           ToolTip="Refresh all data sources (F5)"/>
+                    <syncfusion:RibbonButton Label="Refresh View"
+                                           SizeForm="Small"
+                                           Command="{Binding RefreshCommand}"
+                                           ToolTip="Refresh current view"/>
                 </syncfusion:RibbonBar>
             </syncfusion:RibbonTab>
             <syncfusion:RibbonTab Caption="Budget">
                 <syncfusion:RibbonBar Header="Management">
                     <syncfusion:RibbonButton Label="New Budget"
-                                           Command="{Binding CreateNewBudgetCommand}"/>
+                                           SizeForm="Large"
+                                           Command="{Binding CreateNewBudgetCommand}"
+                                           ToolTip="Create a new fiscal year budget"/>
                     <syncfusion:RibbonButton Label="Import Budget"
-                                           Command="{Binding ImportBudgetCommand}"/>
+                                           SizeForm="Small"
+                                           Command="{Binding ImportBudgetCommand}"
+                                           ToolTip="Import budget from file"/>
                     <syncfusion:RibbonButton Label="Export Budget"
-                                           Command="{Binding ExportBudgetCommand}"/>
+                                           SizeForm="Small"
+                                           Command="{Binding ExportBudgetCommand}"
+                                           ToolTip="Export budget to file"/>
                 </syncfusion:RibbonBar>
                 <syncfusion:RibbonBar Header="Analysis">
                     <syncfusion:RibbonButton Label="Budget Analysis"
-                                           Command="{Binding ShowBudgetAnalysisCommand}"/>
+                                           SizeForm="Large"
+                                           Command="{Binding ShowBudgetAnalysisCommand}"
+                                           ToolTip="View budget vs actual analysis"/>
                     <syncfusion:RibbonButton Label="Rate Calculator"
-                                           Command="{Binding ShowRateCalculatorCommand}"/>
+                                           SizeForm="Large"
+                                           Command="{Binding ShowRateCalculatorCommand}"
+                                           ToolTip="Calculate utility rates"/>
                 </syncfusion:RibbonBar>
             </syncfusion:RibbonTab>
             <syncfusion:RibbonTab Caption="Enterprise">
                 <syncfusion:RibbonBar Header="Management">
                     <syncfusion:RibbonButton Label="Add Enterprise"
-                                           Command="{Binding AddEnterpriseCommand}"/>
+                                           SizeForm="Large"
+                                           Command="{Binding AddEnterpriseCommand}"
+                                           ToolTip="Add new enterprise (Ctrl+N)"/>
                     <syncfusion:RibbonButton Label="Edit Enterprise"
-                                           Command="{Binding EditEnterpriseCommand}"/>
+                                           SizeForm="Small"
+                                           Command="{Binding EditEnterpriseCommand}"
+                                           ToolTip="Edit selected enterprise (Ctrl+E)"/>
                     <syncfusion:RibbonButton Label="Delete Enterprise"
-                                           Command="{Binding DeleteEnterpriseCommand}"/>
+                                           SizeForm="Small"
+                                           Command="{Binding DeleteEnterpriseCommand}"
+                                           ToolTip="Delete selected enterprise (Delete)"/>
                 </syncfusion:RibbonBar>
                 <syncfusion:RibbonBar Header="Operations">
                     <syncfusion:RibbonButton Label="Service Charges"
-                                           Command="{Binding ManageServiceChargesCommand}"/>
+                                           SizeForm="Large"
+                                           Command="{Binding ManageServiceChargesCommand}"
+                                           ToolTip="Manage enterprise service charges"/>
                     <syncfusion:RibbonButton Label="Utility Bills"
-                                           Command="{Binding ManageUtilityBillsCommand}"/>
+                                           SizeForm="Large"
+                                           Command="{Binding ManageUtilityBillsCommand}"
+                                           ToolTip="Manage utility billing"/>
                 </syncfusion:RibbonBar>
             </syncfusion:RibbonTab>
             <syncfusion:RibbonTab Caption="Reports">
                 <syncfusion:RibbonBar Header="Standard Reports">
                     <syncfusion:RibbonButton Label="Financial Summary"
-                                           Command="{Binding GenerateFinancialSummaryCommand}"/>
+                                           SizeForm="Large"
+                                           Command="{Binding GenerateFinancialSummaryCommand}"
+                                           ToolTip="Generate financial summary report"/>
                     <syncfusion:RibbonButton Label="Budget vs Actual"
-                                           Command="{Binding GenerateBudgetVsActualCommand}"/>
+                                           SizeForm="Large"
+                                           Command="{Binding GenerateBudgetVsActualCommand}"
+                                           ToolTip="Generate budget comparison report"/>
                     <syncfusion:RibbonButton Label="Enterprise Performance"
-                                           Command="{Binding GenerateEnterprisePerformanceCommand}"/>
+                                           SizeForm="Large"
+                                           Command="{Binding GenerateEnterprisePerformanceCommand}"
+                                           ToolTip="Generate enterprise performance report"/>
                 </syncfusion:RibbonBar>
                 <syncfusion:RibbonBar Header="Custom Reports">
                     <syncfusion:RibbonButton Label="Create Report"
-                                           Command="{Binding CreateCustomReportCommand}"/>
+                                           SizeForm="Large"
+                                           Command="{Binding CreateCustomReportCommand}"
+                                           ToolTip="Build custom report"/>
                     <syncfusion:RibbonButton Label="Saved Reports"
-                                           Command="{Binding ShowSavedReportsCommand}"/>
+                                           SizeForm="Large"
+                                           Command="{Binding ShowSavedReportsCommand}"
+                                           ToolTip="View saved reports"/>
                 </syncfusion:RibbonBar>
             </syncfusion:RibbonTab>
         </syncfusion:Ribbon>
@@ -144,24 +217,24 @@
                                  MinimizeButtonEnabled="True"
                                  MaximizeMode="FullScreen"
                                  IsEnableHotTracking="True"
-                                 CollapseDefaultContextMenuItemsInDock="False"
                                  UseLayoutRounding="True"
-                                 EnableScrollableSidePanel="True"
-                                 IsVS2010DraggingEnabled="True"
-                                 ShowTabItemContextMenu="True"
-                                 CanCreateVerticalTabGroup="True"
-                                 ShowCloseAllTabs="True"
-                                 ShowCloseOtherTabs="True"
-                                 DragProviderStyle="VS2010"
-                                 ShowPin="True"
-                                 ShowTabListContextMenu="True"
                                  UseNativeFloatWindow="False"
                                  AnimationDelay="200"
-                                 EnableOfficeLikeTabSwitcher="True"
+                                 EnableAutoAdjustHeight="True"
+                                 EnableDocumentTooltip="True"
+                                 ShowCloseMenuItem="True"
+                                 ShowFloatMenuItem="True"
+                                 ShowHideMenuItem="True"
+                                 ShowRestoreMenuItem="True"
+                                 ShowAutohideMenuItem="True"
+                                 ShowTabbedMenuItem="True"
+                                 DockToFill="True"
+                                 DockFill="True"
+                                 CloseTabOnMiddleClick="False"
+                                 SwitchMode="Immediate"
                                  syncfusionskin:SfSkinManager.VisualStyle="FluentDark"
                                  DockStateChanged="DockingManager_DockStateChanged"
-                                 WindowClosing="DockingManager_WindowClosing"
-                                 WindowClosed="DockingManager_WindowClosed">
+                                 ActiveWindowChanged="DockingManager_ActiveWindowChanged">
 
             <!-- Dashboard Region (Main Document Area) -->
             <ContentControl x:Name="DashboardRegion"
@@ -170,7 +243,11 @@
                           syncfusion:DockingManager.Header="Dashboard"
                           syncfusion:DockingManager.CanClose="False"
                           syncfusion:DockingManager.CaptionToolTip="Main Dashboard View"
-                          syncfusion:DockingManager.CanSerialize="True"/>
+                          syncfusion:DockingManager.CanSerialize="True"
+                          syncfusion:DockingManager.CanDrag="True"
+                          syncfusion:DockingManager.CanFloat="True"
+                          syncfusion:DockingManager.CanDocument="True"
+                          MinWidth="400" MinHeight="300"/>
 
             <!-- Enterprise Region -->
             <ContentControl x:Name="EnterpriseRegion"
@@ -224,6 +301,33 @@
                           syncfusion:DockingManager.Header="Analytics"
                           syncfusion:DockingManager.CanClose="True"
                           syncfusion:DockingManager.CaptionToolTip="Advanced Analytics"
+                          syncfusion:DockingManager.CanSerialize="True"/>
+
+            <!-- AI Assist Region -->
+            <ContentControl x:Name="AIAssistRegion"
+                          prism:RegionManager.RegionName="AIAssistRegion"
+                          syncfusion:DockingManager.State="Document"
+                          syncfusion:DockingManager.Header="AI Assistant"
+                          syncfusion:DockingManager.CanClose="True"
+                          syncfusion:DockingManager.CaptionToolTip="AI-Powered Assistant"
+                          syncfusion:DockingManager.CanSerialize="True"/>
+
+            <!-- Settings Region -->
+            <ContentControl x:Name="SettingsRegion"
+                          prism:RegionManager.RegionName="SettingsRegion"
+                          syncfusion:DockingManager.State="Document"
+                          syncfusion:DockingManager.Header="Settings"
+                          syncfusion:DockingManager.CanClose="True"
+                          syncfusion:DockingManager.CaptionToolTip="Application Settings"
+                          syncfusion:DockingManager.CanSerialize="True"/>
+
+            <!-- Main Region for dialogs/temporary views -->
+            <ContentControl x:Name="MainRegion"
+                          prism:RegionManager.RegionName="MainRegion"
+                          syncfusion:DockingManager.State="Document"
+                          syncfusion:DockingManager.Header="Main"
+                          syncfusion:DockingManager.CanClose="True"
+                          syncfusion:DockingManager.CaptionToolTip="Main Content Area"
                           syncfusion:DockingManager.CanSerialize="True"/>
 
             <!-- Left Panel: Navigation/Tree -->
