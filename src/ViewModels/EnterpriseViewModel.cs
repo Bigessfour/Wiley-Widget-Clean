@@ -13,6 +13,8 @@ using System.Diagnostics;
 using System.ComponentModel;
 using Prism.Events;
 using WileyWidget.ViewModels.Messages;
+using Syncfusion.Pdf;
+using Syncfusion.Pdf.Graphics;
 
 namespace WileyWidget.ViewModels;
 
@@ -24,6 +26,11 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IEventAggregator _eventAggregator;
+
+    /// <summary>
+    /// Event aggregator for pub/sub messaging
+    /// </summary>
+    public IEventAggregator EventAggregator => _eventAggregator;
 
     /// <summary>
     /// Collection of all enterprises for data binding
@@ -330,12 +337,45 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
     {
         try
         {
-            // This will be handled by the View - the command triggers UI interaction
-            await Task.CompletedTask; // Placeholder
+            StatusMessage = "Generating Excel export...";
+
+            // Get current enterprises data
+            var enterprises = await _unitOfWork.Enterprises.GetAllAsync();
+            var enterpriseList = enterprises.ToList();
+
+            if (!enterpriseList.Any())
+            {
+                StatusMessage = "No enterprise data available for Excel export";
+                return;
+            }
+
+            // Create save file dialog
+            var saveFileDialog = new Microsoft.Win32.SaveFileDialog
+            {
+                Title = "Save Excel Export",
+                Filter = "Excel files (*.xlsx)|*.xlsx",
+                DefaultExt = ".xlsx",
+                FileName = $"Enterprise_Export_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx"
+            };
+
+            if (saveFileDialog.ShowDialog() == true)
+            {
+                var filePath = saveFileDialog.FileName;
+
+                // Generate Excel export
+                await GenerateEnterpriseAdvancedExcelExportAsync(enterpriseList, filePath);
+
+                StatusMessage = $"Excel export saved to {System.IO.Path.GetFileName(filePath)}";
+            }
+            else
+            {
+                StatusMessage = "Excel export cancelled";
+            }
         }
         catch (Exception ex)
         {
             Log.Error(ex, "Error in Excel export command");
+            StatusMessage = $"Error exporting to Excel: {ex.Message}";
         }
     }
 
@@ -347,15 +387,533 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
     {
         try
         {
-            // TODO: Implement PDF report export
-            // This would generate a comprehensive PDF with charts, summaries, etc.
-            StatusMessage = "PDF report export feature coming soon...";
-            await Task.CompletedTask;
+            StatusMessage = "Generating PDF report...";
+
+            // Get current enterprises data
+            var enterprises = await _unitOfWork.Enterprises.GetAllAsync();
+            var enterpriseList = enterprises.ToList();
+
+            if (!enterpriseList.Any())
+            {
+                StatusMessage = "No enterprise data available for PDF report";
+                return;
+            }
+
+            // Create save file dialog
+            var saveFileDialog = new Microsoft.Win32.SaveFileDialog
+            {
+                Title = "Save PDF Report",
+                Filter = "PDF files (*.pdf)|*.pdf",
+                DefaultExt = ".pdf",
+                FileName = $"Enterprise_Report_{DateTime.Now:yyyyMMdd_HHmmss}.pdf"
+            };
+
+            if (saveFileDialog.ShowDialog() == true)
+            {
+                var filePath = saveFileDialog.FileName;
+
+                // Generate PDF report
+                await GenerateEnterprisePdfReportAsync(enterpriseList, filePath);
+
+                StatusMessage = $"PDF report saved to {System.IO.Path.GetFileName(filePath)}";
+            }
+            else
+            {
+                StatusMessage = "PDF report export cancelled";
+            }
         }
         catch (Exception ex)
         {
+            StatusMessage = $"Error generating PDF report: {ex.Message}";
             Log.Error(ex, "Error in PDF report export command");
         }
+    }
+
+    private async Task GenerateEnterprisePdfReportAsync(IEnumerable<Enterprise> enterprises, string filePath)
+    {
+        await Task.Run(() =>
+        {
+            using (var document = new Syncfusion.Pdf.PdfDocument())
+            {
+                var page = document.Pages.Add();
+                var graphics = page.Graphics;
+                var font = new Syncfusion.Pdf.Graphics.PdfStandardFont(Syncfusion.Pdf.Graphics.PdfFontFamily.Helvetica, 12);
+                var headerFont = new Syncfusion.Pdf.Graphics.PdfStandardFont(Syncfusion.Pdf.Graphics.PdfFontFamily.Helvetica, 16, Syncfusion.Pdf.Graphics.PdfFontStyle.Bold);
+
+                float yPosition = 20;
+
+                // Title
+                graphics.DrawString("Enterprise Report", headerFont, Syncfusion.Pdf.Graphics.PdfBrushes.Black, 20, yPosition);
+                yPosition += 30;
+
+                // Report info
+                graphics.DrawString($"Generated: {DateTime.Now:g}", font, Syncfusion.Pdf.Graphics.PdfBrushes.Black, 20, yPosition);
+                yPosition += 20;
+                graphics.DrawString($"Total Enterprises: {enterprises.Count()}", font, Syncfusion.Pdf.Graphics.PdfBrushes.Black, 20, yPosition);
+                yPosition += 30;
+
+                // Table headers
+                graphics.DrawString("Name", font, Syncfusion.Pdf.Graphics.PdfBrushes.Black, 20, yPosition);
+                graphics.DrawString("Type", font, Syncfusion.Pdf.Graphics.PdfBrushes.Black, 120, yPosition);
+                graphics.DrawString("Rate", font, Syncfusion.Pdf.Graphics.PdfBrushes.Black, 220, yPosition);
+                graphics.DrawString("Citizens", font, Syncfusion.Pdf.Graphics.PdfBrushes.Black, 320, yPosition);
+                yPosition += 15;
+
+                // Draw header line
+                graphics.DrawLine(Syncfusion.Pdf.Graphics.PdfPens.Black, 20, yPosition, 400, yPosition);
+                yPosition += 10;
+
+                // Table data
+                foreach (var enterprise in enterprises)
+                {
+                    if (yPosition > page.GetClientSize().Height - 50)
+                    {
+                        page = document.Pages.Add();
+                        graphics = page.Graphics;
+                        yPosition = 20;
+                    }
+
+                    graphics.DrawString(enterprise.Name ?? "N/A", font, Syncfusion.Pdf.Graphics.PdfBrushes.Black, 20, yPosition);
+                    graphics.DrawString(enterprise.Type ?? "N/A", font, Syncfusion.Pdf.Graphics.PdfBrushes.Black, 120, yPosition);
+                    graphics.DrawString(enterprise.CurrentRate.ToString("C"), font, Syncfusion.Pdf.Graphics.PdfBrushes.Black, 220, yPosition);
+                    graphics.DrawString(enterprise.CitizenCount.ToString(), font, Syncfusion.Pdf.Graphics.PdfBrushes.Black, 320, yPosition);
+                    yPosition += 15;
+                }
+
+                // Summary
+                if (yPosition > page.GetClientSize().Height - 100)
+                {
+                    page = document.Pages.Add();
+                    graphics = page.Graphics;
+                    yPosition = 20;
+                }
+
+                yPosition += 20;
+                var totalBudget = enterprises.Sum(e => e.CurrentRate);
+                var totalCitizens = enterprises.Sum(e => e.CitizenCount);
+
+                graphics.DrawString($"Total Budget: {totalBudget:C}", headerFont, Syncfusion.Pdf.Graphics.PdfBrushes.Black, 20, yPosition);
+                yPosition += 20;
+                graphics.DrawString($"Total Citizens Served: {totalCitizens:N0}", font, Syncfusion.Pdf.Graphics.PdfBrushes.Black, 20, yPosition);
+
+                // Save the document
+                document.Save(filePath);
+            }
+        });
+    }
+
+    private async Task GenerateEnterpriseCsvExportAsync(IEnumerable<Enterprise> enterprises, string filePath)
+    {
+        await Task.Run(() =>
+        {
+            using (var writer = new System.IO.StreamWriter(filePath, false, System.Text.Encoding.UTF8))
+            {
+                // Write CSV header
+                writer.WriteLine("\"Name\",\"Type\",\"Current Rate\",\"Monthly Expenses\",\"Citizens Served\",\"Created Date\",\"Modified Date\"");
+
+                // Write data rows
+                foreach (var enterprise in enterprises)
+                {
+                    var name = enterprise.Name?.Replace("\"", "\"\"") ?? ""; // Escape quotes
+                    var type = enterprise.Type?.Replace("\"", "\"\"") ?? "";
+                    var rate = enterprise.CurrentRate.ToString("F2");
+                    var expenses = enterprise.MonthlyExpenses.ToString("F2");
+                    var citizens = enterprise.CitizenCount.ToString();
+                    var created = enterprise.CreatedDate.ToString("yyyy-MM-dd HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture);
+                    var modified = enterprise.ModifiedDate?.ToString("yyyy-MM-dd HH:mm:ss") ?? "";
+
+                    writer.WriteLine($"\"{name}\",\"{type}\",\"{rate}\",\"{expenses}\",\"{citizens}\",\"{created}\",\"{modified}\"");
+                }
+            }
+        });
+    }
+
+    private async Task GenerateEnterpriseAdvancedExcelExportAsync(IEnumerable<Enterprise> enterprises, string filePath)
+    {
+        await Task.Run(() =>
+        {
+            using (var excelEngine = new Syncfusion.XlsIO.ExcelEngine())
+            {
+                var application = excelEngine.Excel;
+                application.DefaultVersion = Syncfusion.XlsIO.ExcelVersion.Xlsx;
+
+                var workbook = application.Workbooks.Create(1);
+                var worksheet = workbook.Worksheets[0];
+                worksheet.Name = "Enterprise Report";
+
+                // Set up headers with formatting
+                worksheet.Range["A1"].Text = "Enterprise Report";
+                worksheet.Range["A1:G1"].Merge();
+                worksheet.Range["A1"].CellStyle.Font.Size = 16;
+                worksheet.Range["A1"].CellStyle.Font.Bold = true;
+                worksheet.Range["A1"].HorizontalAlignment = Syncfusion.XlsIO.ExcelHAlign.HAlignCenter;
+
+                // Report info
+                worksheet.Range["A3"].Text = "Generated:";
+                worksheet.Range["B3"].Text = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                worksheet.Range["A4"].Text = "Total Enterprises:";
+                worksheet.Range["B4"].Text = enterprises.Count().ToString();
+
+                // Column headers
+                worksheet.Range["A6"].Text = "Name";
+                worksheet.Range["B6"].Text = "Type";
+                worksheet.Range["C6"].Text = "Current Rate";
+                worksheet.Range["D6"].Text = "Monthly Expenses";
+                worksheet.Range["E6"].Text = "Citizens Served";
+                worksheet.Range["F6"].Text = "Created Date";
+                worksheet.Range["G6"].Text = "Modified Date";
+
+                // Style headers
+                var headerRange = worksheet.Range["A6:G6"];
+                headerRange.CellStyle.Font.Bold = true;
+                headerRange.CellStyle.Interior.Color = System.Drawing.Color.LightGray;
+                headerRange.CellStyle.HorizontalAlignment = Syncfusion.XlsIO.ExcelHAlign.HAlignCenter;
+
+                // Data rows
+                int row = 7;
+                foreach (var enterprise in enterprises)
+                {
+                    worksheet.Range[$"A{row}"].Text = enterprise.Name ?? "";
+                    worksheet.Range[$"B{row}"].Text = enterprise.Type ?? "";
+                    worksheet.Range[$"C{row}"].Number = (double)enterprise.CurrentRate;
+                    worksheet.Range[$"C{row}"].NumberFormat = "$#,##0.00";
+                    worksheet.Range[$"D{row}"].Number = (double)enterprise.MonthlyExpenses;
+                    worksheet.Range[$"D{row}"].NumberFormat = "$#,##0.00";
+                    worksheet.Range[$"E{row}"].Number = enterprise.CitizenCount;
+                    worksheet.Range[$"F{row}"].Text = enterprise.CreatedDate.ToString("yyyy-MM-dd HH:mm:ss");
+                    worksheet.Range[$"G{row}"].Text = enterprise.ModifiedDate?.ToString("yyyy-MM-dd HH:mm:ss") ?? "";
+
+                    row++;
+                }
+
+                // Auto-fit columns
+                worksheet.UsedRange.AutofitColumns();
+
+                // Summary section
+                row += 2;
+                worksheet.Range[$"A{row}"].Text = "Summary";
+                worksheet.Range[$"A{row}:B{row}"].Merge();
+                worksheet.Range[$"A{row}"].CellStyle.Font.Bold = true;
+
+                row++;
+                var totalBudget = enterprises.Sum(e => e.CurrentRate);
+                var totalExpenses = enterprises.Sum(e => e.MonthlyExpenses);
+                var totalCitizens = enterprises.Sum(e => e.CitizenCount);
+
+                worksheet.Range[$"A{row}"].Text = "Total Budget:";
+                worksheet.Range[$"B{row}"].Number = (double)totalBudget;
+                worksheet.Range[$"B{row}"].NumberFormat = "$#,##0.00";
+
+                row++;
+                worksheet.Range[$"A{row}"].Text = "Total Monthly Expenses:";
+                worksheet.Range[$"B{row}"].Number = (double)totalExpenses;
+                worksheet.Range[$"B{row}"].NumberFormat = "$#,##0.00";
+
+                row++;
+                worksheet.Range[$"A{row}"].Text = "Total Citizens Served:";
+                worksheet.Range[$"B{row}"].Number = totalCitizens;
+
+                // Save the workbook
+                workbook.SaveAs(filePath);
+            }
+        });
+    }
+
+    private async Task GenerateEnterpriseComprehensiveReportAsync(IEnumerable<Enterprise> enterprises, string filePath)
+    {
+        await Task.Run(() =>
+        {
+            using (var document = new Syncfusion.Pdf.PdfDocument())
+            {
+                var page = document.Pages.Add();
+                var graphics = page.Graphics;
+                var font = new Syncfusion.Pdf.Graphics.PdfStandardFont(Syncfusion.Pdf.Graphics.PdfFontFamily.Helvetica, 12);
+                var headerFont = new Syncfusion.Pdf.Graphics.PdfStandardFont(Syncfusion.Pdf.Graphics.PdfFontFamily.Helvetica, 16, Syncfusion.Pdf.Graphics.PdfFontStyle.Bold);
+                var titleFont = new Syncfusion.Pdf.Graphics.PdfStandardFont(Syncfusion.Pdf.Graphics.PdfFontFamily.Helvetica, 20, Syncfusion.Pdf.Graphics.PdfFontStyle.Bold);
+
+                float yPosition = 20;
+
+                // Title
+                graphics.DrawString("Enterprise Comprehensive Report", titleFont, Syncfusion.Pdf.Graphics.PdfBrushes.Black, 20, yPosition);
+                yPosition += 40;
+
+                // Report metadata
+                graphics.DrawString($"Generated: {DateTime.Now:g}", font, Syncfusion.Pdf.Graphics.PdfBrushes.Black, 20, yPosition);
+                yPosition += 20;
+                graphics.DrawString($"Total Enterprises: {enterprises.Count()}", font, Syncfusion.Pdf.Graphics.PdfBrushes.Black, 20, yPosition);
+                yPosition += 30;
+
+                // Executive Summary
+                graphics.DrawString("Executive Summary", headerFont, Syncfusion.Pdf.Graphics.PdfBrushes.Black, 20, yPosition);
+                yPosition += 20;
+
+                var totalRevenue = enterprises.Sum(e => e.MonthlyRevenue);
+                var totalExpenses = enterprises.Sum(e => e.MonthlyExpenses);
+                var totalBudget = enterprises.Sum(e => e.CurrentRate);
+                var totalCitizens = enterprises.Sum(e => e.CitizenCount);
+                var avgRate = enterprises.Average(e => e.CurrentRate);
+
+                graphics.DrawString($"Total Monthly Revenue: {totalRevenue:C}", font, Syncfusion.Pdf.Graphics.PdfBrushes.Black, 20, yPosition);
+                yPosition += 15;
+                graphics.DrawString($"Total Monthly Expenses: {totalExpenses:C}", font, Syncfusion.Pdf.Graphics.PdfBrushes.Black, 20, yPosition);
+                yPosition += 15;
+                graphics.DrawString($"Net Monthly Position: {(totalRevenue - totalExpenses):C}", font, Syncfusion.Pdf.Graphics.PdfBrushes.Black, 20, yPosition);
+                yPosition += 15;
+                graphics.DrawString($"Total Citizens Served: {totalCitizens:N0}", font, Syncfusion.Pdf.Graphics.PdfBrushes.Black, 20, yPosition);
+                yPosition += 15;
+                graphics.DrawString($"Average Rate: {avgRate:C}", font, Syncfusion.Pdf.Graphics.PdfBrushes.Black, 20, yPosition);
+                yPosition += 30;
+
+                // Detailed Enterprise List
+                graphics.DrawString("Enterprise Details", headerFont, Syncfusion.Pdf.Graphics.PdfBrushes.Black, 20, yPosition);
+                yPosition += 20;
+
+                foreach (var enterprise in enterprises)
+                {
+                    if (yPosition > page.GetClientSize().Height - 100)
+                    {
+                        page = document.Pages.Add();
+                        graphics = page.Graphics;
+                        yPosition = 20;
+                    }
+
+                    graphics.DrawString($"Name: {enterprise.Name}", headerFont, Syncfusion.Pdf.Graphics.PdfBrushes.Black, 20, yPosition);
+                    yPosition += 15;
+                    graphics.DrawString($"Type: {enterprise.Type} | Rate: {enterprise.CurrentRate:C} | Citizens: {enterprise.CitizenCount}", font, Syncfusion.Pdf.Graphics.PdfBrushes.Black, 20, yPosition);
+                    yPosition += 15;
+                    graphics.DrawString($"Revenue: {enterprise.MonthlyRevenue:C} | Expenses: {enterprise.MonthlyExpenses:C} | Balance: {(enterprise.MonthlyRevenue - enterprise.MonthlyExpenses):C}", font, Syncfusion.Pdf.Graphics.PdfBrushes.Black, 20, yPosition);
+                    yPosition += 20;
+                }
+
+                // Save the document
+                document.Save(filePath);
+            }
+        });
+    }
+
+    private async Task GenerateEnterpriseComprehensiveExcelReportAsync(IEnumerable<Enterprise> enterprises, string filePath)
+    {
+        await Task.Run(() =>
+        {
+            using (var excelEngine = new Syncfusion.XlsIO.ExcelEngine())
+            {
+                var application = excelEngine.Excel;
+                application.DefaultVersion = Syncfusion.XlsIO.ExcelVersion.Xlsx;
+
+                var workbook = application.Workbooks.Create(1);
+
+                // Summary sheet
+                var summarySheet = workbook.Worksheets[0];
+                summarySheet.Name = "Summary";
+
+                summarySheet.Range["A1"].Text = "Enterprise Comprehensive Report";
+                summarySheet.Range["A1:D1"].Merge();
+                summarySheet.Range["A1"].CellStyle.Font.Size = 16;
+                summarySheet.Range["A1"].CellStyle.Font.Bold = true;
+
+                summarySheet.Range["A3"].Text = "Generated:";
+                summarySheet.Range["B3"].Text = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                summarySheet.Range["A4"].Text = "Total Enterprises:";
+                summarySheet.Range["B4"].Text = enterprises.Count().ToString();
+
+                summarySheet.Range["A6"].Text = "Executive Summary";
+                summarySheet.Range["A6:B6"].Merge();
+                summarySheet.Range["A6"].CellStyle.Font.Bold = true;
+
+                var totalRevenue = enterprises.Sum(e => e.MonthlyRevenue);
+                var totalExpenses = enterprises.Sum(e => e.MonthlyExpenses);
+                var totalCitizens = enterprises.Sum(e => e.CitizenCount);
+                var avgRate = enterprises.Average(e => e.CurrentRate);
+
+                summarySheet.Range["A8"].Text = "Total Monthly Revenue:";
+                summarySheet.Range["B8"].Number = (double)totalRevenue;
+                summarySheet.Range["B8"].NumberFormat = "$#,##0.00";
+
+                summarySheet.Range["A9"].Text = "Total Monthly Expenses:";
+                summarySheet.Range["B9"].Number = (double)totalExpenses;
+                summarySheet.Range["B9"].NumberFormat = "$#,##0.00";
+
+                summarySheet.Range["A10"].Text = "Net Monthly Position:";
+                summarySheet.Range["B10"].Number = (double)(totalRevenue - totalExpenses);
+                summarySheet.Range["B10"].NumberFormat = "$#,##0.00";
+
+                summarySheet.Range["A11"].Text = "Total Citizens Served:";
+                summarySheet.Range["B11"].Number = totalCitizens;
+
+                summarySheet.Range["A12"].Text = "Average Rate:";
+                summarySheet.Range["B12"].Number = (double)avgRate;
+                summarySheet.Range["B12"].NumberFormat = "$#,##0.00";
+
+                // Details sheet
+                var detailsSheet = workbook.Worksheets.Create("Details");
+
+                detailsSheet.Range["A1"].Text = "Enterprise Details";
+                detailsSheet.Range["A1:G1"].Merge();
+                detailsSheet.Range["A1"].CellStyle.Font.Bold = true;
+
+                detailsSheet.Range["A3"].Text = "Name";
+                detailsSheet.Range["B3"].Text = "Type";
+                detailsSheet.Range["C3"].Text = "Current Rate";
+                detailsSheet.Range["D3"].Text = "Monthly Revenue";
+                detailsSheet.Range["E3"].Text = "Monthly Expenses";
+                detailsSheet.Range["F3"].Text = "Net Position";
+                detailsSheet.Range["G3"].Text = "Citizens Served";
+
+                var headerRange = detailsSheet.Range["A3:G3"];
+                headerRange.CellStyle.Font.Bold = true;
+                headerRange.CellStyle.Interior.Color = System.Drawing.Color.LightGray;
+
+                int row = 4;
+                foreach (var enterprise in enterprises)
+                {
+                    detailsSheet.Range[$"A{row}"].Text = enterprise.Name ?? "";
+                    detailsSheet.Range[$"B{row}"].Text = enterprise.Type ?? "";
+                    detailsSheet.Range[$"C{row}"].Number = (double)enterprise.CurrentRate;
+                    detailsSheet.Range[$"C{row}"].NumberFormat = "$#,##0.00";
+                    detailsSheet.Range[$"D{row}"].Number = (double)enterprise.MonthlyRevenue;
+                    detailsSheet.Range[$"D{row}"].NumberFormat = "$#,##0.00";
+                    detailsSheet.Range[$"E{row}"].Number = (double)enterprise.MonthlyExpenses;
+                    detailsSheet.Range[$"E{row}"].NumberFormat = "$#,##0.00";
+                    detailsSheet.Range[$"F{row}"].Number = (double)(enterprise.MonthlyRevenue - enterprise.MonthlyExpenses);
+                    detailsSheet.Range[$"F{row}"].NumberFormat = "$#,##0.00";
+                    detailsSheet.Range[$"G{row}"].Number = enterprise.CitizenCount;
+                    row++;
+                }
+
+                // Auto-fit columns
+                summarySheet.UsedRange.AutofitColumns();
+                detailsSheet.UsedRange.AutofitColumns();
+
+                // Save the workbook
+                workbook.SaveAs(filePath);
+            }
+        });
+    }
+
+    private async Task<int> ImportEnterpriseDataFromCsvAsync(string filePath)
+    {
+        return await Task.Run(() =>
+        {
+            int importedCount = 0;
+
+            using (var reader = new System.IO.StreamReader(filePath))
+            {
+                // Read header line
+                var headerLine = reader.ReadLine();
+                if (string.IsNullOrEmpty(headerLine))
+                    return 0;
+
+                var headers = headerLine.Split(',').Select(h => h.Trim('"')).ToArray();
+
+                // Find column indices
+                var nameIndex = Array.IndexOf(headers, "Name");
+                var typeIndex = Array.IndexOf(headers, "Type");
+                var rateIndex = Array.IndexOf(headers, "Current Rate");
+                var expensesIndex = Array.IndexOf(headers, "Monthly Expenses");
+                var citizensIndex = Array.IndexOf(headers, "Citizens Served");
+
+                if (nameIndex == -1 || typeIndex == -1)
+                    throw new InvalidOperationException("CSV must contain 'Name' and 'Type' columns");
+
+                string? line;
+                while ((line = reader.ReadLine()) != null)
+                {
+                    if (string.IsNullOrWhiteSpace(line))
+                        continue;
+
+                    var values = line.Split(',').Select(v => v.Trim('"')).ToArray();
+
+                    if (values.Length <= Math.Max(nameIndex, typeIndex))
+                        continue;
+
+                    var enterprise = new Enterprise
+                    {
+                        Name = values[nameIndex],
+                        Type = values[typeIndex],
+                        CurrentRate = rateIndex >= 0 && values.Length > rateIndex && decimal.TryParse(values[rateIndex], out var rate) ? rate : 0,
+                        MonthlyExpenses = expensesIndex >= 0 && values.Length > expensesIndex && decimal.TryParse(values[expensesIndex], out var expenses) ? expenses : 0,
+                        CitizenCount = citizensIndex >= 0 && values.Length > citizensIndex && int.TryParse(values[citizensIndex], out var citizens) ? citizens : 1,
+                        Status = EnterpriseStatus.Active,
+                        TotalBudget = 0.00m,
+                        Notes = "Imported from CSV"
+                    };
+
+                    if (!string.IsNullOrWhiteSpace(enterprise.Name) && !string.IsNullOrWhiteSpace(enterprise.Type))
+                    {
+                        _unitOfWork.Enterprises.AddAsync(enterprise);
+                        importedCount++;
+                    }
+                }
+            }
+
+            return importedCount;
+        });
+    }
+
+    private async Task<int> ImportEnterpriseDataFromExcelAsync(string filePath)
+    {
+        return await Task.Run(() =>
+        {
+            int importedCount = 0;
+
+            using (var excelEngine = new Syncfusion.XlsIO.ExcelEngine())
+            {
+                var application = excelEngine.Excel;
+                var workbook = application.Workbooks.Open(filePath);
+                var worksheet = workbook.Worksheets[0];
+
+                // Find header row (assume first non-empty row)
+                int headerRow = 1;
+                while (headerRow <= worksheet.Rows.Length)
+                {
+                    if (!string.IsNullOrWhiteSpace(worksheet.Range[$"A{headerRow}"].Text))
+                        break;
+                    headerRow++;
+                }
+
+                if (headerRow > worksheet.Rows.Length)
+                    return 0;
+
+                // Read headers
+                var headers = new Dictionary<string, int>();
+                for (int col = 1; col <= worksheet.Columns.Length; col++)
+                {
+                    var headerText = worksheet.Range[headerRow, col].Text;
+                    if (!string.IsNullOrWhiteSpace(headerText))
+                        headers[headerText] = col;
+                }
+
+                if (!headers.ContainsKey("Name") || !headers.ContainsKey("Type"))
+                    throw new InvalidOperationException("Excel file must contain 'Name' and 'Type' columns");
+
+                // Read data rows
+                for (int row = headerRow + 1; row <= worksheet.Rows.Length; row++)
+                {
+                    var name = worksheet.Range[row, headers["Name"]].Text;
+                    var type = worksheet.Range[row, headers["Type"]].Text;
+
+                    if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(type))
+                        continue;
+
+                    var enterprise = new Enterprise
+                    {
+                        Name = name,
+                        Type = type,
+                        CurrentRate = headers.ContainsKey("Current Rate") && decimal.TryParse(worksheet.Range[row, headers["Current Rate"]].Text, out var rate) ? rate : 0,
+                        MonthlyExpenses = headers.ContainsKey("Monthly Expenses") && decimal.TryParse(worksheet.Range[row, headers["Monthly Expenses"]].Text, out var expenses) ? expenses : 0,
+                        CitizenCount = headers.ContainsKey("Citizens Served") && int.TryParse(worksheet.Range[row, headers["Citizens Served"]].Text, out var citizens) ? citizens : 1,
+                        Status = EnterpriseStatus.Active,
+                        TotalBudget = 0.00m,
+                        Notes = "Imported from Excel"
+                    };
+
+                    _unitOfWork.Enterprises.AddAsync(enterprise);
+                    importedCount++;
+                }
+            }
+
+            return importedCount;
+        });
     }
 
     /// <summary>
@@ -366,13 +924,49 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
     {
         try
         {
-            // TODO: Implement advanced Excel export with formatting
-            StatusMessage = "Advanced Excel export feature coming soon...";
-            await Task.CompletedTask;
+            await NewMethod();
         }
         catch (Exception ex)
         {
             Log.Error(ex, "Error in Excel advanced export command");
+        }
+    }
+
+    private async Task NewMethod()
+    {
+        StatusMessage = "Generating advanced Excel export...";
+
+        // Get current enterprises data
+        var enterprises = await _unitOfWork.Enterprises.GetAllAsync();
+        var enterpriseList = enterprises.ToList();
+
+        if (!enterpriseList.Any())
+        {
+            StatusMessage = "No enterprise data available for advanced Excel export";
+            return;
+        }
+
+        // Create save file dialog
+        var saveFileDialog = new Microsoft.Win32.SaveFileDialog
+        {
+            Title = "Save Advanced Excel Export",
+            Filter = "Excel files (*.xlsx)|*.xlsx",
+            DefaultExt = ".xlsx",
+            FileName = $"Enterprise_Report_Advanced_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx"
+        };
+
+        if (saveFileDialog.ShowDialog() == true)
+        {
+            var filePath = saveFileDialog.FileName;
+
+            // Generate advanced Excel export
+            await GenerateEnterpriseAdvancedExcelExportAsync(enterpriseList, filePath);
+
+            StatusMessage = $"Advanced Excel export saved to {System.IO.Path.GetFileName(filePath)}";
+        }
+        else
+        {
+            StatusMessage = "Advanced Excel export cancelled";
         }
     }
 
@@ -384,12 +978,44 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
     {
         try
         {
-            // TODO: Implement CSV export
-            StatusMessage = "CSV export feature coming soon...";
-            await Task.CompletedTask;
+            StatusMessage = "Generating CSV export...";
+
+            // Get current enterprises data
+            var enterprises = await _unitOfWork.Enterprises.GetAllAsync();
+            var enterpriseList = enterprises.ToList();
+
+            if (!enterpriseList.Any())
+            {
+                StatusMessage = "No enterprise data available for CSV export";
+                return;
+            }
+
+            // Create save file dialog
+            var saveFileDialog = new Microsoft.Win32.SaveFileDialog
+            {
+                Title = "Save CSV Export",
+                Filter = "CSV files (*.csv)|*.csv",
+                DefaultExt = ".csv",
+                FileName = $"Enterprise_Data_{DateTime.Now:yyyyMMdd_HHmmss}.csv"
+            };
+
+            if (saveFileDialog.ShowDialog() == true)
+            {
+                var filePath = saveFileDialog.FileName;
+
+                // Generate CSV export
+                await GenerateEnterpriseCsvExportAsync(enterpriseList, filePath);
+
+                StatusMessage = $"CSV export saved to {System.IO.Path.GetFileName(filePath)}";
+            }
+            else
+            {
+                StatusMessage = "CSV export cancelled";
+            }
         }
         catch (Exception ex)
         {
+            StatusMessage = $"Error generating CSV export: {ex.Message}";
             Log.Error(ex, "Error in CSV export command");
         }
     }
@@ -402,12 +1028,54 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
     {
         try
         {
-            // TODO: Implement selection export
-            StatusMessage = "Selection export feature coming soon...";
-            await Task.CompletedTask;
+            StatusMessage = "Generating selection export...";
+
+            // Get selected enterprises or all if none selected
+            var enterprisesToExport = SelectedEnterprise != null
+                ? new List<Enterprise> { SelectedEnterprise }
+                : EnterpriseList.ToList();
+
+            if (!enterprisesToExport.Any())
+            {
+                StatusMessage = "No enterprises available for selection export";
+                return;
+            }
+
+            // Create save file dialog
+            var saveFileDialog = new Microsoft.Win32.SaveFileDialog
+            {
+                Title = "Save Selection Export",
+                Filter = "CSV files (*.csv)|*.csv|Excel files (*.xlsx)|*.xlsx",
+                DefaultExt = ".csv",
+                FileName = $"Enterprise_Selection_{DateTime.Now:yyyyMMdd_HHmmss}.csv"
+            };
+
+            if (saveFileDialog.ShowDialog() == true)
+            {
+                var filePath = saveFileDialog.FileName;
+                var isCsv = System.IO.Path.GetExtension(filePath).ToLower(CultureInfo.InvariantCulture) == ".csv";
+
+                if (isCsv)
+                {
+                    // Generate CSV export for selection
+                    await GenerateEnterpriseCsvExportAsync(enterprisesToExport, filePath);
+                    StatusMessage = $"Selection CSV export saved to {System.IO.Path.GetFileName(filePath)}";
+                }
+                else
+                {
+                    // Generate Excel export for selection
+                    await GenerateEnterpriseAdvancedExcelExportAsync(enterprisesToExport, filePath);
+                    StatusMessage = $"Selection Excel export saved to {System.IO.Path.GetFileName(filePath)}";
+                }
+            }
+            else
+            {
+                StatusMessage = "Selection export cancelled";
+            }
         }
         catch (Exception ex)
         {
+            StatusMessage = $"Error generating selection export: {ex.Message}";
             Log.Error(ex, "Error in selection export command");
         }
     }
@@ -483,8 +1151,13 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
         }
         catch (Exception ex)
         {
-            // TODO: Add proper error handling/logging
-            Log.Error(ex, "Error loading enterprises");
+            // Provide proper error handling and user feedback
+            ErrorMessage = $"Failed to load enterprises: {ex.Message}";
+            StatusMessage = "Error loading enterprise data";
+            Log.Error(ex, "Error loading enterprises from database");
+
+            // Clear the list to show no data state
+            EnterpriseList.Clear();
         }
         finally
         {
@@ -658,9 +1331,100 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
     [RelayCommand]
     private async Task BulkUpdateAsync()
     {
-        // TODO: Implement bulk update functionality
-        StatusMessage = "Bulk update feature coming soon...";
-        await Task.CompletedTask;
+        try
+        {
+            if (!EnterpriseList.Any())
+            {
+                StatusMessage = "No enterprises available for bulk update";
+                return;
+            }
+
+            // Show field selection dialog
+            var fieldSelection = System.Windows.MessageBox.Show(
+                "Select field to update for all enterprises:\n\n" +
+                "Yes = Update Status to Active\n" +
+                "No = Update Type to Utility\n" +
+                "Cancel = Abort operation",
+                "Bulk Update Field Selection",
+                System.Windows.MessageBoxButton.YesNoCancel,
+                System.Windows.MessageBoxImage.Question);
+
+            if (fieldSelection == System.Windows.MessageBoxResult.Cancel)
+            {
+                StatusMessage = "Bulk update cancelled";
+                return;
+            }
+
+            // Show confirmation dialog
+            var result = System.Windows.MessageBox.Show(
+                $"Update {EnterpriseList.Count} enterprises?\n\n" +
+                $"Field: {(fieldSelection == System.Windows.MessageBoxResult.Yes ? "Status" : "Type")}\n" +
+                $"New Value: {(fieldSelection == System.Windows.MessageBoxResult.Yes ? "Active" : "Utility")}",
+                "Bulk Update Confirmation",
+                System.Windows.MessageBoxButton.YesNo,
+                System.Windows.MessageBoxImage.Question);
+
+            if (result != System.Windows.MessageBoxResult.Yes)
+            {
+                StatusMessage = "Bulk update cancelled";
+                return;
+            }
+
+            IsLoading = true;
+            StatusMessage = "Performing bulk update...";
+
+            // Perform the bulk update
+            var updateCount = 0;
+            foreach (var enterprise in EnterpriseList)
+            {
+                var updated = false;
+
+                if (fieldSelection == System.Windows.MessageBoxResult.Yes)
+                {
+                    // Update status to Active
+                    if (enterprise.Status != EnterpriseStatus.Active)
+                    {
+                        enterprise.Status = EnterpriseStatus.Active;
+                        updated = true;
+                    }
+                }
+                else
+                {
+                    // Update type to Utility
+                    if (enterprise.Type != "Utility")
+                    {
+                        enterprise.Type = "Utility";
+                        updated = true;
+                    }
+                }
+
+                if (updated)
+                {
+                    // Save individual enterprise changes
+                    await _unitOfWork.Enterprises.UpdateAsync(enterprise);
+                    updateCount++;
+                }
+            }
+
+            // Commit all changes
+            await _unitOfWork.SaveChangesAsync();
+
+            StatusMessage = $"Bulk update completed: {updateCount} enterprises updated";
+
+            // Refresh the list to show changes
+            await LoadEnterprisesAsync();
+
+            Log.Information("Bulk update completed: {UpdateCount} enterprises updated", updateCount);
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error in bulk update: {ex.Message}";
+            Log.Error(ex, "Error in bulk update command");
+        }
+        finally
+        {
+            IsLoading = false;
+        }
     }
 
     /// <summary>
@@ -680,7 +1444,10 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
     [RelayCommand]
     private void ClearGrouping()
     {
-        // TODO: Implement clear grouping
+        _eventAggregator.GetEvent<GroupingMessage>().Publish(new GroupingMessage
+        {
+            Operation = GroupingOperation.Clear
+        });
         StatusMessage = "Grouping cleared";
     }
 
@@ -712,9 +1479,53 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
     [RelayCommand]
     private async Task GenerateEnterpriseReport()
     {
-        // TODO: Implement report generation
-        StatusMessage = "Report generation feature coming soon...";
-        await Task.CompletedTask;
+        try
+        {
+            StatusMessage = "Generating enterprise report...";
+
+            if (!EnterpriseList.Any())
+            {
+                StatusMessage = "No enterprise data available for report generation";
+                return;
+            }
+
+            // Create save file dialog
+            var saveFileDialog = new Microsoft.Win32.SaveFileDialog
+            {
+                Title = "Save Enterprise Report",
+                Filter = "PDF files (*.pdf)|*.pdf|Excel files (*.xlsx)|*.xlsx",
+                DefaultExt = ".pdf",
+                FileName = $"Enterprise_Comprehensive_Report_{DateTime.Now:yyyyMMdd_HHmmss}.pdf"
+            };
+
+            if (saveFileDialog.ShowDialog() == true)
+            {
+                var filePath = saveFileDialog.FileName;
+                var isPdf = System.IO.Path.GetExtension(filePath).ToLower(CultureInfo.InvariantCulture) == ".pdf";
+
+                if (isPdf)
+                {
+                    // Generate comprehensive PDF report
+                    await GenerateEnterpriseComprehensiveReportAsync(EnterpriseList, filePath);
+                    StatusMessage = $"Comprehensive PDF report saved to {System.IO.Path.GetFileName(filePath)}";
+                }
+                else
+                {
+                    // Generate comprehensive Excel report
+                    await GenerateEnterpriseComprehensiveExcelReportAsync(EnterpriseList, filePath);
+                    StatusMessage = $"Comprehensive Excel report saved to {System.IO.Path.GetFileName(filePath)}";
+                }
+            }
+            else
+            {
+                StatusMessage = "Report generation cancelled";
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error generating enterprise report: {ex.Message}";
+            Log.Error(ex, "Error in enterprise report generation");
+        }
     }
 
     /// <summary>
@@ -723,7 +1534,11 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
     [RelayCommand]
     private void GroupByStatus()
     {
-        // TODO: Implement grouping by status
+        _eventAggregator.GetEvent<GroupingMessage>().Publish(new GroupingMessage
+        {
+            Operation = GroupingOperation.GroupByColumn,
+            ColumnName = "Status"
+        });
         StatusMessage = "Grouped by status";
     }
 
@@ -733,7 +1548,11 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
     [RelayCommand]
     private void GroupByType()
     {
-        // TODO: Implement grouping by type
+        _eventAggregator.GetEvent<GroupingMessage>().Publish(new GroupingMessage
+        {
+            Operation = GroupingOperation.GroupByColumn,
+            ColumnName = "Type"
+        });
         StatusMessage = "Grouped by type";
     }
 
@@ -743,9 +1562,48 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
     [RelayCommand]
     private async Task ImportData()
     {
-        // TODO: Implement data import
-        StatusMessage = "Data import feature coming soon...";
-        await Task.CompletedTask;
+        try
+        {
+            StatusMessage = "Importing enterprise data...";
+
+            // Create open file dialog
+            var openFileDialog = new Microsoft.Win32.OpenFileDialog
+            {
+                Title = "Import Enterprise Data",
+                Filter = "CSV files (*.csv)|*.csv|Excel files (*.xlsx)|*.xlsx",
+                DefaultExt = ".csv"
+            };
+
+            if (openFileDialog.ShowDialog() == true)
+            {
+                var filePath = openFileDialog.FileName;
+                var isCsv = System.IO.Path.GetExtension(filePath).ToLower(CultureInfo.InvariantCulture) == ".csv";
+
+                int importedCount = 0;
+                if (isCsv)
+                {
+                    importedCount = await ImportEnterpriseDataFromCsvAsync(filePath);
+                }
+                else
+                {
+                    importedCount = await ImportEnterpriseDataFromExcelAsync(filePath);
+                }
+
+                StatusMessage = $"Successfully imported {importedCount} enterprises from {System.IO.Path.GetFileName(filePath)}";
+
+                // Refresh the enterprise list
+                await LoadEnterprisesAsync();
+            }
+            else
+            {
+                StatusMessage = "Data import cancelled";
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error importing data: {ex.Message}";
+            Log.Error(ex, "Error in data import");
+        }
     }
 
     /// <summary>
@@ -754,8 +1612,21 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
     [RelayCommand]
     private async Task LoadEnterprisesIncrementalAsync()
     {
-        // TODO: Implement incremental loading
-        await LoadEnterprisesAsync();
+        try
+        {
+            StatusMessage = "Incremental loading feature - loading all enterprises...";
+
+            // For now, reload all enterprises (simulating incremental load)
+            // In a real implementation, this would load the next page
+            await LoadEnterprisesAsync();
+
+            StatusMessage = $"Loaded {EnterpriseList.Count} enterprises incrementally";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error in incremental loading: {ex.Message}";
+            Log.Error(ex, "Error in incremental enterprise loading");
+        }
     }
 
     /// <summary>

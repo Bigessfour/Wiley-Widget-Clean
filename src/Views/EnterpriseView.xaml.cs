@@ -6,10 +6,8 @@ using WileyWidget.Services;
 using WileyWidget.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using WileyWidget.Data;
-using Syncfusion.SfSkinManager;
-using Syncfusion.Windows.Shared;
-using Serilog;
-using BusinessInterfaces = WileyWidget.Business.Interfaces;
+using Syncfusion.UI.Xaml.Grid;
+using WileyWidget.ViewModels.Messages;
 
 namespace WileyWidget;
 
@@ -18,6 +16,8 @@ namespace WileyWidget;
 /// </summary>
 public partial class EnterpriseView : UserControl
 {
+    private IEventAggregator? _eventAggregator;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="EnterpriseView"/> class.
     /// Parameterless constructor for XAML designer and Prism region navigation.
@@ -39,7 +39,11 @@ public partial class EnterpriseView : UserControl
         if (viewModel != null)
         {
             DataContext = viewModel;
+            _eventAggregator = viewModel.EventAggregator; // Assuming ViewModel exposes EventAggregator
         }
+
+        // Subscribe to grouping messages
+        _eventAggregator?.GetEvent<GroupingMessage>().Subscribe(HandleGroupingMessage);
 
         // Load enterprises when window opens
         Loaded += async (s, e) =>
@@ -258,6 +262,34 @@ public partial class EnterpriseView : UserControl
                     }
                 }
             }
+        }
+    }
+
+    /// <summary>
+    /// Handles grouping messages to update the data grid grouping
+    /// </summary>
+    private void HandleGroupingMessage(GroupingMessage message)
+    {
+        if (EnterpriseDataGrid == null) return;
+
+        switch (message.Operation)
+        {
+            case GroupingOperation.Clear:
+                EnterpriseDataGrid.GroupColumnDescriptions.Clear();
+                break;
+            case GroupingOperation.GroupByColumn:
+                EnterpriseDataGrid.GroupColumnDescriptions.Clear();
+                if (!string.IsNullOrEmpty(message.ColumnName))
+                {
+                    EnterpriseDataGrid.GroupColumnDescriptions.Add(new GroupColumnDescription { ColumnName = message.ColumnName });
+                }
+                break;
+            case GroupingOperation.AddGroupByColumn:
+                if (!string.IsNullOrEmpty(message.ColumnName))
+                {
+                    EnterpriseDataGrid.GroupColumnDescriptions.Add(new GroupColumnDescription { ColumnName = message.ColumnName });
+                }
+                break;
         }
     }
 }
