@@ -6,6 +6,7 @@ using Syncfusion.SfSkinManager;
 using Syncfusion.Windows.Shared;
 using WileyWidget.Services;
 using WileyWidget.Data;
+using WileyWidget.Models;
 using Serilog;
 using Microsoft.Extensions.DependencyInjection;
 using BusinessInterfaces = WileyWidget.Business.Interfaces;
@@ -68,6 +69,47 @@ public partial class AIAssistView : UserControl
     private ViewModels.AIAssistViewModel? ViewModel
     {
         get => DataContext as ViewModels.AIAssistViewModel;
+    }
+
+    /// <summary>
+    /// Refresh live enterprise data from GrokSupercomputer
+    /// </summary>
+    private async void OnRefreshLiveDataClick(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel == null) return;
+
+        try
+        {
+            Log.Information("Refreshing live enterprise data from GrokSupercomputer");
+
+            // Fetch latest enterprise data
+            var reportData = await ViewModel.GrokSupercomputer.FetchEnterpriseDataAsync();
+
+            // Add system message to chat using the correct ChatMessage from WileyWidget.Models
+            var systemMessage = new { 
+                Author = new { Name = "System" },
+                Text = $"✓ Live data refreshed: {reportData?.EnterpriseCount ?? 0} enterprises loaded. Context updated with latest municipal data.",
+                DateTime = DateTime.Now
+            };
+
+            ViewModel.Responses.Add(systemMessage);
+
+            Log.Information("Live data refresh completed: {Count} enterprises", reportData?.EnterpriseCount ?? 0);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error refreshing live enterprise data");
+            
+            if (ViewModel != null)
+            {
+                var errorMessage = new {
+                    Author = new { Name = "System" },
+                    Text = $"⚠ Error refreshing data: {ex.Message}",
+                    DateTime = DateTime.Now
+                };
+                ViewModel.Responses.Add(errorMessage);
+            }
+        }
     }
 
     /// <summary>

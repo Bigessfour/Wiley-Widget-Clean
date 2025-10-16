@@ -11,13 +11,13 @@ namespace WileyWidget.Models
     /// </summary>
     public class KPI : INotifyPropertyChanged
     {
-        private string _name;
+        private string? _name;
         private double _value;
 
         /// <summary>
         /// Gets or sets the name of the KPI.
         /// </summary>
-        public string Name
+        public string? Name
         {
             get => _name;
             set
@@ -49,7 +49,7 @@ namespace WileyWidget.Models
         /// <summary>
         /// Occurs when a property value changes.
         /// </summary>
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         /// <summary>
         /// Raises the PropertyChanged event.
@@ -172,7 +172,7 @@ namespace WileyWidget.Models
         /// <summary>
         /// Occurs when a property value changes.
         /// </summary>
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         /// <summary>
         /// Raises the PropertyChanged event.

@@ -730,7 +730,8 @@ public static class DatabaseConfiguration
             {
                 var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
                 var contextService = sp.GetRequiredService<IWileyWidgetContextService>();
-                return new XAIService(httpClientFactory, configuration, sp.GetRequiredService<ILogger<XAIService>>(), contextService);
+                var aiLoggingService = sp.GetRequiredService<IAILoggingService>();
+                return new XAIService(httpClientFactory, configuration, sp.GetRequiredService<ILogger<XAIService>>(), contextService, aiLoggingService);
         }
         catch (Exception ex)
         {

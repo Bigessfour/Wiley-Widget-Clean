@@ -33,15 +33,15 @@ namespace WileyWidget.Models
     /// </summary>
     public class ComplianceViolation : INotifyPropertyChanged
     {
-        private string _regulation;
-        private string _description;
+        private string? _regulation;
+        private string? _description;
         private ViolationSeverity _severity;
-        private string _correctiveAction;
+        private string? _correctiveAction;
 
         /// <summary>
         /// Gets or sets the regulation that was violated.
         /// </summary>
-        public string Regulation
+        public string? Regulation
         {
             get => _regulation;
             set
@@ -57,7 +57,7 @@ namespace WileyWidget.Models
         /// <summary>
         /// Gets or sets the description of the violation.
         /// </summary>
-        public string Description
+        public string? Description
         {
             get => _description;
             set
@@ -89,7 +89,7 @@ namespace WileyWidget.Models
         /// <summary>
         /// Gets or sets the recommended corrective action.
         /// </summary>
-        public string CorrectiveAction
+        public string? CorrectiveAction
         {
             get => _correctiveAction;
             set
@@ -105,7 +105,7 @@ namespace WileyWidget.Models
         /// <summary>
         /// Occurs when a property value changes.
         /// </summary>
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         /// <summary>
         /// Raises the PropertyChanged event.
@@ -122,14 +122,14 @@ namespace WileyWidget.Models
     /// </summary>
     public class ComplianceItem : INotifyPropertyChanged
     {
-        private string _name;
+        private string? _name;
         private ComplianceStatus _status;
-        private string _description;
+        private string? _description;
 
         /// <summary>
         /// Gets or sets the name of the compliance item.
         /// </summary>
-        public string Name
+        public string? Name
         {
             get => _name;
             set
@@ -161,7 +161,7 @@ namespace WileyWidget.Models
         /// <summary>
         /// Gets or sets the description of the compliance item.
         /// </summary>
-        public string Description
+        public string? Description
         {
             get => _description;
             set
@@ -177,7 +177,7 @@ namespace WileyWidget.Models
         /// <summary>
         /// Occurs when a property value changes.
         /// </summary>
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         /// <summary>
         /// Raises the PropertyChanged event.

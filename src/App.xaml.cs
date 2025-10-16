@@ -299,12 +299,29 @@ namespace WileyWidget
             
             try
             {
+                // 0. Register IDataAnonymizerService -> DataAnonymizerService (Singleton)
+                // Provides privacy-compliant data anonymization for AI operations
+                containerRegistry.RegisterSingleton<IDataAnonymizerService, DataAnonymizerService>();
+                Log.Information("✓ Registered IDataAnonymizerService -> DataAnonymizerService (Singleton)");
+                Log.Information("  - Provides GDPR-compliant data anonymization");
+                Log.Information("  - Features: Enterprise anonymization, budget data masking, deterministic hashing");
+                Log.Information("  - Dependencies: ILogger<DataAnonymizerService>");
+                
                 // 1. Register IWileyWidgetContextService -> WileyWidgetContextService (Singleton)
                 // Provides dynamic context building for AI operations including system state, enterprises, budgets, and operations
                 containerRegistry.RegisterSingleton<IWileyWidgetContextService, WileyWidgetContextService>();
                 Log.Information("✓ Registered IWileyWidgetContextService -> WileyWidgetContextService (Singleton)");
-                Log.Information("  - Provides dynamic context for AI operations");
-                Log.Information("  - Dependencies: ILogger<WileyWidgetContextService>, IEnterpriseRepository, IBudgetRepository, IAuditRepository");
+                Log.Information("  - Provides dynamic context for AI operations with anonymization support");
+                Log.Information("  - Dependencies: ILogger<WileyWidgetContextService>, IEnterpriseRepository, IBudgetRepository, IAuditRepository, IDataAnonymizerService");
+                
+                // 1.5. Register IAILoggingService -> AILoggingService (Singleton)
+                // AI usage tracking and logging service for monitoring XAI operations
+                containerRegistry.RegisterSingleton<IAILoggingService, AILoggingService>();
+                Log.Information("✓ Registered IAILoggingService -> AILoggingService (Singleton)");
+                Log.Information("  - AI usage tracking and monitoring service");
+                Log.Information("  - Features: Query/response logging, error tracking, usage metrics, statistics");
+                Log.Information("  - Logging: Dedicated Serilog file sink at logs/ai-usage.log");
+                Log.Information("  - Dependencies: ILogger<AILoggingService>");
                 
                 // 2. Register IGrokSupercomputer -> GrokSupercomputer (Singleton)
                 // AI-powered municipal utility analytics and compliance reporting engine
@@ -312,15 +329,15 @@ namespace WileyWidget
                 Log.Information("✓ Registered IGrokSupercomputer -> GrokSupercomputer (Singleton)");
                 Log.Information("  - AI-powered municipal utility analytics engine");
                 Log.Information("  - Capabilities: Enterprise data fetching, report calculations, budget analysis, compliance reporting");
-                Log.Information("  - Dependencies: ILogger<GrokSupercomputer>, IEnterpriseRepository, IBudgetRepository, IAuditRepository");
+                Log.Information("  - Dependencies: ILogger<GrokSupercomputer>, IEnterpriseRepository, IBudgetRepository, IAuditRepository, IAILoggingService");
                 
-                // 3. Register IAIService -> XAIService (Singleton) - Enhanced with context service
+                // 3. Register IAIService -> XAIService (Singleton) - Enhanced with context service and logging
                 // xAI service implementation for AI-powered insights and analysis with Grok integration
                 containerRegistry.RegisterSingleton<IAIService, XAIService>();
                 Log.Information("✓ Registered IAIService -> XAIService (Singleton) [Enhanced]");
                 Log.Information("  - xAI/Grok integration for AI-powered insights");
                 Log.Information("  - Features: Insights, data analysis, area review, mock data generation");
-                Log.Information("  - Dependencies: IHttpClientFactory, IConfiguration, ILogger<XAIService>, IWileyWidgetContextService");
+                Log.Information("  - Dependencies: IHttpClientFactory, IConfiguration, ILogger<XAIService>, IWileyWidgetContextService, IAILoggingService");
                 Log.Information("  - Configuration: XAI:ApiKey, XAI:BaseUrl, XAI:Model, XAI:TimeoutSeconds");
                 
                 // 4. Validate AI service configuration

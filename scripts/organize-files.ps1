@@ -8,7 +8,7 @@
 .DESCRIPTION
     This script moves files from the root directory into organized subdirectories,
     creates new directory structure, and cleans up temporary files.
-    
+
     Uses git mv when possible to preserve file history.
 
 .PARAMETER DryRun
@@ -38,10 +38,10 @@ param(
 $ErrorActionPreference = "Stop"
 
 # Color output functions
-function Write-Success { param($Message) Write-Host "✅ $Message" -ForegroundColor Green }
-function Write-Info { param($Message) Write-Host "ℹ️  $Message" -ForegroundColor Cyan }
-function Write-Warning { param($Message) Write-Host "⚠️  $Message" -ForegroundColor Yellow }
-function Write-Error { param($Message) Write-Host "❌ $Message" -ForegroundColor Red }
+function Write-Success { param($Message) Write-Output "✅ $Message" }
+function Write-Info { param($Message) Write-Output "ℹ️  $Message" }
+function WriteColoredWarning { param($Message) Write-Output "⚠️  $Message" }
+function WriteColoredError { param($Message) Write-Output "❌ $Message" }
 
 function Move-FileOrDir {
     param(
@@ -49,80 +49,89 @@ function Move-FileOrDir {
         [string]$Destination,
         [string]$Description
     )
-    
+
     if (-not (Test-Path $Source)) {
-        Write-Warning "$Description - Source not found: $Source"
+        WriteColoredWarning "$Description - Source not found: $Source"
         return
     }
-    
+
     $destDir = Split-Path $Destination -Parent
     if ($destDir -and -not (Test-Path $destDir)) {
         if ($DryRun) {
             Write-Info "[DRY RUN] Would create directory: $destDir"
-        } else {
+        }
+        else {
             New-Item -ItemType Directory -Path $destDir -Force | Out-Null
             Write-Info "Created directory: $destDir"
         }
     }
-    
+
     if ($DryRun) {
         Write-Info "[DRY RUN] Would move: $Source → $Destination"
-    } else {
+    }
+    else {
         try {
             if ($UseGit -and (Test-Path ".git")) {
                 git mv "$Source" "$Destination" 2>&1 | Out-Null
                 Write-Success "Moved (git): $Description"
-            } else {
+            }
+            else {
                 Move-Item -Path $Source -Destination $Destination -Force
                 Write-Success "Moved: $Description"
             }
-        } catch {
-            Write-Warning "Failed to move $Description : $($_.Exception.Message)"
+        }
+        catch {
+            WriteColoredWarning "Failed to move $Description : $($_.Exception.Message)"
         }
     }
 }
 
 function Remove-FileOrDir {
+    [CmdletBinding(SupportsShouldProcess = $true)]
     param(
         [string]$Path,
         [string]$Description
     )
-    
+
     if (-not (Test-Path $Path)) {
         return
     }
-    
+
     if ($DryRun) {
         Write-Info "[DRY RUN] Would delete: $Path"
-    } else {
-        try {
-            Remove-Item -Path $Path -Recurse -Force
-            Write-Success "Deleted: $Description"
-        } catch {
-            Write-Warning "Failed to delete $Description : $($_.Exception.Message)"
+    }
+    else {
+        if ($PSCmdlet.ShouldProcess($Path, "Remove $Description")) {
+            try {
+                Remove-Item -Path $Path -Recurse -Force
+                Write-Success "Deleted: $Description"
+            }
+            catch {
+                WriteColoredWarning "Failed to delete $Description : $($_.Exception.Message)"
+            }
         }
     }
 }
 
-Write-Host ""
-Write-Host "═══════════════════════════════════════════════════════" -ForegroundColor Cyan
-Write-Host "  WileyWidget File Organization Script" -ForegroundColor Cyan
-Write-Host "═══════════════════════════════════════════════════════" -ForegroundColor Cyan
-Write-Host ""
+Write-Output ""
+Write-Output "═══════════════════════════════════════════════════════"
+Write-Output "  WileyWidget File Organization Script"
+Write-Output "═══════════════════════════════════════════════════════"
+Write-Output ""
 
 if ($DryRun) {
-    Write-Warning "DRY RUN MODE - No changes will be made"
-    Write-Host ""
+    WriteColoredWarning "DRY RUN MODE - No changes will be made"
+    Write-Output ""
 }
 
 # Check if we're in the right directory
 if (-not (Test-Path "WileyWidget.sln")) {
-    Write-Error "This script must be run from the WileyWidget project root directory"
+    WriteColoredError "This script must be run from the WileyWidget project root directory"
     exit 1
 }
 
 Write-Info "Creating new directory structure..."
-Write-Host ""
+Write-Output ""
 
 # Create directory structure
 $directories = @(
@@ -142,78 +151,79 @@ foreach ($dir in $directories) {
     if (-not (Test-Path $dir)) {
         if ($DryRun) {
             Write-Info "[DRY RUN] Would create: $dir"
-        } else {
+        }
+        else {
             New-Item -ItemType Directory -Path $dir -Force | Out-Null
             Write-Success "Created: $dir"
         }
     }
 }
 
-Write-Host ""
+Write-Output ""
 Write-Info "Moving documentation files..."
-Write-Host ""
+Write-Output ""
 
 # Move documentation files
-Move-FileOrDir "AI_Integration_Plan.md" "docs/architecture/AI_Integration_Plan.md" "AI Integration Plan"
-Move-FileOrDir "AI_INTEGRATION_DI_STATUS.md" "docs/architecture/AI_INTEGRATION_DI_STATUS.md" "AI Integration DI Status"
-Move-FileOrDir "LOGGING_ENHANCEMENTS.md" "docs/architecture/LOGGING_ENHANCEMENTS.md" "Logging Enhancements"
-Move-FileOrDir "quickbooks-registration-guide.md" "docs/guides/quickbooks-registration-guide.md" "QuickBooks Registration Guide"
-Move-FileOrDir "QUICKBOOKS-SETUP.md" "docs/guides/QUICKBOOKS-SETUP.md" "QuickBooks Setup Guide"
-Move-FileOrDir "COMMAND_REVIEW_REPORT.md" "docs/reports/COMMAND_REVIEW_REPORT.md" "Command Review Report"
-Move-FileOrDir "fetchability-resources.json" "docs/analysis/fetchability-resources.json" "Fetchability Resources"
+Move-FileOrDir -Source "AI_Integration_Plan.md" -Destination "docs/architecture/AI_Integration_Plan.md" -Description "AI Integration Plan"
+Move-FileOrDir -Source "AI_INTEGRATION_DI_STATUS.md" -Destination "docs/architecture/AI_INTEGRATION_DI_STATUS.md" -Description "AI Integration DI Status"
+Move-FileOrDir -Source "LOGGING_ENHANCEMENTS.md" -Destination "docs/architecture/LOGGING_ENHANCEMENTS.md" -Description "Logging Enhancements"
+Move-FileOrDir -Source "quickbooks-registration-guide.md" -Destination "docs/guides/quickbooks-registration-guide.md" -Description "QuickBooks Registration Guide"
+Move-FileOrDir -Source "QUICKBOOKS-SETUP.md" -Destination "docs/guides/QUICKBOOKS-SETUP.md" -Description "QuickBooks Setup Guide"
+Move-FileOrDir -Source "COMMAND_REVIEW_REPORT.md" -Destination "docs/reports/COMMAND_REVIEW_REPORT.md" -Description "Command Review Report"
+Move-FileOrDir -Source "fetchability-resources.json" -Destination "docs/analysis/fetchability-resources.json" -Description "Fetchability Resources"
 # Note: repomix-output.md and repomix-output.xml remain in root per user preference
-Move-FileOrDir "wiley-widget-llm.txt" "docs/analysis/wiley-widget-llm.txt" "LLM Context File"
+Move-FileOrDir -Source "wiley-widget-llm.txt" -Destination "docs/analysis/wiley-widget-llm.txt" -Description "LLM Context File"
 
-Write-Host ""
+Write-Output ""
 Write-Info "Moving script files..."
-Write-Host ""
+Write-Output ""
 
 # Move scripts
-Move-FileOrDir "setup-quickbooks-sandbox.ps1" "scripts/quickbooks/setup-quickbooks-sandbox.ps1" "QuickBooks Sandbox Setup"
-Move-FileOrDir "setup-town-of-wiley.ps1" "scripts/quickbooks/setup-town-of-wiley.ps1" "Town of Wiley Setup"
-Move-FileOrDir "test-qbo-keyvault-integration.ps1" "scripts/quickbooks/test-qbo-keyvault-integration.ps1" "QBO KeyVault Test"
-Move-FileOrDir "test-quickbooks-connection.ps1" "scripts/quickbooks/test-quickbooks-connection.ps1" "QuickBooks Connection Test"
-Move-FileOrDir "run-dashboard-tests.ps1" "scripts/testing/run-dashboard-tests.ps1" "Dashboard Tests"
+Move-FileOrDir -Source "setup-quickbooks-sandbox.ps1" -Destination "scripts/quickbooks/setup-quickbooks-sandbox.ps1" -Description "QuickBooks Sandbox Setup"
+Move-FileOrDir -Source "setup-town-of-wiley.ps1" -Destination "scripts/quickbooks/setup-town-of-wiley.ps1" -Description "Town of Wiley Setup"
+Move-FileOrDir -Source "test-qbo-keyvault-integration.ps1" -Destination "scripts/quickbooks/test-qbo-keyvault-integration.ps1" -Description "QBO KeyVault Test"
+Move-FileOrDir -Source "test-quickbooks-connection.ps1" -Destination "scripts/quickbooks/test-quickbooks-connection.ps1" -Description "QuickBooks Connection Test"
+Move-FileOrDir -Source "run-dashboard-tests.ps1" -Destination "scripts/testing/run-dashboard-tests.ps1" -Description "Dashboard Tests"
 
-Write-Host ""
+Write-Output ""
 Write-Info "Moving Docker files..."
-Write-Host ""
+Write-Output ""
 
 # Move Docker files
-Move-FileOrDir "docker-compose.regionviewregistry-tests.yml" "docker/docker-compose.regionviewregistry-tests.yml" "Docker Compose (RegionView)"
-Move-FileOrDir "docker-compose.test.yml" "docker/docker-compose.test.yml" "Docker Compose (Tests)"
-Move-FileOrDir "Dockerfile.regionviewregistry-tests" "docker/Dockerfile.regionviewregistry-tests" "Dockerfile (RegionView Tests)"
-Move-FileOrDir "Dockerfile.test" "docker/Dockerfile.test" "Dockerfile (Tests)"
-Move-FileOrDir "Dockerfile.test-regionviewregistry" "docker/Dockerfile.test-regionviewregistry" "Dockerfile (Test RegionView)"
+Move-FileOrDir -Source "docker-compose.regionviewregistry-tests.yml" -Destination "docker/docker-compose.regionviewregistry-tests.yml" -Description "Docker Compose (RegionView)"
+Move-FileOrDir -Source "docker-compose.test.yml" -Destination "docker/docker-compose.test.yml" -Description "Docker Compose (Tests)"
+Move-FileOrDir -Source "Dockerfile.regionviewregistry-tests" -Destination "docker/Dockerfile.regionviewregistry-tests" -Description "Dockerfile (RegionView Tests)"
+Move-FileOrDir -Source "Dockerfile.test" -Destination "docker/Dockerfile.test" -Description "Dockerfile (Tests)"
+Move-FileOrDir -Source "Dockerfile.test-regionviewregistry" -Destination "docker/Dockerfile.test-regionviewregistry" -Description "Dockerfile (Test RegionView)"
 
-Write-Host ""
+Write-Output ""
 Write-Info "Moving test files..."
-Write-Host ""
+Write-Output ""
 
 # Move test files
-Move-FileOrDir "QuickBooksStructureTest.cs" "tests/integration/QuickBooksStructureTest.cs" "QuickBooks Structure Test"
+Move-FileOrDir -Source "QuickBooksStructureTest.cs" -Destination "tests/integration/QuickBooksStructureTest.cs" -Description "QuickBooks Structure Test"
 
-Write-Host ""
+Write-Output ""
 Write-Info "Moving configuration files..."
-Write-Host ""
+Write-Output ""
 
 # Move configuration
-Move-FileOrDir ".env.production.sample" "config/.env.production.sample" "Production Environment Sample"
+Move-FileOrDir -Source ".env.production.sample" -Destination "config/.env.production.sample" -Description "Production Environment Sample"
 
-Write-Host ""
+Write-Output ""
 Write-Info "Moving database files..."
-Write-Host ""
+Write-Output ""
 
 # Move database files
-Move-FileOrDir "WileyWidgetDev.db" "data/WileyWidgetDev.db" "Development Database"
-Move-FileOrDir "DatabaseSetup" "data/DatabaseSetup" "Database Setup Scripts"
-Move-FileOrDir "DatabaseTest" "data/tests/DatabaseTest" "Database Tests"
+Move-FileOrDir -Source "WileyWidgetDev.db" -Destination "data/WileyWidgetDev.db" -Description "Development Database"
+Move-FileOrDir -Source "DatabaseSetup" -Destination "data/DatabaseSetup" -Description "Database Setup Scripts"
+Move-FileOrDir -Source "DatabaseTest" -Destination "data/tests/DatabaseTest" -Description "Database Tests"
 
 if (-not $SkipCleanup) {
-    Write-Host ""
+    Write-Output ""
     Write-Info "Cleaning up temporary files..."
-    Write-Host ""
-    
+    Write-Output ""
+
     # Delete temporary/build files
     Remove-FileOrDir "build-detailed.log" "Build Detailed Log"
     Remove-FileOrDir "build-diag.txt" "Build Diagnostics"
@@ -224,34 +234,36 @@ if (-not $SkipCleanup) {
     Remove-FileOrDir "startup-performance-results.json" "Startup Performance Results"
     Remove-FileOrDir ".packages.lastmodified" "Packages Last Modified"
     Remove-FileOrDir ".coverage" "Coverage File"
-    
+
     # Delete build artifact directories
     Remove-FileOrDir ".buildcache" "Build Cache Directory"
     Remove-FileOrDir ".tmp.drivedownload" "Temp Drive Download"
     Remove-FileOrDir ".tmp.driveupload" "Temp Drive Upload"
-} else {
+}
+else {
     Write-Info "Skipping cleanup (--SkipCleanup specified)"
 }
 
-Write-Host ""
-Write-Host "═══════════════════════════════════════════════════════" -ForegroundColor Green
+Write-Output ""
+Write-Output "═══════════════════════════════════════════════════════"
 Write-Success "File organization complete!"
-Write-Host "═══════════════════════════════════════════════════════" -ForegroundColor Green
-Write-Host ""
+Write-Output "═══════════════════════════════════════════════════════"
+Write-Output ""
 
 if ($DryRun) {
-    Write-Warning "This was a DRY RUN - no changes were made"
+    WriteColoredWarning "This was a DRY RUN - no changes were made"
     Write-Info "Run without -DryRun to execute the changes"
-} else {
+}
+else {
     Write-Info "Verify changes with: git status"
-    
+
     if ($UseGit) {
         Write-Info "Files moved using git mv - commit the changes"
-        Write-Host ""
-        Write-Host "Next steps:" -ForegroundColor Yellow
-        Write-Host "  1. Review changes: git status" -ForegroundColor White
-        Write-Host "  2. Commit changes: git commit -m 'refactor: organize project files into proper structure'" -ForegroundColor White
+        Write-Output ""
+        Write-Output "Next steps:"
+        Write-Output "  1. Review changes: git status"
+        Write-Output "  2. Commit changes: git commit -m 'refactor: organize project files into proper structure'"
     }
 }
 
-Write-Host ""
+Write-Output ""

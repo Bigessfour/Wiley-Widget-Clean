@@ -22,16 +22,23 @@ public class XAIService : IAIService, IDisposable
     private readonly ILogger<XAIService> _logger;
     private readonly IConfiguration _configuration;
     private readonly IWileyWidgetContextService _contextService;
+    private readonly IAILoggingService _aiLoggingService;
     private bool _disposed;
 
     /// <summary>
     /// Constructor with dependency injection
     /// </summary>
-    public XAIService(IHttpClientFactory httpClientFactory, IConfiguration configuration, ILogger<XAIService> logger, IWileyWidgetContextService contextService)
+    public XAIService(
+        IHttpClientFactory httpClientFactory, 
+        IConfiguration configuration, 
+        ILogger<XAIService> logger, 
+        IWileyWidgetContextService contextService,
+        IAILoggingService aiLoggingService)
     {
         _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _contextService = contextService ?? throw new ArgumentNullException(nameof(contextService));
+        _aiLoggingService = aiLoggingService ?? throw new ArgumentNullException(nameof(aiLoggingService));
         
         _apiKey = configuration["XAI:ApiKey"] ?? throw new ArgumentNullException("XAI:ApiKey", "XAI API key not configured");
 
@@ -65,10 +72,16 @@ public class XAIService : IAIService, IDisposable
         if (string.IsNullOrWhiteSpace(question))
             throw new ArgumentException("Question cannot be null or empty", nameof(question));
 
+        var startTime = DateTime.UtcNow;
+        var model = _configuration["XAI:Model"] ?? "grok-4-0709";
+
         try
         {
             var systemContext = await _contextService.BuildCurrentSystemContextAsync(cancellationToken);
-            var model = _configuration["XAI:Model"] ?? "grok-4-0709";
+            
+            // Log the query
+            _aiLoggingService.LogQuery(question, $"{context} | {systemContext}", model);
+            
             var request = new
             {
                 messages = new[]
@@ -98,6 +111,7 @@ public class XAIService : IAIService, IDisposable
             if (result?.error != null)
             {
                 Log.Error("xAI API error: {ErrorType} - {ErrorMessage}", result.error.type, result.error.message);
+                _aiLoggingService.LogError(question, result.error.message, result.error.type ?? "API Error");
                 return $"API error: {result.error.message}";
             }
 
@@ -106,32 +120,40 @@ public class XAIService : IAIService, IDisposable
                 var content = result.choices[0].message?.content;
                 if (!string.IsNullOrEmpty(content))
                 {
+                    var responseTimeMs = (long)(DateTime.UtcNow - startTime).TotalMilliseconds;
+                    _aiLoggingService.LogResponse(question, content, responseTimeMs, 0);
+                    
                     Log.Information("Successfully received xAI response for question: {Question}", question);
                     return content;
                 }
             }
 
             Log.Warning("xAI API returned empty or invalid response");
+            _aiLoggingService.LogError(question, "Empty or invalid response from XAI API", "Empty Response");
             return "I apologize, but I received an empty response. Please try rephrasing your question.";
         }
         catch (InvalidOperationException ex)
         {
             Log.Error(ex, "xAI API authentication failed: {Message}", ex.Message);
+            _aiLoggingService.LogError(question, ex);
             return "Authentication failed. Please check your API key configuration.";
         }
         catch (HttpRequestException ex)
         {
             Log.Error(ex, "Network error calling xAI API: {Message}", ex.Message);
+            _aiLoggingService.LogError(question, ex);
             return "I'm experiencing network connectivity issues. Please check your internet connection and try again.";
         }
         catch (TaskCanceledException ex)
         {
             Log.Error(ex, "xAI API request timed out after {TimeoutSeconds} seconds", _httpClient.Timeout.TotalSeconds);
+            _aiLoggingService.LogError(question, $"Request timed out after {_httpClient.Timeout.TotalSeconds} seconds", "Timeout");
             return $"The request timed out after {_httpClient.Timeout.TotalSeconds} seconds. The xAI service may be experiencing high load. Please try again later.";
         }
         catch (Exception ex)
         {
             Log.Error(ex, "Unexpected error in xAI service: {Message}", ex.Message);
+            _aiLoggingService.LogError(question, ex);
             return "I encountered an unexpected error. Please try again later.";
         }
     }

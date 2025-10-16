@@ -21,6 +21,7 @@ public class GrokSupercomputer : IGrokSupercomputer
     private readonly IEnterpriseRepository _enterpriseRepository;
     private readonly IBudgetRepository _budgetRepository;
     private readonly IAuditRepository _auditRepository;
+    private readonly IAILoggingService _aiLoggingService;
 
     /// <summary>
     /// Initializes a new instance of the GrokSupercomputer class
@@ -29,16 +30,19 @@ public class GrokSupercomputer : IGrokSupercomputer
     /// <param name="enterpriseRepository">Repository for enterprise data</param>
     /// <param name="budgetRepository">Repository for budget data</param>
     /// <param name="auditRepository">Repository for audit data</param>
+    /// <param name="aiLoggingService">AI logging service for tracking operations</param>
     public GrokSupercomputer(
         ILogger<GrokSupercomputer> logger,
         IEnterpriseRepository enterpriseRepository,
         IBudgetRepository budgetRepository,
-        IAuditRepository auditRepository)
+        IAuditRepository auditRepository,
+        IAILoggingService aiLoggingService)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _enterpriseRepository = enterpriseRepository ?? throw new ArgumentNullException(nameof(enterpriseRepository));
         _budgetRepository = budgetRepository ?? throw new ArgumentNullException(nameof(budgetRepository));
         _auditRepository = auditRepository ?? throw new ArgumentNullException(nameof(auditRepository));
+        _aiLoggingService = aiLoggingService ?? throw new ArgumentNullException(nameof(aiLoggingService));
     }
 
     /// <summary>
@@ -54,8 +58,17 @@ public class GrokSupercomputer : IGrokSupercomputer
     {
         try
         {
+            var operationStart = DateTime.UtcNow;
             _logger.LogInformation("Fetching enterprise data for enterprise {EnterpriseId} with filters: startDate={StartDate}, endDate={EndDate}, filter={Filter}",
                 enterpriseId, startDate, endDate, filter);
+
+            // Log operation metrics
+            _aiLoggingService.LogMetric("GrokSupercomputer.FetchEnterpriseData", 1, new Dictionary<string, object>
+            {
+                ["EnterpriseId"] = enterpriseId?.ToString() ?? "All",
+                ["HasDateFilter"] = startDate.HasValue || endDate.HasValue,
+                ["HasTextFilter"] = !string.IsNullOrEmpty(filter)
+            });
 
             var reportData = new ReportData
             {
@@ -102,14 +115,26 @@ public class GrokSupercomputer : IGrokSupercomputer
                 // Implement filtering logic based on filter string
             }
 
-            _logger.LogInformation("Successfully fetched enterprise data with {DepartmentCount} departments, {FundCount} funds, {AuditCount} audit entries",
-                reportData.Departments?.Count ?? 0, reportData.Funds?.Count ?? 0, reportData.AuditEntries?.Count() ?? 0);
+            var operationTime = (long)(DateTime.UtcNow - operationStart).TotalMilliseconds;
+            
+            // Log performance metrics
+            _aiLoggingService.LogMetric("GrokSupercomputer.FetchEnterpriseData.ResponseTime", operationTime, new Dictionary<string, object>
+            {
+                ["DepartmentCount"] = reportData.Departments?.Count ?? 0,
+                ["FundCount"] = reportData.Funds?.Count ?? 0,
+                ["AuditCount"] = reportData.AuditEntries?.Count() ?? 0,
+                ["Success"] = true
+            });
+
+            _logger.LogInformation("Successfully fetched enterprise data with {DepartmentCount} departments, {FundCount} funds, {AuditCount} audit entries in {Duration}ms",
+                reportData.Departments?.Count ?? 0, reportData.Funds?.Count ?? 0, reportData.AuditEntries?.Count() ?? 0, operationTime);
 
             return reportData;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error fetching enterprise data for enterprise {EnterpriseId}", enterpriseId);
+            _aiLoggingService.LogError("FetchEnterpriseData", ex);
             throw;
         }
     }

@@ -48,6 +48,11 @@ namespace WileyWidget.Models
         public decimal AverageBudgetVariance => Enterprises?.Any() == true ? Enterprises.Average(e => e.CalculateBreakEvenVariance()) : 0;
 
         /// <summary>
+        /// Gets the count of enterprises in the report.
+        /// </summary>
+        public int EnterpriseCount => Enterprises?.Count ?? 0;
+
+        /// <summary>
         /// Occurs when a property value changes.
         /// </summary>
         public event PropertyChangedEventHandler PropertyChanged;

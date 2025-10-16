@@ -49,7 +49,7 @@ namespace WileyWidget.Models
         /// <summary>
         /// Occurs when a property value changes.
         /// </summary>
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         /// <summary>
         /// Raises the PropertyChanged event.
@@ -144,7 +144,7 @@ namespace WileyWidget.Models
         /// <summary>
         /// Gets or sets the variance analysis as a dictionary of string keys and double values.
         /// </summary>
-        public Dictionary<string, double> VarianceAnalysis
+        public new Dictionary<string, double> VarianceAnalysis
         {
             get => _varianceAnalysis;
             set

@@ -29,6 +29,11 @@ public partial class AIAssistViewModel : ObservableObject
     private readonly IDispatcherHelper _dispatcherHelper;
     private readonly Microsoft.Extensions.Logging.ILogger<AIAssistViewModel> _logger;
 
+    /// <summary>
+    /// Expose GrokSupercomputer for real-time data refresh in View
+    /// </summary>
+    public IGrokSupercomputer GrokSupercomputer => _grokSupercomputer;
+
     public ObservableCollection<ChatMessage> ChatMessages { get; } = new();
 
     /// <summary>
@@ -45,10 +50,19 @@ public partial class AIAssistViewModel : ObservableObject
             {
                 // Subscribe to collection changes for notifications
                 _responses.CollectionChanged += (s, e) => OnPropertyChanged(nameof(Responses));
-            }
         }
     }
+}
 
+/// <summary>
+/// Represents conversation mode information for UI display
+/// </summary>
+public class ConversationModeInfo
+{
+    public string Name { get; set; }
+    public string Description { get; set; }
+    public string Icon { get; set; }
+}
     private string queryText = string.Empty;
 
     public string QueryText
@@ -92,19 +106,19 @@ public partial class AIAssistViewModel : ObservableObject
     /// <summary>
     /// Available conversation modes
     /// </summary>
-    public List<ConversationMode> AvailableModes { get; } = new()
+    public List<ConversationModeInfo> AvailableModes { get; } = new()
     {
-        new ConversationMode { Name = "General Assistant", Description = "General questions and analysis", Icon = "🤖" },
-        new ConversationMode { Name = "Service Charge Calculator", Description = "Calculate service charges and fees", Icon = "💰" },
-        new ConversationMode { Name = "What-If Planner", Description = "Plan financial scenarios and upgrades", Icon = "🔮" },
-        new ConversationMode { Name = "Proactive Advisor", Description = "Anticipate needs and provide insights", Icon = "🎯" }
+        new ConversationModeInfo { Name = "General Assistant", Description = "General questions and analysis", Icon = "🤖" },
+        new ConversationModeInfo { Name = "Service Charge Calculator", Description = "Calculate service charges and fees", Icon = "💰" },
+        new ConversationModeInfo { Name = "What-If Planner", Description = "Plan financial scenarios and upgrades", Icon = "🔮" },
+        new ConversationModeInfo { Name = "Proactive Advisor", Description = "Anticipate needs and provide insights", Icon = "🎯" }
     };
 
     /// <summary>
     /// Currently selected conversation mode
     /// </summary>
-    private ConversationMode selectedMode;
-    public ConversationMode SelectedMode
+    private ConversationModeInfo selectedMode;
+    public ConversationModeInfo SelectedMode
     {
         get => selectedMode;
         set => SetProperty(ref selectedMode, value);

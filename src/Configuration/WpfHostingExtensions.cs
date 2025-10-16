@@ -396,7 +396,8 @@ public static class WpfHostingExtensions
                             try
                             {
                                 logger.LogInformation("Initializing XAIService with provided API key (length {Len}).", apiKey.Length);
-                                _instance = new XAIService(httpClientFactory, configuration, logger, contextService);
+                                var aiLoggingService = _serviceProvider.GetRequiredService<IAILoggingService>();
+                                _instance = new XAIService(httpClientFactory, configuration, logger, contextService, aiLoggingService);
                             }
                             catch (Exception ex)
                             {

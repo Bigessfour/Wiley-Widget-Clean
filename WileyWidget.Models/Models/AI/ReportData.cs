@@ -50,9 +50,15 @@ namespace WileyWidget.Models
                     OnPropertyChanged(nameof(Enterprises));
                     OnPropertyChanged(nameof(TotalRevenue));
                     OnPropertyChanged(nameof(AverageBudgetVariance));
+                    OnPropertyChanged(nameof(EnterpriseCount));
                 }
             }
         }
+
+        /// <summary>
+        /// Gets the count of enterprises in the report.
+        /// </summary>
+        public int EnterpriseCount => Enterprises?.Count ?? 0;
 
         /// <summary>
         /// Gets or sets the title of the report.
@@ -195,7 +201,7 @@ namespace WileyWidget.Models
         /// <summary>
         /// Occurs when a property value changes.
         /// </summary>
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         /// <summary>
         /// Raises the PropertyChanged event.

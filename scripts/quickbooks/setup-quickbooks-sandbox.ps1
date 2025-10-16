@@ -2,16 +2,16 @@
 # Run this script to configure and validate your QuickBooks sandbox credentials
 
 param(
-    [Parameter(Mandatory=$true)]
+    [Parameter(Mandatory = $true)]
     [string]$ClientId,
 
-    [Parameter(Mandatory=$true)]
+    [Parameter(Mandatory = $true)]
     [string]$ClientSecret,
 
-    [Parameter(Mandatory=$false)]
+    [Parameter(Mandatory = $false)]
     [switch]$ValidateOnly,
 
-    [Parameter(Mandatory=$false)]
+    [Parameter(Mandatory = $false)]
     [switch]$SetupSandboxAccounts
 )
 
@@ -94,12 +94,14 @@ class Program {
 
         if ($testExitCode -eq 0) {
             Write-Output "✓ QuickBooks API validation completed successfully!"
-        } else {
+        }
+        else {
             Write-Error "✗ QuickBooks API validation failed!"
             exit 1
         }
 
-    } catch {
+    }
+    catch {
         Write-Error "Failed to run validation test: $_"
         exit 1
     }
@@ -247,12 +249,14 @@ class Program {
 
         if ($setupExitCode -eq 0) {
             Write-Output "✓ Town of Wiley Accounts setup completed successfully!"
-        } else {
+        }
+        else {
             Write-Error "✗ Town of Wiley Accounts setup failed!"
             exit 1
         }
 
-    } catch {
+    }
+    catch {
         Write-Error "Failed to run sandbox setup: $_"
         exit 1
     }

@@ -1,5 +1,5 @@
 # Docker Compose for running xUnit tests
-version: '3.8'
+version: "3.8"
 
 services:
   test-runner:
@@ -11,4 +11,18 @@ services:
     environment:
       - DOTNET_CLI_TELEMETRY_OPTOUT=1
       - DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
-    command: ["dotnet", "test", "WileyWidget.Tests/WileyWidget.Tests.csproj", "--configuration", "Release", "--logger", "trx", "--results-directory", "/test-results", "--no-build", "--verbosity", "normal"]
+    command:
+      [
+        "dotnet",
+        "test",
+        "WileyWidget.Tests/WileyWidget.Tests.csproj",
+        "--configuration",
+        "Release",
+        "--logger",
+        "trx",
+        "--results-directory",
+        "/test-results",
+        "--no-build",
+        "--verbosity",
+        "normal",
+      ]

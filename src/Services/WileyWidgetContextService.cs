@@ -12,6 +12,7 @@ namespace WileyWidget.Services
     /// <summary>
     /// Service for building dynamic context in municipal finance operations.
     /// Implements IWileyWidgetContextService to provide contextual information for AI and system operations.
+    /// Enhanced with data anonymization for privacy-compliant AI integration.
     /// </summary>
     public class WileyWidgetContextService : IWileyWidgetContextService
     {
@@ -19,6 +20,7 @@ namespace WileyWidget.Services
         private readonly IEnterpriseRepository _enterpriseRepository;
         private readonly IBudgetRepository _budgetRepository;
         private readonly IAuditRepository _auditRepository;
+        private readonly IDataAnonymizerService _anonymizerService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="WileyWidgetContextService"/> class.
@@ -27,16 +29,21 @@ namespace WileyWidget.Services
         /// <param name="enterpriseRepository">The enterprise repository for data access.</param>
         /// <param name="budgetRepository">The budget repository for data access.</param>
         /// <param name="auditRepository">The audit repository for operational metrics.</param>
+        /// <param name="anonymizerService">The data anonymizer service for privacy protection.</param>
         public WileyWidgetContextService(
             ILogger<WileyWidgetContextService> logger,
             IEnterpriseRepository enterpriseRepository,
             IBudgetRepository budgetRepository,
-            IAuditRepository auditRepository)
+            IAuditRepository auditRepository,
+            IDataAnonymizerService anonymizerService)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _enterpriseRepository = enterpriseRepository ?? throw new ArgumentNullException(nameof(enterpriseRepository));
             _budgetRepository = budgetRepository ?? throw new ArgumentNullException(nameof(budgetRepository));
             _auditRepository = auditRepository ?? throw new ArgumentNullException(nameof(auditRepository));
+            _anonymizerService = anonymizerService ?? throw new ArgumentNullException(nameof(anonymizerService));
+            
+            _logger.LogInformation("WileyWidgetContextService initialized with data anonymization support");
         }
 
         /// <summary>
@@ -61,15 +68,19 @@ namespace WileyWidget.Services
             sb.AppendLine($"Time Zone: {TimeZoneInfo.Local.DisplayName}");
             sb.AppendLine();
 
-            // Aggregate active enterprises
+            // Aggregate active enterprises (with anonymization for privacy)
             var enterprises = await _enterpriseRepository.GetAllAsync();
             var activeEnterprises = enterprises.Where(e => e.Status == EnterpriseStatus.Active).ToList();
-            sb.AppendLine("Active Enterprises:");
-            foreach (var ent in activeEnterprises)
+            
+            _logger.LogInformation("Anonymizing {Count} active enterprises for AI context", activeEnterprises.Count);
+            var anonymizedEnterprises = _anonymizerService.AnonymizeEnterprises(activeEnterprises).ToList();
+            
+            sb.AppendLine("Active Enterprises (Anonymized for Privacy):");
+            foreach (var ent in anonymizedEnterprises)
             {
-                sb.AppendLine($"- {Anonymize(ent.Name)} (ID: {ent.Id}, Type: {ent.Type})");
+                sb.AppendLine($"- {ent.Name} (ID: {ent.Id}, Type: {ent.Type})");
             }
-            sb.AppendLine($"Total Active Enterprises: {activeEnterprises.Count}");
+            sb.AppendLine($"Total Active Enterprises: {anonymizedEnterprises.Count}");
             sb.AppendLine();
 
             // Aggregate budgets for current fiscal year
@@ -104,18 +115,22 @@ namespace WileyWidget.Services
                 return $"Enterprise with ID {enterpriseId} not found.";
             }
 
+            // Anonymize enterprise data for privacy
+            var anonymizedEnterprise = _anonymizerService.AnonymizeEnterprise(enterprise);
+            _logger.LogInformation("Enterprise data anonymized for AI context: {EnterpriseId}", enterpriseId);
+
             var sb = new StringBuilder();
-            sb.AppendLine($"=== Enterprise Context: {Anonymize(enterprise.Name)} ===");
-            sb.AppendLine($"ID: {enterprise.Id}");
-            sb.AppendLine($"Name: {Anonymize(enterprise.Name)}");
-            sb.AppendLine($"Type: {enterprise.Type}");
-            sb.AppendLine($"Description: {Anonymize(enterprise.Description ?? "N/A")}");
+            sb.AppendLine($"=== Enterprise Context (Anonymized): {anonymizedEnterprise.Name} ===");
+            sb.AppendLine($"ID: {anonymizedEnterprise.Id}");
+            sb.AppendLine($"Name: {anonymizedEnterprise.Name}");
+            sb.AppendLine($"Type: {anonymizedEnterprise.Type}");
+            sb.AppendLine($"Description: {anonymizedEnterprise.Description ?? "N/A"}");
             sb.AppendLine($"Current Rate: ${enterprise.CurrentRate:N2}");
             sb.AppendLine($"Monthly Expenses: ${enterprise.MonthlyExpenses:N2}");
             sb.AppendLine($"Monthly Revenue: ${enterprise.MonthlyRevenue:N2}");
-            sb.AppendLine($"Status: {enterprise.Status}");
-            sb.AppendLine($"Created: {enterprise.CreatedAt:yyyy-MM-dd HH:mm:ss}");
-            sb.AppendLine($"Last Modified: {enterprise.UpdatedAt:yyyy-MM-dd HH:mm:ss}");
+            sb.AppendLine($"Status: {anonymizedEnterprise.Status}");
+            sb.AppendLine($"Created: {anonymizedEnterprise.CreatedDate:yyyy-MM-dd HH:mm:ss}");
+            sb.AppendLine($"Last Modified: {anonymizedEnterprise.ModifiedDate:yyyy-MM-dd HH:mm:ss}");
 
             _logger.LogInformation("Enterprise context retrieved for ID: {EnterpriseId}", enterpriseId);
             return sb.ToString();
@@ -139,26 +154,28 @@ namespace WileyWidget.Services
             var budgetSummary = await _budgetRepository.GetBudgetSummaryAsync(start, end);
 
             var sb = new StringBuilder();
-            sb.AppendLine($"=== Budget Context: {start:yyyy-MM-dd} to {end:yyyy-MM-dd} ===");
+            sb.AppendLine($"=== Budget Context (Anonymized): {start:yyyy-MM-dd} to {end:yyyy-MM-dd} ===");
             sb.AppendLine($"Analysis Date: {budgetSummary.AnalysisDate:yyyy-MM-dd HH:mm:ss}");
             sb.AppendLine($"Budget Period: {budgetSummary.BudgetPeriod ?? "N/A"}");
             sb.AppendLine($"Total Budgeted: ${budgetSummary.TotalBudgeted:N2}");
             sb.AppendLine($"Total Actual: ${budgetSummary.TotalActual:N2}");
             sb.AppendLine($"Total Variance: ${budgetSummary.TotalVariance:N2} ({budgetSummary.TotalVariancePercentage:N2}%)");
             sb.AppendLine();
-            sb.AppendLine("Fund Summaries:");
+            sb.AppendLine("Fund Summaries (Anonymized):");
             foreach (var fund in budgetSummary.FundSummaries)
             {
-                sb.AppendLine($"- {Anonymize(fund.FundName ?? "Unknown")}: Budgeted ${fund.Budgeted:N2}, Actual ${fund.Actual:N2}, Variance ${fund.Variance:N2}");
+                var anonymizedFundName = Anonymize(fund.FundName ?? "Unknown");
+                sb.AppendLine($"- {anonymizedFundName}: Budgeted ${fund.Budgeted:N2}, Actual ${fund.Actual:N2}, Variance ${fund.Variance:N2}");
             }
             sb.AppendLine();
-            sb.AppendLine("Department Summaries:");
+            sb.AppendLine("Department Summaries (Anonymized):");
             foreach (var dept in budgetSummary.DepartmentSummaries)
             {
-                sb.AppendLine($"- {Anonymize(dept.DepartmentName ?? "Unknown")}: Budgeted ${dept.Budgeted:N2}, Actual ${dept.Actual:N2}, Variance ${dept.Variance:N2}");
+                var anonymizedDeptName = Anonymize(dept.DepartmentName ?? "Unknown");
+                sb.AppendLine($"- {anonymizedDeptName}: Budgeted ${dept.Budgeted:N2}, Actual ${dept.Actual:N2}, Variance ${dept.Variance:N2}");
             }
 
-            _logger.LogInformation("Budget context retrieved for period: {StartDate} to {EndDate}", start, end);
+            _logger.LogInformation("Budget context retrieved and anonymized for period: {StartDate} to {EndDate}", start, end);
             return sb.ToString();
         }
 

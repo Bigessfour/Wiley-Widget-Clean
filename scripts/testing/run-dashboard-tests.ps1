@@ -56,7 +56,8 @@ function Invoke-Build {
         & docker build -f $dockerfile -t $imageName .
         if ($LASTEXITCODE -eq 0) {
             Write-Host "Docker image built successfully!" -ForegroundColor Green
-        } else {
+        }
+        else {
             Write-Error "Failed to build Docker image"
             exit $LASTEXITCODE
         }
@@ -82,7 +83,8 @@ function Invoke-Run {
 
         if ($exitCode -eq 0) {
             Write-Host "All tests passed!" -ForegroundColor Green
-        } else {
+        }
+        else {
             Write-Warning "Some tests failed (exit code: $exitCode)"
         }
 
@@ -115,7 +117,8 @@ function Invoke-Test {
 
     if ($exitCode -eq 0) {
         Write-Host "✅ All DashboardModule tests passed successfully!" -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host "❌ Some DashboardModule tests failed. Check TestResults directory for details." -ForegroundColor Red
     }
 

@@ -14,7 +14,8 @@ foreach ($var in $envVars) {
     if ([string]::IsNullOrEmpty($value)) {
         $missingVars += $var
         Write-Output "❌ $var : Not set"
-    } else {
+    }
+    else {
         Write-Output "✅ $var : Set ($value)"
     }
 }
@@ -127,7 +128,8 @@ if ($testExitCode -eq 0) {
     Write-Output "2. Run: .\setup-quickbooks-sandbox.ps1 -ClientId '<real-id>' -ClientSecret '<real-secret>'"
     Write-Output "3. Run: .\setup-quickbooks-sandbox.ps1 -ValidateOnly"
     Write-Output "4. Run: .\setup-town-of-wiley.ps1 to setup municipal accounts"
-} else {
+}
+else {
     Write-Error "❌ QuickBooks service structure validation failed!"
     exit 1
 }

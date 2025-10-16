@@ -375,7 +375,7 @@ public class ReportsViewModel : AsyncViewModelBase
             {
                 Title = "Department Budget Report",
                 GeneratedAt = DateTime.Now,
-                Departments = departments
+                Departments = new ObservableCollection<DepartmentSummary>(departments)
             };
         }
         catch (Exception ex)
@@ -400,7 +400,7 @@ public class ReportsViewModel : AsyncViewModelBase
         {
             Title = "Fund Allocation Report",
             GeneratedAt = DateTime.Now,
-            Funds = funds
+            Funds = new ObservableCollection<FundSummary>(funds)
         };
     }
 
@@ -415,7 +415,7 @@ public class ReportsViewModel : AsyncViewModelBase
         {
             Title = "Budget Audit Trail Report",
             GeneratedAt = DateTime.Now,
-            AuditEntries = auditEntries
+            AuditEntries = new ObservableCollection<AuditEntry>(auditEntries)
         };
     }
 
@@ -498,7 +498,7 @@ public class ReportsViewModel : AsyncViewModelBase
         {
             Title = "Department Budget Report (Preview)",
             GeneratedAt = DateTime.Now,
-            Departments = departments
+            Departments = new ObservableCollection<DepartmentSummary>(departments)
         };
     }
 
@@ -513,7 +513,7 @@ public class ReportsViewModel : AsyncViewModelBase
         {
             Title = "Fund Allocation Report (Preview)",
             GeneratedAt = DateTime.Now,
-            Funds = funds
+            Funds = new ObservableCollection<FundSummary>(funds)
         };
     }
 
@@ -528,7 +528,7 @@ public class ReportsViewModel : AsyncViewModelBase
         {
             Title = "Budget Audit Trail Report (Preview)",
             GeneratedAt = DateTime.Now,
-            AuditEntries = auditEntries
+            AuditEntries = new ObservableCollection<AuditEntry>(auditEntries)
         };
     }
 
@@ -724,7 +724,7 @@ public class ReportsViewModel : AsyncViewModelBase
     /// <summary>
     /// Data structure for report information
     /// </summary>
-    public class ReportData
+    public class ReportDataModel
     {
         public string Title { get; set; } = string.Empty;
         public DateTime GeneratedAt { get; set; } = DateTime.Now;
