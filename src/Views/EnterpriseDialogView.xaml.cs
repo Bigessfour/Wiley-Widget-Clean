@@ -1,0 +1,141 @@
+using System.ComponentModel;
+using System.Windows;
+using System.Windows.Controls;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using WileyWidget.Models;
+
+namespace WileyWidget.Views
+{
+    /// <summary>
+    /// Interaction logic for EnterpriseDialogView.xaml
+    /// </summary>
+    public partial class EnterpriseDialogView : Window
+    {
+        public EnterpriseDialogView()
+        {
+            InitializeComponent();
+            DataContext = new EnterpriseDialogViewModel(this);
+        }
+
+        public EnterpriseDialogView(Enterprise enterprise) : this()
+        {
+            if (DataContext is EnterpriseDialogViewModel viewModel)
+            {
+                viewModel.Enterprise = enterprise;
+            }
+        }
+
+        private void OkButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is EnterpriseDialogViewModel viewModel)
+            {
+                if (string.IsNullOrWhiteSpace(viewModel.Enterprise.Name))
+                {
+                    MessageBox.Show("Enterprise name is required.", "Validation Error",
+                                  MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                if (string.IsNullOrWhiteSpace(viewModel.Enterprise.Type))
+                {
+                    MessageBox.Show("Enterprise type is required.", "Validation Error",
+                                  MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                if (viewModel.Enterprise.CitizenCount <= 0)
+                {
+                    MessageBox.Show("Citizen count must be greater than zero.", "Validation Error",
+                                  MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                DialogResult = true;
+            }
+        }
+
+        private void CancelButton_Click(object sender, RoutedEventArgs e)
+        {
+            DialogResult = false;
+        }
+
+        public static bool ShowDialog(Enterprise enterprise)
+        {
+            var dialog = new EnterpriseDialogView(enterprise);
+            var result = dialog.ShowDialog();
+            return result == true;
+        }
+    }
+
+    public class EnterpriseDialogViewModel : ObservableObject
+    {
+        private readonly Window _window;
+        private Enterprise _enterprise = new();
+
+        public EnterpriseDialogViewModel(Window window)
+        {
+            _window = window;
+        }
+
+        public Enterprise Enterprise
+        {
+            get => _enterprise;
+            set => SetProperty(ref _enterprise, value);
+        }
+
+        public RelayCommand OkCommand => new(ExecuteOk, CanExecuteOk);
+        public RelayCommand CancelCommand => new(ExecuteCancel);
+
+        private void ExecuteOk()
+        {
+            // Validate required fields
+            if (string.IsNullOrWhiteSpace(Enterprise.Name))
+            {
+                MessageBox.Show("Enterprise name is required.", "Validation Error",
+                              MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(Enterprise.Type))
+            {
+                MessageBox.Show("Enterprise type is required.", "Validation Error",
+                              MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (Enterprise.CitizenCount <= 0)
+            {
+                MessageBox.Show("Citizen count must be greater than zero.", "Validation Error",
+                              MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            _window.DialogResult = true;
+        }
+
+        private bool CanExecuteOk()
+        {
+            return !string.IsNullOrWhiteSpace(Enterprise.Name) &&
+                   !string.IsNullOrWhiteSpace(Enterprise.Type) &&
+                   Enterprise.CitizenCount > 0;
+        }
+
+        private void ExecuteCancel()
+        {
+            _window.DialogResult = false;
+        }
+    }
+
+    public class NotEmptyValidationRule : ValidationRule
+    {
+        public override ValidationResult Validate(object value, System.Globalization.CultureInfo cultureInfo)
+        {
+            if (value is string str && string.IsNullOrWhiteSpace(str))
+            {
+                return new ValidationResult(false, "This field is required.");
+            }
+            return ValidationResult.ValidResult;
+        }
+    }
+}
