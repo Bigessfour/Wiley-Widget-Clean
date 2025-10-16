@@ -21,15 +21,17 @@ public class XAIService : IAIService, IDisposable
     private readonly string _apiKey;
     private readonly ILogger<XAIService> _logger;
     private readonly IConfiguration _configuration;
+    private readonly IWileyWidgetContextService _contextService;
     private bool _disposed;
 
     /// <summary>
     /// Constructor with dependency injection
     /// </summary>
-    public XAIService(IHttpClientFactory httpClientFactory, IConfiguration configuration, ILogger<XAIService> logger)
+    public XAIService(IHttpClientFactory httpClientFactory, IConfiguration configuration, ILogger<XAIService> logger, IWileyWidgetContextService contextService)
     {
         _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _contextService = contextService ?? throw new ArgumentNullException(nameof(contextService));
         
         _apiKey = configuration["XAI:ApiKey"] ?? throw new ArgumentNullException("XAI:ApiKey", "XAI API key not configured");
 
@@ -65,6 +67,7 @@ public class XAIService : IAIService, IDisposable
 
         try
         {
+            var systemContext = await _contextService.BuildCurrentSystemContextAsync(cancellationToken);
             var model = _configuration["XAI:Model"] ?? "grok-4-0709";
             var request = new
             {
@@ -73,7 +76,7 @@ public class XAIService : IAIService, IDisposable
                     new
                     {
                         role = "system",
-                        content = $"You are a helpful AI assistant for a municipal utility management application called Wiley Widget. Context: {context}"
+                        content = $"You are a helpful AI assistant for a municipal utility management application called Wiley Widget. System Context: {systemContext}. Context: {context}"
                     },
                     new
                     {

@@ -441,6 +441,16 @@ public class Enterprise : INotifyPropertyChanged, ISoftDeletable
     /// </summary>
     public string? ModifiedBy { get; set; }
 
+    /// <summary>
+    /// Date and time when the enterprise was created (UTC) - IAuditable implementation
+    /// </summary>
+    public DateTime CreatedAt { get => CreatedDate; set => CreatedDate = value; }
+
+    /// <summary>
+    /// Date and time when the enterprise was last modified (UTC) - IAuditable implementation
+    /// </summary>
+    public DateTime? UpdatedAt { get => ModifiedDate; set => ModifiedDate = value; }
+
     #endregion
 
     #region ISoftDeletable Implementation

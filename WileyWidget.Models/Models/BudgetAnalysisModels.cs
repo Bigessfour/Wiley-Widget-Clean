@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using WileyWidget.Models.Entities;
 
 namespace WileyWidget.Models;
 
@@ -67,6 +68,24 @@ public class FundSummary
     /// Gets or sets the list of account variances for this fund
     /// </summary>
     public List<AccountVariance> AccountVariances { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the budgeted amount (alias for TotalBudgeted)
+    /// </summary>
+    public decimal Budgeted
+    {
+        get => TotalBudgeted;
+        set => TotalBudgeted = value;
+    }
+
+    /// <summary>
+    /// Gets or sets the actual amount (alias for TotalActual)
+    /// </summary>
+    public decimal Actual
+    {
+        get => TotalActual;
+        set => TotalActual = value;
+    }
 }
 
 /// <summary>
@@ -136,6 +155,24 @@ public class DepartmentSummary
     /// Gets or sets the list of account variances for this department
     /// </summary>
     public List<AccountVariance> AccountVariances { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the budgeted amount (alias for TotalBudgeted)
+    /// </summary>
+    public decimal Budgeted
+    {
+        get => TotalBudgeted;
+        set => TotalBudgeted = value;
+    }
+
+    /// <summary>
+    /// Gets or sets the actual amount (alias for TotalActual)
+    /// </summary>
+    public decimal Actual
+    {
+        get => TotalActual;
+        set => TotalActual = value;
+    }
 }
 
 /// <summary>

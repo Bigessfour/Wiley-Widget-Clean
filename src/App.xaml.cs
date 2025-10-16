@@ -1,4 +1,9 @@
 using System.Windows;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Threading;
 using Prism.Unity;
 using Prism.Modularity;
 using Unity;
@@ -23,6 +28,7 @@ using WileyWidget.ViewModels;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics.CodeAnalysis;
 using Azure.Identity;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace WileyWidget
 {
@@ -132,11 +138,14 @@ namespace WileyWidget
 
         protected override void RegisterTypes(IContainerRegistry containerRegistry)
         {
+            Log.Information("=== Starting DI Container Registration ===");
+            
             // Build configuration first
             var configuration = BuildConfiguration();
             
             // Register configuration as singleton
             containerRegistry.RegisterInstance<IConfiguration>(configuration);
+            Log.Information("✓ Registered IConfiguration as singleton instance");
 
             // Register Microsoft.Extensions.Logging integration with Serilog
 #pragma warning disable CA2000
@@ -144,6 +153,10 @@ namespace WileyWidget
 #pragma warning restore CA2000
             containerRegistry.RegisterInstance<ILoggerFactory>(loggerFactory);
             containerRegistry.Register(typeof(ILogger<>), typeof(Logger<>));
+            Log.Information("✓ Registered ILoggerFactory and ILogger<> with Serilog integration");
+
+            // Register HttpClient infrastructure for AI services
+            RegisterHttpClientServices(containerRegistry, configuration);
 
             // Register core infrastructure services
             containerRegistry.RegisterSingleton<ISyncfusionLicenseService, SyncfusionLicenseService>();
@@ -154,44 +167,48 @@ namespace WileyWidget
             containerRegistry.RegisterSingleton<ThemeManager>();
             containerRegistry.RegisterSingleton<IThemeManager>(provider => provider.Resolve<ThemeManager>());
             containerRegistry.RegisterSingleton<IDispatcherHelper>(provider => new DispatcherHelper());
+            Log.Information("✓ Registered core infrastructure services (Syncfusion, Settings, Theme, Dispatcher)");
             
             // Register data repositories
             containerRegistry.Register<IEnterpriseRepository, WileyWidget.Data.EnterpriseRepository>();
             containerRegistry.Register<IUtilityCustomerRepository, WileyWidget.Data.UtilityCustomerRepository>();
             containerRegistry.Register<IMunicipalAccountRepository, WileyWidget.Data.MunicipalAccountRepository>();
             containerRegistry.Register<IUnitOfWork, WileyWidget.Data.UnitOfWork>();
+            containerRegistry.Register<IBudgetRepository, WileyWidget.Data.BudgetRepository>();
+            containerRegistry.Register<IAuditRepository, WileyWidget.Data.AuditRepository>();
+            Log.Information("✓ Registered data repositories (Enterprise, UtilityCustomer, MunicipalAccount, UnitOfWork, Budget, Audit)");
             
             // Register business services
             containerRegistry.RegisterSingleton<IWhatIfScenarioEngine, WhatIfScenarioEngine>();
             containerRegistry.RegisterSingleton<FiscalYearSettings>();
             containerRegistry.RegisterSingleton<IChargeCalculatorService, ServiceChargeCalculatorService>();
+            Log.Information("✓ Registered business services (WhatIfScenarioEngine, FiscalYearSettings, ChargeCalculator)");
             
-            // Register AI services
-            containerRegistry.RegisterSingleton<IAIService, XAIService>();
+            // Register AI Integration Services (Phase 1 - Production Ready)
+            RegisterAIIntegrationServices(containerRegistry);
             
             // Register QuickBooks service
             containerRegistry.RegisterSingleton<IQuickBooksService, QuickBooksService>();
+            Log.Information("✓ Registered IQuickBooksService as singleton");
             
             // Register Excel services
             containerRegistry.RegisterSingleton<IExcelReaderService, ExcelReaderService>();
+            Log.Information("✓ Registered IExcelReaderService as singleton");
             
             // Register report export service
             containerRegistry.RegisterSingleton<IReportExportService, ReportExportService>();
-            
-            // Register budget repository
-            containerRegistry.Register<IBudgetRepository, WileyWidget.Data.BudgetRepository>();
-            
-            // Register audit repository
-            containerRegistry.Register<IAuditRepository, WileyWidget.Data.AuditRepository>();
+            Log.Information("✓ Registered IReportExportService as singleton");
             
             // Register StartupPerformanceMonitor
             containerRegistry.RegisterSingleton<WileyWidget.Diagnostics.StartupPerformanceMonitor>();
+            Log.Information("✓ Registered StartupPerformanceMonitor as singleton");
             
             // Register Prism DialogService
             containerRegistry.RegisterSingleton<Prism.Dialogs.IDialogService, Prism.Dialogs.DialogService>();
+            Log.Information("✓ Registered Prism IDialogService as singleton");
             
             // Register ViewModels
-            containerRegistry.RegisterSingleton<MainViewModel>(provider => new MainViewModel(provider.Resolve<IRegionManager>(), provider.Resolve<IDispatcherHelper>(), provider.Resolve<ILogger<MainViewModel>>(), provider.Resolve<IEnterpriseRepository>(), provider.Resolve<IExcelReaderService>(), provider.Resolve<IReportExportService>(), provider.Resolve<IBudgetRepository>()));
+            containerRegistry.RegisterSingleton<MainViewModel>(provider => new MainViewModel(provider.Resolve<IRegionManager>(), provider.Resolve<IDispatcherHelper>(), provider.Resolve<ILogger<MainViewModel>>(), provider.Resolve<IEnterpriseRepository>(), provider.Resolve<IExcelReaderService>(), provider.Resolve<IReportExportService>(), provider.Resolve<IBudgetRepository>(), provider.Resolve<IAIService>()));
             containerRegistry.Register<AnalyticsViewModel>(provider => new AnalyticsViewModel(provider.Resolve<IDispatcherHelper>(), provider.Resolve<ILogger<AnalyticsViewModel>>(), provider.Resolve<IBudgetRepository>(), provider.Resolve<IMunicipalAccountRepository>(), provider.Resolve<IReportExportService>()));
             containerRegistry.Register<DashboardViewModel>();
             containerRegistry.Register<EnterpriseViewModel>();
@@ -212,6 +229,183 @@ namespace WileyWidget
             // This ensures services like ThemeManager and SettingsService can access the container
             // during their construction, preventing "Application container not initialized" errors
             CurrentContainer = containerRegistry as IContainerProvider;
+            
+            Log.Information("=== DI Container Registration Complete ===");
+            Log.Information($"Total registrations: AI Services, Data Repositories, Business Services, ViewModels, Infrastructure");
+        }
+
+        /// <summary>
+        /// Registers HttpClient infrastructure for AI services with retry policies and timeout configuration.
+        /// Production-ready implementation with comprehensive error handling and logging.
+        /// </summary>
+        /// <param name="containerRegistry">The Unity container registry for DI registration</param>
+        /// <param name="configuration">Application configuration for HttpClient settings</param>
+        private void RegisterHttpClientServices(IContainerRegistry containerRegistry, IConfiguration configuration)
+        {
+            Log.Information("=== Registering HttpClient Infrastructure for AI Services ===");
+            
+            try
+            {
+                // Create a service collection for HttpClient registration (Microsoft.Extensions.DependencyInjection pattern)
+                var services = new ServiceCollection();
+                
+                // Configure named HttpClient for AI services with timeout and base address
+                var xaiBaseUrl = configuration["XAI:BaseUrl"] ?? "https://api.x.ai/v1/";
+                var timeoutSeconds = double.Parse(configuration["XAI:TimeoutSeconds"] ?? "30");
+                
+                services.AddHttpClient("AIServices", client =>
+                {
+                    client.BaseAddress = new Uri(xaiBaseUrl);
+                    client.Timeout = TimeSpan.FromSeconds(timeoutSeconds);
+                    client.DefaultRequestHeaders.Add("User-Agent", "WileyWidget/1.0");
+                    client.DefaultRequestHeaders.Add("Accept", "application/json");
+                })
+                .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+                {
+                    AllowAutoRedirect = true,
+                    MaxAutomaticRedirections = 3,
+                    UseDefaultCredentials = false
+                })
+                .SetHandlerLifetime(TimeSpan.FromMinutes(5)); // Connection pooling for 5 minutes
+                
+                // Build the service provider and extract IHttpClientFactory
+                var serviceProvider = services.BuildServiceProvider();
+                var httpClientFactory = serviceProvider.GetRequiredService<IHttpClientFactory>();
+                
+                // Register IHttpClientFactory as singleton in Unity container
+                containerRegistry.RegisterInstance<IHttpClientFactory>(httpClientFactory);
+                
+                Log.Information("✓ Registered IHttpClientFactory with named client 'AIServices'");
+                Log.Information($"  - Base URL: {xaiBaseUrl}");
+                Log.Information($"  - Timeout: {timeoutSeconds} seconds");
+                Log.Information($"  - Handler Lifetime: 5 minutes (connection pooling)");
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Failed to register HttpClient infrastructure for AI services");
+                throw new InvalidOperationException("Failed to configure HttpClient for AI services. Check configuration and network settings.", ex);
+            }
+        }
+
+        /// <summary>
+        /// Registers AI Integration Services for Phase 1 production deployment.
+        /// Includes GrokSupercomputer, WileyWidgetContextService, and enhanced XAIService.
+        /// All services are registered as singletons for optimal performance and resource management.
+        /// </summary>
+        /// <param name="containerRegistry">The Unity container registry for DI registration</param>
+        private void RegisterAIIntegrationServices(IContainerRegistry containerRegistry)
+        {
+            Log.Information("=== Registering AI Integration Services (Phase 1 - Production) ===");
+            
+            try
+            {
+                // 1. Register IWileyWidgetContextService -> WileyWidgetContextService (Singleton)
+                // Provides dynamic context building for AI operations including system state, enterprises, budgets, and operations
+                containerRegistry.RegisterSingleton<IWileyWidgetContextService, WileyWidgetContextService>();
+                Log.Information("✓ Registered IWileyWidgetContextService -> WileyWidgetContextService (Singleton)");
+                Log.Information("  - Provides dynamic context for AI operations");
+                Log.Information("  - Dependencies: ILogger<WileyWidgetContextService>, IEnterpriseRepository, IBudgetRepository, IAuditRepository");
+                
+                // 2. Register IGrokSupercomputer -> GrokSupercomputer (Singleton)
+                // AI-powered municipal utility analytics and compliance reporting engine
+                containerRegistry.RegisterSingleton<IGrokSupercomputer, GrokSupercomputer>();
+                Log.Information("✓ Registered IGrokSupercomputer -> GrokSupercomputer (Singleton)");
+                Log.Information("  - AI-powered municipal utility analytics engine");
+                Log.Information("  - Capabilities: Enterprise data fetching, report calculations, budget analysis, compliance reporting");
+                Log.Information("  - Dependencies: ILogger<GrokSupercomputer>, IEnterpriseRepository, IBudgetRepository, IAuditRepository");
+                
+                // 3. Register IAIService -> XAIService (Singleton) - Enhanced with context service
+                // xAI service implementation for AI-powered insights and analysis with Grok integration
+                containerRegistry.RegisterSingleton<IAIService, XAIService>();
+                Log.Information("✓ Registered IAIService -> XAIService (Singleton) [Enhanced]");
+                Log.Information("  - xAI/Grok integration for AI-powered insights");
+                Log.Information("  - Features: Insights, data analysis, area review, mock data generation");
+                Log.Information("  - Dependencies: IHttpClientFactory, IConfiguration, ILogger<XAIService>, IWileyWidgetContextService");
+                Log.Information("  - Configuration: XAI:ApiKey, XAI:BaseUrl, XAI:Model, XAI:TimeoutSeconds");
+                
+                // 4. Validate AI service configuration
+                ValidateAIServiceConfiguration();
+                
+                Log.Information("=== AI Integration Services Registration Complete ===");
+                Log.Information("All AI services registered successfully with singleton lifetime scope");
+                Log.Information("Services ready for production use with comprehensive dependency injection");
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "CRITICAL: Failed to register AI Integration Services");
+                Log.Error("Application may not function correctly without AI services");
+                Log.Error("Please check configuration (appsettings.json) and ensure all dependencies are available");
+                throw new InvalidOperationException("Failed to register AI Integration Services. Application cannot continue.", ex);
+            }
+        }
+
+        /// <summary>
+        /// Validates AI service configuration to ensure all required settings are present.
+        /// Production-ready validation with comprehensive error reporting.
+        /// </summary>
+        private void ValidateAIServiceConfiguration()
+        {
+            Log.Information("Validating AI service configuration...");
+            
+            try
+            {
+                var config = Container.Resolve<IConfiguration>();
+                var validationErrors = new List<string>();
+                
+                // Validate XAI configuration
+                var apiKey = config["XAI:ApiKey"];
+                if (string.IsNullOrWhiteSpace(apiKey))
+                {
+                    validationErrors.Add("XAI:ApiKey is missing or empty");
+                }
+                else if (apiKey.Length < 20)
+                {
+                    validationErrors.Add("XAI:ApiKey appears invalid (too short, expected 20+ characters)");
+                }
+                
+                var baseUrl = config["XAI:BaseUrl"];
+                if (string.IsNullOrWhiteSpace(baseUrl))
+                {
+                    Log.Warning("XAI:BaseUrl not configured, using default: https://api.x.ai/v1/");
+                }
+                else if (!Uri.TryCreate(baseUrl, UriKind.Absolute, out var uri) || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+                {
+                    validationErrors.Add($"XAI:BaseUrl is invalid: {baseUrl}");
+                }
+                
+                var model = config["XAI:Model"];
+                if (string.IsNullOrWhiteSpace(model))
+                {
+                    Log.Warning("XAI:Model not configured, using default: grok-4-0709");
+                }
+                
+                var timeout = config["XAI:TimeoutSeconds"];
+                if (!string.IsNullOrWhiteSpace(timeout) && !double.TryParse(timeout, out var timeoutValue))
+                {
+                    validationErrors.Add($"XAI:TimeoutSeconds is invalid: {timeout}");
+                }
+                
+                if (validationErrors.Any())
+                {
+                    Log.Error("AI Service configuration validation failed:");
+                    foreach (var error in validationErrors)
+                    {
+                        Log.Error($"  - {error}");
+                    }
+                    throw new InvalidOperationException($"AI Service configuration is invalid: {string.Join(", ", validationErrors)}");
+                }
+                
+                Log.Information("✓ AI service configuration validated successfully");
+                Log.Information($"  - API Key: Configured ({apiKey?.Substring(0, Math.Min(8, apiKey.Length))}...)");
+                Log.Information($"  - Base URL: {baseUrl ?? "Default (https://api.x.ai/v1/)"}");
+                Log.Information($"  - Model: {model ?? "Default (grok-4-0709)"}");
+                Log.Information($"  - Timeout: {timeout ?? "Default (30)"} seconds");
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Failed to validate AI service configuration");
+                throw;
+            }
         }
 
         protected override void ConfigureRegionAdapterMappings(RegionAdapterMappings regionAdapterMappings)

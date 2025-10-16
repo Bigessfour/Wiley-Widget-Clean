@@ -6,6 +6,8 @@ using Xunit;
 using WileyWidget.Data;
 using WileyWidget.Models;
 using WileyWidget.Services;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace WileyWidget.Tests;
 
@@ -29,7 +31,7 @@ public class ComprehensiveDatabaseIntegrationTests : IDisposable
         var databaseName = $"ComprehensiveTest_{Guid.NewGuid()}";
         _contextFactory = TestDbContextFactory.CreateSqliteInMemory(databaseName);
         _context = _contextFactory.CreateDbContext();
-        _enterpriseRepository = new EnterpriseRepository(_contextFactory);
+        _enterpriseRepository = new EnterpriseRepository(_contextFactory, NullLogger<EnterpriseRepository>.Instance);
         _municipalAccountRepository = new MunicipalAccountRepository(_contextFactory);
         _utilityCustomerRepository = new UtilityCustomerRepository(_contextFactory);
 

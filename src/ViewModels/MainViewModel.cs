@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Diagnostics;
@@ -28,8 +29,9 @@ namespace WileyWidget.ViewModels
         private readonly IExcelReaderService _excelReaderService;
         private readonly IReportExportService _reportExportService;
         private readonly IBudgetRepository _budgetRepository;
+        private readonly IAIService _aiService;
 
-        public MainViewModel(IRegionManager regionManager, IDispatcherHelper dispatcherHelper, ILogger<MainViewModel> logger, IEnterpriseRepository enterpriseRepository, IExcelReaderService excelReaderService, IReportExportService reportExportService, IBudgetRepository budgetRepository)
+        public MainViewModel(IRegionManager regionManager, IDispatcherHelper dispatcherHelper, ILogger<MainViewModel> logger, IEnterpriseRepository enterpriseRepository, IExcelReaderService excelReaderService, IReportExportService reportExportService, IBudgetRepository budgetRepository, IAIService aiService)
             : base(dispatcherHelper, logger)
         {
             this.regionManager = regionManager ?? throw new ArgumentNullException(nameof(regionManager));
@@ -37,6 +39,7 @@ namespace WileyWidget.ViewModels
             _excelReaderService = excelReaderService ?? throw new ArgumentNullException(nameof(excelReaderService));
             _reportExportService = reportExportService ?? throw new ArgumentNullException(nameof(reportExportService));
             _budgetRepository = budgetRepository ?? throw new ArgumentNullException(nameof(budgetRepository));
+            _aiService = aiService ?? throw new ArgumentNullException(nameof(aiService));
 
             // Subscribe to collection change events for detailed logging
             Enterprises.CollectionChanged += Enterprises_CollectionChanged;
@@ -93,6 +96,11 @@ namespace WileyWidget.ViewModels
             GenerateEnterprisePerformanceCommand = new RelayCommand(GenerateEnterprisePerformance);
             CreateCustomReportCommand = new RelayCommand(CreateCustomReport);
             ShowSavedReportsCommand = new RelayCommand(ShowSavedReports);
+
+            // Initialize AI commands
+            SendAIQueryCommand = new AsyncRelayCommand(SendAIQueryAsync, CanSendAIQuery);
+            ChangeConversationModeCommand = new RelayCommand<ConversationMode>(mode => CurrentConversationMode = mode);
+            ClearAIInsightsCommand = new RelayCommand(ClearAIInsights);
 
             // Initialize legacy commands
             AddTestEnterpriseCommand = new RelayCommand(AddTestEnterprise);
@@ -286,6 +294,60 @@ namespace WileyWidget.ViewModels
             }
         }
 
+        // AI Conversation Mode Properties
+        private ConversationMode currentConversationMode = ConversationMode.General;
+        public ConversationMode CurrentConversationMode
+        {
+            get => currentConversationMode;
+            set
+            {
+                if (SetProperty(ref currentConversationMode, value))
+                {
+                    Logger.LogInformation("AI Conversation mode changed to: {Mode}", value);
+                    OnPropertyChanged(nameof(ConversationModeDescription));
+                    SendAIQueryCommand?.NotifyCanExecuteChanged();
+                }
+            }
+        }
+
+        public string ConversationModeDescription => CurrentConversationMode switch
+        {
+            ConversationMode.General => "General AI assistance for municipal utility management",
+            ConversationMode.Budget => "Budget analysis, forecasting, and financial recommendations",
+            ConversationMode.Enterprise => "Enterprise optimization, rate calculations, and performance insights",
+            ConversationMode.Analytics => "Advanced analytics, trends, and predictive insights",
+            _ => "AI Assistant"
+        };
+
+        private string aiQuery = string.Empty;
+        public string AIQuery
+        {
+            get => aiQuery;
+            set
+            {
+                if (SetProperty(ref aiQuery, value))
+                {
+                    SendAIQueryCommand?.NotifyCanExecuteChanged();
+                }
+            }
+        }
+
+        private string aiResponse = string.Empty;
+        public string AIResponse
+        {
+            get => aiResponse;
+            set => SetProperty(ref aiResponse, value);
+        }
+
+        public ObservableCollection<AIInsight> AIInsights { get; } = new();
+
+        private AIInsight? selectedAIInsight;
+        public AIInsight? SelectedAIInsight
+        {
+            get => selectedAIInsight;
+            set => SetProperty(ref selectedAIInsight, value);
+        }
+
         // Navigation Commands - Convert to AsyncRelayCommand for better UX
         public AsyncRelayCommand NavigateToDashboardCommand { get; }
         public AsyncRelayCommand NavigateToEnterprisesCommand { get; }
@@ -331,6 +393,11 @@ namespace WileyWidget.ViewModels
         public RelayCommand GenerateEnterprisePerformanceCommand { get; }
         public RelayCommand CreateCustomReportCommand { get; }
         public RelayCommand ShowSavedReportsCommand { get; }
+
+        // AI Commands
+        public AsyncRelayCommand SendAIQueryCommand { get; }
+        public RelayCommand<ConversationMode> ChangeConversationModeCommand { get; }
+        public RelayCommand ClearAIInsightsCommand { get; }
 
         // Legacy Commands
         public RelayCommand AddTestEnterpriseCommand { get; }
@@ -698,6 +765,536 @@ namespace WileyWidget.ViewModels
         private void OpenAIAssist()
         {
             NavigateToRegionSafely("AIAssistRegion", "AIAssistView", "AI Assistant");
+        }
+
+        // AI Command Implementations
+        private bool CanSendAIQuery()
+        {
+            return !string.IsNullOrWhiteSpace(AIQuery) && !IsBusy;
+        }
+
+        private async Task SendAIQueryAsync()
+        {
+            using var loggingContext = LoggingContext.BeginOperation("SendAIQuery");
+            var stopwatch = Stopwatch.StartNew();
+
+            Logger.LogInformation("Sending AI query in {Mode} mode - {LogContext}", CurrentConversationMode, loggingContext);
+            
+            try
+            {
+                IsBusy = true;
+                BusyMessage = $"Processing AI query in {CurrentConversationMode} mode...";
+
+                // Build context based on conversation mode
+                var context = await BuildConversationContextAsync();
+
+                // Get AI response using XAIService
+                var response = await _aiService.GetInsightsAsync(context, AIQuery);
+
+                // Update UI with response
+                AIResponse = response;
+
+                // Create insight record
+                var insight = new AIInsight
+                {
+                    Id = AIInsights.Count + 1,
+                    Timestamp = DateTime.UtcNow,
+                    Mode = CurrentConversationMode,
+                    Query = AIQuery,
+                    Response = response,
+                    Category = GetCategoryForMode(CurrentConversationMode),
+                    Priority = DeterminePriority(response)
+                };
+
+                // Add to insights collection for display in SfDataGrid
+                AIInsights.Insert(0, insight); // Add to top of list
+
+                Logger.LogInformation("AI query completed successfully in {ElapsedMs}ms - {LogContext}", 
+                    stopwatch.ElapsedMilliseconds, loggingContext);
+
+                // Clear query for next input
+                AIQuery = string.Empty;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Failed to process AI query - {LogContext}", loggingContext);
+                AIResponse = $"Error processing query: {ex.Message}";
+                MessageBox.Show($"Failed to process AI query: {ex.Message}", "AI Error", 
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsBusy = false;
+                BusyMessage = string.Empty;
+            }
+        }
+
+        private async Task<string> BuildConversationContextAsync()
+        {
+            var context = CurrentConversationMode switch
+            {
+                ConversationMode.Budget => await BuildBudgetContextAsync(),
+                ConversationMode.Enterprise => await BuildEnterpriseContextAsync(),
+                ConversationMode.Analytics => await BuildAnalyticsContextAsync(),
+                ConversationMode.General or _ => await BuildGeneralContextAsync()
+            };
+
+            return context;
+        }
+
+        private async Task<string> BuildBudgetContextAsync()
+        {
+            try
+            {
+                var currentYear = DateTime.UtcNow.Year;
+                var budgets = await _budgetRepository.GetByFiscalYearAsync(currentYear);
+                var budgetList = budgets.ToList();
+                var budgetCount = budgetList.Count;
+                var totalBudgeted = budgetList.Sum(b => b.BudgetedAmount);
+                
+                return $"Budget Context: Total budgets for {currentYear}: {budgetCount}. " +
+                       $"Total budgeted amount: ${totalBudgeted:N0}. " +
+                       $"Sample accounts: {string.Join(", ", budgetList.Take(3).Select(b => $"{b.AccountNumber} - {b.Description}"))}. " +
+                       $"Focus on budget analysis, forecasting, and financial recommendations.";
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "Failed to build budget context");
+                return "Budget Context: Budget data temporarily unavailable. Providing general budget guidance.";
+            }
+        }
+
+        private async Task<string> BuildEnterpriseContextAsync()
+        {
+            try
+            {
+                // Get fresh enterprise data from repository
+                var allEnterprises = await _enterpriseRepository.GetAllAsync();
+                var enterpriseList = allEnterprises.ToList();
+                
+                if (!enterpriseList.Any())
+                {
+                    return "Enterprise Context: No enterprises currently in the system. " +
+                           "Focus on enterprise setup and initial configuration guidance.";
+                }
+
+                var enterpriseCount = enterpriseList.Count;
+                var totalBudget = enterpriseList.Sum(e => e.TotalBudget);
+                var avgRate = enterpriseList.Average(e => e.CurrentRate);
+                var activeCount = enterpriseList.Count(e => e.Status == EnterpriseStatus.Active);
+                var totalCitizens = enterpriseList.Sum(e => e.CitizenCount);
+                var totalMonthlyExpenses = enterpriseList.Sum(e => e.MonthlyExpenses);
+                
+                // Group by type for analysis
+                var typeGroups = enterpriseList.GroupBy(e => e.Type)
+                    .Select(g => new { Type = g.Key, Count = g.Count(), Budget = g.Sum(e => e.TotalBudget) })
+                    .OrderByDescending(g => g.Budget)
+                    .ToList();
+
+                var typeDistribution = string.Join(", ", typeGroups.Select(g => $"{g.Type}: {g.Count} ({g.Budget:C0})"));
+
+                // Identify top performers and concerns
+                var topPerformers = enterpriseList
+                    .Where(e => e.TotalBudget > 0)
+                    .OrderByDescending(e => e.TotalBudget / Math.Max(e.CitizenCount, 1))
+                    .Take(3)
+                    .Select(e => $"{e.Name} (${e.CurrentRate:N2}/citizen)")
+                    .ToList();
+
+                var concernEntries = enterpriseList
+                    .Where(e => e.MonthlyExpenses > e.TotalBudget * 0.1m) // More than 10% monthly burn rate
+                    .Select(e => e.Name)
+                    .ToList();
+
+                var contextBuilder = new System.Text.StringBuilder();
+                contextBuilder.AppendLine($"Enterprise Context for {DateTime.UtcNow:MMMM yyyy}:");
+                contextBuilder.AppendLine($"- Total Enterprises: {enterpriseCount} ({activeCount} active)");
+                contextBuilder.AppendLine($"- Combined Annual Budget: ${totalBudget:N0}");
+                contextBuilder.AppendLine($"- Total Citizens Served: {totalCitizens:N0}");
+                contextBuilder.AppendLine($"- Average Rate: ${avgRate:N2}");
+                contextBuilder.AppendLine($"- Total Monthly Expenses: ${totalMonthlyExpenses:N0}");
+                contextBuilder.AppendLine($"- Enterprise Distribution: {typeDistribution}");
+                
+                if (topPerformers.Any())
+                {
+                    contextBuilder.AppendLine($"- Top Performers (by per-citizen cost): {string.Join(", ", topPerformers)}");
+                }
+                
+                if (concernEntries.Any())
+                {
+                    contextBuilder.AppendLine($"- High Burn Rate Concerns: {string.Join(", ", concernEntries)}");
+                }
+
+                contextBuilder.AppendLine("Focus: Enterprise optimization, rate calculations, performance insights, and cost efficiency recommendations.");
+
+                return contextBuilder.ToString();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "Failed to build enterprise context");
+                return "Enterprise Context: Enterprise data temporarily unavailable. Providing general enterprise guidance.";
+            }
+        }
+
+        private async Task<string> BuildAnalyticsContextAsync()
+        {
+            try
+            {
+                // Get comprehensive data for analytics
+                var allEnterprises = await _enterpriseRepository.GetAllAsync();
+                var enterpriseList = allEnterprises.ToList();
+                
+                var currentYear = DateTime.UtcNow.Year;
+                var budgets = await _budgetRepository.GetByFiscalYearAsync(currentYear);
+                var budgetList = budgets.ToList();
+
+                if (!enterpriseList.Any() && !budgetList.Any())
+                {
+                    return "Analytics Context: No data available for analysis. " +
+                           "Focus on data collection strategies and initial setup recommendations.";
+                }
+
+                var contextBuilder = new System.Text.StringBuilder();
+                contextBuilder.AppendLine($"Analytics Context for {DateTime.UtcNow:MMMM yyyy}:");
+
+                // Enterprise Analytics
+                if (enterpriseList.Any())
+                {
+                    var dataPoints = enterpriseList.Count;
+                    var dateRange = $"{enterpriseList.Min(e => e.CreatedDate):d} to {enterpriseList.Max(e => e.ModifiedDate):d}";
+                    var totalRevenuePotential = enterpriseList.Sum(e => e.CurrentRate * e.CitizenCount * 12); // Annual
+                    var totalExpenses = enterpriseList.Sum(e => e.MonthlyExpenses * 12); // Annual
+                    var profitMargin = totalRevenuePotential > 0 
+                        ? ((totalRevenuePotential - totalExpenses) / totalRevenuePotential * 100) 
+                        : 0;
+
+                    contextBuilder.AppendLine($"Enterprise Analytics:");
+                    contextBuilder.AppendLine($"- Data Points: {dataPoints} enterprises");
+                    contextBuilder.AppendLine($"- Date Range: {dateRange}");
+                    contextBuilder.AppendLine($"- Projected Annual Revenue: ${totalRevenuePotential:N0}");
+                    contextBuilder.AppendLine($"- Projected Annual Expenses: ${totalExpenses:N0}");
+                    contextBuilder.AppendLine($"- Profit Margin: {profitMargin:N2}%");
+
+                    // Calculate trends (growth over time)
+                    var recentEntities = enterpriseList.Where(e => e.CreatedDate > DateTime.UtcNow.AddMonths(-6)).Count();
+                    var olderEntities = enterpriseList.Count - recentEntities;
+                    var growthRate = olderEntities > 0 ? (recentEntities / (double)olderEntities * 100) : 0;
+                    contextBuilder.AppendLine($"- 6-Month Growth: {recentEntities} new enterprises ({growthRate:N1}% growth)");
+
+                    // Type distribution analysis
+                    var typeAnalysis = enterpriseList.GroupBy(e => e.Type)
+                        .Select(g => new {
+                            Type = g.Key,
+                            Count = g.Count(),
+                            AvgBudget = g.Average(e => e.TotalBudget),
+                            AvgRate = g.Average(e => e.CurrentRate)
+                        })
+                        .OrderByDescending(t => t.Count);
+
+                    contextBuilder.AppendLine("- Type Performance:");
+                    foreach (var type in typeAnalysis)
+                    {
+                        contextBuilder.AppendLine($"  • {type.Type}: {type.Count} enterprises, Avg Budget: ${type.AvgBudget:N0}, Avg Rate: ${type.AvgRate:N2}");
+                    }
+                }
+
+                // Budget Analytics
+                if (budgetList.Any())
+                {
+                    var totalBudgeted = budgetList.Sum(b => b.BudgetedAmount);
+                    var totalActual = budgetList.Sum(b => b.ActualAmount);
+                    var totalVariance = totalBudgeted - totalActual;
+                    var variancePercent = totalBudgeted > 0 ? (totalVariance / totalBudgeted * 100) : 0;
+                    var overBudgetCount = budgetList.Count(b => b.ActualAmount > b.BudgetedAmount);
+                    var underBudgetCount = budgetList.Count(b => b.ActualAmount < b.BudgetedAmount);
+
+                    contextBuilder.AppendLine($"\nBudget Analytics for FY {currentYear}:");
+                    contextBuilder.AppendLine($"- Total Budgeted: ${totalBudgeted:N0}");
+                    contextBuilder.AppendLine($"- Total Actual: ${totalActual:N0}");
+                    contextBuilder.AppendLine($"- Variance: ${totalVariance:N0} ({variancePercent:N2}%)");
+                    contextBuilder.AppendLine($"- Over Budget: {overBudgetCount} accounts");
+                    contextBuilder.AppendLine($"- Under Budget: {underBudgetCount} accounts");
+
+                    // Department analysis
+                    var deptAnalysis = budgetList.GroupBy(b => b.DepartmentId)
+                        .Select(g => new {
+                            DeptId = g.Key,
+                            Count = g.Count(),
+                            TotalBudget = g.Sum(b => b.BudgetedAmount),
+                            TotalActual = g.Sum(b => b.ActualAmount),
+                            Variance = g.Sum(b => b.BudgetedAmount) - g.Sum(b => b.ActualAmount)
+                        })
+                        .OrderByDescending(d => Math.Abs(d.Variance))
+                        .Take(5);
+
+                    contextBuilder.AppendLine("- Top 5 Departments by Variance:");
+                    foreach (var dept in deptAnalysis)
+                    {
+                        var status = dept.Variance >= 0 ? "under" : "over";
+                        contextBuilder.AppendLine($"  • Dept {dept.DeptId}: ${Math.Abs(dept.Variance):N0} {status} budget");
+                    }
+                }
+
+                contextBuilder.AppendLine("\nFocus: Advanced analytics, trend identification, predictive insights, and performance optimization recommendations.");
+                return contextBuilder.ToString();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "Failed to build analytics context");
+                return "Analytics Context: Analytics data temporarily unavailable. Providing general analytics guidance.";
+            }
+        }
+
+        private async Task<string> BuildGeneralContextAsync()
+        {
+            try
+            {
+                // Gather system-wide statistics for general context
+                var allEnterprises = await _enterpriseRepository.GetAllAsync();
+                var enterpriseList = allEnterprises.ToList();
+                
+                var currentYear = DateTime.UtcNow.Year;
+                var budgets = await _budgetRepository.GetByFiscalYearAsync(currentYear);
+                var budgetList = budgets.ToList();
+
+                var contextBuilder = new System.Text.StringBuilder();
+                contextBuilder.AppendLine($"Wiley Widget Municipal Utility Management System");
+                contextBuilder.AppendLine($"System Status as of {DateTime.UtcNow:f}");
+                contextBuilder.AppendLine();
+                contextBuilder.AppendLine("Available Modules:");
+                contextBuilder.AppendLine("- Enterprise Management: Municipal enterprise tracking and optimization");
+                contextBuilder.AppendLine("- Budget Tracking: GASB-compliant budget management and variance analysis");
+                contextBuilder.AppendLine("- Analytics: Advanced reporting and predictive insights");
+                contextBuilder.AppendLine("- Municipal Accounts: Account management and billing");
+                contextBuilder.AppendLine("- Utility Customers: Customer relationship management");
+                contextBuilder.AppendLine();
+                
+                if (enterpriseList.Any())
+                {
+                    contextBuilder.AppendLine($"Current System Data:");
+                    contextBuilder.AppendLine($"- {enterpriseList.Count} enterprises managing ${enterpriseList.Sum(e => e.TotalBudget):N0} in budgets");
+                    contextBuilder.AppendLine($"- Serving {enterpriseList.Sum(e => e.CitizenCount):N0} citizens");
+                }
+                
+                if (budgetList.Any())
+                {
+                    contextBuilder.AppendLine($"- {budgetList.Count} budget accounts totaling ${budgetList.Sum(b => b.BudgetedAmount):N0} for FY {currentYear}");
+                }
+
+                if (AIInsights.Any())
+                {
+                    var recentInsights = AIInsights.Take(5);
+                    contextBuilder.AppendLine();
+                    contextBuilder.AppendLine($"Recent AI Conversation History ({AIInsights.Count} total insights):");
+                    foreach (var insight in recentInsights)
+                    {
+                        contextBuilder.AppendLine($"- [{insight.Mode}] {insight.Query.Substring(0, Math.Min(50, insight.Query.Length))}...");
+                    }
+                }
+
+                contextBuilder.AppendLine();
+                contextBuilder.AppendLine("Capabilities: General assistance, system navigation, feature explanations, best practices, and integration with all modules.");
+                
+                return contextBuilder.ToString();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "Failed to build general context");
+                return "General Context: Wiley Widget municipal utility management system. " +
+                       "Available features: Enterprise management, Budget tracking, Analytics, Reporting. " +
+                       "Provide general assistance and guidance.";
+            }
+        }
+
+        private string GetCategoryForMode(ConversationMode mode)
+        {
+            return mode switch
+            {
+                ConversationMode.Budget => "Budget Analysis",
+                ConversationMode.Enterprise => "Enterprise Optimization",
+                ConversationMode.Analytics => "Analytics & Insights",
+                ConversationMode.General or _ => "General Assistance"
+            };
+        }
+
+        private string DeterminePriority(string response)
+        {
+            if (string.IsNullOrWhiteSpace(response))
+                return "Low";
+
+            var lowerResponse = response.ToLowerInvariant();
+            
+            // High priority indicators
+            var highPriorityKeywords = new[] { 
+                "urgent", "critical", "immediate", "warning", "alert", "danger", 
+                "must", "required", "mandatory", "compliance", "violation", "risk",
+                "emergency", "failure", "error", "security", "breach"
+            };
+            
+            var highPriorityCount = highPriorityKeywords.Count(keyword => lowerResponse.Contains(keyword));
+            if (highPriorityCount >= 2) // Multiple high priority keywords
+                return "High";
+            
+            // Medium priority indicators
+            var mediumPriorityKeywords = new[] { 
+                "recommend", "consider", "suggest", "should", "advise", "improve",
+                "optimize", "enhance", "review", "attention", "monitor", "track",
+                "important", "significant", "notable"
+            };
+            
+            var mediumPriorityCount = mediumPriorityKeywords.Count(keyword => lowerResponse.Contains(keyword));
+            if (mediumPriorityCount >= 2 || highPriorityCount == 1)
+                return "Medium";
+            
+            // Check for numerical thresholds that might indicate priority
+            if (lowerResponse.Contains("over budget") || lowerResponse.Contains("exceeded") || 
+                lowerResponse.Contains("deficit") || lowerResponse.Contains("overspending"))
+                return "High";
+            
+            if (lowerResponse.Contains("variance") || lowerResponse.Contains("difference") ||
+                lowerResponse.Contains("deviation"))
+                return "Medium";
+            
+            return "Low";
+        }
+
+        private void ClearAIInsights()
+        {
+            if (!AIInsights.Any())
+            {
+                Logger.LogInformation("No AI insights to clear");
+                return;
+            }
+
+            var count = AIInsights.Count;
+            
+            var result = MessageBox.Show(
+                $"Are you sure you want to clear all {count} AI insights? This action cannot be undone.",
+                "Clear AI Insights",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+
+            if (result == MessageBoxResult.Yes)
+            {
+                Logger.LogInformation("Clearing {Count} AI insights", count);
+                AIInsights.Clear();
+                AIResponse = string.Empty;
+                SelectedAIInsight = null;
+                
+                MessageBox.Show($"Successfully cleared {count} AI insights.", "Insights Cleared", 
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            else
+            {
+                Logger.LogInformation("User cancelled clearing AI insights");
+            }
+        }
+
+        /// <summary>
+        /// Export AI insights to a file for reporting or archival purposes
+        /// </summary>
+        public async Task ExportAIInsightsAsync(string filePath)
+        {
+            if (!AIInsights.Any())
+            {
+                Logger.LogWarning("No AI insights to export");
+                MessageBox.Show("No AI insights available to export.", "Export Failed", 
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            try
+            {
+                IsBusy = true;
+                BusyMessage = "Exporting AI insights...";
+
+                using (var writer = new System.IO.StreamWriter(filePath, false, System.Text.Encoding.UTF8))
+                {
+                    await writer.WriteLineAsync("Wiley Widget - AI Insights Export");
+                    await writer.WriteLineAsync($"Exported: {DateTime.UtcNow:f}");
+                    await writer.WriteLineAsync($"Total Insights: {AIInsights.Count}");
+                    await writer.WriteLineAsync(new string('=', 80));
+                    await writer.WriteLineAsync();
+
+                    foreach (var insight in AIInsights.OrderBy(i => i.Timestamp))
+                    {
+                        await writer.WriteLineAsync($"Insight #{insight.Id}");
+                        await writer.WriteLineAsync($"Timestamp: {insight.Timestamp:f}");
+                        await writer.WriteLineAsync($"Mode: {insight.Mode}");
+                        await writer.WriteLineAsync($"Category: {insight.Category}");
+                        await writer.WriteLineAsync($"Priority: {insight.Priority}");
+                        await writer.WriteLineAsync($"Actioned: {insight.IsActioned}");
+                        await writer.WriteLineAsync();
+                        await writer.WriteLineAsync($"Query:");
+                        await writer.WriteLineAsync(insight.Query);
+                        await writer.WriteLineAsync();
+                        await writer.WriteLineAsync($"Response:");
+                        await writer.WriteLineAsync(insight.Response);
+                        
+                        if (!string.IsNullOrWhiteSpace(insight.Notes))
+                        {
+                            await writer.WriteLineAsync();
+                            await writer.WriteLineAsync($"Notes:");
+                            await writer.WriteLineAsync(insight.Notes);
+                        }
+                        
+                        await writer.WriteLineAsync();
+                        await writer.WriteLineAsync(new string('-', 80));
+                        await writer.WriteLineAsync();
+                    }
+                }
+
+                Logger.LogInformation("Successfully exported {Count} AI insights to {FilePath}", AIInsights.Count, filePath);
+                MessageBox.Show($"Successfully exported {AIInsights.Count} insights to:\n{filePath}", 
+                    "Export Successful", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Failed to export AI insights to {FilePath}", filePath);
+                MessageBox.Show($"Failed to export AI insights: {ex.Message}", "Export Failed", 
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsBusy = false;
+                BusyMessage = string.Empty;
+            }
+        }
+
+        /// <summary>
+        /// Mark an insight as actioned/resolved
+        /// </summary>
+        public void MarkInsightAsActioned(AIInsight insight)
+        {
+            if (insight == null)
+            {
+                Logger.LogWarning("Cannot mark null insight as actioned");
+                return;
+            }
+
+            insight.IsActioned = true;
+            Logger.LogInformation("Marked insight #{Id} as actioned", insight.Id);
+            
+            // Refresh the UI
+            OnPropertyChanged(nameof(AIInsights));
+        }
+
+        /// <summary>
+        /// Filter insights by mode
+        /// </summary>
+        public IEnumerable<AIInsight> GetInsightsByMode(ConversationMode mode)
+        {
+            return AIInsights.Where(i => i.Mode == mode).OrderByDescending(i => i.Timestamp);
+        }
+
+        /// <summary>
+        /// Get high priority unactioned insights
+        /// </summary>
+        public IEnumerable<AIInsight> GetActionableInsights()
+        {
+            return AIInsights
+                .Where(i => !i.IsActioned && i.Priority == "High")
+                .OrderByDescending(i => i.Timestamp);
         }
 
         // Data Command Implementations

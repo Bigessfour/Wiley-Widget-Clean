@@ -10,6 +10,8 @@ using WileyWidget.Models.DTOs;
 using Xunit;
 using FluentAssertions;
 using WileyWidget.Tests;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace WileyWidget.Tests.Data;
 
@@ -33,7 +35,7 @@ public class EnhancedRepositoryTests : IDisposable
     {
         _contextFactory = WileyWidget.Tests.TestDbContextFactory.CreateSqliteInMemory("EnhancedRepositoryTests");
         _context = _contextFactory.CreateDbContext();
-        _repository = new EnterpriseRepository(_contextFactory);
+        _repository = new EnterpriseRepository(_contextFactory, NullLogger<EnterpriseRepository>.Instance);
         
         // Ensure database is created
         _context.Database.EnsureCreated();
@@ -483,7 +485,7 @@ public class EnhancedRepositoryTests : IDisposable
     {
         var context = _contextFactory.CreateDbContext();
         context.Database.ExecuteSqlRaw("DELETE FROM Enterprises");
-        using var uow = new UnitOfWork(context);
+        using var uow = new UnitOfWork(context, NullLogger<UnitOfWork>.Instance, NullLoggerFactory.Instance);
         var enterprise1 = new Enterprise
         {
             Name = "Enterprise 1",
@@ -515,7 +517,7 @@ public class EnhancedRepositoryTests : IDisposable
     public async Task UnitOfWork_ExecuteInTransaction_RollsBackOnFailure()
     {
         var context = _contextFactory.CreateDbContext();
-        using var uow = new UnitOfWork(context);
+        using var uow = new UnitOfWork(context, NullLogger<UnitOfWork>.Instance, NullLoggerFactory.Instance);
         var initialCount = await _repository.GetCountAsync();
 
         // Act & Assert

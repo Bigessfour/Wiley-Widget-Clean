@@ -67,4 +67,8 @@ public class BudgetEntry : IAuditable
     // Auditing (simplified)
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
+
+    // Computed properties for compatibility
+    public decimal TotalBudget => BudgetedAmount;
+    public decimal ActualSpent => ActualAmount;
 }

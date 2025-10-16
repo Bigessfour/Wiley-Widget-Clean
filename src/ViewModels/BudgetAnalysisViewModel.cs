@@ -9,6 +9,7 @@ using WileyWidget.Services;
 using WileyWidget.Services.Threading;
 using WileyWidget.ViewModels.Base;
 using WileyWidget.Business.Interfaces;
+using WileyWidget.Models;
 using System.Windows.Input;
 
 namespace WileyWidget.ViewModels;
@@ -136,6 +137,12 @@ public partial class BudgetAnalysisViewModel : AsyncViewModelBase
     private decimal varianceThreshold = 0.05m;
 
     /// <summary>
+    /// Error message for display
+    /// </summary>
+    [ObservableProperty]
+    private string? errorMessage;
+
+    /// <summary>
     /// Variance sort options
     /// </summary>
     public ObservableCollection<string> VarianceSortOptions { get; } = new()
@@ -236,10 +243,10 @@ public partial class BudgetAnalysisViewModel : AsyncViewModelBase
                 // Fallback to mock data if no real data available
                 budgetData = new[]
                 {
-                    new { BudgetedAmount = 100000m, ActualAmount = 95000m },
-                    new { BudgetedAmount = 50000m, ActualAmount = 52000m },
-                    new { BudgetedAmount = 75000m, ActualAmount = 70000m },
-                    new { BudgetedAmount = 25000m, ActualAmount = 24000m }
+                    new BudgetEntry { BudgetedAmount = 100000m, ActualAmount = 95000m, AccountNumber = "101", Description = "Mock Account 1", FiscalYear = currentYear, DepartmentId = 1 },
+                    new BudgetEntry { BudgetedAmount = 50000m, ActualAmount = 52000m, AccountNumber = "102", Description = "Mock Account 2", FiscalYear = currentYear, DepartmentId = 1 },
+                    new BudgetEntry { BudgetedAmount = 75000m, ActualAmount = 70000m, AccountNumber = "103", Description = "Mock Account 3", FiscalYear = currentYear, DepartmentId = 1 },
+                    new BudgetEntry { BudgetedAmount = 25000m, ActualAmount = 24000m, AccountNumber = "104", Description = "Mock Account 4", FiscalYear = currentYear, DepartmentId = 1 }
                 };
                 Logger.LogWarning("No budget data found for fiscal year {Year}, using mock data", currentYear);
             }
@@ -275,9 +282,6 @@ public partial class BudgetAnalysisViewModel : AsyncViewModelBase
         {
             IsBusy = false;
             BusyMessage = string.Empty;
-        }
-    }
-            Logger.LogError(ex, "Failed to generate budget analysis");
         }
     }
 
