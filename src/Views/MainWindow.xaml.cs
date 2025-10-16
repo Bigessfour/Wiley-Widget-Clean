@@ -317,25 +317,28 @@ namespace WileyWidget.Views
                         {
                             XDocument doc = XDocument.Load(isoStream);
                             
-                            // Validate and filter invalid DockState values using Syncfusion's DockingManager API
-                            var dockStateElements = doc.Descendants().Where(e => e.Name.LocalName.Contains("State") && e.Value == "Hidden");
-                            foreach (var stateElement in dockStateElements)
-                            {
-                                stateElement.Value = "Dock"; // Replace Hidden with Dock as per Syncfusion recommendations
-                                Log.Debug("Replaced invalid 'Hidden' state with 'Dock' for element: {Element}", stateElement.Parent?.Name.LocalName ?? "Unknown");
-                            }
+// Comprehensive validation and filtering of DockState values
+var validStates = new[] { "Dock", "Float", "AutoHidden" };
+var stateElements = doc.Descendants().Where(e => e.Name.LocalName.Contains("State"));
+foreach (var stateElement in stateElements)
+{
+    if (!validStates.Contains(stateElement.Value))
+    {
+        var oldValue = stateElement.Value;
+        stateElement.Value = "Dock";
+        Log.Debug("Invalid DockState '{OldValue}' replaced with 'Dock' for element: {Element}", oldValue, stateElement.Parent?.Name.LocalName ?? "Unknown");
+    }
+}
 
-                            // Additional validation: ensure no invalid combinations
-                            var invalidCombinations = doc.Descendants().Where(e => 
-                                (e.Name.LocalName.Contains("State") && (e.Value == "AutoHidden" || e.Value == "Float")) &&
-                                e.Parent?.Descendants().Any(d => d.Name.LocalName.Contains("IsActive") && d.Value == "false") == true);
-                            foreach (var combo in invalidCombinations)
-                            {
-                                combo.Value = "Dock";
-                                Log.Debug("Corrected invalid state combination to 'Dock'");
-                            }
-
-                            using (var reader = doc.CreateReader())
+// Additional validation: ensure no invalid combinations (e.g., AutoHidden with IsActive=false)
+var invalidCombinations = doc.Descendants().Where(e =>
+    e.Name.LocalName.Contains("State") && (e.Value == "AutoHidden" || e.Value == "Float") &&
+    e.Parent?.Descendants().Any(d => d.Name.LocalName.Contains("IsActive") && d.Value == "false") == true);
+foreach (var combo in invalidCombinations)
+{
+    combo.Value = "Dock";
+    Log.Debug("Corrected invalid state combination to 'Dock'");
+}                            using (var reader = doc.CreateReader())
                             {
                                 dockingManager.LoadDockState(reader);
                             }

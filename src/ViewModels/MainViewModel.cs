@@ -56,16 +56,16 @@ namespace WileyWidget.ViewModels
             NavigateToAnalyticsCommand = new AsyncRelayCommand(NavigateToAnalyticsAsync);
 
             // Initialize UI commands
-            RefreshCommand = new RelayCommand(Refresh);
+            RefreshCommand = new AsyncRelayCommand(RefreshAsync);
             RefreshAllCommand = new AsyncRelayCommand(RefreshAllAsync);
-            OpenSettingsCommand = new RelayCommand(OpenSettings);
-            OpenReportsCommand = new RelayCommand(OpenReports);
-            OpenAIAssistCommand = new RelayCommand(OpenAIAssist);
+            OpenSettingsCommand = new AsyncRelayCommand(OpenSettingsAsync);
+            OpenReportsCommand = new AsyncRelayCommand(OpenReportsAsync);
+            OpenAIAssistCommand = new AsyncRelayCommand(OpenAIAssistAsync);
 
             // Initialize theme commands
-            SwitchToMaterialDarkCommand = new RelayCommand(() => CurrentTheme = "MaterialDark");
-            SwitchToFluentDarkCommand = new RelayCommand(() => CurrentTheme = "FluentDark");
-            SwitchToFluentLightCommand = new RelayCommand(() => CurrentTheme = "FluentLight");
+            SwitchToMaterialDarkCommand = new AsyncRelayCommand(async () => { CurrentTheme = "MaterialDark"; await Task.CompletedTask; });
+            SwitchToFluentDarkCommand = new AsyncRelayCommand(async () => { CurrentTheme = "FluentDark"; await Task.CompletedTask; });
+            SwitchToFluentLightCommand = new AsyncRelayCommand(async () => { CurrentTheme = "FluentLight"; await Task.CompletedTask; });
 
             // Initialize data commands  
             ImportExcelCommand = new AsyncRelayCommand(ImportExcelAsync);
@@ -73,37 +73,37 @@ namespace WileyWidget.ViewModels
             SyncQuickBooksCommand = new AsyncRelayCommand(SyncQuickBooksAsync);
 
             // Initialize view commands
-            ShowDashboardCommand = new RelayCommand(ShowDashboard);
-            ShowAnalyticsCommand = new RelayCommand(ShowAnalytics);
+            ShowDashboardCommand = new AsyncRelayCommand(ShowDashboardAsync);
+            ShowAnalyticsCommand = new AsyncRelayCommand(ShowAnalyticsAsync);
 
             // Initialize budget commands
             CreateNewBudgetCommand = new AsyncRelayCommand(CreateNewBudgetAsync);
             ImportBudgetCommand = new AsyncRelayCommand(ImportBudgetAsync);
             ExportBudgetCommand = new AsyncRelayCommand(ExportBudgetAsync);
-            ShowBudgetAnalysisCommand = new RelayCommand(ShowBudgetAnalysis);
-            ShowRateCalculatorCommand = new RelayCommand(ShowRateCalculator);
+            ShowBudgetAnalysisCommand = new AsyncRelayCommand(ShowBudgetAnalysisAsync);
+            ShowRateCalculatorCommand = new AsyncRelayCommand(ShowRateCalculatorAsync);
 
             // Initialize enterprise commands
             AddEnterpriseCommand = new AsyncRelayCommand(AddEnterpriseAsync);
             EditEnterpriseCommand = new AsyncRelayCommand(EditEnterpriseAsync);
             DeleteEnterpriseCommand = new AsyncRelayCommand(DeleteEnterpriseAsync);
-            ManageServiceChargesCommand = new RelayCommand(ManageServiceCharges);
-            ManageUtilityBillsCommand = new RelayCommand(ManageUtilityBills);
+            ManageServiceChargesCommand = new AsyncRelayCommand(ManageServiceChargesAsync);
+            ManageUtilityBillsCommand = new AsyncRelayCommand(ManageUtilityBillsAsync);
 
             // Initialize report commands
-            GenerateFinancialSummaryCommand = new RelayCommand(GenerateFinancialSummary);
-            GenerateBudgetVsActualCommand = new RelayCommand(GenerateBudgetVsActual);
-            GenerateEnterprisePerformanceCommand = new RelayCommand(GenerateEnterprisePerformance);
-            CreateCustomReportCommand = new RelayCommand(CreateCustomReport);
-            ShowSavedReportsCommand = new RelayCommand(ShowSavedReports);
+            GenerateFinancialSummaryCommand = new AsyncRelayCommand(GenerateFinancialSummaryAsync);
+            GenerateBudgetVsActualCommand = new AsyncRelayCommand(GenerateBudgetVsActualAsync);
+            GenerateEnterprisePerformanceCommand = new AsyncRelayCommand(GenerateEnterprisePerformanceAsync);
+            CreateCustomReportCommand = new AsyncRelayCommand(CreateCustomReportAsync);
+            ShowSavedReportsCommand = new AsyncRelayCommand(ShowSavedReportsAsync);
 
             // Initialize AI commands
             SendAIQueryCommand = new AsyncRelayCommand(SendAIQueryAsync, CanSendAIQuery);
-            ChangeConversationModeCommand = new RelayCommand<ConversationMode>(mode => CurrentConversationMode = mode);
-            ClearAIInsightsCommand = new RelayCommand(ClearAIInsights);
+            ChangeConversationModeCommand = new AsyncRelayCommand<ConversationMode>(async mode => { CurrentConversationMode = mode; await Task.CompletedTask; });
+            ClearAIInsightsCommand = new AsyncRelayCommand(ClearAIInsightsAsync);
 
             // Initialize legacy commands
-            AddTestEnterpriseCommand = new RelayCommand(AddTestEnterprise);
+            AddTestEnterpriseCommand = new AsyncRelayCommand(AddTestEnterpriseAsync);
         }
 
         // Properties
@@ -263,9 +263,9 @@ namespace WileyWidget.ViewModels
         }
 
         // Theme switching commands
-        public RelayCommand SwitchToMaterialDarkCommand { get; }
-        public RelayCommand SwitchToFluentDarkCommand { get; }
-        public RelayCommand SwitchToFluentLightCommand { get; }
+        public AsyncRelayCommand SwitchToMaterialDarkCommand { get; }
+        public AsyncRelayCommand SwitchToFluentDarkCommand { get; }
+        public AsyncRelayCommand SwitchToFluentLightCommand { get; }
 
         private bool isInitialized;
         public bool IsInitialized
@@ -358,11 +358,11 @@ namespace WileyWidget.ViewModels
         public AsyncRelayCommand NavigateToAnalyticsCommand { get; }
 
         // UI Commands
-        public RelayCommand RefreshCommand { get; }
+        public AsyncRelayCommand RefreshCommand { get; }
         public AsyncRelayCommand RefreshAllCommand { get; }
-        public RelayCommand OpenSettingsCommand { get; }
-        public RelayCommand OpenReportsCommand { get; }
-        public RelayCommand OpenAIAssistCommand { get; }
+        public AsyncRelayCommand OpenSettingsCommand { get; }
+        public AsyncRelayCommand OpenReportsCommand { get; }
+        public AsyncRelayCommand OpenAIAssistCommand { get; }
 
         // Data Commands
         public AsyncRelayCommand ImportExcelCommand { get; }
@@ -370,37 +370,37 @@ namespace WileyWidget.ViewModels
         public AsyncRelayCommand SyncQuickBooksCommand { get; }
 
         // View Commands
-        public RelayCommand ShowDashboardCommand { get; }
-        public RelayCommand ShowAnalyticsCommand { get; }
+        public AsyncRelayCommand ShowDashboardCommand { get; }
+        public AsyncRelayCommand ShowAnalyticsCommand { get; }
 
         // Budget Commands
         public AsyncRelayCommand CreateNewBudgetCommand { get; }
         public AsyncRelayCommand ImportBudgetCommand { get; }
         public AsyncRelayCommand ExportBudgetCommand { get; }
-        public RelayCommand ShowBudgetAnalysisCommand { get; }
-        public RelayCommand ShowRateCalculatorCommand { get; }
+        public AsyncRelayCommand ShowBudgetAnalysisCommand { get; }
+        public AsyncRelayCommand ShowRateCalculatorCommand { get; }
 
         // Enterprise Commands
         public AsyncRelayCommand AddEnterpriseCommand { get; }
         public AsyncRelayCommand EditEnterpriseCommand { get; }
         public AsyncRelayCommand DeleteEnterpriseCommand { get; }
-        public RelayCommand ManageServiceChargesCommand { get; }
-        public RelayCommand ManageUtilityBillsCommand { get; }
+        public AsyncRelayCommand ManageServiceChargesCommand { get; }
+        public AsyncRelayCommand ManageUtilityBillsCommand { get; }
 
         // Report Commands
-        public RelayCommand GenerateFinancialSummaryCommand { get; }
-        public RelayCommand GenerateBudgetVsActualCommand { get; }
-        public RelayCommand GenerateEnterprisePerformanceCommand { get; }
-        public RelayCommand CreateCustomReportCommand { get; }
-        public RelayCommand ShowSavedReportsCommand { get; }
+        public AsyncRelayCommand GenerateFinancialSummaryCommand { get; }
+        public AsyncRelayCommand GenerateBudgetVsActualCommand { get; }
+        public AsyncRelayCommand GenerateEnterprisePerformanceCommand { get; }
+        public AsyncRelayCommand CreateCustomReportCommand { get; }
+        public AsyncRelayCommand ShowSavedReportsCommand { get; }
 
         // AI Commands
         public AsyncRelayCommand SendAIQueryCommand { get; }
-        public RelayCommand<ConversationMode> ChangeConversationModeCommand { get; }
-        public RelayCommand ClearAIInsightsCommand { get; }
+        public AsyncRelayCommand<ConversationMode> ChangeConversationModeCommand { get; }
+        public AsyncRelayCommand ClearAIInsightsCommand { get; }
 
         // Legacy Commands
-        public RelayCommand AddTestEnterpriseCommand { get; }
+        public AsyncRelayCommand AddTestEnterpriseCommand { get; }
 
         // Navigation Methods with region existence checks - Now Async
         private async Task NavigateToDashboardAsync()
@@ -630,7 +630,7 @@ namespace WileyWidget.ViewModels
         }
 
         // Other Methods
-        private void Refresh()
+        private async Task RefreshAsync()
         {
             Logger.LogInformation("MainViewModel: Refresh command executed");
             try
@@ -643,7 +643,7 @@ namespace WileyWidget.ViewModels
                 else
                 {
                     Logger.LogInformation("No current view to refresh, reloading data");
-                    RefreshAll();
+                    await RefreshAllAsync();
                 }
             }
             catch (Exception ex)
@@ -700,13 +700,13 @@ namespace WileyWidget.ViewModels
             }
         }
 
-        private void OpenSettings()
+        private async Task OpenSettingsAsync()
         {
             Logger.LogInformation("MainViewModel: Open settings command executed");
             try
             {
                 // Navigate to settings view
-                NavigateToRegionSafely("SettingsRegion", "SettingsView", "Settings");
+                await Task.Run(() => NavigateToRegionSafely("SettingsRegion", "SettingsView", "Settings"));
             }
             catch (Exception ex)
             {
@@ -714,7 +714,7 @@ namespace WileyWidget.ViewModels
             }
         }
 
-        private void AddTestEnterprise()
+        private async Task AddTestEnterpriseAsync()
         {
             Logger.LogInformation("MainViewModel: Add test enterprise command executed");
             try
@@ -726,8 +726,11 @@ namespace WileyWidget.ViewModels
                     Type = "Water"
                 };
                 
-                Enterprises.Add(testEnterprise);
-                SelectedEnterprise = testEnterprise;
+                await Task.Run(() =>
+                {
+                    Enterprises.Add(testEnterprise);
+                    SelectedEnterprise = testEnterprise;
+                });
                 
                 Logger.LogInformation("Test enterprise added: {EnterpriseName}", testEnterprise.Name);
             }
@@ -757,14 +760,14 @@ namespace WileyWidget.ViewModels
         }
 
         // UI Command Implementations
-        private void OpenReports()
+        private async Task OpenReportsAsync()
         {
-            NavigateToRegionSafely("ReportsRegion", "ReportsView", "Reports");
+            await Task.Run(() => NavigateToRegionSafely("ReportsRegion", "ReportsView", "Reports"));
         }
 
-        private void OpenAIAssist()
+        private async Task OpenAIAssistAsync()
         {
-            NavigateToRegionSafely("AIAssistRegion", "AIAssistView", "AI Assistant");
+            await Task.Run(() => NavigateToRegionSafely("AIAssistRegion", "AIAssistView", "AI Assistant"));
         }
 
         // AI Command Implementations
@@ -1158,7 +1161,7 @@ namespace WileyWidget.ViewModels
             return "Low";
         }
 
-        private void ClearAIInsights()
+        private async Task ClearAIInsightsAsync()
         {
             if (!AIInsights.Any())
             {
@@ -1168,11 +1171,11 @@ namespace WileyWidget.ViewModels
 
             var count = AIInsights.Count;
             
-            var result = MessageBox.Show(
+            var result = await Task.Run(() => MessageBox.Show(
                 $"Are you sure you want to clear all {count} AI insights? This action cannot be undone.",
                 "Clear AI Insights",
                 MessageBoxButton.YesNo,
-                MessageBoxImage.Question);
+                MessageBoxImage.Question));
 
             if (result == MessageBoxResult.Yes)
             {
@@ -1181,8 +1184,8 @@ namespace WileyWidget.ViewModels
                 AIResponse = string.Empty;
                 SelectedAIInsight = null;
                 
-                MessageBox.Show($"Successfully cleared {count} AI insights.", "Insights Cleared", 
-                    MessageBoxButton.OK, MessageBoxImage.Information);
+                await Task.Run(() => MessageBox.Show($"Successfully cleared {count} AI insights.", "Insights Cleared", 
+                    MessageBoxButton.OK, MessageBoxImage.Information));
             }
             else
             {
@@ -1562,14 +1565,14 @@ namespace WileyWidget.ViewModels
         }
 
         // View Command Implementations  
-        private void ShowDashboard()
+        private async Task ShowDashboardAsync()
         {
-            NavigateToRegionSafely("DashboardRegion", "DashboardView", "Dashboard");
+            await Task.Run(() => NavigateToRegionSafely("DashboardRegion", "DashboardView", "Dashboard"));
         }
 
-        private void ShowAnalytics()
+        private async Task ShowAnalyticsAsync()
         {
-            NavigateToRegionSafely("AnalyticsRegion", "AnalyticsView", "Analytics");
+            await Task.Run(() => NavigateToRegionSafely("AnalyticsRegion", "AnalyticsView", "Analytics"));
         }
 
         // Budget Command Implementations
@@ -1750,13 +1753,13 @@ namespace WileyWidget.ViewModels
             }
         }
 
-        private void ShowBudgetAnalysis()
+        private async Task ShowBudgetAnalysisAsync()
         {
             Logger.LogInformation("MainViewModel: Show budget analysis command executed");
             try
             {
                 // Navigate to budget analysis view
-                NavigateToRegionSafely("AnalyticsRegion", "BudgetAnalysisView", "Budget Analysis");
+                await Task.Run(() => NavigateToRegionSafely("AnalyticsRegion", "BudgetAnalysisView", "Budget Analysis"));
             }
             catch (Exception ex)
             {
@@ -1764,13 +1767,13 @@ namespace WileyWidget.ViewModels
             }
         }
 
-        private void ShowRateCalculator()
+        private async Task ShowRateCalculatorAsync()
         {
             Logger.LogInformation("MainViewModel: Show rate calculator command executed");
             try
             {
                 // Navigate to rate calculator view
-                NavigateToRegionSafely("AnalyticsRegion", "RateCalculatorView", "Rate Calculator");
+                await Task.Run(() => NavigateToRegionSafely("AnalyticsRegion", "RateCalculatorView", "Rate Calculator"));
             }
             catch (Exception ex)
             {
@@ -1976,13 +1979,13 @@ namespace WileyWidget.ViewModels
             }
         }
 
-        private void ManageServiceCharges()
+        private async Task ManageServiceChargesAsync()
         {
             Logger.LogInformation("MainViewModel: Manage service charges command executed");
             try
             {
                 // Navigate to service charges management view
-                NavigateToRegionSafely("EnterpriseRegion", "ServiceChargesView", "Service Charges");
+                await Task.Run(() => NavigateToRegionSafely("EnterpriseRegion", "ServiceChargesView", "Service Charges"));
             }
             catch (Exception ex)
             {
@@ -1990,13 +1993,13 @@ namespace WileyWidget.ViewModels
             }
         }
 
-        private void ManageUtilityBills()
+        private async Task ManageUtilityBillsAsync()
         {
             Logger.LogInformation("MainViewModel: Manage utility bills command executed");
             try
             {
                 // Navigate to utility bills management view
-                NavigateToRegionSafely("EnterpriseRegion", "UtilityBillsView", "Utility Bills");
+                await Task.Run(() => NavigateToRegionSafely("EnterpriseRegion", "UtilityBillsView", "Utility Bills"));
             }
             catch (Exception ex)
             {
@@ -2005,13 +2008,13 @@ namespace WileyWidget.ViewModels
         }
 
         // Report Command Implementations
-        private void GenerateFinancialSummary()
+        private async Task GenerateFinancialSummaryAsync()
         {
             Logger.LogInformation("MainViewModel: Generate financial summary command executed");
             try
             {
                 // Navigate to financial summary report view
-                NavigateToRegionSafely("ReportsRegion", "FinancialSummaryReportView", "Financial Summary Report");
+                await Task.Run(() => NavigateToRegionSafely("ReportsRegion", "FinancialSummaryReportView", "Financial Summary Report"));
             }
             catch (Exception ex)
             {
@@ -2019,13 +2022,13 @@ namespace WileyWidget.ViewModels
             }
         }
 
-        private void GenerateBudgetVsActual()
+        private async Task GenerateBudgetVsActualAsync()
         {
             Logger.LogInformation("MainViewModel: Generate budget vs actual command executed");
             try
             {
                 // Navigate to budget vs actual report view
-                NavigateToRegionSafely("ReportsRegion", "BudgetVsActualReportView", "Budget vs Actual Report");
+                await Task.Run(() => NavigateToRegionSafely("ReportsRegion", "BudgetVsActualReportView", "Budget vs Actual Report"));
             }
             catch (Exception ex)
             {
@@ -2033,13 +2036,13 @@ namespace WileyWidget.ViewModels
             }
         }
 
-        private void GenerateEnterprisePerformance()
+        private async Task GenerateEnterprisePerformanceAsync()
         {
             Logger.LogInformation("MainViewModel: Generate enterprise performance command executed");
             try
             {
                 // Navigate to enterprise performance report view
-                NavigateToRegionSafely("ReportsRegion", "EnterprisePerformanceReportView", "Enterprise Performance Report");
+                await Task.Run(() => NavigateToRegionSafely("ReportsRegion", "EnterprisePerformanceReportView", "Enterprise Performance Report"));
             }
             catch (Exception ex)
             {
@@ -2047,13 +2050,13 @@ namespace WileyWidget.ViewModels
             }
         }
 
-        private void CreateCustomReport()
+        private async Task CreateCustomReportAsync()
         {
             Logger.LogInformation("MainViewModel: Create custom report command executed");
             try
             {
                 // Navigate to custom report builder view
-                NavigateToRegionSafely("ReportsRegion", "CustomReportBuilderView", "Custom Report Builder");
+                await Task.Run(() => NavigateToRegionSafely("ReportsRegion", "CustomReportBuilderView", "Custom Report Builder"));
             }
             catch (Exception ex)
             {
@@ -2061,13 +2064,13 @@ namespace WileyWidget.ViewModels
             }
         }
 
-        private void ShowSavedReports()
+        private async Task ShowSavedReportsAsync()
         {
             Logger.LogInformation("MainViewModel: Show saved reports command executed");
             try
             {
                 // Navigate to saved reports view
-                NavigateToRegionSafely("ReportsRegion", "SavedReportsView", "Saved Reports");
+                await Task.Run(() => NavigateToRegionSafely("ReportsRegion", "SavedReportsView", "Saved Reports"));
             }
             catch (Exception ex)
             {

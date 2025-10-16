@@ -53,12 +53,6 @@ public class AccountNumber
     /// </summary>
     public AccountNumber(string value)
     {
-        if (string.IsNullOrEmpty(value))
-            throw new ArgumentException("Account number cannot be null or empty");
-
-        if (value.Length > 20)
-            throw new ArgumentException("Account number cannot exceed 20 characters");
-
         if (!Regex.IsMatch(value, @"^\d+([.-]\d+)*$"))
             throw new ArgumentException("Invalid account number format. Must be numeric with optional separators (dots or hyphens) (e.g., 405, 405.1, 410.2.1, 101-1000-000)");
 

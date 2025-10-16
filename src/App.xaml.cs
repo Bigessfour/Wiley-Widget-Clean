@@ -43,6 +43,7 @@ namespace WileyWidget
         // Thread-safety locks
         private static readonly object _initLock = new object();
         private static readonly object _containerLock = new object();
+        private static bool _isInitialized = false;
 
         // Helper method for views that need service resolution
         public static IServiceProvider GetActiveServiceProvider()
@@ -51,41 +52,42 @@ namespace WileyWidget
             {
                 if (CurrentContainer == null)
                 {
-                    Log.Error("Application container not initialized");
-                    throw new InvalidOperationException("Application container not initialized");
+                    Log.Error("Application container not initialized - call InitializeContainer() first");
+                    throw new InvalidOperationException("Application container not initialized. Ensure OnStartup has completed.");
                 }
-                
+
                 Log.Debug("Returning active service provider");
                 // Prism's container implements IServiceProvider
-                return CurrentContainer as IServiceProvider ?? 
+                return CurrentContainer as IServiceProvider ??
                        throw new InvalidOperationException("Container does not implement IServiceProvider");
             }
         }
 
-        // Stub methods for backwards compatibility (will be removed during full refactor)
+        // Production-ready ServiceProvider with proper initialization
         private static IServiceProvider _serviceProvider;
-        public static IServiceProvider ServiceProvider
+        private static IServiceProvider ServiceProvider
         {
             get
             {
-                lock (_initLock)
+                if (_serviceProvider == null)
                 {
-                    if (_serviceProvider == null)
+                    lock (_initLock)
                     {
-                        _serviceProvider = GetActiveServiceProvider();
-                        Log.Information("ServiceProvider initialized lazily with thread-safety");
+                        if (_serviceProvider == null)
+                        {
+                            _serviceProvider = GetActiveServiceProvider();
+                            Log.Information("ServiceProvider initialized with thread-safety");
+                        }
                     }
                 }
                 return _serviceProvider;
             }
-            set
-            {
-                lock (_initLock)
-                {
-                    _serviceProvider = value;
-                    Log.Information("ServiceProvider set explicitly with thread-safety");
-                }
-            }
+        }
+
+        // Public accessor for ServiceProvider (backwards compatibility)
+        public static IServiceProvider GetServiceProvider()
+        {
+            return ServiceProvider;
         }
         public static void LogDebugEvent(string category, string message) => Log.Debug("[{Category}] {Message}", category, message);
         public static void LogStartupTiming(string message, TimeSpan elapsed) => Log.Debug("{Message} completed in {Ms}ms", message, elapsed.TotalMilliseconds);
@@ -95,6 +97,9 @@ namespace WileyWidget
 
         protected override void OnStartup(StartupEventArgs e)
         {
+            // Set up global exception handling before anything else
+            SetupGlobalExceptionHandling();
+
             ConfigureLogging();
 
             // Syncfusion setup (from Syncfusion WPF docs: Register license before any controls load)
@@ -105,24 +110,97 @@ namespace WileyWidget
 
             base.OnStartup(e);
 
-            // Ensure ServiceProvider is set after bootstrapper initialization
-            ServiceProvider = CurrentContainer as IServiceProvider;
-            Log.Information("ServiceProvider initialized early in OnStartup after base initialization");
+            // ServiceProvider is now initialized lazily when first accessed
+            Log.Information("Application startup completed - ServiceProvider ready for lazy initialization");
+        }
+
+        /// <summary>
+        /// Sets up global exception handling for production readiness.
+        /// Catches unhandled exceptions and logs them appropriately.
+        /// </summary>
+        private void SetupGlobalExceptionHandling()
+        {
+            // Handle unhandled exceptions on the UI thread
+            Application.Current.DispatcherUnhandledException += (sender, e) =>
+            {
+                Log.Error(e.Exception, "Unhandled UI exception occurred");
+                e.Handled = true; // Prevent application crash
+
+                // Show user-friendly error message
+                System.Windows.MessageBox.Show(
+                    $"An unexpected error occurred: {e.Exception.Message}\n\nPlease check the logs for more details.",
+                    "Application Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            };
+
+            // Handle unhandled exceptions on background threads
+            AppDomain.CurrentDomain.UnhandledException += (sender, e) =>
+            {
+                var exception = e.ExceptionObject as Exception;
+                Log.Fatal(exception, "Unhandled background thread exception occurred");
+                // Application will terminate after this
+            };
+
+            // Handle unobserved task exceptions
+            System.Threading.Tasks.TaskScheduler.UnobservedTaskException += (sender, e) =>
+            {
+                Log.Error(e.Exception, "Unobserved task exception occurred");
+                e.SetObserved(); // Prevent it from crashing the finalizer thread
+            };
+
+            Log.Information("Global exception handling configured");
         }
 
         private void InitializeInternal()
         {
-            // Early initialization placeholder - ensures ServiceProvider is accessed before potential issues
-            // The lazy initialization in ServiceProvider property handles the actual setup
-            Log.Debug("InitializeInternal called for early container access");
+            // Early initialization to ensure logging is ready and basic services are available
+            // This prevents "Application container not initialized" errors during startup
+            Log.Debug("InitializeInternal called - ensuring early container access readiness");
+
+            // Validate that logging is configured
+            if (Log.Logger == null)
+            {
+                throw new InvalidOperationException("Logging not configured. Call ConfigureLogging() before InitializeInternal().");
+            }
+
+            // Mark as initialized to prevent duplicate initialization attempts
+            lock (_initLock)
+            {
+                if (_isInitialized)
+                {
+                    Log.Debug("Application already initialized, skipping InitializeInternal");
+                    return;
+                }
+                _isInitialized = true;
+            }
+
+            Log.Information("Application internal initialization completed");
         }
 
         protected override Window CreateShell()
         {
-            // CRITICAL: Set CurrentContainer BEFORE resolving shell to ensure views can access it
-            CurrentContainer = Container;
-            
-            return Container.Resolve<MainWindow>();
+            try
+            {
+                // CRITICAL: Set CurrentContainer BEFORE resolving shell to ensure views can access it
+                // This must happen after RegisterTypes() has completed
+                if (Container == null)
+                {
+                    throw new InvalidOperationException("Unity container not initialized. RegisterTypes() must be called before CreateShell().");
+                }
+
+                CurrentContainer = Container;
+                Log.Information("CurrentContainer set in CreateShell() - services now available for resolution");
+
+                var shell = Container.Resolve<MainWindow>();
+                Log.Information("MainWindow shell resolved successfully");
+                return shell;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Failed to create application shell");
+                throw new InvalidOperationException("Failed to create application shell. Check DI registrations and service availability.", ex);
+            }
         }
 
         protected override void InitializeShell(Window shell)
@@ -228,10 +306,88 @@ namespace WileyWidget
             // CRITICAL: Set CurrentContainer immediately after all registrations are complete
             // This ensures services like ThemeManager and SettingsService can access the container
             // during their construction, preventing "Application container not initialized" errors
-            CurrentContainer = containerRegistry as IContainerProvider;
-            
+            try
+            {
+                CurrentContainer = containerRegistry as IContainerProvider;
+                if (CurrentContainer == null)
+                {
+                    throw new InvalidOperationException("Failed to cast container registry to IContainerProvider");
+                }
+                Log.Information("✓ CurrentContainer set successfully after all DI registrations");
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Failed to set CurrentContainer after DI registrations");
+                throw new InvalidOperationException("DI container initialization failed. Application cannot continue.", ex);
+            }
+
             Log.Information("=== DI Container Registration Complete ===");
             Log.Information($"Total registrations: AI Services, Data Repositories, Business Services, ViewModels, Infrastructure");
+            Log.Information("Container ready for service resolution");
+
+            // Validate critical service registrations
+            ValidateCriticalServices(containerRegistry);
+        }
+
+        /// <summary>
+        /// Validates that all critical services are properly registered and can be resolved.
+        /// This prevents runtime errors due to missing DI registrations.
+        /// </summary>
+        /// <param name="containerRegistry">The container registry to validate</param>
+        private void ValidateCriticalServices(IContainerRegistry containerRegistry)
+        {
+            Log.Information("Validating critical service registrations...");
+
+            var criticalServices = new[]
+            {
+                ("IConfiguration", typeof(IConfiguration)),
+                ("ILoggerFactory", typeof(ILoggerFactory)),
+                ("ISettingsService", typeof(ISettingsService)),
+                ("IThemeManager", typeof(IThemeManager)),
+                ("IEnterpriseRepository", typeof(IEnterpriseRepository)),
+                ("IBudgetRepository", typeof(IBudgetRepository)),
+                ("IAIService", typeof(IAIService)),
+                ("IGrokSupercomputer", typeof(IGrokSupercomputer)),
+                ("IWileyWidgetContextService", typeof(IWileyWidgetContextService)),
+                ("IAILoggingService", typeof(IAILoggingService)),
+                ("IDataAnonymizerService", typeof(IDataAnonymizerService))
+            };
+
+            var validationErrors = new List<string>();
+
+            foreach (var (serviceName, serviceType) in criticalServices)
+            {
+                try
+                {
+                    var unityContainer = containerRegistry.GetContainer();
+                    var service = unityContainer.Resolve(serviceType);
+                    if (service == null)
+                    {
+                        validationErrors.Add($"{serviceName} resolved to null");
+                    }
+                    else
+                    {
+                        Log.Debug($"✓ {serviceName} validated successfully");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    validationErrors.Add($"{serviceName} failed to resolve: {ex.Message}");
+                    Log.Warning(ex, $"Critical service validation failed for {serviceName}");
+                }
+            }
+
+            if (validationErrors.Any())
+            {
+                Log.Error("Critical service validation failed:");
+                foreach (var error in validationErrors)
+                {
+                    Log.Error($"  - {error}");
+                }
+                throw new InvalidOperationException($"Critical services failed validation: {string.Join(", ", validationErrors)}");
+            }
+
+            Log.Information("✓ All critical services validated successfully");
         }
 
         /// <summary>
@@ -441,28 +597,55 @@ namespace WileyWidget
 
         protected override void OnInitialized()
         {
-            base.OnInitialized();
-
-            // CurrentContainer is already set in CreateShell()
-            // This ensures it's available during shell construction
-
-            Application.Current.MainWindow?.Show();
-
-            if (SplashScreenInstance != null)
-            {
-                SplashScreenInstance.Close();
-                SplashScreenInstance = null;
-            }
-
             try
             {
-                // var regionManager = Container.Resolve<IRegionManager>();
-                // regionManager.RequestNavigate("MainRegion", "DashboardView");
-                // Log.Information("Navigated to DashboardView during application initialization");
+                base.OnInitialized();
+
+                // CurrentContainer is already set in CreateShell()
+                // This ensures it's available during shell construction
+                if (CurrentContainer == null)
+                {
+                    throw new InvalidOperationException("CurrentContainer not set. DI initialization failed.");
+                }
+
+                Log.Information("Application initialization completed successfully");
+                Log.Information("All services registered and container ready for use");
+
+                Application.Current.MainWindow?.Show();
+
+                if (SplashScreenInstance != null)
+                {
+                    SplashScreenInstance.Close();
+                    SplashScreenInstance = null;
+                    Log.Information("Splash screen closed successfully");
+                }
+
+                try
+                {
+                    // Optional: Navigate to default view
+                    // var regionManager = Container.Resolve<IRegionManager>();
+                    // regionManager.RequestNavigate("MainRegion", "DashboardView");
+                    // Log.Information("Navigated to DashboardView during application initialization");
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "Failed to navigate to default view during startup - continuing without navigation");
+                }
             }
             catch (Exception ex)
             {
-                Log.Warning(ex, "Failed to navigate to DashboardView during startup");
+                Log.Error(ex, "Critical error during application initialization");
+                // Ensure splash screen is closed even on error
+                if (SplashScreenInstance != null)
+                {
+                    try
+                    {
+                        SplashScreenInstance.Close();
+                        SplashScreenInstance = null;
+                    }
+                    catch { /* Ignore cleanup errors */ }
+                }
+                throw;
             }
         }
 

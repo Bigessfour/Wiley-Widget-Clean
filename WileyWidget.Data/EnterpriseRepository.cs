@@ -237,7 +237,7 @@ public class EnterpriseRepository : IEnterpriseRepository
         {
             _logger.LogDebug("Checking if enterprise exists by name '{Name}'", name);
         }
-        var exists = await query.AnyAsync(e => e.Name.ToLowerInvariant() == name.ToLowerInvariant());
+        var exists = await query.AnyAsync(e => e.Name.ToLower(CultureInfo.InvariantCulture) == name.ToLower(CultureInfo.InvariantCulture));
         _logger.LogDebug("Enterprise exists by name '{Name}': {Exists}", name, exists);
         return exists;
     }

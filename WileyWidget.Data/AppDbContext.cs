@@ -190,6 +190,19 @@ public class AppDbContext : DbContext
             relationship.DeleteBehavior = DeleteBehavior.Restrict;
         }
 
+        // Override restrict for cascade deletes on MunicipalAccount relationships
+        modelBuilder.Entity<MunicipalAccount>()
+            .HasOne(ma => ma.ParentAccount)
+            .WithMany(pa => pa.ChildAccounts)
+            .HasForeignKey(ma => ma.ParentAccountId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Invoice>()
+            .HasOne(i => i.MunicipalAccount)
+            .WithMany(ma => ma.Invoices)
+            .HasForeignKey(i => i.MunicipalAccountId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         // Seed sample enterprise data
         // modelBuilder.Entity<Enterprise>().HasData(
         //     new Enterprise 
