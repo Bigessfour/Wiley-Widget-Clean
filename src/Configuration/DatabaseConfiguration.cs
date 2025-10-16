@@ -674,6 +674,7 @@ public static class DatabaseConfiguration
         services.AddScoped<WileyWidget.Business.Interfaces.IMunicipalAccountRepository, WileyWidget.Data.MunicipalAccountRepository>();
         services.AddScoped<WileyWidget.Business.Interfaces.IEnterpriseRepository, WileyWidget.Data.EnterpriseRepository>();
         services.AddScoped<WileyWidget.Business.Interfaces.IUtilityCustomerRepository, WileyWidget.Data.UtilityCustomerRepository>();
+        services.AddScoped<WileyWidget.Business.Interfaces.IAuditRepository, WileyWidget.Data.AuditRepository>();
     }
 
     /// <summary>

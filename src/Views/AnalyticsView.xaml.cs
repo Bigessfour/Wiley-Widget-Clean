@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Threading;
 using Syncfusion.UI.Xaml.Charts;
+using Syncfusion.SfSkinManager;
 using WileyWidget.ViewModels;
 
 namespace WileyWidget;
@@ -29,32 +31,84 @@ public partial class AnalyticsView : UserControl
     {
         InitializeComponent();
 
-        // AnalyticsChart is available as a XAML-generated field
-
         if (viewModel != null)
         {
             DataContext = viewModel;
-            viewModel.DataLoaded += OnAnalyticsLoaded!;
+            viewModel.DataLoaded += OnAnalyticsDataLoaded;
+            viewModel.PropertyChanged += OnViewModelPropertyChanged;
         }
-        
+
         // Clean up when the control is unloaded
         Unloaded += AnalyticsView_Unloaded;
+
+        // Initialize default selections if not set
+        if (viewModel != null && string.IsNullOrEmpty(viewModel.SelectedChartType) && viewModel.ChartTypes.Any())
+        {
+            viewModel.SelectedChartType = viewModel.ChartTypes.First();
+        }
+
+        if (viewModel != null && string.IsNullOrEmpty(viewModel.SelectedTimePeriod) && viewModel.TimePeriods.Any())
+        {
+            viewModel.SelectedTimePeriod = viewModel.TimePeriods.First();
+        }
     }
 
     private void AnalyticsView_Unloaded(object sender, RoutedEventArgs e)
     {
         if (DataContext is AnalyticsViewModel viewModel)
         {
-            viewModel.DataLoaded -= OnAnalyticsLoaded!;
+            viewModel.DataLoaded -= OnAnalyticsDataLoaded;
+            viewModel.PropertyChanged -= OnViewModelPropertyChanged;
         }
     }
 
-    private void OnAnalyticsLoaded(object? sender, EventArgs e)
+    private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(AnalyticsViewModel.IsDataLoaded) && DataContext is AnalyticsViewModel viewModel && viewModel.IsDataLoaded)
+        {
+            UpdateChartDisplay(viewModel);
+        }
+    }
+
+    private void OnAnalyticsDataLoaded(object? sender, EventArgs e)
+    {
+        if (DataContext is AnalyticsViewModel viewModel)
+        {
+            UpdateChartDisplay(viewModel);
+        }
+    }
+
+    private void UpdateChartDisplay(AnalyticsViewModel viewModel)
     {
         Dispatcher.Invoke(() =>
         {
-            // Analytics data loaded, UI can be refreshed if needed
-            // Chart rendering is typically done in the view model or via data binding
+            try
+            {
+                AnalyticsChart.Series.Clear();
+
+                // Create series based on the current analytics data
+                if (viewModel.CurrentAnalyticsData.Any())
+                {
+                    // For now, create a simple series from the first data item
+                    // This would need to be enhanced based on the actual chart requirements
+                    var sampleSeries = new LineSeries
+                    {
+                        ItemsSource = viewModel.CurrentAnalyticsData.Take(10),
+                        XBindingPath = "Category", // This would need to be adjusted based on actual data structure
+                        YBindingPath = "TotalBudgeted", // This would need to be adjusted based on actual data structure
+                        Label = viewModel.SelectedChartType ?? "Data",
+                        EnableAnimation = true,
+                        ShowTooltip = true
+                    };
+
+                    AnalyticsChart.Series.Add(sampleSeries);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log error but don't crash the UI
+                System.Diagnostics.Debug.WriteLine($"Error updating chart display: {ex.Message}");
+            }
         });
     }
 
@@ -121,23 +175,27 @@ public partial class AnalyticsView : UserControl
 
     private void OnChartSelectionChanged(object sender, ChartSelectionChangedEventArgs e)
     {
-        // Commented out due to API changes in .NET 9.0
-        //if (DataContext is not AnalyticsViewModel viewModel)
-        //{
-        //    return;
-        //}
+        if (DataContext is not AnalyticsViewModel viewModel)
+        {
+            return;
+        }
 
-        //if (e.SelectedSeries == null || e.SelectedDataPoint == null)
-        //{
-        //    return;
-        //}
+        // Handle chart selection for drill-down
+        // Simplified implementation - trigger drill-down when any series is selected
+        if (e.SelectedSeries != null && viewModel.DrillDownCommand.CanExecute(null))
+        {
+            viewModel.DrillDownCommand.Execute(null);
+        }
+    }
 
-        //var point = e.SelectedDataPoint as ChartPoint;
-        //var payload = point ?? e.SelectedDataPoint;
-        //if (viewModel.DrillDownCommand.CanExecute(payload))
-        //{
-        //    viewModel.DrillDownCommand.Execute(payload);
-        //}
+    private void ThemeSelector_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (sender is ComboBox comboBox && comboBox.SelectedItem is ComboBoxItem selectedItem && selectedItem.Tag is string themeName)
+        {
+            // Apply the selected theme to this control
+            using var theme = new Theme(themeName);
+            SfSkinManager.SetTheme(this, theme);
+        }
     }
 
     private sealed record ChartPoint(string Label, double Value);

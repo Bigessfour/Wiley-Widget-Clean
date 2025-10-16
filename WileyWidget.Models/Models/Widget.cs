@@ -66,18 +66,18 @@ public class Widget : INotifyPropertyChanged
         }
     }
 
-    private string? _description;
+    private string _description = string.Empty;
 
     /// <summary>
     /// Description of the widget (optional, max 500 characters)
     /// </summary>
     [StringLength(500, ErrorMessage = "Description cannot exceed 500 characters")]
-    public string? Description
+    public string Description
     {
         get => _description;
         set
         {
-            var sanitized = string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+            var sanitized = string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim();
             if (!string.Equals(_description, sanitized, StringComparison.Ordinal))
             {
                 _description = sanitized;
@@ -155,18 +155,18 @@ public class Widget : INotifyPropertyChanged
     [DataType(DataType.DateTime)]
     public DateTime? ModifiedDate { get; set; }
 
-    private string? _category;
+    private string _category = string.Empty;
 
     /// <summary>
     /// Category or type of widget
     /// </summary>
     [StringLength(50)]
-    public string? Category
+    public string Category
     {
         get => _category;
         set
         {
-            var sanitized = string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+            var sanitized = string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim();
             if (!string.Equals(_category, sanitized, StringComparison.Ordinal))
             {
                 _category = sanitized;
@@ -175,18 +175,18 @@ public class Widget : INotifyPropertyChanged
         }
     }
 
-    private string? _sku;
+    private string _sku = string.Empty;
 
     /// <summary>
     /// SKU (Stock Keeping Unit) for the widget
     /// </summary>
     [StringLength(20)]
-    public string? SKU
+    public string SKU
     {
         get => _sku;
         set
         {
-            var sanitized = string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+            var sanitized = string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim();
             if (!string.Equals(_sku, sanitized, StringComparison.Ordinal))
             {
                 _sku = sanitized;

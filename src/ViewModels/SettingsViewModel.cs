@@ -31,6 +31,7 @@ namespace WileyWidget.ViewModels
         private readonly ISyncfusionLicenseService _syncfusionLicenseService;
         private readonly IAIService _aiService;
         private readonly IThemeManager _themeManager;
+        private readonly ISettingsService _settingsService;
 
         private readonly Dictionary<string, List<string>> _errors = new();
 
@@ -540,7 +541,8 @@ namespace WileyWidget.ViewModels
             IQuickBooksService quickBooksService,
             ISyncfusionLicenseService syncfusionLicenseService,
             IAIService aiService,
-            IThemeManager themeManager)
+            IThemeManager themeManager,
+            ISettingsService settingsService)
         {
             // Validate required dependencies
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -553,6 +555,7 @@ namespace WileyWidget.ViewModels
             _syncfusionLicenseService = syncfusionLicenseService ?? throw new ArgumentNullException(nameof(syncfusionLicenseService));
             _aiService = aiService ?? throw new ArgumentNullException(nameof(aiService));
             _themeManager = themeManager ?? throw new ArgumentNullException(nameof(themeManager));
+            _settingsService = settingsService ?? throw new ArgumentNullException(nameof(settingsService));
 
             // Initialize system info
             SystemInfo = $"OS: {Environment.OSVersion}\n" +
@@ -1136,8 +1139,8 @@ namespace WileyWidget.ViewModels
                 }
 
                 // Save the theme preference
-                SettingsService.Instance.Current.Theme = themeName;
-                SettingsService.Instance.Save();
+                _settingsService.Current.Theme = themeName;
+                _settingsService.Save();
             }
             catch (Exception ex)
             {

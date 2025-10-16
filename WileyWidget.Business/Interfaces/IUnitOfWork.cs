@@ -39,6 +39,11 @@ public interface IUnitOfWork : IDisposable, IAsyncDisposable
     IEnterpriseRepository Enterprises { get; }
 
     /// <summary>
+    /// Audit repository access
+    /// </summary>
+    IAuditRepository Audits { get; }
+
+    /// <summary>
     /// Saves all pending changes to the database
     /// </summary>
     /// <returns>Number of affected rows</returns>

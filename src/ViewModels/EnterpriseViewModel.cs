@@ -1457,8 +1457,32 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
     [RelayCommand]
     private void CopyToClipboard()
     {
-        // TODO: Implement copy to clipboard
-        StatusMessage = "Copy to clipboard feature coming soon...";
+        if (SelectedEnterprise == null)
+        {
+            StatusMessage = "No enterprise selected to copy";
+            return;
+        }
+
+        try
+        {
+            var clipboardText = $"Enterprise: {SelectedEnterprise.Name}\n" +
+                               $"Type: {SelectedEnterprise.Type}\n" +
+                               $"Status: {SelectedEnterprise.Status}\n" +
+                               $"Citizens: {SelectedEnterprise.CitizenCount}\n" +
+                               $"Rate: {SelectedEnterprise.CurrentRate:C}\n" +
+                               $"Monthly Revenue: {SelectedEnterprise.MonthlyRevenue:C}\n" +
+                               $"Monthly Expenses: {SelectedEnterprise.MonthlyExpenses:C}\n" +
+                               $"Monthly Balance: {SelectedEnterprise.MonthlyBalance:C}\n" +
+                               $"Last Updated: {SelectedEnterprise.LastUpdated:g}";
+
+            System.Windows.Clipboard.SetText(clipboardText);
+            StatusMessage = $"Enterprise '{SelectedEnterprise.Name}' copied to clipboard";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Failed to copy to clipboard: {ex.Message}";
+            Log.Error(ex, "Failed to copy enterprise to clipboard");
+        }
     }
 
     /// <summary>
@@ -1635,8 +1659,41 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
     [RelayCommand]
     private void RateAnalysis()
     {
-        // TODO: Implement rate analysis
-        StatusMessage = "Rate analysis feature coming soon...";
+        if (EnterpriseList.Count == 0)
+        {
+            StatusMessage = "No enterprises available for rate analysis";
+            return;
+        }
+
+        try
+        {
+            var rates = EnterpriseList.Where(e => e.CurrentRate > 0).Select(e => e.CurrentRate).ToList();
+            if (rates.Count == 0)
+            {
+                StatusMessage = "No valid rates found for analysis";
+                return;
+            }
+
+            var avgRate = rates.Average();
+            var minRate = rates.Min();
+            var maxRate = rates.Max();
+            var medianRate = rates.OrderBy(r => r).ElementAt(rates.Count / 2);
+
+            var analysis = $"Rate Analysis:\n" +
+                          $"Average Rate: {avgRate:C}\n" +
+                          $"Median Rate: {medianRate:C}\n" +
+                          $"Lowest Rate: {minRate:C}\n" +
+                          $"Highest Rate: {maxRate:C}\n" +
+                          $"Enterprises Analyzed: {rates.Count}";
+
+            StatusMessage = analysis;
+            Log.Information("Rate analysis completed: Avg={Avg:C}, Min={Min:C}, Max={Max:C}", avgRate, minRate, maxRate);
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Rate analysis failed: {ex.Message}";
+            Log.Error(ex, "Failed to perform rate analysis");
+        }
     }
 
     /// <summary>
@@ -1645,9 +1702,39 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
     [RelayCommand]
     private async Task ViewAuditHistoryAsync()
     {
-        // TODO: Implement audit history view
-        StatusMessage = "Audit history feature coming soon...";
-        await Task.CompletedTask;
+        if (SelectedEnterprise == null)
+        {
+            StatusMessage = "No enterprise selected to view audit history";
+            return;
+        }
+
+        try
+        {
+            // Get audit entries for the last 30 days
+            var endDate = DateTime.UtcNow;
+            var startDate = endDate.AddDays(-30);
+            
+            var auditEntries = await _unitOfWork.Audits.GetAuditTrailForEntityAsync("Enterprise", SelectedEnterprise.Id, startDate, endDate);
+            
+            if (auditEntries.Any())
+            {
+                var history = string.Join("\n", auditEntries
+                    .OrderByDescending(a => a.Timestamp)
+                    .Take(10) // Show last 10 entries
+                    .Select(a => $"{a.Timestamp:g} - {a.Action} by {a.User}: {a.Changes ?? "No details"}"));
+                
+                StatusMessage = $"Audit History for '{SelectedEnterprise.Name}' (last 30 days):\n{history}";
+            }
+            else
+            {
+                StatusMessage = $"No audit history found for '{SelectedEnterprise.Name}' in the last 30 days";
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Failed to load audit history: {ex.Message}";
+            Log.Error(ex, "Failed to load audit history for enterprise {EnterpriseId}", SelectedEnterprise.Id);
+        }
     }
 
     /// <summary>
@@ -1656,8 +1743,25 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
     [RelayCommand]
     private void ShowAdvancedFilter()
     {
-        // TODO: Implement advanced filter
-        StatusMessage = "Advanced filter feature coming soon...";
+        try
+        {
+            // For now, show available filter options in status message
+            // In a full implementation, this would open a filter dialog
+            var filterOptions = "Advanced Filter Options:\n" +
+                               "• Filter by Budget Range: Min/Max monthly revenue\n" +
+                               "• Filter by Date Range: Last updated within period\n" +
+                               "• Filter by Performance: Positive/negative balance\n" +
+                               "• Custom Criteria: Combine multiple conditions\n\n" +
+                               "Feature will open a dedicated filter dialog in the next update.";
+
+            StatusMessage = filterOptions;
+            Log.Information("Advanced filter options displayed to user");
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Failed to show advanced filter: {ex.Message}";
+            Log.Error(ex, "Failed to show advanced filter options");
+        }
     }
 
     /// <summary>
@@ -1666,8 +1770,38 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
     [RelayCommand]
     private void ShowTreeMap()
     {
-        // TODO: Implement tree map view
-        StatusMessage = "Tree map view feature coming soon...";
+        try
+        {
+            if (EnterpriseList.Count == 0)
+            {
+                StatusMessage = "No enterprise data available for tree map visualization";
+                return;
+            }
+
+            // Calculate enterprise sizes by revenue for tree map
+            var totalRevenue = EnterpriseList.Sum(e => Math.Abs(e.MonthlyRevenue));
+            var treeMapData = EnterpriseList
+                .OrderByDescending(e => Math.Abs(e.MonthlyRevenue))
+                .Take(10) // Top 10 for readability
+                .Select(e => new
+                {
+                    Name = e.Name,
+                    Revenue = e.MonthlyRevenue,
+                    Percentage = totalRevenue > 0 ? (Math.Abs(e.MonthlyRevenue) / totalRevenue) * 100 : 0
+                });
+
+            var treeMapText = "Enterprise Revenue Tree Map (Top 10):\n" +
+                             string.Join("\n", treeMapData.Select(e => 
+                                 $"{e.Name}: {e.Revenue:C} ({e.Percentage:F1}%)"));
+
+            StatusMessage = treeMapText;
+            Log.Information("Tree map visualization displayed for {Count} enterprises", treeMapData.Count());
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Failed to generate tree map: {ex.Message}";
+            Log.Error(ex, "Failed to generate enterprise tree map");
+        }
     }
 
     /// <summary>
@@ -1676,8 +1810,44 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
     [RelayCommand]
     private void ShowTreeView()
     {
-        // TODO: Implement tree view
-        StatusMessage = "Tree view feature coming soon...";
+        try
+        {
+            if (EnterpriseList.Count == 0)
+            {
+                StatusMessage = "No enterprise data available for tree view";
+                return;
+            }
+
+            // Group enterprises by type for hierarchical display
+            var groupedByType = EnterpriseList
+                .GroupBy(e => e.Type)
+                .OrderBy(g => g.Key);
+
+            var treeViewText = "Enterprise Hierarchy by Type:\n";
+            foreach (var group in groupedByType)
+            {
+                treeViewText += $"\n📁 {group.Key} ({group.Count()} enterprises)\n";
+                foreach (var enterprise in group.OrderBy(e => e.Name))
+                {
+                    var statusIcon = enterprise.Status.ToString().ToLower(CultureInfo.InvariantCulture) switch
+                    {
+                        "active" => "🟢",
+                        "inactive" => "🔴",
+                        "pending" => "🟡",
+                        _ => "⚪"
+                    };
+                    treeViewText += $"  └── {statusIcon} {enterprise.Name} ({enterprise.CitizenCount} citizens, {enterprise.MonthlyBalance:C})\n";
+                }
+            }
+
+            StatusMessage = treeViewText;
+            Log.Information("Tree view displayed with {GroupCount} enterprise groups", groupedByType.Count());
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Failed to generate tree view: {ex.Message}";
+            Log.Error(ex, "Failed to generate enterprise tree view");
+        }
     }
 
     /// <summary>

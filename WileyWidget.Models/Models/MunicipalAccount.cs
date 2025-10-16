@@ -20,6 +20,7 @@ public class AccountNumber
     /// The account number value (e.g., "405.1", "410.2.1", "101-1000-000")
     /// </summary>
     [Required]
+    [MaxLength(20)]
     [RegularExpression(@"^\d+([.-]\d+)*$", ErrorMessage = "Account number must be numeric with optional separators (dots or hyphens)")]
     public string Value { get; private set; }
 
@@ -120,6 +121,11 @@ public class MunicipalAccount : INotifyPropertyChanged
     /// </summary>
     [Key]
     public int Id { get; set; }
+
+    /// <summary>
+    /// Alias for Id for compatibility
+    /// </summary>
+    public int MunicipalAccountId => Id;
 
     /// <summary>
     /// Row version for optimistic concurrency control

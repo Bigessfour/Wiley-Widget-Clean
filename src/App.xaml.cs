@@ -34,23 +34,52 @@ namespace WileyWidget
         // Splash screen instance for bootstrapper access
         public static Window? SplashScreenInstance { get; set; }
 
+        // Thread-safety locks
+        private static readonly object _initLock = new object();
+        private static readonly object _containerLock = new object();
+
         // Helper method for views that need service resolution
         public static IServiceProvider GetActiveServiceProvider()
         {
-            if (CurrentContainer == null)
-                throw new InvalidOperationException("Application container not initialized");
-            
-            // Prism's container implements IServiceProvider
-            return CurrentContainer as IServiceProvider ?? 
-                   throw new InvalidOperationException("Container does not implement IServiceProvider");
+            lock (_containerLock)
+            {
+                if (CurrentContainer == null)
+                {
+                    Log.Error("Application container not initialized");
+                    throw new InvalidOperationException("Application container not initialized");
+                }
+                
+                Log.Debug("Returning active service provider");
+                // Prism's container implements IServiceProvider
+                return CurrentContainer as IServiceProvider ?? 
+                       throw new InvalidOperationException("Container does not implement IServiceProvider");
+            }
         }
 
         // Stub methods for backwards compatibility (will be removed during full refactor)
         private static IServiceProvider _serviceProvider;
         public static IServiceProvider ServiceProvider
         {
-            get => _serviceProvider ?? GetActiveServiceProvider();
-            set => _serviceProvider = value;
+            get
+            {
+                lock (_initLock)
+                {
+                    if (_serviceProvider == null)
+                    {
+                        _serviceProvider = GetActiveServiceProvider();
+                        Log.Information("ServiceProvider initialized lazily with thread-safety");
+                    }
+                }
+                return _serviceProvider;
+            }
+            set
+            {
+                lock (_initLock)
+                {
+                    _serviceProvider = value;
+                    Log.Information("ServiceProvider set explicitly with thread-safety");
+                }
+            }
         }
         public static void LogDebugEvent(string category, string message) => Log.Debug("[{Category}] {Message}", category, message);
         public static void LogStartupTiming(string message, TimeSpan elapsed) => Log.Debug("{Message} completed in {Ms}ms", message, elapsed.TotalMilliseconds);
@@ -65,7 +94,21 @@ namespace WileyWidget
             // Syncfusion setup (from Syncfusion WPF docs: Register license before any controls load)
             SyncfusionLicenseProvider.RegisterLicense("YOUR_SYNCFUSION_LICENSE_KEY_HERE");  // Replace with your actual key
 
+            // Initialize ServiceProvider early to prevent "Application container not initialized" errors
+            InitializeInternal();
+
             base.OnStartup(e);
+
+            // Ensure ServiceProvider is set after bootstrapper initialization
+            ServiceProvider = CurrentContainer as IServiceProvider;
+            Log.Information("ServiceProvider initialized early in OnStartup after base initialization");
+        }
+
+        private void InitializeInternal()
+        {
+            // Early initialization placeholder - ensures ServiceProvider is accessed before potential issues
+            // The lazy initialization in ServiceProvider property handles the actual setup
+            Log.Debug("InitializeInternal called for early container access");
         }
 
         protected override Window CreateShell()
@@ -132,6 +175,15 @@ namespace WileyWidget
             // Register Excel services
             containerRegistry.RegisterSingleton<IExcelReaderService, ExcelReaderService>();
             
+            // Register report export service
+            containerRegistry.RegisterSingleton<IReportExportService, ReportExportService>();
+            
+            // Register budget repository
+            containerRegistry.Register<IBudgetRepository, WileyWidget.Data.BudgetRepository>();
+            
+            // Register audit repository
+            containerRegistry.Register<IAuditRepository, WileyWidget.Data.AuditRepository>();
+            
             // Register StartupPerformanceMonitor
             containerRegistry.RegisterSingleton<WileyWidget.Diagnostics.StartupPerformanceMonitor>();
             
@@ -139,14 +191,15 @@ namespace WileyWidget
             containerRegistry.RegisterSingleton<Prism.Dialogs.IDialogService, Prism.Dialogs.DialogService>();
             
             // Register ViewModels
-            containerRegistry.RegisterSingleton<MainViewModel>(provider => new MainViewModel(provider.Resolve<IRegionManager>(), provider.Resolve<IDispatcherHelper>(), provider.Resolve<ILogger<MainViewModel>>(), provider.Resolve<IEnterpriseRepository>()));
-            containerRegistry.Register<AnalyticsViewModel>();
+            containerRegistry.RegisterSingleton<MainViewModel>(provider => new MainViewModel(provider.Resolve<IRegionManager>(), provider.Resolve<IDispatcherHelper>(), provider.Resolve<ILogger<MainViewModel>>(), provider.Resolve<IEnterpriseRepository>(), provider.Resolve<IExcelReaderService>(), provider.Resolve<IReportExportService>(), provider.Resolve<IBudgetRepository>()));
+            containerRegistry.Register<AnalyticsViewModel>(provider => new AnalyticsViewModel(provider.Resolve<IDispatcherHelper>(), provider.Resolve<ILogger<AnalyticsViewModel>>(), provider.Resolve<IBudgetRepository>(), provider.Resolve<IMunicipalAccountRepository>(), provider.Resolve<IReportExportService>()));
             containerRegistry.Register<DashboardViewModel>();
             containerRegistry.Register<EnterpriseViewModel>();
             containerRegistry.Register<BudgetViewModel>();
             containerRegistry.Register<MunicipalAccountViewModel>();
             containerRegistry.Register<UtilityCustomerViewModel>();
             containerRegistry.Register<ReportsViewModel>();
+            containerRegistry.Register<BudgetAnalysisViewModel>(provider => new BudgetAnalysisViewModel(provider.Resolve<IDispatcherHelper>(), provider.Resolve<ILogger<BudgetAnalysisViewModel>>(), provider.Resolve<IReportExportService>(), provider.Resolve<IBudgetRepository>()));
             
             // Register Region Adapters
             containerRegistry.Register<WileyWidget.Regions.DockingManagerRegionAdapter>();

@@ -15,50 +15,6 @@ namespace WileyWidget.Services;
 /// </summary>
 public class ThemeManager : IThemeManager
 {
-    private static readonly Lazy<ThemeManager> _fallbackInstance = new(() => new ThemeManager(SettingsService.Instance, NullLogger<ThemeManager>.Instance));
-
-    /// <summary>
-    /// Provides backwards-compatible access to a singleton ThemeManager resolved from the application's DI container when available.
-    /// Falls back to an internally managed instance if the container is unavailable (e.g., early startup or unit tests).
-    /// </summary>
-    public static ThemeManager Instance
-    {
-        get
-        {
-            IServiceProvider? provider = null;
-            try
-            {
-                provider = App.GetActiveServiceProvider();
-            }
-            catch (InvalidOperationException)
-            {
-                provider = App.ServiceProvider;
-            }
-
-            if (provider != null)
-            {
-                try
-                {
-                    var resolved = provider.GetService<ThemeManager>();
-                    if (resolved != null)
-                    {
-                        return resolved;
-                    }
-                }
-                catch (ObjectDisposedException)
-                {
-                    // Container disposed during shutdown
-                }
-                catch (InvalidOperationException)
-                {
-                    // Container not ready yet
-                }
-            }
-
-            return _fallbackInstance.Value;
-        }
-    }
-
     private readonly ISettingsService _settingsService;
     private readonly ILogger<ThemeManager> _logger;
 
@@ -88,7 +44,7 @@ public class ThemeManager : IThemeManager
     public event EventHandler<ThemeChangedEventArgs>? ThemeChanged;
 
     public ThemeManager()
-        : this(SettingsService.Instance, NullLogger<ThemeManager>.Instance)
+        : this(new SettingsService(), NullLogger<ThemeManager>.Instance)
     {
     }
 

@@ -61,6 +61,9 @@ public class UtilityCustomer : INotifyPropertyChanged, IValidatableObject
         _mailingZipCode = string.Empty;
         _phoneNumber = string.Empty;
         _emailAddress = string.Empty;
+        _meterNumber = string.Empty;
+        _taxId = string.Empty;
+        _businessLicenseNumber = string.Empty;
         _notes = string.Empty;
     }
 

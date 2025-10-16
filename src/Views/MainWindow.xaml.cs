@@ -285,38 +285,70 @@ namespace WileyWidget.Views
 
         private void LoadDockStateWithFallback()
         {
-            try
+            Dispatcher.Invoke(() =>
             {
-                // Load from IsolatedStorage
-                using (IsolatedStorageFile isoStorage = IsolatedStorageFile.GetUserStoreForAssembly())
+                try
                 {
-                    using (IsolatedStorageFileStream isoStream = new IsolatedStorageFileStream("DockingLayout.xml", FileMode.Open, isoStorage))
+                    var dockingManager = this.FindName("MainDockingManager") as DockingManager;
+                    if (dockingManager == null)
                     {
-                        XDocument doc = XDocument.Load(isoStream);
-                        // Validate and filter invalid states (per Syncfusion docs)
-                        var invalidStates = doc.Descendants("DockState").Where(e => e.Value == "Hidden");
-                        foreach (var state in invalidStates)
+                        Log.Warning("MainDockingManager not found - cannot load docking state");
+                        LoadDefaultDockingLayout();
+                        return;
+                    }
+
+                    // Attach event handlers for dynamic state updates
+                    dockingManager.DockStateChanged += DockingManager_DockStateChanged;
+                    dockingManager.ActiveWindowChanged += DockingManager_ActiveWindowChanged;
+
+                    Log.Debug("DockingManager event handlers attached");
+
+                    // Load from IsolatedStorage with validation
+                    using (IsolatedStorageFile isoStorage = IsolatedStorageFile.GetUserStoreForAssembly())
+                    {
+                        if (!isoStorage.FileExists("DockingLayout.xml"))
                         {
-                            state.Value = "Dock"; // Fallback to valid state
+                            Log.Information("No saved docking state found - using default layout");
+                            LoadDefaultDockingLayout();
+                            return;
                         }
-                        using (var reader = doc.CreateReader())
+
+                        using (IsolatedStorageFileStream isoStream = new IsolatedStorageFileStream("DockingLayout.xml", FileMode.Open, isoStorage))
                         {
-                            var dockingManager = this.FindName("MainDockingManager") as DockingManager;
-                            if (dockingManager != null)
+                            XDocument doc = XDocument.Load(isoStream);
+                            
+                            // Validate and filter invalid DockState values using Syncfusion's DockingManager API
+                            var dockStateElements = doc.Descendants().Where(e => e.Name.LocalName.Contains("State") && e.Value == "Hidden");
+                            foreach (var stateElement in dockStateElements)
+                            {
+                                stateElement.Value = "Dock"; // Replace Hidden with Dock as per Syncfusion recommendations
+                                Log.Debug("Replaced invalid 'Hidden' state with 'Dock' for element: {Element}", stateElement.Parent?.Name.LocalName ?? "Unknown");
+                            }
+
+                            // Additional validation: ensure no invalid combinations
+                            var invalidCombinations = doc.Descendants().Where(e => 
+                                (e.Name.LocalName.Contains("State") && (e.Value == "AutoHidden" || e.Value == "Float")) &&
+                                e.Parent?.Descendants().Any(d => d.Name.LocalName.Contains("IsActive") && d.Value == "false") == true);
+                            foreach (var combo in invalidCombinations)
+                            {
+                                combo.Value = "Dock";
+                                Log.Debug("Corrected invalid state combination to 'Dock'");
+                            }
+
+                            using (var reader = doc.CreateReader())
                             {
                                 dockingManager.LoadDockState(reader);
                             }
                         }
                     }
+                    Log.Information("Docking state loaded and validated successfully");
                 }
-                Log.Information("Docking state loaded successfully");
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Failed to load docking state - using default layout");
-                // Apply default layout
-                LoadDefaultDockingLayout();
-            }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Failed to load docking state - using default layout");
+                    LoadDefaultDockingLayout();
+                }
+            }, System.Windows.Threading.DispatcherPriority.Normal);
         }
 
         /// <summary>
@@ -364,43 +396,79 @@ namespace WileyWidget.Views
         /// </summary>
         private void InitializePrismRegions()
         {
-            Log.Information("Initializing Prism regions using ViewRegistrationService");
-            
-            if (_regionManager == null)
+            Dispatcher.Invoke(() =>
             {
-                Log.Warning("RegionManager is null - cannot initialize regions");
-                return;
-            }
+                Log.Information("Initializing Prism regions using ViewRegistrationService");
 
-            try
-            {
-                // Log current region count before initialization
-                Log.Information("Current regions available: {RegionCount}", _regionManager.Regions.Count());
-                
-                // Check if regions are already available from XAML
-                var availableRegions = _regionManager.Regions.Select(r => r.Name).ToArray();
-                Log.Information("Available regions from XAML: [{Regions}]", string.Join(", ", availableRegions));
-                
-                // Use ViewRegistrationService for comprehensive registration
-                var viewRegistrationService = new ViewRegistrationService(_regionManager);
-                viewRegistrationService.RegisterAllViews();
-
-                // Validate regions after registration
-                var validationResult = viewRegistrationService.ValidateRegions();
-                Log.Information("Region validation result: {Result}", validationResult);
-
-                if (!validationResult.IsValid)
+                if (_regionManager == null)
                 {
-                    Log.Warning("Some regions are missing: [{MissingRegions}]", 
-                        string.Join(", ", validationResult.MissingRegions));
+                    Log.Warning("RegionManager is null - cannot initialize regions");
+                    return;
                 }
-                
-                Log.Information("Prism regions initialization completed using ViewRegistrationService");
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Failed to initialize Prism regions");
-            }
+
+                try
+                {
+                    // Log current region count before initialization
+                    Log.Information("Current regions available: {RegionCount}", _regionManager.Regions.Count());
+
+                    // Check if regions are already available from XAML
+                    var availableRegions = _regionManager.Regions.Select(r => r.Name).ToArray();
+                    Log.Information("Available regions from XAML: [{Regions}]", string.Join(", ", availableRegions));
+
+                    // Explicitly create MainRegion if it doesn't exist
+                    if (!_regionManager.Regions.ContainsRegionWithName("MainRegion"))
+                    {
+                        Log.Information("MainRegion not found - creating explicitly");
+                        var mainRegionControl = new System.Windows.Controls.ContentControl
+                        {
+                            Name = "MainRegionControl",
+                            HorizontalAlignment = HorizontalAlignment.Stretch,
+                            VerticalAlignment = VerticalAlignment.Stretch
+                        };
+                        RegionManager.SetRegionName(mainRegionControl, "MainRegion");
+                        RegionManager.SetRegionManager(mainRegionControl, _regionManager);
+
+                        // Add to the DockingManager as a docked element
+                        var dockingManager = this.FindName("MainDockingManager") as DockingManager;
+                        if (dockingManager != null)
+                        {
+                            DockingManager.SetState(mainRegionControl, DockState.Dock);
+                            DockingManager.SetDesiredWidthInDockedMode(mainRegionControl, double.NaN); // Auto width
+                            DockingManager.SetDesiredHeightInDockedMode(mainRegionControl, double.NaN); // Auto height
+                            dockingManager.Children.Add(mainRegionControl);
+                            Log.Information("MainRegion created and added to DockingManager");
+                        }
+                        else
+                        {
+                            Log.Warning("MainDockingManager not found - cannot add MainRegion control");
+                        }
+                    }
+                    else
+                    {
+                        Log.Information("MainRegion already exists");
+                    }
+
+                    // Use ViewRegistrationService for comprehensive registration
+                    var viewRegistrationService = new ViewRegistrationService(_regionManager);
+                    viewRegistrationService.RegisterAllViews();
+
+                    // Validate regions after registration
+                    var validationResult = viewRegistrationService.ValidateRegions();
+                    Log.Information("Region validation result: {Result}", validationResult);
+
+                    if (!validationResult.IsValid)
+                    {
+                        Log.Warning("Some regions are missing: [{MissingRegions}]", 
+                            string.Join(", ", validationResult.MissingRegions));
+                    }
+
+                    Log.Information("Prism regions initialization completed using ViewRegistrationService");
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Failed to initialize Prism regions");
+                }
+            }, System.Windows.Threading.DispatcherPriority.Normal);
         }
 
         /// <summary>

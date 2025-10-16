@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using WileyWidget.Models;
 using WileyWidget.Models.DTOs;
 using WileyWidget.Business.Interfaces;
+using System.Globalization;
+using Microsoft.Extensions.Logging;
 
 namespace WileyWidget.Data;
 
@@ -11,13 +13,15 @@ namespace WileyWidget.Data;
 public class EnterpriseRepository : IEnterpriseRepository
 {
     private readonly IDbContextFactory<AppDbContext> _contextFactory;
+    private readonly ILogger<EnterpriseRepository> _logger;
 
     /// <summary>
     /// Constructor with dependency injection
     /// </summary>
-    public EnterpriseRepository(IDbContextFactory<AppDbContext> contextFactory)
+    public EnterpriseRepository(IDbContextFactory<AppDbContext> contextFactory, ILogger<EnterpriseRepository> logger)
     {
         _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     /// <summary>
@@ -209,9 +213,12 @@ public class EnterpriseRepository : IEnterpriseRepository
     public async Task<Enterprise?> GetByNameAsync(string name)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
-        return await context.Enterprises
-            .AsNoTracking()
-            .FirstOrDefaultAsync(e => e.Name == name);
+        return await Task.FromResult(
+            context.Enterprises
+                .AsNoTracking()
+                .AsEnumerable()
+                .FirstOrDefault(e => e.Name.ToLowerInvariant() == name.ToLowerInvariant())
+        );
     }
 
     /// <summary>
@@ -224,8 +231,15 @@ public class EnterpriseRepository : IEnterpriseRepository
         if (excludeId.HasValue)
         {
             query = query.Where(e => e.Id != excludeId.Value);
+            _logger.LogDebug("Checking if enterprise exists by name '{Name}' excluding ID {ExcludeId}", name, excludeId);
         }
-        return await query.AnyAsync(e => string.Equals(e.Name, name, StringComparison.OrdinalIgnoreCase));
+        else
+        {
+            _logger.LogDebug("Checking if enterprise exists by name '{Name}'", name);
+        }
+        var exists = await query.AnyAsync(e => e.Name.ToLowerInvariant() == name.ToLowerInvariant());
+        _logger.LogDebug("Enterprise exists by name '{Name}': {Exists}", name, exists);
+        return exists;
     }
 
     /// <summary>
@@ -240,7 +254,7 @@ public class EnterpriseRepository : IEnterpriseRepository
 
         enterprise.IsDeleted = true;
         enterprise.DeletedDate = DateTime.UtcNow;
-        enterprise.DeletedBy = "System"; // TODO: Get from current user context
+        enterprise.DeletedBy = Environment.UserName;
         await context.SaveChangesAsync();
         return true;
     }

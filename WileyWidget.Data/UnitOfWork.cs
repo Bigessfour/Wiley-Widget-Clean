@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
-using Serilog;
+using Microsoft.Extensions.Logging;
 // Clean Architecture: Data layer implements interfaces from Business layer
 using WileyWidget.Business.Interfaces;
 
@@ -18,6 +18,8 @@ namespace WileyWidget.Data;
 public class UnitOfWork : IUnitOfWork
 {
     private readonly AppDbContext _context;
+    private readonly ILogger<UnitOfWork> _logger;
+    private readonly ILoggerFactory _loggerFactory;
     private IDbContextTransaction? _currentTransaction;
     private bool _disposed;
 
@@ -27,13 +29,16 @@ public class UnitOfWork : IUnitOfWork
     private IMunicipalAccountRepository? _municipalAccounts;
     private IUtilityCustomerRepository? _utilityCustomers;
     private IEnterpriseRepository? _enterprises;
+    private IAuditRepository? _audits;
 
     /// <summary>
     /// Constructor with DbContext injection
     /// </summary>
-    public UnitOfWork(AppDbContext context)
+    public UnitOfWork(AppDbContext context, ILogger<UnitOfWork> logger, ILoggerFactory loggerFactory)
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
     }
 
     /// <summary>
@@ -110,9 +115,26 @@ public class UnitOfWork : IUnitOfWork
             if (_enterprises == null)
             {
                 var factory = new SingleContextFactory(_context);
-                _enterprises = new EnterpriseRepository(factory);
+                var logger = _loggerFactory.CreateLogger<EnterpriseRepository>();
+                _enterprises = new EnterpriseRepository(factory, logger);
             }
             return _enterprises;
+        }
+    }
+
+    /// <summary>
+    /// Audit repository (lazy-loaded)
+    /// </summary>
+    public IAuditRepository Audits
+    {
+        get
+        {
+            if (_audits == null)
+            {
+                var factory = new SingleContextFactory(_context);
+                _audits = new AuditRepository(factory);
+            }
+            return _audits;
         }
     }
 
@@ -127,12 +149,12 @@ public class UnitOfWork : IUnitOfWork
         }
         catch (DbUpdateConcurrencyException ex)
         {
-            Log.Error(ex, "Concurrency conflict in UnitOfWork.SaveChangesAsync");
+            _logger.LogError(ex, "Concurrency conflict in UnitOfWork.SaveChangesAsync");
             throw;
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error saving changes in UnitOfWork");
+            _logger.LogError(ex, "Error saving changes in UnitOfWork");
             throw;
         }
     }
@@ -148,7 +170,7 @@ public class UnitOfWork : IUnitOfWork
         }
 
         _currentTransaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-        Log.Debug("Transaction started: {TransactionId}", _currentTransaction.TransactionId);
+        _logger.LogDebug("Transaction started: {TransactionId}", _currentTransaction.TransactionId);
         return _currentTransaction;
     }
 
@@ -166,11 +188,11 @@ public class UnitOfWork : IUnitOfWork
         {
             await _context.SaveChangesAsync(cancellationToken);
             await _currentTransaction.CommitAsync(cancellationToken);
-            Log.Debug("Transaction committed: {TransactionId}", _currentTransaction.TransactionId);
+            _logger.LogDebug("Transaction committed: {TransactionId}", _currentTransaction.TransactionId);
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error committing transaction");
+            _logger.LogError(ex, "Error committing transaction");
             await RollbackTransactionAsync(cancellationToken);
             throw;
         }
@@ -204,16 +226,16 @@ public class UnitOfWork : IUnitOfWork
         try
         {
             await _currentTransaction.RollbackAsync(cancellationToken);
-            Log.Debug("Transaction rolled back: {TransactionId}", _currentTransaction.TransactionId);
+            _logger.LogDebug("Transaction rolled back: {TransactionId}", _currentTransaction.TransactionId);
         }
         catch (InvalidOperationException ex) when (ex.Message.Contains("completed"))
         {
             // Transaction already completed, ignore
-            Log.Debug("Transaction already completed, ignoring rollback");
+            _logger.LogDebug("Transaction already completed, ignoring rollback");
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error rolling back transaction");
+            _logger.LogError(ex, "Error rolling back transaction");
             throw;
         }
         finally

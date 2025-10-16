@@ -168,7 +168,7 @@ public class WidgetTests
         var widget = new Widget
         {
             Name = name,
-            SKU = sku,
+            SKU = sku ?? string.Empty,
             Price = 10.00m
         };
 

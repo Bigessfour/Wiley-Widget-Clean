@@ -12,14 +12,17 @@ namespace WileyWidget.Services;
 public class GrokSupercomputer : IGrokSupercomputer
 {
     private readonly ILogger<GrokSupercomputer> _logger;
+    private readonly IAIService _aiService;
 
     /// <summary>
     /// Initializes a new instance of the GrokSupercomputer class
     /// </summary>
     /// <param name="logger">The logger instance</param>
-    public GrokSupercomputer(ILogger<GrokSupercomputer> logger)
+    /// <param name="aiService">The AI service for processing queries</param>
+    public GrokSupercomputer(ILogger<GrokSupercomputer> logger, IAIService aiService)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _aiService = aiService ?? throw new ArgumentNullException(nameof(aiService));
     }
 
     /// <summary>
@@ -36,11 +39,9 @@ public class GrokSupercomputer : IGrokSupercomputer
         {
             _logger.LogInformation("Processing query: {Query}", query);
 
-            // TODO: Implement actual AI processing
-            // For now, return a placeholder response
-            await Task.Delay(100); // Simulate processing time
-
-            return $"AI Response to: {query}\n\nThis is a placeholder response. The actual Grok supercomputer integration would provide intelligent analysis of municipal data and queries.";
+            // Use AI service for actual processing
+            var context = "Municipal utility management and budgeting system";
+            return await _aiService.GetInsightsAsync(context, query);
         }
         catch (Exception ex)
         {
@@ -63,10 +64,11 @@ public class GrokSupercomputer : IGrokSupercomputer
         {
             _logger.LogInformation("Analyzing municipal data with context: {Context}", context);
 
-            // TODO: Implement actual data analysis
-            await Task.Delay(200); // Simulate analysis time
-
-            return $"Analysis of municipal data ({data.GetType().Name}):\n\nContext: {context ?? "None provided"}\n\nThis is a placeholder analysis. The actual implementation would provide detailed insights into municipal financial data, trends, and recommendations.";
+            // Convert data to string representation for AI analysis
+            var dataString = data.ToString() ?? "No data representation available";
+            var analysisType = "municipal_data_analysis";
+            
+            return await _aiService.AnalyzeDataAsync(dataString, analysisType);
         }
         catch (Exception ex)
         {
@@ -88,10 +90,12 @@ public class GrokSupercomputer : IGrokSupercomputer
         {
             _logger.LogInformation("Generating recommendations based on data: {DataType}", data.GetType().Name);
 
-            // TODO: Implement actual recommendation generation
-            await Task.Delay(150); // Simulate processing time
-
-            return $"Recommendations based on {data.GetType().Name} data:\n\n1. Optimize budget allocations\n2. Implement cost-saving measures\n3. Enhance revenue streams\n4. Improve operational efficiency\n\nThis is a placeholder. The actual AI would provide data-driven, context-specific recommendations.";
+            // Convert data to string and use AI service for recommendations
+            var dataString = data.ToString() ?? "No data representation available";
+            var context = "Municipal utility management and budgeting system";
+            var question = $"Based on this data: {dataString}, what recommendations would you make for improving municipal operations and financial management?";
+            
+            return await _aiService.GetInsightsAsync(context, question);
         }
         catch (Exception ex)
         {

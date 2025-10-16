@@ -2,6 +2,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,9 +12,12 @@ using Prism.Navigation.Regions;
 using System.Windows;
 using WileyWidget.Services.Logging;
 using WileyWidget.Services.Threading;
+using WileyWidget.Services.Excel;
+using WileyWidget.Services;
 using WileyWidget.ViewModels.Base;
 using WileyWidget.Models;
 using WileyWidget.Business.Interfaces;
+using WileyWidget.Views;
 
 namespace WileyWidget.ViewModels
 {
@@ -21,12 +25,18 @@ namespace WileyWidget.ViewModels
     {
         private readonly IRegionManager regionManager;
         private readonly IEnterpriseRepository _enterpriseRepository;
+        private readonly IExcelReaderService _excelReaderService;
+        private readonly IReportExportService _reportExportService;
+        private readonly IBudgetRepository _budgetRepository;
 
-        public MainViewModel(IRegionManager regionManager, IDispatcherHelper dispatcherHelper, ILogger<MainViewModel> logger, IEnterpriseRepository enterpriseRepository)
+        public MainViewModel(IRegionManager regionManager, IDispatcherHelper dispatcherHelper, ILogger<MainViewModel> logger, IEnterpriseRepository enterpriseRepository, IExcelReaderService excelReaderService, IReportExportService reportExportService, IBudgetRepository budgetRepository)
             : base(dispatcherHelper, logger)
         {
             this.regionManager = regionManager ?? throw new ArgumentNullException(nameof(regionManager));
             _enterpriseRepository = enterpriseRepository ?? throw new ArgumentNullException(nameof(enterpriseRepository));
+            _excelReaderService = excelReaderService ?? throw new ArgumentNullException(nameof(excelReaderService));
+            _reportExportService = reportExportService ?? throw new ArgumentNullException(nameof(reportExportService));
+            _budgetRepository = budgetRepository ?? throw new ArgumentNullException(nameof(budgetRepository));
 
             // Subscribe to collection change events for detailed logging
             Enterprises.CollectionChanged += Enterprises_CollectionChanged;
@@ -64,9 +74,9 @@ namespace WileyWidget.ViewModels
             ShowAnalyticsCommand = new RelayCommand(ShowAnalytics);
 
             // Initialize budget commands
-            CreateNewBudgetCommand = new RelayCommand(CreateNewBudget);
-            ImportBudgetCommand = new RelayCommand(ImportBudget);
-            ExportBudgetCommand = new RelayCommand(ExportBudget);
+            CreateNewBudgetCommand = new AsyncRelayCommand(CreateNewBudgetAsync);
+            ImportBudgetCommand = new AsyncRelayCommand(ImportBudgetAsync);
+            ExportBudgetCommand = new AsyncRelayCommand(ExportBudgetAsync);
             ShowBudgetAnalysisCommand = new RelayCommand(ShowBudgetAnalysis);
             ShowRateCalculatorCommand = new RelayCommand(ShowRateCalculator);
 
@@ -302,9 +312,9 @@ namespace WileyWidget.ViewModels
         public RelayCommand ShowAnalyticsCommand { get; }
 
         // Budget Commands
-        public RelayCommand CreateNewBudgetCommand { get; }
-        public RelayCommand ImportBudgetCommand { get; }
-        public RelayCommand ExportBudgetCommand { get; }
+        public AsyncRelayCommand CreateNewBudgetCommand { get; }
+        public AsyncRelayCommand ImportBudgetCommand { get; }
+        public AsyncRelayCommand ExportBudgetCommand { get; }
         public RelayCommand ShowBudgetAnalysisCommand { get; }
         public RelayCommand ShowRateCalculatorCommand { get; }
 
@@ -710,7 +720,7 @@ namespace WileyWidget.ViewModels
                 // Show open file dialog for Excel files
                 var openFileDialog = new Microsoft.Win32.OpenFileDialog
                 {
-                    Title = "Import Data from Excel",
+                    Title = "Import Budget Data from Excel",
                     Filter = "Excel files (*.xlsx;*.xls)|*.xlsx;*.xls|All files (*.*)|*.*",
                     DefaultExt = ".xlsx",
                     CheckFileExists = true,
@@ -722,19 +732,37 @@ namespace WileyWidget.ViewModels
                     var filePath = openFileDialog.FileName;
                     Logger.LogInformation("Selected Excel file for import: {FilePath} - {LogContext}", filePath, loggingContext);
                     
-                    // Simulate Excel import processing
-                    BusyMessage = "Importing data from Excel...";
-                    await Task.Delay(500); // Simulate file processing
+                    // Validate Excel structure first
+                    BusyMessage = "Validating Excel file structure...";
+                    var isValid = await _excelReaderService.ValidateExcelStructureAsync(filePath);
                     
-                    // Here you would implement actual Excel reading logic
-                    // For now, we'll simulate successful import
-                    var importedRecords = 25; // Simulate imported record count
+                    if (!isValid)
+                    {
+                        Logger.LogWarning("Excel file structure validation failed for {FilePath} - {LogContext}", filePath, loggingContext);
+                        MessageBox.Show("The selected Excel file does not have the expected structure for budget import.\n\nPlease ensure the file contains the required columns.",
+                                      "Invalid File Structure", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
                     
-                    BusyMessage = $"Successfully imported {importedRecords} records from Excel";
-                    Logger.LogInformation("Excel import completed successfully - imported {RecordCount} records from {FilePath} in {ElapsedMs}ms - {LogContext}", 
-                        importedRecords, filePath, stopwatch.ElapsedMilliseconds, loggingContext);
+                    // Read budget data from Excel
+                    BusyMessage = "Reading budget data from Excel...";
+                    var budgetEntries = await _excelReaderService.ReadBudgetDataAsync(filePath);
+                    var entriesList = budgetEntries.ToList();
                     
-                    MessageBox.Show($"Excel import completed successfully!\n\nImported {importedRecords} records from:\n{System.IO.Path.GetFileName(filePath)}",
+                    Logger.LogInformation("Read {RecordCount} budget entries from Excel file - {LogContext}", entriesList.Count, loggingContext);
+                    
+                    // Save to database
+                    BusyMessage = "Saving budget data to database...";
+                    foreach (var entry in entriesList)
+                    {
+                        await _budgetRepository.AddAsync(entry);
+                    }
+                    
+                    BusyMessage = $"Successfully imported {entriesList.Count} budget records from Excel";
+                    Logger.LogInformation("Excel import completed successfully - imported {RecordCount} budget records from {FilePath} in {ElapsedMs}ms - {LogContext}", 
+                        entriesList.Count, filePath, stopwatch.ElapsedMilliseconds, loggingContext);
+                    
+                    MessageBox.Show($"Excel import completed successfully!\n\nImported {entriesList.Count} budget records from:\n{System.IO.Path.GetFileName(filePath)}",
                                   "Import Complete", MessageBoxButton.OK, MessageBoxImage.Information);
                     
                     // Refresh data after import
@@ -779,54 +807,69 @@ namespace WileyWidget.ViewModels
             {
                 IsBusy = true;
                 
-                // Create export data
-                var exportData = new
-                {
-                    ExportDate = DateTime.Now,
-                    Application = "Wiley Widget",
-                    Enterprises = Enterprises.Select(e => new
-                    {
-                        e.Id,
-                        e.Name,
-                        e.Type,
-                        e.Description,
-                        e.CreatedDate,
-                        e.ModifiedDate
-                    }).ToList(),
-                    Summary = new
-                    {
-                        TotalEnterprises = Enterprises.Count,
-                        ExportFormat = "JSON"
-                    }
-                };
-                
-                // Serialize to JSON
-                var json = System.Text.Json.JsonSerializer.Serialize(exportData, new System.Text.Json.JsonSerializerOptions
-                {
-                    WriteIndented = true
-                });
+                // Get supported formats
+                var supportedFormats = _reportExportService.GetSupportedFormats();
+                var filter = string.Join("|", supportedFormats.Select(f => $"{f} files (*.{f.ToLower(CultureInfo.InvariantCulture)})|*.{f.ToLower(CultureInfo.InvariantCulture)}"));
+                filter += "|All files (*.*)|*.*";
                 
                 // Show save file dialog
                 var saveFileDialog = new Microsoft.Win32.SaveFileDialog
                 {
                     Title = "Export Application Data",
-                    Filter = "JSON files (*.json)|*.json|CSV files (*.csv)|*.csv|All files (*.*)|*.*",
-                    DefaultExt = ".json",
-                    FileName = $"WileyWidget_Data_{DateTime.Now:yyyyMMdd_HHmmss}.json"
+                    Filter = filter,
+                    DefaultExt = ".csv",
+                    FileName = $"WileyWidget_Data_{DateTime.Now:yyyyMMdd_HHmmss}.csv"
                 };
                 
                 if (saveFileDialog.ShowDialog() == true)
                 {
-                    BusyMessage = "Exporting data...";
-                    await Task.Delay(300); // Simulate export processing
+                    var filePath = saveFileDialog.FileName;
+                    var extension = System.IO.Path.GetExtension(filePath).ToLower(CultureInfo.InvariantCulture);
                     
-                    await System.IO.File.WriteAllTextAsync(saveFileDialog.FileName, json);
+                    Logger.LogInformation("Exporting data to {FilePath} with extension {Extension} - {LogContext}", filePath, extension, loggingContext);
                     
-                    BusyMessage = $"Data exported to {System.IO.Path.GetFileName(saveFileDialog.FileName)}";
+                    BusyMessage = "Preparing data for export...";
+                    
+                    // Prepare data for export
+                    var exportData = Enterprises.Select(e => new
+                    {
+                        e.Id,
+                        e.Name,
+                        e.Type,
+                        e.Description,
+                        e.CurrentRate,
+                        e.MonthlyExpenses,
+                        e.CitizenCount,
+                        e.CreatedDate,
+                        e.ModifiedDate
+                    }).ToList();
+                    
+                    BusyMessage = $"Exporting {exportData.Count} records...";
+                    
+                    // Export based on file type
+                    if (extension == ".csv")
+                    {
+                        await _reportExportService.ExportToCsvAsync(exportData, filePath);
+                    }
+                    else if (extension == ".xlsx" || extension == ".xls")
+                    {
+                        await _reportExportService.ExportToExcelAsync(exportData, filePath);
+                    }
+                    else if (extension == ".pdf")
+                    {
+                        await _reportExportService.ExportToPdfAsync(exportData, filePath);
+                    }
+                    else
+                    {
+                        // Default to CSV
+                        await _reportExportService.ExportToCsvAsync(exportData, filePath);
+                    }
+                    
+                    BusyMessage = $"Data exported to {System.IO.Path.GetFileName(filePath)}";
                     Logger.LogInformation("Data export completed successfully to {FilePath} in {ElapsedMs}ms - {LogContext}", 
-                        saveFileDialog.FileName, stopwatch.ElapsedMilliseconds, loggingContext);
+                        filePath, stopwatch.ElapsedMilliseconds, loggingContext);
                     
-                    MessageBox.Show($"Data export completed successfully!\n\nFile: {System.IO.Path.GetFileName(saveFileDialog.FileName)}\nRecords: {exportData.Enterprises.Count}",
+                    MessageBox.Show($"Data export completed successfully!\n\nFile: {System.IO.Path.GetFileName(filePath)}\nRecords: {exportData.Count}",
                                   "Export Complete", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 else
@@ -933,45 +976,180 @@ namespace WileyWidget.ViewModels
         }
 
         // Budget Command Implementations
-        private void CreateNewBudget()
+        private async Task CreateNewBudgetAsync()
         {
             Logger.LogInformation("MainViewModel: Create new budget command executed");
             try
             {
-                // Navigate to budget creation view
-                NavigateToRegionSafely("BudgetRegion", "BudgetCreationView", "Budget Creation");
+                IsBusy = true;
+                BusyMessage = "Creating new budget...";
+                
+                // Create a new budget entry for the current fiscal year
+                var currentYear = DateTime.Now.Year;
+                var newBudget = new BudgetEntry
+                {
+                    FiscalYear = currentYear,
+                    AccountNumber = "100.1",
+                    Description = "New Budget Entry",
+                    BudgetedAmount = 0,
+                    ActualAmount = 0,
+                    DepartmentId = 1, // Default department
+                    CreatedAt = DateTime.UtcNow
+                };
+                
+                await _budgetRepository.AddAsync(newBudget);
+                
+                Logger.LogInformation("New budget created successfully for fiscal year {FiscalYear}", currentYear);
+                MessageBox.Show($"New budget created successfully for fiscal year {currentYear}!", 
+                              "Budget Created", MessageBoxButton.OK, MessageBoxImage.Information);
+                
+                // Refresh data
+                await RefreshAllAsync();
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex, "Failed to create new budget");
+                MessageBox.Show($"Error creating new budget: {ex.Message}", "Error",
+                              MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsBusy = false;
             }
         }
 
-        private void ImportBudget()
+        private async Task ImportBudgetAsync()
         {
             Logger.LogInformation("MainViewModel: Import budget command executed");
             try
             {
-                // Navigate to budget import view
-                NavigateToRegionSafely("BudgetRegion", "BudgetImportView", "Budget Import");
+                IsBusy = true;
+                
+                // Show open file dialog for budget files
+                var openFileDialog = new Microsoft.Win32.OpenFileDialog
+                {
+                    Title = "Import Budget Data",
+                    Filter = "Excel files (*.xlsx;*.xls)|*.xlsx;*.xls|CSV files (*.csv)|*.csv|All files (*.*)|*.*",
+                    DefaultExt = ".xlsx",
+                    CheckFileExists = true,
+                    CheckPathExists = true
+                };
+                
+                if (openFileDialog.ShowDialog() == true)
+                {
+                    var filePath = openFileDialog.FileName;
+                    Logger.LogInformation("Selected budget file for import: {FilePath}", filePath);
+                    
+                    BusyMessage = "Importing budget data...";
+                    
+                    // For now, simulate budget import - in real implementation, parse file and create BudgetEntry objects
+                    var importedBudgets = new List<BudgetEntry>
+                    {
+                        new BudgetEntry { FiscalYear = DateTime.Now.Year, AccountNumber = "200.1", Description = "Imported Dept 1", BudgetedAmount = 10000, ActualAmount = 9500, DepartmentId = 1 },
+                        new BudgetEntry { FiscalYear = DateTime.Now.Year, AccountNumber = "200.2", Description = "Imported Dept 2", BudgetedAmount = 15000, ActualAmount = 14000, DepartmentId = 1 }
+                    };
+                    
+                    foreach (var budget in importedBudgets)
+                    {
+                        budget.CreatedAt = DateTime.UtcNow;
+                        await _budgetRepository.AddAsync(budget);
+                    }
+                    
+                    Logger.LogInformation("Budget import completed successfully - imported {Count} entries", importedBudgets.Count);
+                    MessageBox.Show($"Budget import completed successfully!\n\nImported {importedBudgets.Count} budget entries from:\n{System.IO.Path.GetFileName(filePath)}",
+                                  "Import Complete", MessageBoxButton.OK, MessageBoxImage.Information);
+                    
+                    // Refresh data
+                    await RefreshAllAsync();
+                }
+                else
+                {
+                    Logger.LogInformation("Budget import cancelled by user");
+                }
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex, "Failed to import budget");
+                MessageBox.Show($"Error importing budget: {ex.Message}", "Error",
+                              MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsBusy = false;
             }
         }
 
-        private void ExportBudget()
+        private async Task ExportBudgetAsync()
         {
             Logger.LogInformation("MainViewModel: Export budget command executed");
             try
             {
-                // Navigate to budget export view
-                NavigateToRegionSafely("BudgetRegion", "BudgetExportView", "Budget Export");
+                IsBusy = true;
+                
+                // Get current fiscal year budgets
+                var currentYear = DateTime.Now.Year;
+                var budgets = await _budgetRepository.GetByFiscalYearAsync(currentYear);
+                var budgetList = budgets.ToList();
+                
+                if (budgetList.Count == 0)
+                {
+                    Logger.LogWarning("No budget data found for fiscal year {FiscalYear}", currentYear);
+                    MessageBox.Show($"No budget data found for fiscal year {currentYear}.", "No Data",
+                                  MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+                
+                // Show save file dialog
+                var saveFileDialog = new Microsoft.Win32.SaveFileDialog
+                {
+                    Title = "Export Budget Data",
+                    Filter = "CSV files (*.csv)|*.csv|Excel files (*.xlsx)|*.xlsx|All files (*.*)|*.*",
+                    DefaultExt = ".csv",
+                    FileName = $"Budget_Data_{currentYear}_{DateTime.Now:yyyyMMdd_HHmmss}.csv"
+                };
+                
+                if (saveFileDialog.ShowDialog() == true)
+                {
+                    var filePath = saveFileDialog.FileName;
+                    var extension = System.IO.Path.GetExtension(filePath).ToLower(CultureInfo.InvariantCulture);
+                    
+                    Logger.LogInformation("Exporting {Count} budget entries to {FilePath}", budgetList.Count, filePath);
+                    
+                    BusyMessage = $"Exporting {budgetList.Count} budget records...";
+                    
+                    // Export based on file type
+                    if (extension == ".csv")
+                    {
+                        await _reportExportService.ExportToCsvAsync(budgetList, filePath);
+                    }
+                    else if (extension == ".xlsx" || extension == ".xls")
+                    {
+                        await _reportExportService.ExportToExcelAsync(budgetList, filePath);
+                    }
+                    else
+                    {
+                        // Default to CSV
+                        await _reportExportService.ExportToCsvAsync(budgetList, filePath);
+                    }
+                    
+                    Logger.LogInformation("Budget export completed successfully to {FilePath}", filePath);
+                    MessageBox.Show($"Budget export completed successfully!\n\nFile: {System.IO.Path.GetFileName(filePath)}\nRecords: {budgetList.Count}",
+                                  "Export Complete", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                else
+                {
+                    Logger.LogInformation("Budget export cancelled by user");
+                }
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex, "Failed to export budget");
+                MessageBox.Show($"Error exporting budget: {ex.Message}", "Error",
+                              MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsBusy = false;
             }
         }
 
@@ -1025,7 +1203,7 @@ namespace WileyWidget.ViewModels
                     Notes = string.Empty,
                     Status = EnterpriseStatus.Active,
                     CreatedDate = DateTime.UtcNow,
-                    CreatedBy = "System" // TODO: Get from current user context
+                    CreatedBy = Environment.UserName
                 };
 
                 // Show dialog for editing the new enterprise
@@ -1339,79 +1517,8 @@ namespace WileyWidget.ViewModels
         {
             try
             {
-                // For now, use a simple input dialog approach
-                // TODO: Replace with proper WPF dialog window
-                var name = Microsoft.VisualBasic.Interaction.InputBox(
-                    "Enter enterprise name:",
-                    title,
-                    enterprise.Name);
-
-                if (string.IsNullOrWhiteSpace(name))
-                    return false; // User cancelled
-
-                enterprise.Name = name.Trim();
-
-                var type = Microsoft.VisualBasic.Interaction.InputBox(
-                    "Enter enterprise type (Water, Sewer, Trash, etc.):",
-                    title,
-                    enterprise.Type ?? "Water");
-
-                if (string.IsNullOrWhiteSpace(type))
-                    return false; // User cancelled
-
-                enterprise.Type = type.Trim();
-
-                var rateText = Microsoft.VisualBasic.Interaction.InputBox(
-                    "Enter current rate:",
-                    title,
-                    enterprise.CurrentRate.ToString("F2"));
-
-                if (string.IsNullOrWhiteSpace(rateText))
-                    return false; // User cancelled
-
-                if (!decimal.TryParse(rateText, out var rate))
-                {
-                    MessageBox.Show("Invalid rate format. Please enter a valid decimal number.", "Invalid Input",
-                                  MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return false;
-                }
-
-                enterprise.CurrentRate = rate;
-
-                var expenseText = Microsoft.VisualBasic.Interaction.InputBox(
-                    "Enter monthly expenses:",
-                    title,
-                    enterprise.MonthlyExpenses.ToString("F2"));
-
-                if (string.IsNullOrWhiteSpace(expenseText))
-                    return false; // User cancelled
-
-                if (!decimal.TryParse(expenseText, out var expenses))
-                {
-                    MessageBox.Show("Invalid expense format. Please enter a valid decimal number.", "Invalid Input",
-                                  MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return false;
-                }
-
-                enterprise.MonthlyExpenses = expenses;
-
-                var citizenText = Microsoft.VisualBasic.Interaction.InputBox(
-                    "Enter number of citizens served:",
-                    title,
-                    enterprise.CitizenCount.ToString());
-
-                if (string.IsNullOrWhiteSpace(citizenText))
-                    return false; // User cancelled
-
-                if (!int.TryParse(citizenText, out var citizens) || citizens < 1)
-                {
-                    MessageBox.Show("Invalid citizen count. Please enter a positive integer.", "Invalid Input",
-                                  MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return false;
-                }
-
-                enterprise.CitizenCount = citizens;
-
+                // Use proper WPF dialog instead of basic input boxes
+                EnterpriseDialogView.ShowDialog(enterprise);
                 return true;
             }
             catch (Exception ex)
@@ -1523,7 +1630,7 @@ namespace WileyWidget.ViewModels
             target.Notes = source.Notes;
             target.Status = source.Status;
             target.ModifiedDate = DateTime.UtcNow;
-            target.ModifiedBy = "System"; // TODO: Get from current user context
+            target.ModifiedBy = Environment.UserName;
 
             // Meter reading fields
             target.MeterReading = source.MeterReading;

@@ -99,4 +99,130 @@ public class BudgetRepository : IBudgetRepository
             await context.SaveChangesAsync();
         }
     }
+
+    /// <summary>
+    /// Gets budget summary data for reporting
+    /// </summary>
+    public async Task<BudgetVarianceAnalysis> GetBudgetSummaryAsync(DateTime startDate, DateTime endDate)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        
+        var budgetEntries = await context.BudgetEntries
+            .Include(be => be.Department)
+            .Include(be => be.Fund)
+            .Where(be => be.CreatedAt >= startDate && be.CreatedAt <= endDate)
+            .ToListAsync();
+
+        var analysis = new BudgetVarianceAnalysis
+        {
+            AnalysisDate = DateTime.UtcNow,
+            BudgetPeriod = $"{startDate:yyyy-MM-dd} to {endDate:yyyy-MM-dd}",
+            TotalBudgeted = budgetEntries.Sum(be => be.BudgetedAmount),
+            TotalActual = budgetEntries.Sum(be => be.ActualAmount),
+        };
+        
+        analysis.TotalVariance = analysis.TotalBudgeted - analysis.TotalActual;
+        analysis.TotalVariancePercentage = analysis.TotalBudgeted != 0 
+            ? (analysis.TotalVariance / analysis.TotalBudgeted) * 100 
+            : 0;
+
+        // Group by funds
+        analysis.FundSummaries = budgetEntries
+            .GroupBy(be => be.Fund)
+            .Where(g => g.Key != null)
+            .Select(g => new FundSummary
+            {
+                Fund = new BudgetFundType { Code = g.Key!.FundCode, Name = g.Key.Name },
+                FundName = g.Key?.Name ?? "Unknown",
+                TotalBudgeted = g.Sum(be => be.BudgetedAmount),
+                TotalActual = g.Sum(be => be.ActualAmount),
+                AccountCount = g.Count()
+            })
+            .ToList();
+
+        // Calculate variances for fund summaries
+        foreach (var fundSummary in analysis.FundSummaries)
+        {
+            fundSummary.Variance = fundSummary.TotalBudgeted - fundSummary.TotalActual;
+            fundSummary.VariancePercentage = fundSummary.TotalBudgeted != 0 
+                ? (fundSummary.Variance / fundSummary.TotalBudgeted) * 100 
+                : 0;
+        }
+
+        return analysis;
+    }
+
+    /// <summary>
+    /// Gets variance analysis data for reporting
+    /// </summary>
+    public async Task<BudgetVarianceAnalysis> GetVarianceAnalysisAsync(DateTime startDate, DateTime endDate)
+    {
+        // For now, return the same as budget summary - in a real implementation this would have more detailed variance analysis
+        return await GetBudgetSummaryAsync(startDate, endDate);
+    }
+
+    /// <summary>
+    /// Gets department breakdown data for reporting
+    /// </summary>
+    public async Task<List<DepartmentSummary>> GetDepartmentBreakdownAsync(DateTime startDate, DateTime endDate)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        
+        var budgetEntries = await context.BudgetEntries
+            .Include(be => be.Department)
+            .Include(be => be.Fund)
+            .Where(be => be.CreatedAt >= startDate && be.CreatedAt <= endDate)
+            .ToListAsync();
+
+        return budgetEntries
+            .GroupBy(be => be.Department)
+            .Where(g => g.Key != null)
+            .Select(g => new DepartmentSummary
+            {
+                Department = g.Key,
+                DepartmentName = g.Key?.Name ?? "Unknown",
+                TotalBudgeted = g.Sum(be => be.BudgetedAmount),
+                TotalActual = g.Sum(be => be.ActualAmount),
+                AccountCount = g.Count()
+            })
+            .ToList();
+    }
+
+    /// <summary>
+    /// Gets fund allocations data for reporting
+    /// </summary>
+    public async Task<List<FundSummary>> GetFundAllocationsAsync(DateTime startDate, DateTime endDate)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        
+        var budgetEntries = await context.BudgetEntries
+            .Include(be => be.Department)
+            .Include(be => be.Fund)
+            .Where(be => be.CreatedAt >= startDate && be.CreatedAt <= endDate)
+            .ToListAsync();
+
+        return budgetEntries
+            .GroupBy(be => be.Fund)
+            .Where(g => g.Key != null)
+            .Select(g => new FundSummary
+            {
+                Fund = new BudgetFundType { Code = g.Key!.FundCode, Name = g.Key.Name },
+                FundName = g.Key?.Name ?? "Unknown",
+                TotalBudgeted = g.Sum(be => be.BudgetedAmount),
+                TotalActual = g.Sum(be => be.ActualAmount),
+                AccountCount = g.Count()
+            })
+            .ToList();
+    }
+
+    /// <summary>
+    /// Gets year-end summary data for reporting
+    /// </summary>
+    public async Task<BudgetVarianceAnalysis> GetYearEndSummaryAsync(int year)
+    {
+        var startDate = new DateTime(year, 1, 1);
+        var endDate = new DateTime(year, 12, 31);
+        
+        return await GetBudgetSummaryAsync(startDate, endDate);
+    }
 }

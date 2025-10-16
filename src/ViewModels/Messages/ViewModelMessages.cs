@@ -45,6 +45,16 @@ public class NavigationMessage : PubSubEvent<NavigationMessage>
 }
 
 /// <summary>
+/// Message sent when grouping should be changed in the data grid
+/// </summary>
+public class GroupingMessage : PubSubEvent<GroupingMessage>
+{
+    public GroupingOperation Operation { get; set; }
+    public string? ColumnName { get; set; }
+    public DateTime Timestamp { get; } = DateTime.UtcNow;
+}
+
+/// <summary>
 /// Type of change made to an entity
 /// </summary>
 public enum ChangeType
@@ -53,4 +63,14 @@ public enum ChangeType
     Updated,
     Deleted,
     Restored
+}
+
+/// <summary>
+/// Type of grouping operation
+/// </summary>
+public enum GroupingOperation
+{
+    Clear,
+    GroupByColumn,
+    AddGroupByColumn
 }

@@ -38,4 +38,29 @@ public interface IBudgetRepository
     /// Deletes a budget entry
     /// </summary>
     Task DeleteAsync(int id);
+
+    /// <summary>
+    /// Gets budget summary data for reporting
+    /// </summary>
+    Task<BudgetVarianceAnalysis> GetBudgetSummaryAsync(DateTime startDate, DateTime endDate);
+
+    /// <summary>
+    /// Gets variance analysis data for reporting
+    /// </summary>
+    Task<BudgetVarianceAnalysis> GetVarianceAnalysisAsync(DateTime startDate, DateTime endDate);
+
+    /// <summary>
+    /// Gets department breakdown data for reporting
+    /// </summary>
+    Task<List<DepartmentSummary>> GetDepartmentBreakdownAsync(DateTime startDate, DateTime endDate);
+
+    /// <summary>
+    /// Gets fund allocations data for reporting
+    /// </summary>
+    Task<List<FundSummary>> GetFundAllocationsAsync(DateTime startDate, DateTime endDate);
+
+    /// <summary>
+    /// Gets year-end summary data for reporting
+    /// </summary>
+    Task<BudgetVarianceAnalysis> GetYearEndSummaryAsync(int year);
 }

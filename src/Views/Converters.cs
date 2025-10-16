@@ -82,16 +82,18 @@ public class ComparisonConverter : IValueConverter
     }
 
     /// <summary>
-    /// Not implemented.
+    /// Not implemented - this converter is intended for one-way conversion only.
     /// </summary>
     /// <param name="value">The value.</param>
     /// <param name="targetType">The target type.</param>
     /// <param name="parameter">The parameter.</param>
     /// <param name="culture">The culture.</param>
-    /// <returns>Not implemented.</returns>
+    /// <returns>The original value unchanged.</returns>
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
     {
-        throw new NotImplementedException();
+        // This converter is designed for one-way conversion (comparison results)
+        // ConvertBack doesn't make logical sense for comparison operations
+        return value;
     }
 }
 

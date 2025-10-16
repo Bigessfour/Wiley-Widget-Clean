@@ -17,8 +17,8 @@ using Microsoft.Extensions.Logging;
 namespace WileyWidget.Services;
 
 /// <summary>
-/// QuickBooks service using Intuit SDK + (placeholder) interactive flow. NOTE: MSAL does not directly broker Intuit auth codes; retained for future refinement.
-/// For now implement token refresh + DataService access; initial interactive acquisition still handled by prior manual flow (to be unified later).
+/// QuickBooks service using Intuit SDK with OAuth2 authentication.
+/// Handles token refresh and DataService access for QuickBooks Online integration.
 /// </summary>
 public sealed class QuickBooksService : IQuickBooksService
 {

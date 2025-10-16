@@ -128,15 +128,12 @@ public class MunicipalAccountTests
         // Arrange
         var account = new MunicipalAccount
         {
-            AccountNumber = new AccountNumber("9999-999") // Default, will be overridden
+            AccountNumber = new AccountNumber("9999-999"),
+            Name = "" // Empty name
         };
 
-        // Act - Empty values
-        account.AccountNumber = new AccountNumber("");
-        account.Name = "";
-
         // Assert
-        Assert.Equal(" - ", account.DisplayName);
+        Assert.Equal("9999-999 - ", account.DisplayName);
     }
 
     [Fact]
@@ -367,23 +364,25 @@ public class MunicipalAccountTests
     [Fact]
     public void MunicipalAccount_Validation_AccountNumberTooLong_Fails()
     {
-        // Arrange
-        var account = new MunicipalAccount
-        {
-            AccountNumber = new AccountNumber(new string('1', 21)), // 21 characters, exceeds max of 20
-            Name = "Cash Account",
-            Type = AccountType.Asset,
-            Fund = MunicipalFundType.General
-        };
-
-        // Act
-        var validationContext = new ValidationContext(account);
-        var validationResults = new List<ValidationResult>();
-        var isValid = Validator.TryValidateObject(account, validationContext, validationResults, true);
-
         // Assert
-        Assert.False(isValid);
-        Assert.Contains(validationResults, vr => vr.ErrorMessage == "Account number cannot exceed 20 characters");
+        var ex = Assert.Throws<ArgumentException>(() => new AccountNumber(new string('1', 21)));
+        Assert.Contains("Account number cannot exceed 20 characters", ex.Message);
+    }
+
+    [Fact]
+    public void MunicipalAccount_Validation_AccountNumberNull_Fails()
+    {
+        // Assert
+        var ex = Assert.Throws<ArgumentException>(() => new AccountNumber(null!));
+        Assert.Contains("Account number cannot be null or empty", ex.Message);
+    }
+
+    [Fact]
+    public void MunicipalAccount_Validation_AccountNumberEmpty_Fails()
+    {
+        // Assert
+        var ex = Assert.Throws<ArgumentException>(() => new AccountNumber(""));
+        Assert.Contains("Account number cannot be null or empty", ex.Message);
     }
 
     [Fact]

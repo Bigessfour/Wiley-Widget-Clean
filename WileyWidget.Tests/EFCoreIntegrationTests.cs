@@ -65,7 +65,7 @@ public sealed class EFCoreIntegrationTests : IDisposable
         await _context.SaveChangesAsync();
 
         var retrieved = await _context.MunicipalAccounts
-            .FirstOrDefaultAsync(a => a.AccountNumber == new AccountNumber("101-1000"));
+            .FirstOrDefaultAsync(a => a.AccountNumber!.Value == "101-1000");
 
         // Assert
         Assert.NotNull(retrieved);

@@ -43,4 +43,12 @@ public class AppSettings
     public string? QboAccessToken { get; set; }
     public string? QboRefreshToken { get; set; }
     public DateTime QboTokenExpiry { get; set; } // UTC absolute expiry of access token
+
+    // Report settings
+    public string? LastSelectedReportType { get; set; }
+    public string? LastSelectedFormat { get; set; }
+    public DateTime? LastReportStartDate { get; set; }
+    public DateTime? LastReportEndDate { get; set; }
+    public bool IncludeChartsInReports { get; set; } = true;
+    public int LastSelectedEnterpriseId { get; set; }
 }

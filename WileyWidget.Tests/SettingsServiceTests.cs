@@ -38,22 +38,10 @@ public sealed class SettingsServiceTests : IDisposable
     }
 
     [Fact]
-    public void SettingsService_Instance_IsSingleton()
-    {
-        // Arrange
-        var instance1 = SettingsService.Instance;
-        var instance2 = SettingsService.Instance;
-
-        // Assert
-        Assert.Same(instance1, instance2);
-        Assert.NotNull(instance1);
-    }
-
-    [Fact]
     public void SettingsService_Current_IsNotNull()
     {
         // Act
-        var current = SettingsService.Instance.Current;
+        var current = _testInstance.Current;
 
         // Assert
         Assert.NotNull(current);
@@ -64,31 +52,31 @@ public sealed class SettingsServiceTests : IDisposable
     public void SettingsService_ResetForTests_Works()
     {
         // Arrange - Modify current settings
-        SettingsService.Instance.Current.Theme = "ModifiedTheme";
-        SettingsService.Instance.Current.WindowWidth = 999;
+        _testInstance.Current.Theme = "ModifiedTheme";
+        _testInstance.Current.WindowWidth = 999;
 
         // Act - Reset for tests
-        SettingsService.Instance.ResetForTests();
+        _testInstance.ResetForTests();
 
         // Assert - Should be back to defaults
-        Assert.Equal("FluentDark", SettingsService.Instance.Current.Theme);
-        Assert.Null(SettingsService.Instance.Current.WindowWidth);
+        Assert.Equal("FluentDark", _testInstance.Current.Theme);
+        Assert.Null(_testInstance.Current.WindowWidth);
     }
 
     [Fact]
     public void SettingsService_Save_CreatesFile()
     {
         // Arrange
-        SettingsService.Instance.ResetForTests();
-        SettingsService.Instance.Current.Theme = "Dark";
-        SettingsService.Instance.Current.WindowWidth = 800;
-        SettingsService.Instance.Current.WindowHeight = 600;
+        _testInstance.ResetForTests();
+        _testInstance.Current.Theme = "Dark";
+        _testInstance.Current.WindowWidth = 800;
+        _testInstance.Current.WindowHeight = 600;
 
         // Get the expected file path
         var filePath = Path.Combine(_testDirectory, "settings.json");
 
         // Act
-        SettingsService.Instance.Save();
+        _testInstance.Save();
 
         // Assert
         Assert.True(File.Exists(filePath));
@@ -127,12 +115,12 @@ public sealed class SettingsServiceTests : IDisposable
         File.WriteAllText(filePath, "{ invalid json content }");
 
         // Act - Reset and load (should handle corruption gracefully)
-        SettingsService.Instance.ResetForTests();
-        SettingsService.Instance.Load();
+        _testInstance.ResetForTests();
+        _testInstance.Load();
 
         // Assert - Should have default settings, not crash
-        Assert.NotNull(SettingsService.Instance.Current);
-        Assert.Equal("FluentDark", SettingsService.Instance.Current.Theme);
+        Assert.NotNull(_testInstance.Current);
+        Assert.Equal("FluentDark", _testInstance.Current.Theme);
     }
 
     [Fact]
@@ -143,8 +131,8 @@ public sealed class SettingsServiceTests : IDisposable
         File.WriteAllText(filePath, "{ invalid json content }");
 
         // Act - Load (should create backup)
-        SettingsService.Instance.ResetForTests();
-        SettingsService.Instance.Load();
+        _testInstance.ResetForTests();
+        _testInstance.Load();
 
         // Assert - Should have created a backup file
         var backupFiles = Directory.GetFiles(_testDirectory, "settings.json.bad_*");
@@ -167,13 +155,13 @@ public sealed class SettingsServiceTests : IDisposable
         File.WriteAllText(filePath, json);
 
         // Act - Load (should migrate old properties)
-        SettingsService.Instance.ResetForTests();
-        SettingsService.Instance.Load();
+        _testInstance.ResetForTests();
+        _testInstance.Load();
 
         // Assert - Should have migrated to new QBO properties
-        Assert.Equal("old_token", SettingsService.Instance.Current.QboAccessToken);
-        Assert.Equal("old_refresh", SettingsService.Instance.Current.QboRefreshToken);
-        Assert.True(SettingsService.Instance.Current.QboTokenExpiry > DateTime.UtcNow);
+        Assert.Equal("old_token", _testInstance.Current.QboAccessToken);
+        Assert.Equal("old_refresh", _testInstance.Current.QboRefreshToken);
+        Assert.True(_testInstance.Current.QboTokenExpiry > DateTime.UtcNow);
     }
 
     [Fact]
@@ -185,12 +173,12 @@ public sealed class SettingsServiceTests : IDisposable
             File.Delete(filePath);
 
         // Act - Load from non-existent file
-        SettingsService.Instance.ResetForTests();
-        SettingsService.Instance.Load();
+        _testInstance.ResetForTests();
+        _testInstance.Load();
 
         // Assert - Should have default settings
-        Assert.NotNull(SettingsService.Instance.Current);
-        Assert.Equal("FluentDark", SettingsService.Instance.Current.Theme);
+        Assert.NotNull(_testInstance.Current);
+        Assert.Equal("FluentDark", _testInstance.Current.Theme);
     }
 
     public void Dispose()

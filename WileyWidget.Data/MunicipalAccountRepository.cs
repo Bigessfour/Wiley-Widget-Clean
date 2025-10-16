@@ -208,6 +208,11 @@ namespace WileyWidget.Data
                 {
                     await RepositoryConcurrencyHelper.HandleAsync(ex, nameof(MunicipalAccount)).ConfigureAwait(false);
                 }
+                catch (DbUpdateException ex)
+                {
+                    // Handle other update exceptions (e.g., FK constraints)
+                    throw new InvalidOperationException($"Failed to delete MunicipalAccount with ID {id}: {ex.Message}", ex);
+                }
                 return true;
             }
             return false;

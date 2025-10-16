@@ -327,7 +327,9 @@ public static class TestDiSetup
                 Application.Current.Properties["ServiceProvider"] = _serviceProvider;
             }
 
-            // Set the static App.ServiceProvider (this is a bit of a hack but necessary for views)
+            // Set the static App.ServiceProvider via reflection (hack required for UI tests)
+            // Views expect a static service provider for dependency resolution during testing
+            // This is necessary because the App class doesn't expose a public ServiceProvider property
             typeof(WileyWidget.App).GetProperty("ServiceProvider")?.SetValue(null, _serviceProvider);
 
             _isInitialized = true;

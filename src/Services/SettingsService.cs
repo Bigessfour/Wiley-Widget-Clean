@@ -17,54 +17,16 @@ namespace WileyWidget.Services;
 // AppSettings moved to Models/AppSettings.cs
 
 /// <summary>
-/// Simple singleton service for loading/saving <see cref="AppSettings"/> as JSON in AppData.
+/// Simple service for loading/saving <see cref="AppSettings"/> as JSON in AppData.
 /// Handles corruption by renaming the bad file and regenerating defaults.
 /// </summary>
 public sealed class SettingsService : ISettingsService
 {
-    private static readonly Lazy<SettingsService> _fallbackInstance = new(() => new SettingsService());
-
     /// <summary>
-    /// Provides backwards-compatible access to a singleton instance sourced from the Prism/Microsoft DI container when available.
-    /// Falls back to an internal lazy instance for early-startup or test scenarios where the container has not yet been established.
+    /// Gets the singleton instance from DI container.
     /// </summary>
-    public static SettingsService Instance
-    {
-        get
-        {
-            IServiceProvider? provider = null;
-            try
-            {
-                provider = App.GetActiveServiceProvider();
-            }
-            catch (InvalidOperationException)
-            {
-                provider = App.ServiceProvider;
-            }
-
-            if (provider != null)
-            {
-                try
-                {
-                    var resolved = provider.GetService<SettingsService>();
-                    if (resolved != null)
-                    {
-                        return resolved;
-                    }
-                }
-                catch (ObjectDisposedException)
-                {
-                    // Container disposed during shutdown; fall back to lazy instance
-                }
-                catch (InvalidOperationException)
-                {
-                    // Container not fully built yet; fall back to lazy instance
-                }
-            }
-
-            return _fallbackInstance.Value;
-        }
-    }
+    public static SettingsService Instance => App.GetActiveServiceProvider().GetService<SettingsService>() 
+        ?? throw new InvalidOperationException("SettingsService not registered in DI container");
 
     private readonly IConfiguration? _configuration;
     private readonly ILogger<SettingsService> _logger;
@@ -172,6 +134,7 @@ public sealed class SettingsService : ISettingsService
             Directory.CreateDirectory(_root);
             var json = JsonSerializer.Serialize(Current, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(_file, json);
+            _logger.LogDebug("Settings saved successfully to {SettingsFile}.", _file);
         }
         catch (Exception ex)
         {

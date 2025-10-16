@@ -22,6 +22,12 @@ namespace WileyWidget.ViewModels;
 public partial class AIAssistViewModel : ObservableObject
 {
     private readonly IAIService _aiService;
+    private readonly IChargeCalculatorService _chargeCalculator;
+    private readonly IWhatIfScenarioEngine _scenarioEngine;
+    private readonly IGrokSupercomputer _grokSupercomputer;
+    private readonly IEnterpriseRepository _enterpriseRepository;
+    private readonly IDispatcherHelper _dispatcherHelper;
+    private readonly Microsoft.Extensions.Logging.ILogger<AIAssistViewModel> _logger;
 
     public ObservableCollection<ChatMessage> ChatMessages { get; } = new();
 
@@ -224,16 +230,6 @@ public partial class AIAssistViewModel : ObservableObject
     private string whatIfVariable = string.Empty;
 
     /// <summary>
-    /// Service charge calculator service
-    /// </summary>
-    private readonly IChargeCalculatorService _chargeCalculator;
-
-    /// <summary>
-    /// What-if scenario engine
-    /// </summary>
-    private readonly IWhatIfScenarioEngine _scenarioEngine;
-
-    /// <summary>
     /// Constructor with AI service dependency
     /// </summary>
     public AIAssistViewModel(IAIService aiService, IChargeCalculatorService chargeCalculator, IWhatIfScenarioEngine scenarioEngine, IGrokSupercomputer grokSupercomputer, IEnterpriseRepository enterpriseRepository, IDispatcherHelper dispatcherHelper, Microsoft.Extensions.Logging.ILogger<AIAssistViewModel> logger)
@@ -241,6 +237,10 @@ public partial class AIAssistViewModel : ObservableObject
         _aiService = aiService ?? throw new ArgumentNullException(nameof(aiService));
         _chargeCalculator = chargeCalculator ?? throw new ArgumentNullException(nameof(chargeCalculator));
         _scenarioEngine = scenarioEngine ?? throw new ArgumentNullException(nameof(scenarioEngine));
+        _grokSupercomputer = grokSupercomputer ?? throw new ArgumentNullException(nameof(grokSupercomputer));
+        _enterpriseRepository = enterpriseRepository ?? throw new ArgumentNullException(nameof(enterpriseRepository));
+        _dispatcherHelper = dispatcherHelper ?? throw new ArgumentNullException(nameof(dispatcherHelper));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         // Initialize Responses collection with notification
         Responses = new ObservableCollection<object>();
@@ -459,7 +459,7 @@ public partial class AIAssistViewModel : ObservableObject
     private bool CanSendMessage() => !string.IsNullOrWhiteSpace(MessageText);
 
     /// <summary>
-    /// Generate response command (placeholder for charge calculation)
+    /// Generate response command using AI service
     /// </summary>
     [RelayCommand(CanExecute = nameof(CanGenerate))]
     private async Task Generate()
@@ -473,19 +473,15 @@ public partial class AIAssistViewModel : ObservableObject
         IsProcessing = true;
         try
         {
-            // Placeholder for charge calculation - using IChargeCalculatorService
-            // This is a basic implementation that will be enhanced
-            var result = await Task.Run(() =>
-            {
-                // Simple placeholder calculation
-                return $"Generated response for: {QueryText}\n\nThis is a placeholder response. The IChargeCalculatorService integration is pending.";
-            });
+            // Use AI service for general queries and analysis
+            var context = "Municipal utility management and budgeting system";
+            var result = await _aiService.GetInsightsAsync(context, QueryText);
 
             Response = result;
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error generating response");
+            Log.Error(ex, "Error generating AI response");
             Response = $"Error generating response: {ex.Message}";
         }
         finally
@@ -733,7 +729,7 @@ public partial class AIAssistViewModel : ObservableObject
         {
             await Task.CompletedTask; // Suppress async warning
             var recentActivity = GetRecentActivitySummary();
-            var userProfile = GetUserProfileSummary();
+            var userProfile = await GetUserProfileSummary();
 
             var insights = new LocalAnticipatoryInsights
             {
@@ -774,21 +770,35 @@ public partial class AIAssistViewModel : ObservableObject
     }
 
     /// <summary>
-    /// Get current enterprise (placeholder - implement based on your data access)
+    /// Get current enterprise from repository
     /// </summary>
     private async Task<Enterprise> GetCurrentEnterpriseAsync()
     {
-        // This should be implemented to get the current enterprise from your data context
-        // For testing purposes, return a mock enterprise
-        await Task.CompletedTask; // Suppress async warning
-        return new Enterprise
+        try
         {
-            Id = 1,
-            Name = "Test Enterprise",
-            CurrentRate = 125.00M,
-            CitizenCount = 2500,
-            MonthlyExpenses = 350000.00M
-        };
+            // Get the first enterprise as current (you may want to implement proper selection logic)
+            var enterprises = await Task.Run(() => _enterpriseRepository.GetAllAsync());
+            return enterprises.FirstOrDefault() ?? new Enterprise
+            {
+                Id = 0,
+                Name = "No Enterprise Found",
+                CurrentRate = 0.00M,
+                CitizenCount = 0,
+                MonthlyExpenses = 0.00M
+            };
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error retrieving current enterprise");
+            return new Enterprise
+            {
+                Id = 0,
+                Name = "Error Loading Enterprise",
+                CurrentRate = 0.00M,
+                CitizenCount = 0,
+                MonthlyExpenses = 0.00M
+            };
+        }
     }
 
     /// <summary>
@@ -804,10 +814,37 @@ public partial class AIAssistViewModel : ObservableObject
     /// <summary>
     /// Get user profile summary
     /// </summary>
-    private string GetUserProfileSummary()
+    private async Task<string> GetUserProfileSummary()
     {
-        // This should summarize user preferences, role, and context
-        return "Municipal utility manager focused on financial planning and service optimization";
+        try
+        {
+            var enterprise = await GetCurrentEnterpriseAsync();
+
+            // Build profile summary based on enterprise and context
+            var profileParts = new List<string>();
+
+            if (enterprise.Id > 0)
+            {
+                profileParts.Add($"Municipal utility manager for {enterprise.Name}");
+                profileParts.Add($"Managing service operations for {enterprise.CitizenCount:N0} citizens");
+                profileParts.Add($"Current service rate: ${enterprise.CurrentRate:F2} per unit");
+                profileParts.Add($"Monthly operating expenses: ${enterprise.MonthlyExpenses:N0}");
+            }
+            else
+            {
+                profileParts.Add("Municipal utility manager");
+            }
+
+            profileParts.Add("Focused on financial planning, service optimization, and regulatory compliance");
+            profileParts.Add("Experienced with budget analysis, rate setting, and infrastructure planning");
+
+            return string.Join(". ", profileParts);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error generating user profile summary");
+            return "Municipal utility manager focused on financial planning and service optimization";
+        }
     }
 
     /// <summary>

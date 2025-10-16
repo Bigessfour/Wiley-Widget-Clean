@@ -20,6 +20,7 @@ public class AppDbContext : DbContext
         FiscalYearSettings = Set<FiscalYearSettings>();
         UtilityCustomers = Set<UtilityCustomer>();
         BudgetPeriods = Set<BudgetPeriod>();
+        AuditEntries = Set<AuditEntry>();
     }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -43,6 +44,8 @@ public class AppDbContext : DbContext
     public DbSet<FiscalYearSettings> FiscalYearSettings { get; set; } // New
     public DbSet<UtilityCustomer> UtilityCustomers { get; set; } // New
     public DbSet<BudgetPeriod> BudgetPeriods { get; set; } // New
+    public DbSet<Invoice> Invoices { get; set; } // New
+    public DbSet<AuditEntry> AuditEntries { get; set; } // New
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -97,19 +100,20 @@ public class AppDbContext : DbContext
                   .HasForeignKey(e => e.DepartmentId)
                   .OnDelete(DeleteBehavior.Restrict);
             entity.HasOne(e => e.BudgetPeriod)
-                  .WithMany()
+                  .WithMany(bp => bp.Accounts)
                   .HasForeignKey(e => e.BudgetPeriodId)
                   .OnDelete(DeleteBehavior.Restrict);
             entity.HasOne(e => e.ParentAccount)
                   .WithMany(e => e.ChildAccounts)
                   .HasForeignKey(e => e.ParentAccountId)
-                  .OnDelete(DeleteBehavior.Restrict);
+                  .OnDelete(DeleteBehavior.Cascade);
             entity.HasIndex(e => e.DepartmentId);
             entity.HasIndex(e => e.BudgetPeriodId);
             entity.HasIndex(e => e.ParentAccountId);
             entity.HasIndex(e => new { e.Fund, e.Type });
             entity.Property(e => e.Balance).HasColumnType("decimal(18,2)");
             entity.Property(e => e.BudgetAmount).HasColumnType("decimal(18,2)");
+            entity.Property(e => e.RowVersion).IsConcurrencyToken();
         });
 
         // Fund relations
@@ -133,6 +137,24 @@ public class AppDbContext : DbContext
             entity.Property(t => t.Type).HasMaxLength(50);
             entity.Property(t => t.Description).HasMaxLength(200);
             entity.ToTable(t => t.HasCheckConstraint("CK_Transaction_NonZero", "[Amount] != 0"));
+        });
+
+        // New: Invoice
+        modelBuilder.Entity<Invoice>(entity =>
+        {
+            entity.HasOne(i => i.Vendor)
+                  .WithMany(v => v.Invoices)
+                  .HasForeignKey(i => i.VendorId)
+                  .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(i => i.MunicipalAccount)
+                  .WithMany(ma => ma.Invoices)
+                  .HasForeignKey(i => i.MunicipalAccountId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(i => i.VendorId);
+            entity.HasIndex(i => i.MunicipalAccountId);
+            entity.HasIndex(i => i.InvoiceDate);
+            entity.Property(i => i.Amount).HasColumnType("decimal(18,2)");
+            entity.Property(i => i.InvoiceNumber).HasMaxLength(50);
         });
 
         // New: BudgetInteraction relationships
@@ -210,6 +232,9 @@ public class AppDbContext : DbContext
         
 
         // modelBuilder.Entity<Transaction>().HasData(
+        //     // NOTE: BudgetEntryId = 1 assumes a matching seeded BudgetEntry with Id = 1 exists.
+        //     new Transaction { Id = 1, BudgetEntryId = 1, Amount = 10000, Type = "Payment", TransactionDate = new DateTime(2025, 10, 13, 12, 0, 0, DateTimeKind.Utc), Description = "Initial payment for road work" }
+        // );
         //     new Transaction { Id = 1, BudgetEntryId = 1, Amount = 10000, Type = "Payment", TransactionDate = new DateTime(2025, 10, 13, 12, 0, 0, DateTimeKind.Utc), Description = "Initial payment for road work" }
         // );
     }
