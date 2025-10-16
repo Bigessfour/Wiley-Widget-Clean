@@ -16,6 +16,24 @@
       }
     },
     {
+      "name": "Launch WileyWidget (Debug Exceptions)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/bin/Debug/net9.0-windows/WileyWidget.exe",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "console": "internalConsole",
+      "justMyCode": false,
+      "stopAtEntry": false,
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "SYNCFUSION_LICENSE_KEY": "${env:SYNCFUSION_LICENSE_KEY}",
+        "COREHOST_TRACE": "1"
+      },
+      "envFile": "${workspaceFolder}/.env"
+    },
+    {
       "name": "Launch WileyWidget (Azure)",
       "type": "coreclr",
       "request": "launch",

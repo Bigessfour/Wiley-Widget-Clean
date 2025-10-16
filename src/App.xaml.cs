@@ -18,6 +18,7 @@ using Microsoft.Extensions.Logging;
 using Serilog.Extensions.Logging;
 using WileyWidget.Configuration;
 using WileyWidget.Data;
+using DotNetEnv;
 using WileyWidget.Regions;
 using WileyWidget.Business.Interfaces;
 using WileyWidget.Models;
@@ -29,6 +30,8 @@ using Microsoft.EntityFrameworkCore;
 using System.Diagnostics.CodeAnalysis;
 using Azure.Identity;
 using Microsoft.Extensions.DependencyInjection;
+// using Microsoft.ApplicationInsights;
+// using Microsoft.ApplicationInsights.Extensibility;
 
 namespace WileyWidget
 {
@@ -36,6 +39,8 @@ namespace WileyWidget
     {
         // Static property for backwards compatibility with views
         public static IContainerProvider CurrentContainer { get; private set; }
+        // Backwards-compatible IServiceProvider instance (Prism's container implements IServiceProvider)
+        public static IServiceProvider? ServiceProvider { get; private set; }
 
         // Splash screen instance for bootstrapper access
         public static Window? SplashScreenInstance { get; set; }
@@ -63,30 +68,14 @@ namespace WileyWidget
             }
         }
 
-        // Production-ready ServiceProvider with proper initialization
-        private static IServiceProvider _serviceProvider;
-        private static IServiceProvider ServiceProvider
-        {
-            get
-            {
-                if (_serviceProvider == null)
-                {
-                    lock (_initLock)
-                    {
-                        if (_serviceProvider == null)
-                        {
-                            _serviceProvider = GetActiveServiceProvider();
-                            Log.Information("ServiceProvider initialized with thread-safety");
-                        }
-                    }
-                }
-                return _serviceProvider;
-            }
-        }
-
         // Public accessor for ServiceProvider (backwards compatibility)
         public static IServiceProvider GetServiceProvider()
         {
+            if (ServiceProvider == null)
+            {
+                // If container not yet set, attempt to return active service provider
+                return GetActiveServiceProvider();
+            }
             return ServiceProvider;
         }
         public static void LogDebugEvent(string category, string message) => Log.Debug("[{Category}] {Message}", category, message);
@@ -103,7 +92,24 @@ namespace WileyWidget
             ConfigureLogging();
 
             // Syncfusion setup (from Syncfusion WPF docs: Register license before any controls load)
-            SyncfusionLicenseProvider.RegisterLicense("YOUR_SYNCFUSION_LICENSE_KEY_HERE");  // Replace with your actual key
+            try
+            {
+                var cfg = BuildConfiguration();
+                var licenseKey = cfg["Syncfusion:LicenseKey"] ?? cfg["Syncfusion:License"] ?? Environment.GetEnvironmentVariable("SYNCFUSION_LICENSE_KEY");
+                if (!string.IsNullOrWhiteSpace(licenseKey) && !licenseKey.Contains("YOUR_SYNCFUSION_LICENSE_KEY_HERE"))
+                {
+                    SyncfusionLicenseProvider.RegisterLicense(licenseKey);
+                    Log.Information("Syncfusion license registered from configuration (masked: {Mask})", licenseKey.Length > 8 ? licenseKey.Substring(0, 8) + "..." : "(masked)");
+                }
+                else
+                {
+                    Log.Warning("Syncfusion license key not configured. Set Syncfusion:LicenseKey in appsettings.json or SYNCFUSION_LICENSE_KEY environment variable to suppress runtime license dialogs.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Failed to register Syncfusion license during startup - continuing without license registration (this may show license dialogs on first use)");
+            }
 
             // Initialize ServiceProvider early to prevent "Application container not initialized" errors
             InitializeInternal();
@@ -190,6 +196,20 @@ namespace WileyWidget
                 }
 
                 CurrentContainer = Container;
+                // Expose a concrete IServiceProvider for legacy consumers and tests that
+                // read Application.Current.Properties["ServiceProvider"].
+                ServiceProvider = CurrentContainer as IServiceProvider;
+                try
+                {
+                    if (Application.Current != null)
+                    {
+                        Application.Current.Properties["ServiceProvider"] = ServiceProvider;
+                    }
+                }
+                catch
+                {
+                    // Non-fatal: some test-hosts or early startup states may not allow Application.Current.Properties
+                }
                 Log.Information("CurrentContainer set in CreateShell() - services now available for resolution");
 
                 var shell = Container.Resolve<MainWindow>();
@@ -235,6 +255,9 @@ namespace WileyWidget
 
             // Register HttpClient infrastructure for AI services
             RegisterHttpClientServices(containerRegistry, configuration);
+
+            // Register database services
+            RegisterDatabaseServices(containerRegistry, configuration);
 
             // Register core infrastructure services
             containerRegistry.RegisterSingleton<ISyncfusionLicenseService, SyncfusionLicenseService>();
@@ -444,6 +467,60 @@ namespace WileyWidget
         }
 
         /// <summary>
+        /// Registers database services using Microsoft.Extensions.DependencyInjection pattern
+        /// </summary>
+        /// <param name="containerRegistry">The Unity container registry for DI registration</param>
+        /// <param name="configuration">Application configuration for database settings</param>
+        private void RegisterDatabaseServices(IContainerRegistry containerRegistry, IConfiguration configuration)
+        {
+            Log.Information("=== Registering Database Services ===");
+
+            try
+            {
+                // Unity-only approach: build DbContextOptions<AppDbContext> from configuration
+                // and register a small Unity-friendly factory implementation that takes
+                // DbContextOptions<AppDbContext> in its constructor. This removes the
+                // cross-container ServiceCollection usage and keeps DI with Unity only.
+
+                var connectionString = configuration.GetConnectionString("DefaultConnection")
+                                       ?? "Server=(localdb)\\mssqllocaldb;Database=WileyWidgetDb;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=true";
+
+                var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
+                // Configure SQL Server with reasonable defaults (migrations assembly, retries, timeout)
+                optionsBuilder.UseSqlServer(connectionString, sqlOptions =>
+                {
+                    sqlOptions.MigrationsAssembly("WileyWidget.Data");
+                    sqlOptions.EnableRetryOnFailure(maxRetryCount: 3, maxRetryDelay: TimeSpan.FromSeconds(10), errorNumbersToAdd: null);
+                    sqlOptions.CommandTimeout(30);
+                });
+
+                optionsBuilder.EnableDetailedErrors();
+                optionsBuilder.UseQueryTrackingBehavior(QueryTrackingBehavior.TrackAll);
+
+                var options = optionsBuilder.Options;
+
+                // Register the options instance with Unity
+                containerRegistry.RegisterInstance<DbContextOptions<AppDbContext>>(options);
+
+                // Register a Unity-friendly factory implementation that Unity can construct
+                // because it takes DbContextOptions<AppDbContext> in its ctor
+                containerRegistry.RegisterSingleton<IDbContextFactory<AppDbContext>, WileyWidget.Data.UnityAppDbContextFactory>();
+
+                // Register AppDbContext using the factory
+                containerRegistry.Register<AppDbContext>(provider => provider.Resolve<IDbContextFactory<AppDbContext>>().CreateDbContext());
+
+                Log.Information("✓ Registered database services (AppDbContext, IDbContextFactory via Unity)");
+                Log.Information("  - Provider: SQL Server with connection pooling");
+                Log.Information("  - Features: Unity-only registration, repositories, audit logging");
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Failed to register database services");
+                throw new InvalidOperationException("Failed to configure database services. Check connection string and database availability.", ex);
+            }
+        }
+
+        /// <summary>
         /// Registers AI Integration Services for Phase 1 production deployment.
         /// Includes GrokSupercomputer, WileyWidgetContextService, and enhanced XAIService.
         /// All services are registered as singletons for optimal performance and resource management.
@@ -455,6 +532,30 @@ namespace WileyWidget
             
             try
             {
+                // 0. Register Application Insights Telemetry (Singleton)
+                // Production telemetry for AI service monitoring and performance tracking
+                // NOTE: Commented out until Azure/Application Insights is configured
+                /*
+                var config = Container.Resolve<IConfiguration>();
+                var instrumentationKey = config["ApplicationInsights:InstrumentationKey"];
+                if (!string.IsNullOrEmpty(instrumentationKey))
+                {
+                    var telemetryConfiguration = new Microsoft.ApplicationInsights.Extensibility.TelemetryConfiguration();
+                    telemetryConfiguration.ConnectionString = config["ApplicationInsights:ConnectionString"] ?? $"InstrumentationKey={instrumentationKey}";
+                    
+                    var telemetryClient = new Microsoft.ApplicationInsights.TelemetryClient(telemetryConfiguration);
+                    containerRegistry.RegisterInstance(telemetryClient);
+                    Log.Information("✓ Registered Application Insights TelemetryClient (Singleton)");
+                    Log.Information("  - Production telemetry for AI service monitoring");
+                    Log.Information("  - Features: Request tracking, dependency monitoring, custom events, metrics");
+                    Log.Information("  - Configuration: InstrumentationKey, ConnectionString from appsettings.json");
+                }
+                else
+                {
+                    Log.Warning("Application Insights not configured - set ApplicationInsights:InstrumentationKey in appsettings.json for production telemetry");
+                }
+                */
+                
                 // 0. Register IDataAnonymizerService -> DataAnonymizerService (Singleton)
                 // Provides privacy-compliant data anonymization for AI operations
                 containerRegistry.RegisterSingleton<IDataAnonymizerService, DataAnonymizerService>();
@@ -479,22 +580,22 @@ namespace WileyWidget
                 Log.Information("  - Logging: Dedicated Serilog file sink at logs/ai-usage.log");
                 Log.Information("  - Dependencies: ILogger<AILoggingService>");
                 
-                // 2. Register IGrokSupercomputer -> GrokSupercomputer (Singleton)
-                // AI-powered municipal utility analytics and compliance reporting engine
-                containerRegistry.RegisterSingleton<IGrokSupercomputer, GrokSupercomputer>();
-                Log.Information("✓ Registered IGrokSupercomputer -> GrokSupercomputer (Singleton)");
-                Log.Information("  - AI-powered municipal utility analytics engine");
-                Log.Information("  - Capabilities: Enterprise data fetching, report calculations, budget analysis, compliance reporting");
-                Log.Information("  - Dependencies: ILogger<GrokSupercomputer>, IEnterpriseRepository, IBudgetRepository, IAuditRepository, IAILoggingService");
-                
-                // 3. Register IAIService -> XAIService (Singleton) - Enhanced with context service and logging
+                // 2. Register IAIService -> XAIService (Singleton) - Enhanced with context service and logging
                 // xAI service implementation for AI-powered insights and analysis with Grok integration
                 containerRegistry.RegisterSingleton<IAIService, XAIService>();
                 Log.Information("✓ Registered IAIService -> XAIService (Singleton) [Enhanced]");
                 Log.Information("  - xAI/Grok integration for AI-powered insights");
                 Log.Information("  - Features: Insights, data analysis, area review, mock data generation");
-                Log.Information("  - Dependencies: IHttpClientFactory, IConfiguration, ILogger<XAIService>, IWileyWidgetContextService, IAILoggingService");
+                Log.Information("  - Dependencies: IHttpClientFactory, IConfiguration, ILogger<XAIService>, IWileyWidgetContextService, IAILoggingService, IMemoryCache");
                 Log.Information("  - Configuration: XAI:ApiKey, XAI:BaseUrl, XAI:Model, XAI:TimeoutSeconds");
+                
+                // 3. Register IGrokSupercomputer -> GrokSupercomputer (Singleton)
+                // AI-powered municipal utility analytics and compliance reporting engine
+                containerRegistry.RegisterSingleton<IGrokSupercomputer, GrokSupercomputer>();
+                Log.Information("✓ Registered IGrokSupercomputer -> GrokSupercomputer (Singleton)");
+                Log.Information("  - AI-powered municipal utility analytics engine");
+                Log.Information("  - Capabilities: Enterprise data fetching, report calculations, budget analysis, compliance reporting, AI data analysis");
+                Log.Information("  - Dependencies: ILogger<GrokSupercomputer>, IEnterpriseRepository, IBudgetRepository, IAuditRepository, IAILoggingService, IAIService");
                 
                 // 4. Validate AI service configuration
                 ValidateAIServiceConfiguration();
@@ -527,6 +628,10 @@ namespace WileyWidget
                 
                 // Validate XAI configuration
                 var apiKey = config["XAI:ApiKey"];
+                Log.Information("XAI:ApiKey resolved to: {ApiKeyMasked} (length: {Length})", 
+                    string.IsNullOrEmpty(apiKey) ? "null/empty" : $"{apiKey.Substring(0, Math.Min(10, apiKey.Length))}...", 
+                    apiKey?.Length ?? 0);
+                
                 if (string.IsNullOrWhiteSpace(apiKey))
                 {
                     validationErrors.Add("XAI:ApiKey is missing or empty");
@@ -673,6 +778,9 @@ namespace WileyWidget
 
         private IConfiguration BuildConfiguration()
         {
+            // Load .env file if it exists
+            DotNetEnv.Env.Load();
+
             var builder = new ConfigurationBuilder()
                 .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
                 .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
@@ -681,6 +789,63 @@ namespace WileyWidget
                 .AddUserSecrets<App>(optional: true);
 
             return builder.Build();
+        }
+
+        /// <summary>
+        /// Ensure application shutdown is robust. Some third-party libraries (Syncfusion) may attempt to show
+        /// dialogs during shutdown which can throw if the UI thread or owner windows are disposed. We catch
+        /// and swallow known shutdown-time exceptions to avoid the process terminating with an unhelpful crash.
+        /// </summary>
+        /// <param name="e">Exit event args</param>
+        protected override void OnExit(ExitEventArgs e)
+        {
+            Log.Information("Application shutdown initiated");
+
+            try
+            {
+                // Best-effort: re-register Syncfusion license in case some syncfusion component needs it during shutdown
+                try
+                {
+                    var cfg = BuildConfiguration();
+                    var licenseKey = cfg["Syncfusion:LicenseKey"] ?? Environment.GetEnvironmentVariable("SYNCFUSION_LICENSE_KEY");
+                    if (!string.IsNullOrWhiteSpace(licenseKey))
+                    {
+                        try
+                        {
+                            SyncfusionLicenseProvider.RegisterLicense(licenseKey);
+                            Log.Debug("Re-registered Syncfusion license during shutdown (masked)");
+                        }
+                        catch (Exception rex)
+                        {
+                            Log.Warning(rex, "Re-registering Syncfusion license during shutdown failed - continuing with shutdown");
+                        }
+                    }
+                }
+                catch (Exception) { /* ignore configuration read errors during shutdown */ }
+
+                base.OnExit(e);
+                Log.Information("Application shutdown completed successfully");
+            }
+            catch (Exception ex)
+            {
+                // Special handling: Syncfusion LicenseMessage.ShowDialog can throw during shutdown
+                var msg = ex.ToString();
+                if (msg.Contains("LicenseMessage", StringComparison.OrdinalIgnoreCase) || msg.Contains("Syncfusion", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Log and swallow to prevent fatal shutdown crash
+                    Log.Warning(ex, "Non-fatal Syncfusion-related exception occurred during OnExit; swallowing to allow graceful exit");
+                }
+                else
+                {
+                    // Unknown exception - log as fatal but do not rethrow to avoid ungraceful termination
+                    Log.Fatal(ex, "Unhandled exception during application shutdown");
+                }
+            }
+            finally
+            {
+                // Ensure logger flush
+                try { Log.CloseAndFlush(); } catch { }
+            }
         }
     }
 }
