@@ -4,7 +4,6 @@ WPF Application Startup Timing Analysis for WileyWidget
 Analyzes current startup sequence and provides optimization recommendations
 """
 
-import os
 from pathlib import Path
 
 def analyze_startup_timing():

@@ -31,6 +31,7 @@ namespace WileyWidget.ViewModels
         private readonly IAIService _aiService;
         private readonly IThemeManager _themeManager;
         private readonly ISettingsService _settingsService;
+        private readonly IInteractionRequestService _interactionRequestService;
 
         private readonly Dictionary<string, List<string>> _errors = new();
 
@@ -541,7 +542,8 @@ namespace WileyWidget.ViewModels
             ISyncfusionLicenseService syncfusionLicenseService,
             IAIService aiService,
             IThemeManager themeManager,
-            ISettingsService settingsService)
+            ISettingsService settingsService,
+            IInteractionRequestService interactionRequestService)
         {
             // Validate required dependencies
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -555,6 +557,7 @@ namespace WileyWidget.ViewModels
             _aiService = aiService ?? throw new ArgumentNullException(nameof(aiService));
             _themeManager = themeManager ?? throw new ArgumentNullException(nameof(themeManager));
             _settingsService = settingsService ?? throw new ArgumentNullException(nameof(settingsService));
+            _interactionRequestService = interactionRequestService ?? throw new ArgumentNullException(nameof(interactionRequestService));
 
             // Initialize system info
             SystemInfo = $"OS: {Environment.OSVersion}\n" +
@@ -610,8 +613,6 @@ namespace WileyWidget.ViewModels
             {
                 SettingsStatus = "Error loading settings";
                 _logger.LogError(ex, "Error loading settings");
-                MessageBox.Show($"Error loading settings: {ex.Message}", "Settings Error",
-                              MessageBoxButton.OK);
             }
         }
 
@@ -888,8 +889,6 @@ namespace WileyWidget.ViewModels
             {
                 SettingsStatus = "Error saving settings";
                 _logger.LogError(ex, "Error saving settings");
-                MessageBox.Show($"Error saving settings: {ex.Message}", "Settings Error",
-                              MessageBoxButton.OK);
             }
             finally
             {
@@ -1017,9 +1016,10 @@ namespace WileyWidget.ViewModels
             }
         }
 
-    private async Task ExecuteResetSettingsAsync()
+        private async Task ExecuteResetSettingsAsync()
         {
-            var result = MessageBox.Show(
+            var confirmed = await _interactionRequestService.ShowConfirmationAsync(
+                "Reset All Settings",
                 "Are you sure you want to reset ALL settings to their default values?\n\n" +
                 "This action cannot be undone and will:\n" +
                 "• Reset all application preferences\n" +
@@ -1027,23 +1027,27 @@ namespace WileyWidget.ViewModels
                 "• Restore default themes and window sizes\n" +
                 "• Reset fiscal year and advanced configurations\n\n" +
                 "Continue with reset?",
-                "Reset All Settings",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Warning,
-                MessageBoxResult.No);
+                "Reset",
+                "Cancel");
 
-            if (result == MessageBoxResult.Yes)
+            if (!confirmed)
             {
-                await LoadSettingsAsync();
+                _logger.LogInformation("Settings reset cancelled by user");
+                SettingsStatus = "Settings reset cancelled";
+                return;
             }
+
+            await LoadSettingsAsync();
+            SettingsStatus = "Settings reset to defaults";
+            _logger.LogInformation("All settings reloaded to defaults after confirmation");
         }
 
-    private async Task ExecuteTestConnectionAsync()
+        private async Task ExecuteTestConnectionAsync()
         {
             await LoadDatabaseSettingsAsync();
         }
 
-    private async Task ExecuteTestQuickBooksConnectionAsync()
+        private async Task ExecuteTestQuickBooksConnectionAsync()
         {
             try
             {
@@ -1061,7 +1065,7 @@ namespace WileyWidget.ViewModels
             }
         }
 
-    private async Task ExecuteValidateLicenseAsync()
+        private async Task ExecuteValidateLicenseAsync()
         {
             try
             {
@@ -1079,23 +1083,23 @@ namespace WileyWidget.ViewModels
             }
         }
 
-    private async Task ExecuteTestXaiConnectionAsync()
-    {
-        try
+        private async Task ExecuteTestXaiConnectionAsync()
         {
-            XaiConnectionStatus = "Testing...";
-            XaiStatusColor = Brushes.Orange;
+            try
+            {
+                XaiConnectionStatus = "Testing...";
+                XaiStatusColor = Brushes.Orange;
 
-            var isConnected = await TestXaiConnectionInternalAsync();
-            XaiConnectionStatus = isConnected ? "Connected" : "Connection Failed";
-            XaiStatusColor = isConnected ? Brushes.Green : Brushes.Red;
+                var isConnected = await TestXaiConnectionInternalAsync();
+                XaiConnectionStatus = isConnected ? "Connected" : "Connection Failed";
+                XaiStatusColor = isConnected ? Brushes.Green : Brushes.Red;
+            }
+            catch (Exception ex)
+            {
+                XaiConnectionStatus = $"Error: {ex.Message}";
+                XaiStatusColor = Brushes.Red;
+            }
         }
-        catch (Exception ex)
-        {
-            XaiConnectionStatus = $"Error: {ex.Message}";
-            XaiStatusColor = Brushes.Red;
-        }
-    }
 
         private async Task<bool> TestXaiConnectionInternalAsync()
         {
@@ -1157,7 +1161,7 @@ namespace WileyWidget.ViewModels
             }
         }
 
-    private async Task SaveFiscalYearSettingsAsync()
+        private async Task SaveFiscalYearSettingsAsync()
         {
             try
             {
@@ -1193,21 +1197,19 @@ namespace WileyWidget.ViewModels
 
                 SettingsStatus = "Fiscal year settings saved successfully";
                 LastSaved = DateTime.Now.ToString("g");
-                
-                MessageBox.Show("Fiscal year settings saved successfully.\nChanges will affect budget periods and financial reports.",
-                              "Settings Saved",
-                              MessageBoxButton.OK,
-                              MessageBoxImage.Information);
+
+                await _interactionRequestService.ShowInformationAsync(
+                    "Settings Saved",
+                    "Fiscal year settings saved successfully.\nChanges will affect budget periods and financial reports.");
             }
             catch (Exception ex)
             {
                 SettingsStatus = $"Error saving fiscal year settings: {ex.Message}";
                 _logger.LogError(ex, "Failed to save fiscal year settings");
-                
-                MessageBox.Show($"Failed to save fiscal year settings:\n{ex.Message}",
-                              "Error",
-                              MessageBoxButton.OK,
-                              MessageBoxImage.Error);
+
+                await _interactionRequestService.ShowErrorAsync(
+                    "Error",
+                    $"Failed to save fiscal year settings:\n{ex.Message}");
             }
         }
 

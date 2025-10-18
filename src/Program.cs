@@ -29,25 +29,6 @@ public static class Program
     [STAThread]
     public static int Main(string[] args)
     {
-        // Check for test mode - create a simple MainWindow directly
-        if (args.Length > 0 && args[0] == "testmain")
-        {
-            try
-            {
-                var app = new System.Windows.Application();
-                var mainWindow = new WileyWidget.Views.MainWindow();
-                app.MainWindow = mainWindow;
-                mainWindow.Show();
-                app.Run();
-                return 0;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Test MainWindow failed: {ex.Message}");
-                return 1;
-            }
-        }
-
         var startupStopwatch = System.Diagnostics.Stopwatch.StartNew();
         var startupId = Guid.NewGuid().ToString("N")[..8];
 

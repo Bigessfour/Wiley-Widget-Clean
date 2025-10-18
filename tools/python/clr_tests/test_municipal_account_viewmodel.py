@@ -9,12 +9,18 @@ import pytest
 # collection with ModuleNotFoundError in environments without pythonnet or the
 # expected framework assemblies.
 try:
+    import clr  # type: ignore[attr-defined, import-not-found]
+    clr.AddReference("System")
+    clr.AddReference("System.Collections")
+    clr.AddReference("WileyWidget.Business")
+    clr.AddReference("WileyWidget.Models")
+    clr.AddReference("WileyWidget.Services")
     from System import (  # type: ignore[attr-defined, import-not-found]
         Activator,
         Array,
         Object,
     )
-    from System import (  # type: ignore[attr-defined, import-not-found]
+    from System import (
         Exception as NetException,
     )
     from System.Collections.Generic import (
@@ -23,11 +29,11 @@ try:
     from System.Threading.Tasks import (
         Task,  # type: ignore[attr-defined, import-not-found]
     )
-    from WileyWidget.Business.Interfaces import (
-        IMunicipalAccountRepository,  # type: ignore[attr-defined]
+-except Exception as exc:  # pragma: no cover - environment guard
+    pytest.skip(
+        f"Skipping CLR-backed tests (missing CLR or assemblies): {exc}",
+        allow_module_level=True,
     )
-except Exception as exc:  # pragma: no cover - environment guard
-    pytest.skip(f"Skipping CLR-backed tests (missing CLR or assemblies): {exc}", allow_module_level=True)
 
 from .helpers import dotnet_utils
 
@@ -36,18 +42,26 @@ def _await(task):
     return task.GetAwaiter().GetResult()
 
 
-class MunicipalAccountRepositoryStub(dotnet_utils.get_type.__annotations__ if False else object):
+class MunicipalAccountRepositoryStub(
+    dotnet_utils.get_type.__annotations__ if False else object
+):
     # This is a stub type for static analysis and test readability.
     pass
 
 
 def _create_account_list(assemblies_dir, count: int = 1):
-    account_type = dotnet_utils.get_type(assemblies_dir, "WileyWidget.Models", "WileyWidget.Models.MunicipalAccount")
-    account_number_type = dotnet_utils.get_type(assemblies_dir, "WileyWidget.Models", "WileyWidget.Models.AccountNumber")
+    account_type = dotnet_utils.get_type(
+        assemblies_dir, "WileyWidget.Models", "WileyWidget.Models.MunicipalAccount"
+    )
+    account_number_type = dotnet_utils.get_type(
+        assemblies_dir, "WileyWidget.Models", "WileyWidget.Models.AccountNumber"
+    )
     accounts = List[account_type]()
     for index in range(count):
         account = Activator.CreateInstance(account_type)
-        account.AccountNumber = Activator.CreateInstance(account_number_type, Array[Object]([f"405.{index}"]))
+        account.AccountNumber = Activator.CreateInstance(
+            account_number_type, Array[Object]([f"405.{index}"])
+        )
         account.Name = f"Test Account {index}"
         account.DepartmentId = 1
         account.BudgetPeriodId = 1
@@ -67,9 +81,6 @@ def _create_repo_interface(assemblies_dir, accounts, raise_error: bool = False):
             if self._fail:
                 raise NetException("Load failed")
             return Task.FromResult(self._data)
-
-        def GetByIdAsync(self, _):
-            return Task.FromResult(None)
 
         def GetByAccountNumberAsync(self, __):
             return Task.FromResult(None)
@@ -105,10 +116,18 @@ def _create_repo_interface(assemblies_dir, accounts, raise_error: bool = False):
 def _create_grok_stub(assemblies_dir):
     from WileyWidget.Services import IGrokSupercomputer  # type: ignore[attr-defined]
 
-    report_data_type = dotnet_utils.get_type(assemblies_dir, "WileyWidget.Models", "WileyWidget.Models.ReportData")
-    analytics_type = dotnet_utils.get_type(assemblies_dir, "WileyWidget.Models", "WileyWidget.Models.AnalyticsData")
-    budget_insights_type = dotnet_utils.get_type(assemblies_dir, "WileyWidget.Models", "WileyWidget.Models.BudgetInsights")
-    compliance_type = dotnet_utils.get_type(assemblies_dir, "WileyWidget.Models", "WileyWidget.Models.ComplianceReport")
+    report_data_type = dotnet_utils.get_type(
+        assemblies_dir, "WileyWidget.Models", "WileyWidget.Models.ReportData"
+    )
+    analytics_type = dotnet_utils.get_type(
+        assemblies_dir, "WileyWidget.Models", "WileyWidget.Models.AnalyticsData"
+    )
+    budget_insights_type = dotnet_utils.get_type(
+        assemblies_dir, "WileyWidget.Models", "WileyWidget.Models.BudgetInsights"
+    )
+    compliance_type = dotnet_utils.get_type(
+        assemblies_dir, "WileyWidget.Models", "WileyWidget.Models.ComplianceReport"
+    )
 
     class GrokStub(IGrokSupercomputer):
         def FetchEnterpriseDataAsync(self, *__):
@@ -133,12 +152,18 @@ def _create_grok_stub(assemblies_dir):
 
 
 def _create_viewmodel(assemblies_dir, repo, grok):
-    viewmodel_type = dotnet_utils.get_type(assemblies_dir, "WileyWidget", "WileyWidget.ViewModels.MunicipalAccountViewModel")
+    viewmodel_type = dotnet_utils.get_type(
+        assemblies_dir,
+        "WileyWidget",
+        "WileyWidget.ViewModels.MunicipalAccountViewModel",
+    )
     return Activator.CreateInstance(viewmodel_type, Array[Object]([repo, None, grok]))
 
 
 @pytest.fixture()
-def viewmodel_success(clr_loader, ensure_assemblies_present, load_wileywidget_core, system_runtime):
+def viewmodel_success(
+    clr_loader, ensure_assemblies_present, load_wileywidget_core, system_runtime
+):
     clr_loader("Microsoft.Extensions.DependencyInjection")
     accounts = _create_account_list(ensure_assemblies_present)
     repo = _create_repo_interface(ensure_assemblies_present, accounts)
@@ -148,8 +173,14 @@ def viewmodel_success(clr_loader, ensure_assemblies_present, load_wileywidget_co
 
 
 @pytest.fixture()
-def viewmodel_failure(clr_loader, ensure_assemblies_present, load_wileywidget_core, system_runtime):
-    repo = _create_repo_interface(ensure_assemblies_present, _create_account_list(ensure_assemblies_present, 0), True)
+def viewmodel_failure(
+    clr_loader, ensure_assemblies_present, load_wileywidget_core, system_runtime
+):
+    repo = _create_repo_interface(
+        ensure_assemblies_present,
+        _create_account_list(ensure_assemblies_present, 0),
+        True,
+    )
     grok = _create_grok_stub(ensure_assemblies_present)
     vm = _create_viewmodel(ensure_assemblies_present, repo, grok)
     return vm
@@ -169,8 +200,12 @@ def test_load_accounts_success(viewmodel_success):
     assert vm.StatusMessage.startswith("Loaded")
 
 
-def test_load_accounts_empty(clr_loader, ensure_assemblies_present, load_wileywidget_core):
-    repo = _create_repo_interface(ensure_assemblies_present, _create_account_list(ensure_assemblies_present, 0))
+def test_load_accounts_empty(
+    clr_loader, ensure_assemblies_present, load_wileywidget_core
+):
+    repo = _create_repo_interface(
+        ensure_assemblies_present, _create_account_list(ensure_assemblies_present, 0)
+    )
     grok = _create_grok_stub(ensure_assemblies_present)
     vm = _create_viewmodel(ensure_assemblies_present, repo, grok)
     command = vm.LoadAccountsAsyncCommand

@@ -162,9 +162,8 @@ lint:
         - '*.yaml'
 actions:
   enabled:
-    - trunk-check-pre-push
     - trunk-announce
-    # - trunk-check-pre-push  # Temporarily disabled due to --ci-progress argument issue
+    # - trunk-check-pre-push  # Disabled while trunk push rejects --ci-progress
     - trunk-fmt-pre-commit
     - trunk-upgrade-available
 tools:

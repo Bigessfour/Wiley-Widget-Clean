@@ -21,6 +21,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Options;
 using Serilog.Extensions.Logging;
 using WileyWidget.Configuration;
 using WileyWidget.Data;
@@ -74,13 +75,7 @@ namespace WileyWidget
             {
                 Log.Error(e.Exception, "Unhandled UI exception occurred");
                 e.Handled = true; // Prevent application crash
-
-                // Show user-friendly error message
-                System.Windows.MessageBox.Show(
-                    $"An unexpected error occurred: {e.Exception.Message}\n\nPlease check the logs for more details.",
-                    "Application Error",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
+                Log.Warning("UI exception suppressed per policy; notifying via logs only.");
             };
 
             // Handle unhandled exceptions on background threads
@@ -206,6 +201,7 @@ namespace WileyWidget
             containerRegistry.RegisterSingleton<ThemeManager>();
             containerRegistry.RegisterSingleton<IThemeManager>(provider => provider.Resolve<ThemeManager>());
             containerRegistry.RegisterSingleton<IDispatcherHelper>(provider => new DispatcherHelper());
+            containerRegistry.RegisterSingleton<AppOptionsConfigurator>();
 
             // Register IServiceProvider via Unity adapter so framework services can request it per Prism guidance
             var unityContainer = containerRegistry.GetContainer();
@@ -242,6 +238,9 @@ namespace WileyWidget
             containerRegistry.RegisterInstance<IMemoryCache>(memoryCache);
             Log.Information("✓ Registered IMemoryCache for in-memory caching infrastructure");
             
+            // Register configuration options infrastructure (bridging Microsoft.Extensions.Options into Unity)
+            RegisterAppOptions(containerRegistry, configuration, unityContainer);
+
             // Register data repositories required during startup validation to prevent Unity resolution failures
             containerRegistry.Register<IEnterpriseRepository, WileyWidget.Data.EnterpriseRepository>();
             containerRegistry.Register<IBudgetRepository, WileyWidget.Data.BudgetRepository>();
@@ -337,7 +336,8 @@ namespace WileyWidget
             Log.Information($"Total registrations: AI Services, Data Repositories, Business Services, ViewModels, Infrastructure");
             Log.Information("Container ready for service resolution");
 
-            // Validate critical service registrations
+            // Validate Prism infrastructure and critical services
+            ValidatePrismInfrastructure(containerRegistry);
             ValidateCriticalServices(containerRegistry);
         }
 
@@ -400,6 +400,91 @@ namespace WileyWidget
             }
 
             Log.Information("✓ All critical services validated successfully");
+        }
+
+        /// <summary>
+        /// Ensures Prism and Unity remain the single composition root by validating container state and legacy configuration.
+        /// </summary>
+        /// <param name="containerRegistry">The active Prism container registry</param>
+        private void ValidatePrismInfrastructure(IContainerRegistry containerRegistry)
+        {
+            if (containerRegistry == null)
+            {
+                throw new ArgumentNullException(nameof(containerRegistry));
+            }
+
+            var unityContainer = containerRegistry.GetContainer();
+            if (unityContainer == null)
+            {
+                throw new InvalidOperationException("Unity container is not available during Prism startup.");
+            }
+
+            var prismContainerType = Container?.GetType().FullName ?? "(unavailable)";
+            Log.Information("Prism container provider: {PrismContainerType}", prismContainerType);
+
+            if (Application.Current is not App)
+            {
+                throw new InvalidOperationException("Application.Current is not WileyWidget.App. Legacy WPF startup path detected.");
+            }
+
+            if (Application.Current.StartupUri != null)
+            {
+                Log.Warning("StartupUri detected ({StartupUri}); Prism requires StartupUri to remain null. Clearing legacy configuration to enforce Prism-first navigation.", Application.Current.StartupUri);
+                Application.Current.StartupUri = null;
+            }
+
+            var unityRegistrationCount = unityContainer.Registrations.Count();
+            Log.Information("Unity container registration count: {RegistrationCount}", unityRegistrationCount);
+        }
+
+        private void RegisterAppOptions(IContainerRegistry containerRegistry, IConfiguration configuration, IUnityContainer unityContainer)
+        {
+            if (containerRegistry == null)
+            {
+                throw new ArgumentNullException(nameof(containerRegistry));
+            }
+
+            if (configuration == null)
+            {
+                throw new ArgumentNullException(nameof(configuration));
+            }
+
+            if (unityContainer == null)
+            {
+                throw new ArgumentNullException(nameof(unityContainer));
+            }
+
+            try
+            {
+                var appOptions = new AppOptions();
+                configuration.GetSection("App").Bind(appOptions);
+
+                try
+                {
+                    var configurator = unityContainer.Resolve<AppOptionsConfigurator>();
+                    configurator.Configure(appOptions);
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "AppOptionsConfigurator failed during startup; continuing with configuration-only AppOptions values.");
+                }
+
+                var optionsWrapper = Options.Create(appOptions);
+                containerRegistry.RegisterInstance<IOptions<AppOptions>>(optionsWrapper);
+
+                var monitor = new StaticOptionsMonitor<AppOptions>(appOptions, Log.Logger);
+                containerRegistry.RegisterInstance<IOptionsMonitor<AppOptions>>(monitor);
+
+                Log.Information("✓ Registered AppOptions for SettingsViewModel via Options bridge");
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Failed to register AppOptions bridge; registering fallback options instance");
+
+                var fallback = new AppOptions();
+                containerRegistry.RegisterInstance<IOptions<AppOptions>>(Options.Create(fallback));
+                containerRegistry.RegisterInstance<IOptionsMonitor<AppOptions>>(new StaticOptionsMonitor<AppOptions>(fallback, Log.Logger));
+            }
         }
 
         [Conditional("DEBUG")]

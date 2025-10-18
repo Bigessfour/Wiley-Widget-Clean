@@ -102,7 +102,16 @@ namespace WileyWidget.ViewModels
 
             // Initialize AI commands
             SendAIQueryCommand = new DelegateCommand(async () => await SendAIQueryAsync(), CanSendAIQuery);
-            ChangeConversationModeCommand = new DelegateCommand<ConversationMode>(async mode => { CurrentConversationMode = mode; await Task.CompletedTask; });
+            ChangeConversationModeCommand = new DelegateCommand<ConversationMode?>(mode =>
+            {
+                if (!mode.HasValue)
+                {
+                    Logger.LogWarning("ChangeConversationModeCommand invoked without a mode parameter; ignoring request.");
+                    return;
+                }
+
+                CurrentConversationMode = mode.Value;
+            });
             ClearAIInsightsCommand = new DelegateCommand(async () => await ClearAIInsightsAsync());
 
             // Initialize legacy commands
@@ -398,7 +407,7 @@ namespace WileyWidget.ViewModels
 
         // AI Commands
         public DelegateCommand SendAIQueryCommand { get; }
-        public DelegateCommand<ConversationMode> ChangeConversationModeCommand { get; }
+    public DelegateCommand<ConversationMode?> ChangeConversationModeCommand { get; }
         public DelegateCommand ClearAIInsightsCommand { get; }
 
         // Legacy Commands
