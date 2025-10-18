@@ -1,0 +1,33 @@
+{
+  "name": "wiley-tools",
+  "tools": [
+    {
+      "id": "get_build_logs",
+      "name": "Get Build Logs",
+      "description": "Summarize logs for SHA",
+      "parameters": {
+        "sha": {
+          "type": "string",
+          "description": "Git commit SHA to get build logs for"
+        }
+      }
+    },
+    {
+      "id": "analyze_xaml",
+      "name": "Analyze XAML",
+      "description": "Check Syncfusion WPF themes in XAML files",
+      "parameters": {
+        "path": {
+          "type": "string",
+          "description": "Path to XAML file or directory to analyze"
+        }
+      }
+    },
+    {
+      "id": "check_syncfusion_license",
+      "name": "Check Syncfusion License",
+      "description": "Check Syncfusion license status and configuration",
+      "parameters": {}
+    }
+  ]
+}

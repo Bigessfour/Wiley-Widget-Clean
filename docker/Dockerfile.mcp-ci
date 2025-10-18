@@ -1,0 +1,23 @@
+# Dockerfile for Wiley-Widget MCP CI Server
+FROM node:18-alpine
+
+# Install git for log operations
+RUN apk add --no-cache git
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY tools/node/package*.json ./
+
+# Install dependencies
+RUN npm ci --only=production
+
+# Copy MCP server files
+COPY tools/node/*.js ./
+
+# Expose port for MCP server
+EXPOSE 8080
+
+# Start the CI MCP server
+CMD ["npm", "run", "start-ci"]

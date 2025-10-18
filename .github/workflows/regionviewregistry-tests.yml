@@ -72,6 +72,33 @@ jobs:
           -v $(pwd)/${{ env.TEST_RESULTS_PATH }}:/testresults \
           wiley-regionviewregistry-tests:${{ github.sha }}
     
+    - name: Start MCP Server
+      run: docker run -d -p 8080:8080 --name wiley-mcp-ci wiley-mcp-ci
+    
+    - name: Register MCP Tools
+      run: |
+        sleep 5
+        # Assuming mcp client is available or we use curl for testing
+        curl -X GET http://localhost:8080/health
+    
+    - name: Run .NET Tests
+      run: dotnet test WileyWidget.sln
+    
+    - name: Run Python Tests
+      run: cd tools/python/tests && pytest
+    
+    - name: AI Diagnostic with MCP
+      run: |
+        # Call MCP tools for diagnostics
+        curl -X POST http://localhost:8080/tools/get_build_logs \
+          -H "Content-Type: application/json" \
+          -d "{\"sha\": \"${{ github.sha }}\"}"
+        
+        # Analyze XAML for Syncfusion issues
+        curl -X POST http://localhost:8080/tools/analyze_xaml \
+          -H "Content-Type: application/json" \
+          -d "{\"path\": \".\"}"
+    
     - name: Upload Docker test results
       uses: actions/upload-artifact@v4
       if: always()
