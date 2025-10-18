@@ -1,8 +1,8 @@
 #nullable enable
 
 using System.Collections.ObjectModel;
-using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
+using Prism.Mvvm;
+using Prism.Commands;
 using WileyWidget.Services.Threading;
 using WileyWidget.ViewModels.Base;
 using System.Windows.Input;
@@ -24,49 +24,126 @@ public partial class ExcelImportViewModel : AsyncViewModelBase
     /// <summary>
     /// Selected file path
     /// </summary>
-    [ObservableProperty]
-    private string selectedFilePath = string.Empty;
+    private string _selectedFilePath = string.Empty;
+    public string SelectedFilePath
+    {
+        get => _selectedFilePath;
+        set
+        {
+            if (_selectedFilePath != value)
+            {
+                _selectedFilePath = value;
+                RaisePropertyChanged();
+            }
+        }
+    }
 
     /// <summary>
     /// Browse file command
     /// </summary>
-    public ICommand BrowseFileCommand { get; }
+    public DelegateCommand BrowseFileCommand { get; private set; } = null!;
 
     /// <summary>
     /// Validate GASB compliance
     /// </summary>
-    [ObservableProperty]
-    private bool validateGASBCompliance = true;
+    private bool _validateGASBCompliance = true;
+    public bool ValidateGASBCompliance
+    {
+        get => _validateGASBCompliance;
+        set
+        {
+            if (_validateGASBCompliance != value)
+            {
+                _validateGASBCompliance = value;
+                RaisePropertyChanged();
+            }
+        }
+    }
 
     /// <summary>
     /// Create new budget period
     /// </summary>
-    [ObservableProperty]
-    private bool createNewBudgetPeriod;
+    private bool _createNewBudgetPeriod;
+    public bool CreateNewBudgetPeriod
+    {
+        get => _createNewBudgetPeriod;
+        set
+        {
+            if (_createNewBudgetPeriod != value)
+            {
+                _createNewBudgetPeriod = value;
+                RaisePropertyChanged();
+            }
+        }
+    }
 
     /// <summary>
     /// Overwrite existing accounts
     /// </summary>
-    [ObservableProperty]
-    private bool overwriteExistingAccounts;
+    private bool _overwriteExistingAccounts;
+    public bool OverwriteExistingAccounts
+    {
+        get => _overwriteExistingAccounts;
+        set
+        {
+            if (_overwriteExistingAccounts != value)
+            {
+                _overwriteExistingAccounts = value;
+                RaisePropertyChanged();
+            }
+        }
+    }
 
     /// <summary>
     /// Budget year
     /// </summary>
-    [ObservableProperty]
-    private string budgetYear = DateTime.Now.Year.ToString();
+    private string _budgetYear = DateTime.Now.Year.ToString();
+    public string BudgetYear
+    {
+        get => _budgetYear;
+        set
+        {
+            if (_budgetYear != value)
+            {
+                _budgetYear = value;
+                RaisePropertyChanged();
+            }
+        }
+    }
 
     /// <summary>
     /// Preview row count
     /// </summary>
-    [ObservableProperty]
-    private int previewRowCount;
+    private int _previewRowCount;
+    public int PreviewRowCount
+    {
+        get => _previewRowCount;
+        set
+        {
+            if (_previewRowCount != value)
+            {
+                _previewRowCount = value;
+                RaisePropertyChanged();
+            }
+        }
+    }
 
     /// <summary>
     /// Filter text
     /// </summary>
-    [ObservableProperty]
-    private string filterText = string.Empty;
+    private string _filterText = string.Empty;
+    public string FilterText
+    {
+        get => _filterText;
+        set
+        {
+            if (_filterText != value)
+            {
+                _filterText = value;
+                RaisePropertyChanged();
+            }
+        }
+    }
 
     /// <summary>
     /// Sort options
@@ -82,20 +159,54 @@ public partial class ExcelImportViewModel : AsyncViewModelBase
     /// <summary>
     /// Selected sort option
     /// </summary>
-    [ObservableProperty]
-    private string selectedSortOption = "Account Number";
+    private string _selectedSortOption = "Account Number";
+    public string SelectedSortOption
+    {
+        get => _selectedSortOption;
+        set
+        {
+            if (_selectedSortOption != value)
+            {
+                _selectedSortOption = value;
+                RaisePropertyChanged();
+            }
+        }
+    }
 
     /// <summary>
     /// Import progress
     /// </summary>
-    [ObservableProperty]
-    private double importProgress;
+    private double _importProgress;
+    public double ImportProgress
+    {
+        get => _importProgress;
+        set
+        {
+            if (_importProgress != value)
+            {
+                _importProgress = value;
+                RaisePropertyChanged();
+            }
+        }
+    }
 
     /// <summary>
     /// Is importing
     /// </summary>
-    [ObservableProperty]
-    private bool isImporting;
+    private bool _isImporting;
+    public bool IsImporting
+    {
+        get => _isImporting;
+        set
+        {
+            if (_isImporting != value)
+            {
+                _isImporting = value;
+                RaisePropertyChanged();
+                CancelCommand?.RaiseCanExecuteChanged();
+            }
+        }
+    }
 
     /// <summary>
     /// Status messages
@@ -105,41 +216,87 @@ public partial class ExcelImportViewModel : AsyncViewModelBase
     /// <summary>
     /// Show import stats
     /// </summary>
-    [ObservableProperty]
-    private bool showImportStats;
+    private bool _showImportStats;
+    public bool ShowImportStats
+    {
+        get => _showImportStats;
+        set
+        {
+            if (_showImportStats != value)
+            {
+                _showImportStats = value;
+                RaisePropertyChanged();
+            }
+        }
+    }
 
     /// <summary>
     /// Import stats
     /// </summary>
-    [ObservableProperty]
-    private ImportStatistics importStats = new();
+    private ImportStatistics _importStats = new();
+    public ImportStatistics ImportStats
+    {
+        get => _importStats;
+        set
+        {
+            if (_importStats != value)
+            {
+                _importStats = value;
+                RaisePropertyChanged();
+            }
+        }
+    }
 
     /// <summary>
     /// Preview command
     /// </summary>
-    public ICommand PreviewCommand { get; }
+    public DelegateCommand PreviewCommand { get; private set; } = null!;
 
     /// <summary>
     /// Can preview
     /// </summary>
-    [ObservableProperty]
-    private bool canPreview = true;
+    private bool _canPreview = true;
+    public bool CanPreview
+    {
+        get => _canPreview;
+        set
+        {
+            if (_canPreview != value)
+            {
+                _canPreview = value;
+                RaisePropertyChanged();
+                PreviewCommand?.RaiseCanExecuteChanged();
+            }
+        }
+    }
 
     /// <summary>
     /// Import command
     /// </summary>
-    public ICommand ImportCommand { get; }
+    public DelegateCommand ImportCommand { get; private set; } = null!;
 
     /// <summary>
     /// Can import
     /// </summary>
-    [ObservableProperty]
-    private bool canImport;
+    private bool _canImport;
+    public bool CanImport
+    {
+        get => _canImport;
+        set
+        {
+            if (_canImport != value)
+            {
+                _canImport = value;
+                RaisePropertyChanged();
+                ImportCommand?.RaiseCanExecuteChanged();
+            }
+        }
+    }
 
     /// <summary>
     /// Cancel command
     /// </summary>
-    public ICommand CancelCommand { get; }
+    public DelegateCommand CancelCommand { get; private set; } = null!;
 
     /// <summary>
     /// Constructor
@@ -147,13 +304,18 @@ public partial class ExcelImportViewModel : AsyncViewModelBase
     public ExcelImportViewModel(IDispatcherHelper dispatcherHelper, Microsoft.Extensions.Logging.ILogger<ExcelImportViewModel> logger)
         : base(dispatcherHelper, logger)
     {
-        BrowseFileCommand = new RelayCommand(BrowseFile);
-        PreviewCommand = new RelayCommand(Preview, () => CanPreview);
-        ImportCommand = new RelayCommand(Import, () => CanImport);
-        CancelCommand = new RelayCommand(Cancel, () => IsImporting);
+        InitializeCommands();
     }
 
-    private void BrowseFile()
+    private void InitializeCommands()
+    {
+        BrowseFileCommand = new DelegateCommand(ExecuteBrowseFile);
+        PreviewCommand = new DelegateCommand(ExecutePreview, () => CanPreview);
+        ImportCommand = new DelegateCommand(ExecuteImport, () => CanImport);
+        CancelCommand = new DelegateCommand(ExecuteCancel, () => IsImporting);
+    }
+
+    private void ExecuteBrowseFile()
     {
         var openFileDialog = new OpenFileDialog
         {
@@ -171,7 +333,7 @@ public partial class ExcelImportViewModel : AsyncViewModelBase
         }
     }
 
-    private void Preview()
+    private void ExecutePreview()
     {
         try
         {
@@ -219,7 +381,7 @@ public partial class ExcelImportViewModel : AsyncViewModelBase
         }
     }
 
-    private async void Import()
+    private async void ExecuteImport()
     {
         try
         {
@@ -279,7 +441,7 @@ public partial class ExcelImportViewModel : AsyncViewModelBase
         }
     }
 
-    private void Cancel()
+    private void ExecuteCancel()
     {
         if (IsImporting)
         {

@@ -2,7 +2,7 @@ using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using CommunityToolkit.Mvvm.ComponentModel;
+using Prism.Mvvm;
 using Microsoft.Extensions.Logging;
 using WileyWidget.Services;
 using WileyWidget.Services.Threading;
@@ -14,7 +14,7 @@ namespace WileyWidget.ViewModels.Base;
 /// <summary>
 /// Base class for ViewModels that provides async functionality and property change notifications
 /// </summary>
-public abstract class AsyncViewModelBase : ObservableRecipient, INotifyPropertyChanged
+public abstract class AsyncViewModelBase : BindableBase, INotifyPropertyChanged
 {
     /// <summary>
     /// Gets the logger instance
@@ -45,7 +45,14 @@ public abstract class AsyncViewModelBase : ObservableRecipient, INotifyPropertyC
     public bool IsBusy
     {
         get => _isBusy;
-        set => SetProperty(ref _isBusy, value);
+        set
+        {
+            if (_isBusy != value)
+            {
+                _isBusy = value;
+                RaisePropertyChanged();
+            }
+        }
     }
 
     /// <summary>
@@ -54,7 +61,14 @@ public abstract class AsyncViewModelBase : ObservableRecipient, INotifyPropertyC
     public string? BusyMessage
     {
         get => _busyMessage;
-        set => SetProperty(ref _busyMessage, value);
+        set
+        {
+            if (_busyMessage != value)
+            {
+                _busyMessage = value;
+                RaisePropertyChanged();
+            }
+        }
     }
 
     /// <summary>

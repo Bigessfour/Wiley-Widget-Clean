@@ -15,17 +15,20 @@ namespace WileyWidget.Services;
 /// </summary>
 public class ServiceChargeCalculatorService : IChargeCalculatorService
 {
-    private readonly IServiceProvider _serviceProvider;
+    private readonly BusinessInterfaces.IEnterpriseRepository _enterpriseRepository;
+    private readonly BusinessInterfaces.IMunicipalAccountRepository _municipalAccountRepository;
 
-    public ServiceChargeCalculatorService(IServiceProvider serviceProvider)
+    public ServiceChargeCalculatorService(BusinessInterfaces.IEnterpriseRepository enterpriseRepository, BusinessInterfaces.IMunicipalAccountRepository municipalAccountRepository)
     {
-        _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+        _enterpriseRepository = enterpriseRepository ?? throw new ArgumentNullException(nameof(enterpriseRepository));
+        _municipalAccountRepository = municipalAccountRepository ?? throw new ArgumentNullException(nameof(municipalAccountRepository));
     }
 
     // Parameterless constructor for testing/mocking
     protected ServiceChargeCalculatorService()
     {
-        _serviceProvider = null!;
+        _enterpriseRepository = null!;
+        _municipalAccountRepository = null!;
     }
 
     /// <summary>
@@ -33,14 +36,9 @@ public class ServiceChargeCalculatorService : IChargeCalculatorService
     /// </summary>
     public async Task<ServiceChargeRecommendation> CalculateRecommendedChargeAsync(int enterpriseId)
     {
-        var scopeFactory = _serviceProvider.GetRequiredService<IServiceScopeFactory>();
-        using var scope = scopeFactory.CreateScope();
-        var enterpriseRepo = scope.ServiceProvider.GetRequiredService<BusinessInterfaces.IEnterpriseRepository>();
-        var accountRepo = scope.ServiceProvider.GetRequiredService<BusinessInterfaces.IMunicipalAccountRepository>();
-
         try
         {
-            var enterprise = await enterpriseRepo.GetByIdAsync(enterpriseId);
+            var enterprise = await _enterpriseRepository.GetByIdAsync(enterpriseId);
             if (enterprise == null)
             {
                 throw new ArgumentException($"Enterprise with ID {enterpriseId} not found");
@@ -56,7 +54,7 @@ public class ServiceChargeCalculatorService : IChargeCalculatorService
                 _ => MunicipalFundType.Enterprise
             };
 
-            var expenseAccounts = await accountRepo.GetByFundAsync(fundType);
+            var expenseAccounts = await _municipalAccountRepository.GetByFundAsync(fundType);
 
             // Calculate total monthly expenses from accounts
             var totalMonthlyExpenses = expenseAccounts
@@ -154,11 +152,7 @@ public class ServiceChargeCalculatorService : IChargeCalculatorService
     {
         var currentRecommendation = await CalculateRecommendedChargeAsync(enterpriseId);
 
-        var scopeFactory = _serviceProvider.GetRequiredService<IServiceScopeFactory>();
-        using var scope = scopeFactory.CreateScope();
-        var enterpriseRepo = scope.ServiceProvider.GetRequiredService<BusinessInterfaces.IEnterpriseRepository>();
-
-        var enterprise = await enterpriseRepo.GetByIdAsync(enterpriseId);
+        var enterprise = await _enterpriseRepository.GetByIdAsync(enterpriseId);
         if (enterprise == null)
             throw new ArgumentException($"Enterprise with ID {enterpriseId} not found");
 

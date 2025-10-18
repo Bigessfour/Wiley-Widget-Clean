@@ -75,7 +75,7 @@ public sealed class ThemeDiagnosticsTests : LifecycleTestBase
                 ValidateViewTheme(utilityView, nameof(UtilityCustomerView));
 
                 var enterpriseRepository = new EnterpriseRepository(DbContextFactory);
-                var budgetViewModel = new BudgetViewModel(enterpriseRepository, CreateDispatcherHelper(), CreateLogger<BudgetViewModel>());
+                var budgetViewModel = new BudgetViewModel(enterpriseRepository);
                 await budgetViewModel.RefreshBudgetDataAsync();
                 var budgetView = new BudgetView(budgetViewModel);
                 ValidateViewTheme(budgetView, nameof(BudgetView));

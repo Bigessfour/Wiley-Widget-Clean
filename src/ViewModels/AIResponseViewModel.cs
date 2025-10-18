@@ -5,7 +5,6 @@ using System.Linq;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using WileyWidget.Models;
 
@@ -44,6 +43,9 @@ namespace WileyWidget.ViewModels
         [ObservableProperty]
         private bool hasWarnings;
 
+    // Prism DelegateCommand property replacing CommunityToolkit RelayCommand
+    public Prism.Commands.DelegateCommand ClearCommand { get; private set; }
+
         /// <summary>
         /// Collection of extracted insights from XAI response.
         /// Bound to SfDataGrid for visual display.
@@ -77,6 +79,9 @@ namespace WileyWidget.ViewModels
             Warnings = new ObservableCollection<AIWarning>();
             ResponseTimestamp = DateTime.Now;
             Summary = new ResponseSummary();
+
+            // Initialize Prism commands
+            ClearCommand = new Prism.Commands.DelegateCommand(Clear);
 
             _logger.LogDebug("AIResponseViewModel initialized");
         }
@@ -400,11 +405,10 @@ namespace WileyWidget.ViewModels
             return "Information";
         }
 
-        /// <summary>
-        /// Clears all parsed data.
-        /// </summary>
-        [RelayCommand]
-        public void Clear()
+    /// <summary>
+    /// Clears all parsed data.
+    /// </summary>
+    public void Clear()
         {
             ResponseText = string.Empty;
             QueryText = string.Empty;

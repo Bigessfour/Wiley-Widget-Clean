@@ -26,7 +26,7 @@ public partial class AIAssistPanelView : UserControl
     {
         if (e.Key == Key.Enter && ViewModel != null)
         {
-            ViewModel.SendMessageCommand.Execute(null);
+            ViewModel.SendMessageCommand.Execute();
             e.Handled = true;
         }
     }

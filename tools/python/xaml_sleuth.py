@@ -88,9 +88,18 @@ class XamlSleuth:
         self.report_path = report_path
         self.verbose = verbose
         self.mock_data = {**DEFAULT_MOCK_DATA, **(mock_data or {})}
-        self._xml_parser = etree.XMLParser(
-            remove_blank_text=True, resolve_entities=False, recover=True
-        )
+        self._xml_parser = None
+        if etree is not None:
+            self._xml_parser = etree.XMLParser(
+                remove_blank_text=True, resolve_entities=False, recover=True
+            )
+
+    @staticmethod
+    def _default_window_title(runtime_target: Path | None) -> str:
+        """Generate a default window title for runtime inspection."""
+        if runtime_target:
+            return runtime_target.stem
+        return ""
 
     # ------------------------------------------------------------------
     # Static analysis
@@ -245,12 +254,21 @@ class XamlSleuth:
 
     @staticmethod
     def _extract_path(binding_body: str) -> str | None:
+        # First try explicit Path= syntax
         explicit_match = PATH_PATTERN.search(binding_body)
         if explicit_match:
             return explicit_match.group("path").strip()
 
+        # For simple cases, check if it looks like a property path (not a binding parameter)
+        # Property paths typically don't contain '=' and are not binding keywords
+        binding_keywords = {'mode', 'converter', 'relativesource', 'elementname', 'source', 'xpath', 'stringformat', 'converterparameter', 'bindinggroupname', 'binding', 'multibinding', 'prioritybinding'}
+
         simple_match = SIMPLE_PATH_PATTERN.match(binding_body)
         if simple_match:
+            candidate_path = simple_match.group("path").strip().lower()
+            # Don't treat binding parameters as paths
+            if '=' in candidate_path or candidate_path in binding_keywords:
+                return None
             return simple_match.group("path").strip()
         return None
 
@@ -269,7 +287,7 @@ class XamlSleuth:
                 "Install it via 'pip install uiautomation'."
             )
         if window_title is None:
-            window_title = self._default_window_title()
+            window_title = self._default_window_title(self.runtime_target)
         if not window_title:
             raise ValueError(
                 "Unable to derive a window title. Provide --window-title explicitly."
@@ -297,10 +315,6 @@ class XamlSleuth:
         )
         return issues
 
-    def _default_window_title(self) -> str:
-        if self.runtime_target:
-            return self.runtime_target.stem
-        return ""
 
     def _walk_runtime_tree(
         self,

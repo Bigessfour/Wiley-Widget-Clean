@@ -5,6 +5,7 @@
   <ItemGroup>
     <!-- Core Microsoft + EF -->
     <PackageVersion Include="BoldReports.WPF" Version="5.2.26" />
+    <PackageVersion Include="Microsoft.ApplicationInsights" Version="2.23.0" />
     <PackageVersion Include="Microsoft.CodeAnalysis.Common" Version="4.8.0" />
     <PackageVersion Include="Microsoft.CodeAnalysis.VisualBasic" Version="4.8.0" />
     <PackageVersion Include="Microsoft.Data.SqlClient" Version="6.1.1" />
@@ -100,9 +101,10 @@
     <PackageVersion Include="Prism.Wpf" Version="9.0.537" />
     <PackageVersion Include="Prism.Unity" Version="9.0.537" />
     <PackageVersion Include="Prism.Regions" Version="9.0.537" />
+    <PackageVersion Include="Prism.Interactivity" Version="9.0.537" />
     <PackageVersion Include="Unity.Container" Version="5.11.11" />
     <!-- Azure Configuration Packages -->
     <PackageVersion Include="Azure.Extensions.AspNetCore.Configuration.Secrets" Version="1.3.2" />
-    <PackageVersion Include="Azure.Identity" Version="1.13.1" />
+  <PackageVersion Include="Azure.Identity" Version="1.14.2" />
   </ItemGroup>
 </Project>

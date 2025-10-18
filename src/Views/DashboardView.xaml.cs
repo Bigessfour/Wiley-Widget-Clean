@@ -76,27 +76,16 @@ namespace WileyWidget
             }
         }
 
-        private async void DashboardView_Loaded(object sender, RoutedEventArgs e)
+        private void DashboardView_Loaded(object sender, RoutedEventArgs e)
         {
             using var loggingContext = LoggingContext.BeginOperation("DashboardView_Loaded");
-            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
             
             Log.Debug("DashboardView: Loaded event fired - {LogContext}", loggingContext);
             Log.Information($"DashboardView: Size - ActualWidth: {ActualWidth}, ActualHeight: {ActualHeight}");
             
-            if (DataContext is DashboardViewModel viewModel)
-            {
-                Log.Information("DashboardView: Loading dashboard data... - {LogContext}", loggingContext);
-                await viewModel.LoadDashboardDataAsync();
-                stopwatch.Stop();
-                Log.Information("DashboardView: Dashboard data load completed in {ElapsedMs}ms - {LogContext}", 
-                    stopwatch.ElapsedMilliseconds, loggingContext);
-            }
-            else
-            {
-                stopwatch.Stop();
-                Log.Error("DashboardView: Cannot load data - DataContext is not DashboardViewModel - {LogContext}", loggingContext);
-            }
+            // Data loading is now handled by ViewModel constructor
+            // No need to trigger LoadDataCommand here as it's redundant
+            Log.Information("DashboardView: View loaded successfully - data loading handled by ViewModel - {LogContext}", loggingContext);
         }
         
         private void LogVisualTree()

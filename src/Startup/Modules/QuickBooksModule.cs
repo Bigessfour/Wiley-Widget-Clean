@@ -13,6 +13,7 @@ namespace WileyWidget.Startup.Modules
     /// Prism module responsible for QuickBooks Online initialization.
     /// Replaces QuickBooksStartupTask in the new bootstrapper-based architecture.
     /// </summary>
+    [Module(ModuleName = "QuickBooksModule")]
     public class QuickBooksModule : IModule
     {
         public void OnInitialized(IContainerProvider containerProvider)

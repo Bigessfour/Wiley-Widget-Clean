@@ -1,13 +1,14 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
-using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
+using Prism.Mvvm;
+using Prism.Commands;
 using WileyWidget.Data;
 using WileyWidget.Models;
 using System.Threading.Tasks;
 using Serilog;
 using WileyWidget.Business.Interfaces;
+using WileyWidget.Services;
 
 namespace WileyWidget.ViewModels;
 
@@ -15,9 +16,10 @@ namespace WileyWidget.ViewModels;
 /// View model for managing utility customers
 /// Provides data binding for customer CRUD operations and search functionality
 /// </summary>
-public partial class UtilityCustomerViewModel : ObservableObject
+public class UtilityCustomerViewModel : BindableBase
 {
     private readonly IUtilityCustomerRepository _customerRepository;
+    private readonly IGrokSupercomputer _grokSupercomputer;
 
     /// <summary>
     /// Collection of all customers for data binding
@@ -47,49 +49,174 @@ public partial class UtilityCustomerViewModel : ObservableObject
     /// <summary>
     /// Currently selected customer in the UI
     /// </summary>
-    [ObservableProperty]
-    private UtilityCustomer selectedCustomer;
+    private UtilityCustomer _selectedCustomer;
+    public UtilityCustomer SelectedCustomer
+    {
+        get => _selectedCustomer;
+        set
+        {
+            if (_selectedCustomer != value)
+            {
+                _selectedCustomer = value;
+                RaisePropertyChanged();
+            }
+        }
+    }
 
     /// <summary>
     /// Loading state for async operations
     /// </summary>
-    [ObservableProperty]
-    private bool isLoading;
+    private bool _isLoading;
+    public bool IsLoading
+    {
+        get => _isLoading;
+        set
+        {
+            if (_isLoading != value)
+            {
+                _isLoading = value;
+                RaisePropertyChanged();
+            }
+        }
+    }
 
     /// <summary>
     /// Search term for filtering customers
     /// </summary>
-    [ObservableProperty]
-    private string searchTerm = string.Empty;
+    private string _searchTerm = string.Empty;
+    public string SearchTerm
+    {
+        get => _searchTerm;
+        set
+        {
+            if (_searchTerm != value)
+            {
+                _searchTerm = value;
+                RaisePropertyChanged();
+            }
+        }
+    }
 
     /// <summary>
     /// Summary text for display
     /// </summary>
-    [ObservableProperty]
-    private string summaryText = "No customer data available";
+    private string _summaryText = "No customer data available";
+    public string SummaryText
+    {
+        get => _summaryText;
+        set
+        {
+            if (_summaryText != value)
+            {
+                _summaryText = value;
+                RaisePropertyChanged();
+            }
+        }
+    }
 
     /// <summary>
     /// Whether there's an error
     /// </summary>
-    [ObservableProperty]
-    private bool hasError;
+    private bool _hasError;
+    public bool HasError
+    {
+        get => _hasError;
+        set
+        {
+            if (_hasError != value)
+            {
+                _hasError = value;
+                RaisePropertyChanged();
+            }
+        }
+    }
 
     /// <summary>
     /// Error message if any
     /// </summary>
-    [ObservableProperty]
-    private string errorMessage = string.Empty;
+    private string _errorMessage = string.Empty;
+    public string ErrorMessage
+    {
+        get => _errorMessage;
+        set
+        {
+            if (_errorMessage != value)
+            {
+                _errorMessage = value;
+                RaisePropertyChanged();
+            }
+        }
+    }
 
     /// <summary>
     /// Status message presented in the UI
     /// </summary>
-    [ObservableProperty]
-    private string statusMessage = "Ready";
+    private string _statusMessage = "Ready";
+    public string StatusMessage
+    {
+        get => _statusMessage;
+        set
+        {
+            if (_statusMessage != value)
+            {
+                _statusMessage = value;
+                RaisePropertyChanged();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Analysis result from Grok AI for the selected customer
+    /// </summary>
+    private string _customerAnalysisResult = string.Empty;
+    public string CustomerAnalysisResult
+    {
+        get => _customerAnalysisResult;
+        set
+        {
+            if (_customerAnalysisResult != value)
+            {
+                _customerAnalysisResult = value;
+                RaisePropertyChanged();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Whether customer analysis is currently running
+    /// </summary>
+    private bool _isAnalyzingCustomer;
+    public bool IsAnalyzingCustomer
+    {
+        get => _isAnalyzingCustomer;
+        set
+        {
+            if (_isAnalyzingCustomer != value)
+            {
+                _isAnalyzingCustomer = value;
+                RaisePropertyChanged();
+            }
+        }
+    }
+
+    // Commands
+    public DelegateCommand LoadCustomersCommand { get; private set; }
+    public DelegateCommand LoadActiveCustomersCommand { get; private set; }
+    public DelegateCommand LoadCustomersOutsideCityLimitsCommand { get; private set; }
+    public DelegateCommand SearchCustomersCommand { get; private set; }
+    public DelegateCommand AddCustomerCommand { get; private set; }
+    public DelegateCommand SaveCustomerCommand { get; private set; }
+    public DelegateCommand DeleteCustomerCommand { get; private set; }
+    public DelegateCommand ClearSearchCommand { get; private set; }
+    public DelegateCommand ClearErrorCommand { get; private set; }
+    public DelegateCommand LoadCustomerBillsCommand { get; private set; }
+    public DelegateCommand PayBillCommand { get; private set; }
+    public DelegateCommand AnalyzeSelectedCustomerCommand { get; private set; }
 
     /// <summary>
     /// Constructor with dependency injection
     /// </summary>
-    public UtilityCustomerViewModel(IUnitOfWork unitOfWork)
+    public UtilityCustomerViewModel(IUnitOfWork unitOfWork, IGrokSupercomputer grokSupercomputer)
     {
         if (unitOfWork is null)
         {
@@ -98,13 +225,31 @@ public partial class UtilityCustomerViewModel : ObservableObject
 
         _customerRepository = unitOfWork.UtilityCustomers
             ?? throw new ArgumentNullException(nameof(IUnitOfWork.UtilityCustomers));
+        _grokSupercomputer = grokSupercomputer ?? throw new ArgumentNullException(nameof(grokSupercomputer));
+
+        InitializeCommands();
+    }
+
+    private void InitializeCommands()
+    {
+        LoadCustomersCommand = new DelegateCommand(async () => await ExecuteLoadCustomersAsync(), () => !IsLoading);
+        LoadActiveCustomersCommand = new DelegateCommand(async () => await ExecuteLoadActiveCustomersAsync(), () => !IsLoading);
+        LoadCustomersOutsideCityLimitsCommand = new DelegateCommand(async () => await ExecuteLoadCustomersOutsideCityLimitsAsync(), () => !IsLoading);
+        SearchCustomersCommand = new DelegateCommand(async () => await ExecuteSearchCustomersAsync(), () => !IsLoading);
+        AddCustomerCommand = new DelegateCommand(async () => await ExecuteAddCustomerAsync(), () => !IsLoading);
+        SaveCustomerCommand = new DelegateCommand(async () => await ExecuteSaveCustomerAsync(), () => !IsLoading && SelectedCustomer != null);
+        DeleteCustomerCommand = new DelegateCommand(async () => await ExecuteDeleteCustomerAsync(), () => !IsLoading && SelectedCustomer != null);
+        ClearSearchCommand = new DelegateCommand(async () => await ExecuteClearSearchAsync());
+        ClearErrorCommand = new DelegateCommand(ExecuteClearError);
+        LoadCustomerBillsCommand = new DelegateCommand(async () => await ExecuteLoadCustomerBillsAsync(), () => SelectedCustomer != null);
+        PayBillCommand = new DelegateCommand(async () => await ExecutePayBillAsync(), () => !IsLoading && SelectedBill != null);
+        AnalyzeSelectedCustomerCommand = new DelegateCommand(async () => await ExecuteAnalyzeSelectedCustomerAsync(), () => !IsLoading && SelectedCustomer != null && !IsAnalyzingCustomer);
     }
 
     /// <summary>
     /// Loads all customers from the database
     /// </summary>
-    [RelayCommand]
-    public async Task LoadCustomersAsync()
+    private async Task ExecuteLoadCustomersAsync()
     {
         try
         {
@@ -141,8 +286,7 @@ public partial class UtilityCustomerViewModel : ObservableObject
     /// <summary>
     /// Loads active customers only
     /// </summary>
-    [RelayCommand]
-    public async Task LoadActiveCustomersAsync()
+    private async Task ExecuteLoadActiveCustomersAsync()
     {
         try
         {
@@ -179,8 +323,7 @@ public partial class UtilityCustomerViewModel : ObservableObject
     /// <summary>
     /// Loads customers outside city limits
     /// </summary>
-    [RelayCommand]
-    public async Task LoadCustomersOutsideCityLimitsAsync()
+    private async Task ExecuteLoadCustomersOutsideCityLimitsAsync()
     {
         try
         {
@@ -217,8 +360,7 @@ public partial class UtilityCustomerViewModel : ObservableObject
     /// <summary>
     /// Searches customers based on the search term
     /// </summary>
-    [RelayCommand]
-    public async Task SearchCustomersAsync()
+    private async Task ExecuteSearchCustomersAsync()
     {
         try
         {
@@ -255,8 +397,8 @@ public partial class UtilityCustomerViewModel : ObservableObject
     /// <summary>
     /// Adds a new customer
     /// </summary>
-    [RelayCommand]
-    private async Task AddCustomerAsync()
+    
+    private async Task ExecuteAddCustomerAsync()
     {
         try
         {
@@ -296,8 +438,8 @@ public partial class UtilityCustomerViewModel : ObservableObject
     /// <summary>
     /// Saves changes to the selected customer
     /// </summary>
-    [RelayCommand]
-    private async Task SaveCustomerAsync()
+    
+    private async Task ExecuteSaveCustomerAsync()
     {
         if (SelectedCustomer == null) return;
 
@@ -332,8 +474,8 @@ public partial class UtilityCustomerViewModel : ObservableObject
     /// <summary>
     /// Deletes the selected customer
     /// </summary>
-    [RelayCommand]
-    private async Task DeleteCustomerAsync()
+    
+    private async Task ExecuteDeleteCustomerAsync()
     {
         if (SelectedCustomer == null) return;
 
@@ -397,19 +539,19 @@ public partial class UtilityCustomerViewModel : ObservableObject
     /// <summary>
     /// Clears the search and reloads all customers
     /// </summary>
-    [RelayCommand]
-    public async Task ClearSearchAsync()
+    
+    private async Task ExecuteClearSearchAsync()
     {
         SearchTerm = string.Empty;
         StatusMessage = "Clearing search results...";
-        await LoadCustomersAsync();
+        await ExecuteLoadCustomersAsync();
     }
 
     /// <summary>
     /// Clears any error state
     /// </summary>
-    [RelayCommand]
-    private void ClearError()
+    
+    private void ExecuteClearError()
     {
         ErrorMessage = string.Empty;
         HasError = false;
@@ -422,14 +564,24 @@ public partial class UtilityCustomerViewModel : ObservableObject
     /// <summary>
     /// Selected bill in the bill history grid
     /// </summary>
-    [ObservableProperty]
-    private UtilityBill selectedBill;
+    private UtilityBill _selectedBill;
+    public UtilityBill SelectedBill
+    {
+        get => _selectedBill;
+        set
+        {
+            if (_selectedBill != value)
+            {
+                _selectedBill = value;
+                RaisePropertyChanged();
+            }
+        }
+    }
 
     /// <summary>
     /// Loads bills for the currently selected customer
     /// </summary>
-    [RelayCommand]
-    public Task LoadCustomerBillsAsync()
+    private Task ExecuteLoadCustomerBillsAsync()
     {
         if (SelectedCustomer == null) return Task.CompletedTask;
 
@@ -509,8 +661,8 @@ public partial class UtilityCustomerViewModel : ObservableObject
     /// <summary>
     /// Pays a selected bill
     /// </summary>
-    [RelayCommand]
-    private Task PayBillAsync()
+    
+    private Task ExecutePayBillAsync()
     {
         if (SelectedBill == null) return Task.CompletedTask;
 
@@ -584,6 +736,63 @@ public partial class UtilityCustomerViewModel : ObservableObject
         }
 
         return bills;
+    }
+
+    /// <summary>
+    /// Analyzes the selected customer using Grok AI for natural language processing
+    /// </summary>
+    private async Task ExecuteAnalyzeSelectedCustomerAsync()
+    {
+        if (SelectedCustomer == null)
+        {
+            CustomerAnalysisResult = "No customer selected for analysis.";
+            return;
+        }
+
+        try
+        {
+            IsAnalyzingCustomer = true;
+            CustomerAnalysisResult = "Analyzing customer data...";
+            StatusMessage = "Running AI analysis on customer data...";
+
+            // Prepare customer data for analysis
+            var customerData = new
+            {
+                SelectedCustomer.Id,
+                SelectedCustomer.AccountNumber,
+                SelectedCustomer.FirstName,
+                SelectedCustomer.LastName,
+                SelectedCustomer.CompanyName,
+                SelectedCustomer.CustomerType,
+                SelectedCustomer.ServiceAddress,
+                SelectedCustomer.ServiceCity,
+                SelectedCustomer.ServiceState,
+                SelectedCustomer.ServiceZipCode,
+                SelectedCustomer.CurrentBalance,
+                SelectedCustomer.Status,
+                SelectedCustomer.AccountOpenDate,
+                SelectedCustomer.LastModifiedDate
+            };
+
+            // Call Grok API for analysis
+            var analysis = await _grokSupercomputer.AnalyzeMunicipalDataAsync(
+                customerData,
+                $"Analyze this utility customer data and provide insights about their account status, payment patterns, service usage, and any recommendations for customer service or billing optimization."
+            );
+
+            CustomerAnalysisResult = analysis;
+            StatusMessage = "Customer analysis completed.";
+        }
+        catch (Exception ex)
+        {
+            CustomerAnalysisResult = $"Error analyzing customer: {ex.Message}";
+            StatusMessage = "Customer analysis failed.";
+            Log.Error(ex, "Error analyzing selected customer with Grok AI");
+        }
+        finally
+        {
+            IsAnalyzingCustomer = false;
+        }
     }
 
     #endregion

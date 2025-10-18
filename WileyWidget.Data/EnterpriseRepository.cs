@@ -22,6 +22,7 @@ public class EnterpriseRepository : IEnterpriseRepository
     {
         _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _logger.LogInformation("EnterpriseRepository constructed and DB factory injected");
     }
 
     /// <summary>

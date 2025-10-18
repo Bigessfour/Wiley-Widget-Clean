@@ -16,13 +16,17 @@ namespace WileyWidget.Services;
 /// </summary>
 public class WhatIfScenarioEngine : IWhatIfScenarioEngine
 {
-    private readonly IServiceProvider _serviceProvider;
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly IChargeCalculatorService _chargeCalculator;
+    private readonly BusinessInterfaces.IEnterpriseRepository _enterpriseRepository;
+    private readonly BusinessInterfaces.IMunicipalAccountRepository _municipalAccountRepository;
 
-    public WhatIfScenarioEngine(IServiceProvider serviceProvider, IChargeCalculatorService chargeCalculator)
+    public WhatIfScenarioEngine(IServiceScopeFactory scopeFactory, IChargeCalculatorService chargeCalculator, BusinessInterfaces.IEnterpriseRepository enterpriseRepository, BusinessInterfaces.IMunicipalAccountRepository municipalAccountRepository)
     {
-        _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+        _scopeFactory = scopeFactory ?? throw new ArgumentNullException(nameof(scopeFactory));
         _chargeCalculator = chargeCalculator ?? throw new ArgumentNullException(nameof(chargeCalculator));
+        _enterpriseRepository = enterpriseRepository ?? throw new ArgumentNullException(nameof(enterpriseRepository));
+        _municipalAccountRepository = municipalAccountRepository ?? throw new ArgumentNullException(nameof(municipalAccountRepository));
     }
 
     /// <summary>
@@ -32,12 +36,7 @@ public class WhatIfScenarioEngine : IWhatIfScenarioEngine
         int enterpriseId,
         ScenarioParameters parameters)
     {
-        var scopeFactory = _serviceProvider.GetRequiredService<IServiceScopeFactory>();
-        using var scope = scopeFactory.CreateScope();
-        var enterpriseRepo = scope.ServiceProvider.GetRequiredService<BusinessInterfaces.IEnterpriseRepository>();
-        var accountRepo = scope.ServiceProvider.GetRequiredService<BusinessInterfaces.IMunicipalAccountRepository>();
-
-        var enterprise = await enterpriseRepo.GetByIdAsync(enterpriseId);
+        var enterprise = await _enterpriseRepository.GetByIdAsync(enterpriseId);
         if (enterprise == null)
             throw new ArgumentException($"Enterprise with ID {enterpriseId} not found");
 
@@ -51,7 +50,7 @@ public class WhatIfScenarioEngine : IWhatIfScenarioEngine
             _ => MunicipalFundType.Enterprise
         };
 
-        var expenseAccounts = await accountRepo.GetByFundAsync(fundType);
+        var expenseAccounts = await _municipalAccountRepository.GetByFundAsync(fundType);
 
         // Calculate scenario impacts
         var payRaiseImpact = CalculatePayRaiseImpact(parameters.PayRaisePercentage, enterprise);

@@ -1,5 +1,4 @@
 using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.ObjectModel;
@@ -565,6 +564,15 @@ namespace WileyWidget.ViewModels
 
             // Set up property change tracking for unsaved changes
             PropertyChanged += OnPropertyChanged;
+
+            // Initialize Prism DelegateCommands
+            SaveSettingsCommand = new Prism.Commands.DelegateCommand(async () => await ExecuteSaveSettingsAsync(), () => !IsBusy);
+            ResetSettingsCommand = new Prism.Commands.DelegateCommand(async () => await ExecuteResetSettingsAsync(), () => !IsBusy);
+            TestConnectionCommand = new Prism.Commands.DelegateCommand(async () => await ExecuteTestConnectionAsync(), () => !IsBusy);
+            TestQuickBooksConnectionCommand = new Prism.Commands.DelegateCommand(async () => await ExecuteTestQuickBooksConnectionAsync(), () => !IsBusy);
+            ValidateLicenseCommand = new Prism.Commands.DelegateCommand(async () => await ExecuteValidateLicenseAsync(), () => !IsBusy);
+            TestXaiConnectionCommand = new Prism.Commands.DelegateCommand(async () => await ExecuteTestXaiConnectionAsync(), () => !IsBusy);
+            SaveFiscalYearSettingsCommand = new Prism.Commands.DelegateCommand(async () => await SaveFiscalYearSettingsAsync(), () => !IsBusy);
         }
 
         private void OnPropertyChanged(object sender, PropertyChangedEventArgs e)
@@ -841,8 +849,14 @@ namespace WileyWidget.ViewModels
             }
         }
 
-        [RelayCommand]
-        private async Task SaveSettingsAsync()
+    public Prism.Commands.DelegateCommand SaveSettingsCommand { get; private set; }
+    public Prism.Commands.DelegateCommand ResetSettingsCommand { get; private set; }
+    public Prism.Commands.DelegateCommand TestConnectionCommand { get; private set; }
+    public Prism.Commands.DelegateCommand TestQuickBooksConnectionCommand { get; private set; }
+    public Prism.Commands.DelegateCommand ValidateLicenseCommand { get; private set; }
+    public Prism.Commands.DelegateCommand TestXaiConnectionCommand { get; private set; }
+    public Prism.Commands.DelegateCommand SaveFiscalYearSettingsCommand { get; private set; }
+    private async Task ExecuteSaveSettingsAsync()
         {
             try
             {
@@ -999,8 +1013,7 @@ namespace WileyWidget.ViewModels
             }
         }
 
-        [RelayCommand]
-        private async Task ResetSettingsAsync()
+    private async Task ExecuteResetSettingsAsync()
         {
             var result = MessageBox.Show(
                 "Are you sure you want to reset ALL settings to their default values?\n\n" +
@@ -1021,14 +1034,12 @@ namespace WileyWidget.ViewModels
             }
         }
 
-        [RelayCommand]
-        private async Task TestConnectionAsync()
+    private async Task ExecuteTestConnectionAsync()
         {
             await LoadDatabaseSettingsAsync();
         }
 
-        [RelayCommand]
-        private async Task TestQuickBooksConnectionAsync()
+    private async Task ExecuteTestQuickBooksConnectionAsync()
         {
             try
             {
@@ -1046,8 +1057,7 @@ namespace WileyWidget.ViewModels
             }
         }
 
-        [RelayCommand]
-        private async Task ValidateLicenseAsync()
+    private async Task ExecuteValidateLicenseAsync()
         {
             try
             {
@@ -1065,24 +1075,23 @@ namespace WileyWidget.ViewModels
             }
         }
 
-        [RelayCommand]
-        private async Task TestXaiConnectionAsync()
+    private async Task ExecuteTestXaiConnectionAsync()
+    {
+        try
         {
-            try
-            {
-                XaiConnectionStatus = "Testing...";
-                XaiStatusColor = Brushes.Orange;
+            XaiConnectionStatus = "Testing...";
+            XaiStatusColor = Brushes.Orange;
 
-                var isConnected = await TestXaiConnectionInternalAsync();
-                XaiConnectionStatus = isConnected ? "Connected" : "Connection Failed";
-                XaiStatusColor = isConnected ? Brushes.Green : Brushes.Red;
-            }
-            catch (Exception ex)
-            {
-                XaiConnectionStatus = $"Error: {ex.Message}";
-                XaiStatusColor = Brushes.Red;
-            }
+            var isConnected = await TestXaiConnectionInternalAsync();
+            XaiConnectionStatus = isConnected ? "Connected" : "Connection Failed";
+            XaiStatusColor = isConnected ? Brushes.Green : Brushes.Red;
         }
+        catch (Exception ex)
+        {
+            XaiConnectionStatus = $"Error: {ex.Message}";
+            XaiStatusColor = Brushes.Red;
+        }
+    }
 
         private async Task<bool> TestXaiConnectionInternalAsync()
         {
@@ -1122,9 +1131,7 @@ namespace WileyWidget.ViewModels
                 // Apply to main window
                 if (Application.Current.MainWindow != null)
                 {
-#pragma warning disable CA2000 // Dispose objects before losing scope - Theme objects are managed by SfSkinManager
-                    SfSkinManager.SetTheme(Application.Current.MainWindow, new Theme(themeName));
-#pragma warning restore CA2000 // Dispose objects before losing scope
+                    ThemeUtility.TryApplyTheme(Application.Current.MainWindow, themeName);
                 }
 
                 // Apply to all other windows
@@ -1132,9 +1139,7 @@ namespace WileyWidget.ViewModels
                 {
                     if (window != Application.Current.MainWindow)
                     {
-#pragma warning disable CA2000 // Dispose objects before losing scope - Theme objects are managed by SfSkinManager
-                        SfSkinManager.SetTheme(window, new Theme(themeName));
-#pragma warning restore CA2000 // Dispose objects before losing scope
+                        ThemeUtility.TryApplyTheme(window, themeName);
                     }
                 }
 
@@ -1148,8 +1153,7 @@ namespace WileyWidget.ViewModels
             }
         }
 
-        [RelayCommand]
-        private async Task SaveFiscalYearSettingsAsync()
+    private async Task SaveFiscalYearSettingsAsync()
         {
             try
             {

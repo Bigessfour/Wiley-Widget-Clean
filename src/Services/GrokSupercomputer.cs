@@ -22,6 +22,7 @@ public class GrokSupercomputer : IGrokSupercomputer
     private readonly IBudgetRepository _budgetRepository;
     private readonly IAuditRepository _auditRepository;
     private readonly IAILoggingService _aiLoggingService;
+    private readonly IAIService _aiService;
 
     /// <summary>
     /// Initializes a new instance of the GrokSupercomputer class
@@ -31,18 +32,21 @@ public class GrokSupercomputer : IGrokSupercomputer
     /// <param name="budgetRepository">Repository for budget data</param>
     /// <param name="auditRepository">Repository for audit data</param>
     /// <param name="aiLoggingService">AI logging service for tracking operations</param>
+    /// <param name="aiService">AI service for Grok API integration</param>
     public GrokSupercomputer(
         ILogger<GrokSupercomputer> logger,
         IEnterpriseRepository enterpriseRepository,
         IBudgetRepository budgetRepository,
         IAuditRepository auditRepository,
-        IAILoggingService aiLoggingService)
+        IAILoggingService aiLoggingService,
+        IAIService aiService)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _enterpriseRepository = enterpriseRepository ?? throw new ArgumentNullException(nameof(enterpriseRepository));
         _budgetRepository = budgetRepository ?? throw new ArgumentNullException(nameof(budgetRepository));
         _auditRepository = auditRepository ?? throw new ArgumentNullException(nameof(auditRepository));
         _aiLoggingService = aiLoggingService ?? throw new ArgumentNullException(nameof(aiLoggingService));
+        _aiService = aiService ?? throw new ArgumentNullException(nameof(aiService));
     }
 
     /// <summary>
@@ -411,24 +415,33 @@ public class GrokSupercomputer : IGrokSupercomputer
     /// <param name="data">The data to analyze.</param>
     /// <param name="context">Additional context for the analysis.</param>
     /// <returns>A Task containing the analysis results as a string.</returns>
-    public Task<string> AnalyzeMunicipalDataAsync(object data, string context)
+    public async Task<string> AnalyzeMunicipalDataAsync(object data, string context)
     {
         try
         {
             _logger.LogInformation("Analyzing municipal data with context: {Context}", context);
 
-            // Basic implementation - in a real scenario this would use AI/ML
-            var analysis = $"Analysis of municipal data indicates potential for optimization in {context}. " +
-                          $"Data type: {data?.GetType().Name ?? "Unknown"}. " +
-                          $"Estimated efficiency improvement: 15% through AI-optimized resource allocation.";
+            // Serialize data for AI analysis
+            var dataJson = System.Text.Json.JsonSerializer.Serialize(data, new System.Text.Json.JsonSerializerOptions
+            {
+                WriteIndented = false,
+                DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+            });
 
-            _logger.LogInformation("Municipal data analysis completed");
-            return Task.FromResult(analysis);
+            var question = $"Please analyze this municipal utility data and provide insights. Context: {context}. Data: {dataJson}";
+
+            var analysis = await _aiService.GetInsightsAsync("Municipal Data Analysis", question);
+
+            _logger.LogInformation("Municipal data analysis completed using AI");
+            return analysis;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error analyzing municipal data");
-            throw;
+            _logger.LogError(ex, "Error analyzing municipal data with AI service");
+            // Fallback to basic analysis if AI fails
+            return $"Basic analysis of municipal data indicates potential for optimization in {context}. " +
+                   $"Data type: {data?.GetType().Name ?? "Unknown"}. " +
+                   $"Note: AI analysis failed due to: {ex.Message}";
         }
     }
 
@@ -437,26 +450,36 @@ public class GrokSupercomputer : IGrokSupercomputer
     /// </summary>
     /// <param name="data">The data to generate recommendations for.</param>
     /// <returns>A Task containing the recommendations as a string.</returns>
-    public Task<string> GenerateRecommendationsAsync(object data)
+    public async Task<string> GenerateRecommendationsAsync(object data)
     {
         try
         {
-            _logger.LogInformation("Generating recommendations based on analyzed data");
+            _logger.LogInformation("Generating AI-powered recommendations based on analyzed data");
 
-            // Basic implementation - in a real scenario this would use AI/ML
-            var recommendations = "Recommended actions: " +
-                                 "1. Implement AI-driven demand forecasting to reduce operational costs by $25,000 annually. " +
-                                 "2. Optimize resource allocation using predictive analytics. " +
-                                 "3. Establish automated compliance monitoring systems. " +
-                                 $"Data type analyzed: {data?.GetType().Name ?? "Unknown"}.";
+            // Serialize data for AI analysis
+            var dataJson = System.Text.Json.JsonSerializer.Serialize(data, new System.Text.Json.JsonSerializerOptions
+            {
+                WriteIndented = false,
+                DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+            });
 
-            _logger.LogInformation("Recommendations generated successfully");
-            return Task.FromResult(recommendations);
+            var question = $"Based on this municipal utility data, please generate specific, actionable recommendations for improving efficiency, reducing costs, and optimizing operations. Data: {dataJson}";
+
+            var recommendations = await _aiService.GetInsightsAsync("Recommendation Generation", question);
+
+            _logger.LogInformation("AI-powered recommendations generated successfully");
+            return recommendations;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error generating recommendations");
-            throw;
+            _logger.LogError(ex, "Error generating AI-powered recommendations");
+            // Fallback to basic recommendations if AI fails
+            return $"Recommended actions: " +
+                   $"1. Implement data-driven decision making to reduce operational costs. " +
+                   $"2. Optimize resource allocation based on usage patterns. " +
+                   $"3. Establish automated monitoring systems. " +
+                   $"Data type analyzed: {data?.GetType().Name ?? "Unknown"}. " +
+                   $"Note: AI recommendations failed due to: {ex.Message}";
         }
     }
 }

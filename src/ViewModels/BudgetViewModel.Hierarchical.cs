@@ -1,6 +1,4 @@
 using System.Collections.ObjectModel;
-using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
 using WileyWidget.Models;
 using System.Threading.Tasks;
 using System.Linq;
@@ -23,7 +21,6 @@ public partial class BudgetViewModel
     /// Import budget data from Excel file
     /// Handles hierarchical account structures like 410.1
     /// </summary>
-    [RelayCommand]
     private async Task ImportBudgetAsync()
     {
         try
@@ -134,7 +131,6 @@ public partial class BudgetViewModel
     /// <summary>
     /// Export budget data to Excel with hierarchy preserved
     /// </summary>
-    [RelayCommand]
     private async Task ExportBudgetAsync()
     {
         try
@@ -191,7 +187,6 @@ public partial class BudgetViewModel
     /// <summary>
     /// Add a new budget account
     /// </summary>
-    [RelayCommand]
     private void AddAccount()
     {
         var newAccount = new BudgetAccount
@@ -212,7 +207,6 @@ public partial class BudgetViewModel
     /// <summary>
     /// Delete the selected budget account
     /// </summary>
-    [RelayCommand]
     private void DeleteAccount()
     {
         try
@@ -432,7 +426,7 @@ public partial class BudgetViewModel
     /// <summary>
     /// Initialize budget accounts if empty
     /// </summary>
-    partial void OnSelectedFiscalYearChanged(string value)
+    private void OnSelectedFiscalYearChanged(string value)
     {
         if (BudgetAccounts.Count == 0)
         {

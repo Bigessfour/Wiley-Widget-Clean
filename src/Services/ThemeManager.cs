@@ -24,13 +24,7 @@ public class ThemeManager : IThemeManager
     public static readonly string[] AvailableThemes = new[]
     {
         "FluentDark",
-        "FluentLight",
-        "MaterialDark",
-        "MaterialLight",
-        "Office2019Colorful",
-        "Office2019DarkGray",
-        "Office2019Black",
-        "Office365"
+        "FluentLight"
     };
 
     /// <summary>
@@ -59,6 +53,9 @@ public class ThemeManager : IThemeManager
     /// </summary>
     public void ApplyTheme(string themeName, bool freezeResources = false)
     {
+        // Normalize the theme name to handle legacy themes
+        themeName = ThemeUtility.NormalizeTheme(themeName);
+
         if (string.IsNullOrEmpty(themeName) || !AvailableThemes.Contains(themeName))
         {
             _logger.LogWarning("Invalid theme name: {ThemeName}", themeName);

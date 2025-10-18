@@ -1,7 +1,6 @@
 #nullable enable
 
 using System.Windows.Input;
-using CommunityToolkit.Mvvm.Input;
 using WileyWidget.Services;
 using WileyWidget.Services.Threading;
 using WileyWidget.ViewModels.Base;
@@ -57,7 +56,7 @@ public class ProgressViewModel : AsyncViewModelBase
     /// <summary>
     /// Gets the command to cancel the operation
     /// </summary>
-    public ICommand CancelCommand { get; }
+    public Prism.Commands.DelegateCommand CancelCommand { get; }
 
     /// <summary>
     /// Gets or sets the action to cancel the operation
@@ -72,7 +71,7 @@ public class ProgressViewModel : AsyncViewModelBase
     public ProgressViewModel(IDispatcherHelper dispatcherHelper, Microsoft.Extensions.Logging.ILogger<ProgressViewModel> logger)
         : base(dispatcherHelper, logger)
     {
-        CancelCommand = new RelayCommand(Cancel, CanCancel);
+    CancelCommand = new Prism.Commands.DelegateCommand(Cancel, CanCancel);
         Title = "Operation in Progress";
         Message = "Please wait...";
         IsIndeterminate = true;

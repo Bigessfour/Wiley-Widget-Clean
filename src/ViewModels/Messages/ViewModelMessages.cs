@@ -26,6 +26,17 @@ public class BudgetUpdatedMessage : PubSubEvent<BudgetUpdatedMessage>
 }
 
 /// <summary>
+/// Message sent when dashboard data has been loaded successfully
+/// Used for cross-ViewModel communication to notify other components
+/// </summary>
+public class DataLoadedEvent : PubSubEvent<DataLoadedEvent>
+{
+    public string ViewModelName { get; set; } = string.Empty;
+    public int ItemCount { get; set; }
+    public DateTime Timestamp { get; } = DateTime.UtcNow;
+}
+
+/// <summary>
 /// Message sent when data refresh is needed
 /// </summary>
 public class RefreshDataMessage : PubSubEvent<RefreshDataMessage>

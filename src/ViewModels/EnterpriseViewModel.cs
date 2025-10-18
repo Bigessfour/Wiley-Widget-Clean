@@ -1,6 +1,6 @@
 using System.Collections.ObjectModel;
-using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
+using Prism.Mvvm;
+using Prism.Commands;
 using WileyWidget.Models;
 using WileyWidget.Business.Interfaces;
 using System.Threading.Tasks;
@@ -22,7 +22,7 @@ namespace WileyWidget.ViewModels;
 /// View model for managing municipal enterprises (Phase 1)
 /// Provides data binding for enterprise CRUD operations and budget calculations
 /// </summary>
-public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataErrorInfo
+public class EnterpriseViewModel : BindableBase, IDisposable, IDataErrorInfo
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IEventAggregator _eventAggregator;
@@ -49,8 +49,8 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
             if (_selectedEnterprise != value)
             {
                 _selectedEnterprise = value;
-                OnPropertyChanged();
-                SelectionChangedCommand?.Execute(null);
+                RaisePropertyChanged();
+                SelectionChangedCommand?.Execute();
             }
         }
     }
@@ -67,7 +67,7 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
             if (_statusMessage != value)
             {
                 _statusMessage = value;
-                OnPropertyChanged();
+                RaisePropertyChanged();
             }
         }
     }
@@ -84,7 +84,7 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
             if (_errorMessage != value)
             {
                 _errorMessage = value;
-                OnPropertyChanged();
+                RaisePropertyChanged();
             }
         }
     }
@@ -101,7 +101,7 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
             if (_isLoading != value)
             {
                 _isLoading = value;
-                OnPropertyChanged();
+                RaisePropertyChanged();
             }
         }
     }
@@ -118,7 +118,7 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
             if (_budgetSummaryText != value)
             {
                 _budgetSummaryText = value;
-                OnPropertyChanged();
+                RaisePropertyChanged();
             }
         }
     }
@@ -138,7 +138,7 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
             if (_currentPageIndex != value)
             {
                 _currentPageIndex = value;
-                OnPropertyChanged();
+                RaisePropertyChanged();
             }
         }
     }
@@ -154,7 +154,7 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
             if (_pageCount != value)
             {
                 _pageCount = value;
-                OnPropertyChanged();
+                RaisePropertyChanged();
             }
         }
     }
@@ -168,7 +168,7 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
             if (_pageSize != value)
             {
                 _pageSize = value;
-                OnPropertyChanged();
+                RaisePropertyChanged();
             }
         }
     }
@@ -184,7 +184,7 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
             if (_progressPercentage != value)
             {
                 _progressPercentage = value;
-                OnPropertyChanged();
+                RaisePropertyChanged();
             }
         }
     }
@@ -198,7 +198,7 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
             if (_searchText != value)
             {
                 _searchText = value;
-                OnPropertyChanged();
+                RaisePropertyChanged();
             }
         }
     }
@@ -212,7 +212,7 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
             if (_selectedNode != value)
             {
                 _selectedNode = value;
-                OnPropertyChanged();
+                RaisePropertyChanged();
             }
         }
     }
@@ -226,7 +226,7 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
             if (_selectedStatusFilter != value)
             {
                 _selectedStatusFilter = value;
-                OnPropertyChanged();
+                RaisePropertyChanged();
             }
         }
     }
@@ -242,7 +242,7 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
             if (_enterprise != value)
             {
                 _enterprise = value;
-                OnPropertyChanged();
+                RaisePropertyChanged();
             }
         }
     }
@@ -256,7 +256,7 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
             if (_value != value)
             {
                 _value = value;
-                OnPropertyChanged();
+                RaisePropertyChanged();
             }
         }
     }
@@ -264,8 +264,7 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
     /// <summary>
     /// Selection changed command - updates budget summary and enables drill-down navigation
     /// </summary>
-    [RelayCommand]
-    private void SelectionChanged()
+    private void ExecuteSelectionChanged()
     {
         if (SelectedEnterprise != null)
         {
@@ -292,8 +291,7 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
     /// <summary>
     /// Navigate to enterprise details view
     /// </summary>
-    [RelayCommand]
-    private void NavigateToDetails(int enterpriseId)
+    private void ExecuteNavigateToDetails(int enterpriseId)
     {
         try
         {
@@ -321,8 +319,7 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
     /// <summary>
     /// Navigate to BudgetView command
     /// </summary>
-    [RelayCommand]
-    private void NavigateToBudgetView()
+    private void ExecuteNavigateToBudgetView()
     {
         // Navigation to BudgetView - implementation depends on navigation service
         // This could use messaging, navigation service, or window management
@@ -332,8 +329,7 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
     /// <summary>
     /// Export to Excel command
     /// </summary>
-    [RelayCommand]
-    private async Task ExportToExcelAsync()
+    private async Task ExecuteExportToExcelAsync()
     {
         try
         {
@@ -382,8 +378,7 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
     /// <summary>
     /// Export to PDF report command
     /// </summary>
-    [RelayCommand]
-    private async Task ExportToPdfReportAsync()
+    private async Task ExecuteExportToPdfReportAsync()
     {
         try
         {
@@ -919,8 +914,7 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
     /// <summary>
     /// Export to Excel advanced command
     /// </summary>
-    [RelayCommand]
-    private async Task ExportToExcelAdvancedAsync()
+    private async Task ExecuteExportToExcelAdvancedAsync()
     {
         try
         {
@@ -973,8 +967,7 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
     /// <summary>
     /// Export to CSV command
     /// </summary>
-    [RelayCommand]
-    private async Task ExportToCsvAsync()
+    private async Task ExecuteExportToCsvAsync()
     {
         try
         {
@@ -1023,8 +1016,8 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
     /// <summary>
     /// Export selection command
     /// </summary>
-    [RelayCommand]
-    private async Task ExportSelectionAsync()
+    
+    private async Task ExecuteExportSelectionAsync()
     {
         try
         {
@@ -1112,7 +1105,7 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
     /// <summary>
     /// Loads all enterprises from the database (public for View access)
     /// </summary>
-    [RelayCommand]
+    
     public async Task LoadEnterprisesAsync(CancellationToken cancellationToken = default)
     {
         // Prevent concurrent loading operations
@@ -1166,6 +1159,30 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
         }
     }
 
+    // Commands
+    public DelegateCommand LoadEnterprisesCommand { get; private set; }
+    public DelegateCommand SelectionChangedCommand { get; private set; }
+    public DelegateCommand<int> NavigateToDetailsCommand { get; private set; }
+    public DelegateCommand NavigateToBudgetViewCommand { get; private set; }
+    public DelegateCommand ExportToExcelCommand { get; private set; }
+    public DelegateCommand ExportToPdfReportCommand { get; private set; }
+    public DelegateCommand ExportToExcelAdvancedCommand { get; private set; }
+    public DelegateCommand ExportToCsvCommand { get; private set; }
+    public DelegateCommand ExportSelectionCommand { get; private set; }
+    public DelegateCommand AddEnterpriseCommand { get; private set; }
+    public DelegateCommand SaveEnterpriseCommand { get; private set; }
+    public DelegateCommand DeleteEnterpriseCommand { get; private set; }
+    public DelegateCommand UpdateBudgetSummaryCommand { get; private set; }
+    public DelegateCommand BulkUpdateCommand { get; private set; }
+    public DelegateCommand ClearFiltersCommand { get; private set; }
+    public DelegateCommand ClearGroupingCommand { get; private set; }
+    public DelegateCommand CopyToClipboardCommand { get; private set; }
+    public DelegateCommand EditEnterpriseCommand { get; private set; }
+    public DelegateCommand GenerateEnterpriseReportCommand { get; private set; }
+    public DelegateCommand GroupByStatusCommand { get; private set; }
+    public DelegateCommand GroupByTypeCommand { get; private set; }
+    public DelegateCommand ImportDataCommand { get; private set; }
+
     /// <summary>
     /// Constructor with dependency injection
     /// </summary>
@@ -1173,13 +1190,41 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
     {
         _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
         _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
+
+        InitializeCommands();
+    }
+
+    private void InitializeCommands()
+    {
+        LoadEnterprisesCommand = new DelegateCommand(async () => await LoadEnterprisesAsync(), () => !IsLoading);
+        SelectionChangedCommand = new DelegateCommand(ExecuteSelectionChanged);
+        NavigateToDetailsCommand = new DelegateCommand<int>(ExecuteNavigateToDetails);
+        NavigateToBudgetViewCommand = new DelegateCommand(ExecuteNavigateToBudgetView);
+        ExportToExcelCommand = new DelegateCommand(async () => await ExecuteExportToExcelAsync(), () => !IsLoading);
+        ExportToPdfReportCommand = new DelegateCommand(async () => await ExecuteExportToPdfReportAsync(), () => !IsLoading);
+        ExportToExcelAdvancedCommand = new DelegateCommand(async () => await ExecuteExportToExcelAdvancedAsync(), () => !IsLoading);
+        ExportToCsvCommand = new DelegateCommand(async () => await ExecuteExportToCsvAsync(), () => !IsLoading);
+        ExportSelectionCommand = new DelegateCommand(async () => await ExecuteExportSelectionAsync(), () => !IsLoading);
+        AddEnterpriseCommand = new DelegateCommand(async () => await ExecuteAddEnterpriseAsync(), () => !IsLoading);
+        SaveEnterpriseCommand = new DelegateCommand(async () => await ExecuteSaveEnterpriseAsync(), () => !IsLoading && SelectedEnterprise != null);
+        DeleteEnterpriseCommand = new DelegateCommand(async () => await ExecuteDeleteEnterpriseAsync(), () => !IsLoading && SelectedEnterprise != null);
+        UpdateBudgetSummaryCommand = new DelegateCommand(ExecuteUpdateBudgetSummary);
+        BulkUpdateCommand = new DelegateCommand(async () => await ExecuteBulkUpdateAsync(), () => !IsLoading);
+        ClearFiltersCommand = new DelegateCommand(ExecuteClearFilters);
+        ClearGroupingCommand = new DelegateCommand(ExecuteClearGrouping);
+        CopyToClipboardCommand = new DelegateCommand(ExecuteCopyToClipboard);
+        EditEnterpriseCommand = new DelegateCommand(ExecuteEditEnterprise, () => SelectedEnterprise != null);
+        GenerateEnterpriseReportCommand = new DelegateCommand(async () => await ExecuteGenerateEnterpriseReport(), () => !IsLoading);
+        GroupByStatusCommand = new DelegateCommand(ExecuteGroupByStatus);
+        GroupByTypeCommand = new DelegateCommand(ExecuteGroupByType);
+        ImportDataCommand = new DelegateCommand(async () => await ExecuteImportData(), () => !IsLoading);
     }
 
     /// <summary>
     /// Adds a new enterprise
     /// </summary>
-    [RelayCommand]
-    private async Task AddEnterpriseAsync()
+    
+    private async Task ExecuteAddEnterpriseAsync()
     {
         ErrorMessage = string.Empty;
         
@@ -1222,8 +1267,8 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
     /// <summary>
     /// Saves changes to the selected enterprise
     /// </summary>
-    [RelayCommand]
-    private async Task SaveEnterpriseAsync()
+    
+    private async Task ExecuteSaveEnterpriseAsync()
     {
         if (SelectedEnterprise == null)
         {
@@ -1270,8 +1315,8 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
     /// <summary>
     /// Deletes the selected enterprise
     /// </summary>
-    [RelayCommand]
-    private async Task DeleteEnterpriseAsync()
+    
+    private async Task ExecuteDeleteEnterpriseAsync()
     {
         if (SelectedEnterprise == null)
         {
@@ -1319,8 +1364,8 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
     /// <summary>
     /// Calculates and displays budget summary
     /// </summary>
-    [RelayCommand]
-    private void UpdateBudgetSummary()
+    
+    private void ExecuteUpdateBudgetSummary()
     {
         BudgetSummaryText = GetBudgetSummary();
     }
@@ -1328,8 +1373,8 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
     /// <summary>
     /// Bulk update enterprises
     /// </summary>
-    [RelayCommand]
-    private async Task BulkUpdateAsync()
+    
+    private async Task ExecuteBulkUpdateAsync()
     {
         try
         {
@@ -1430,8 +1475,8 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
     /// <summary>
     /// Clear filters
     /// </summary>
-    [RelayCommand]
-    private void ClearFilters()
+    
+    private void ExecuteClearFilters()
     {
         SearchText = string.Empty;
         SelectedStatusFilter = "All";
@@ -1441,8 +1486,8 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
     /// <summary>
     /// Clear grouping
     /// </summary>
-    [RelayCommand]
-    private void ClearGrouping()
+    
+    private void ExecuteClearGrouping()
     {
         _eventAggregator.GetEvent<GroupingMessage>().Publish(new GroupingMessage
         {
@@ -1454,8 +1499,8 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
     /// <summary>
     /// Copy to clipboard
     /// </summary>
-    [RelayCommand]
-    private void CopyToClipboard()
+    
+    private void ExecuteCopyToClipboard()
     {
         if (SelectedEnterprise == null)
         {
@@ -1488,8 +1533,8 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
     /// <summary>
     /// Edit enterprise
     /// </summary>
-    [RelayCommand]
-    private void EditEnterprise()
+    
+    private void ExecuteEditEnterprise()
     {
         if (SelectedEnterprise != null)
         {
@@ -1500,8 +1545,8 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
     /// <summary>
     /// Generate enterprise report
     /// </summary>
-    [RelayCommand]
-    private async Task GenerateEnterpriseReport()
+    
+    private async Task ExecuteGenerateEnterpriseReport()
     {
         try
         {
@@ -1555,8 +1600,8 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
     /// <summary>
     /// Group by status
     /// </summary>
-    [RelayCommand]
-    private void GroupByStatus()
+    
+    private void ExecuteGroupByStatus()
     {
         _eventAggregator.GetEvent<GroupingMessage>().Publish(new GroupingMessage
         {
@@ -1569,8 +1614,8 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
     /// <summary>
     /// Group by type
     /// </summary>
-    [RelayCommand]
-    private void GroupByType()
+    
+    private void ExecuteGroupByType()
     {
         _eventAggregator.GetEvent<GroupingMessage>().Publish(new GroupingMessage
         {
@@ -1583,8 +1628,8 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
     /// <summary>
     /// Import data
     /// </summary>
-    [RelayCommand]
-    private async Task ImportData()
+    
+    private async Task ExecuteImportData()
     {
         try
         {
@@ -1633,7 +1678,7 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
     /// <summary>
     /// Load enterprises incrementally
     /// </summary>
-    [RelayCommand]
+    
     private async Task LoadEnterprisesIncrementalAsync()
     {
         try
@@ -1656,7 +1701,7 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
     /// <summary>
     /// Rate analysis
     /// </summary>
-    [RelayCommand]
+    
     private void RateAnalysis()
     {
         if (EnterpriseList.Count == 0)
@@ -1699,7 +1744,7 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
     /// <summary>
     /// View audit history
     /// </summary>
-    [RelayCommand]
+    
     private async Task ViewAuditHistoryAsync()
     {
         if (SelectedEnterprise == null)
@@ -1740,7 +1785,7 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
     /// <summary>
     /// Show advanced filter
     /// </summary>
-    [RelayCommand]
+    
     private void ShowAdvancedFilter()
     {
         try
@@ -1767,7 +1812,7 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
     /// <summary>
     /// Show tree map
     /// </summary>
-    [RelayCommand]
+    
     private void ShowTreeMap()
     {
         try
@@ -1807,7 +1852,7 @@ public partial class EnterpriseViewModel : ObservableObject, IDisposable, IDataE
     /// <summary>
     /// Show tree view
     /// </summary>
-    [RelayCommand]
+    
     private void ShowTreeView()
     {
         try

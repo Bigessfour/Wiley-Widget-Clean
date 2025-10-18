@@ -99,7 +99,8 @@ public class UnitOfWork : IUnitOfWork
             if (_utilityCustomers == null)
             {
                 var factory = new SingleContextFactory(_context);
-                _utilityCustomers = new UtilityCustomerRepository(factory);
+                var ucLogger = _loggerFactory.CreateLogger<UtilityCustomerRepository>();
+                _utilityCustomers = new UtilityCustomerRepository(factory, ucLogger);
             }
             return _utilityCustomers;
         }

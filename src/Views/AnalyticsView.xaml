@@ -62,7 +62,6 @@
                     <TextBlock Text="Start Date" Foreground="#FFCEE6FF" FontWeight="SemiBold" />
                     <syncfusion:SfDatePicker Value="{Binding StartDate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                            Width="140"
-                                           IsEnabled="{Binding SelectedTimePeriod, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Custom Range}"
                                            AutomationProperties.Name="Start date picker"
                                            AutomationProperties.HelpText="Select the start date for custom range" />
                 </StackPanel>
@@ -72,7 +71,6 @@
                     <TextBlock Text="End Date" Foreground="#FFCEE6FF" FontWeight="SemiBold" />
                     <syncfusion:SfDatePicker Value="{Binding EndDate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                            Width="140"
-                                           IsEnabled="{Binding SelectedTimePeriod, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Custom Range}"
                                            AutomationProperties.Name="End date picker"
                                            AutomationProperties.HelpText="Select the end date for custom range" />
                 </StackPanel>
@@ -87,20 +85,6 @@
                                             Width="180"
                                             AutomationProperties.Name="Enterprise selector"
                                             AutomationProperties.HelpText="Select an enterprise to filter analytics data" />
-                </StackPanel>
-
-                <!-- Theme Selector -->
-                <StackPanel Grid.Column="10" Orientation="Vertical">
-                    <TextBlock Text="Theme" Foreground="#FFCEE6FF" FontWeight="SemiBold" />
-                    <syncfusion:ComboBoxAdv x:Name="ThemeSelector"
-                                            Width="140"
-                                            SelectionChanged="ThemeSelector_SelectionChanged"
-                                            SelectedIndex="0"
-                                            AutomationProperties.Name="Theme selector"
-                                            AutomationProperties.HelpText="Switch between light and dark themes">
-                        <syncfusion:ComboBoxItemAdv Content="Dark" Tag="FluentDark" />
-                        <syncfusion:ComboBoxItemAdv Content="Light" Tag="FluentLight" />
-                    </syncfusion:ComboBoxAdv>
                 </StackPanel>
 
                 <!-- Action Buttons -->

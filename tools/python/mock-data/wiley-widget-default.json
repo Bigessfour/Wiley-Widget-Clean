@@ -69,7 +69,7 @@
   "AutoRefreshData": true,
   "AutoSaveInterval": "Sample AutoSaveInterval",
   "AvailableBudgetPeriods": "Sample AvailableBudgetPeriods",
-  "AvailableThemes": ["Material", "Fluent", "Office"],
+  "AvailableThemes": ["FluentDark", "FluentLight"],
   "AverageRateIncrease": 12345.67,
   "AverageRatePerCitizen": 12345.67,
   "AzureAuthMethods": "Sample AzureAuthMethods",
@@ -602,7 +602,7 @@
   },
   "SelectedSortOption": "Sample SelectedSortOption",
   "SelectedStatusFilter": "OK",
-  "SelectedTheme": "Material",
+  "SelectedTheme": "FluentDark",
   "SelectedVarianceSortOption": "Sample SelectedVarianceSortOption",
   "SelectedView": {
     "DisplayName": "Enterprises"

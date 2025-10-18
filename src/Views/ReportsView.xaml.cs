@@ -1,6 +1,8 @@
 using System;
 using System.IO;
 using System.Windows;
+using System.Windows.Controls;
+using Prism.Ioc;
 using Microsoft.Extensions.DependencyInjection;
 //using Syncfusion.Windows.Reports.Viewer;
 using WileyWidget.ViewModels;
@@ -10,52 +12,40 @@ namespace WileyWidget;
 /// <summary>
 /// Interactive report surface powered by Syncfusion controls.
 /// </summary>
-public partial class ReportsView : Window
+public partial class ReportsView : UserControl
 {
-    private readonly IServiceScope _viewScope;
     private string? _cachedReportPath;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ReportsView"/> class.
+    /// Prism-aware constructor - prefer this so the container can inject dependencies.
+    /// </summary>
+    public ReportsView(IContainerProvider containerProvider)
+    {
+        InitializeComponent();
+
+        // DataContext will be auto-wired by Prism ViewModelLocator
+        if (DataContext is ReportsViewModel vm)
+        {
+            vm.DataLoaded += OnDataLoaded;
+            vm.ExportCompleted += OnExportCompleted;
+        }
+    }
+
+    /// <summary>
+    /// Parameterless constructor remains for XAML designer compatibility and for
+    /// any code paths that instantiate the view without DI. It attempts to use
+    /// the application container as a fallback but does not throw if unavailable.
     /// </summary>
     public ReportsView()
     {
         InitializeComponent();
 
-        IServiceProvider? provider = null;
-        try
+        // DataContext will be auto-wired by Prism ViewModelLocator
+        if (DataContext is ReportsViewModel vm)
         {
-            provider = App.GetActiveServiceProvider();
+            vm.DataLoaded += OnDataLoaded;
+            vm.ExportCompleted += OnExportCompleted;
         }
-        catch (InvalidOperationException)
-        {
-            provider = Application.Current?.Properties["ServiceProvider"] as IServiceProvider;
-        }
-
-        if (provider is null)
-        {
-            throw new InvalidOperationException("ServiceProvider is not available for ReportsView");
-        }
-
-        _viewScope = provider.CreateScope();
-        var viewModel = _viewScope.ServiceProvider.GetRequiredService<ReportsViewModel>();
-        DataContext = viewModel;
-
-        viewModel.DataLoaded += OnDataLoaded;
-        viewModel.ExportCompleted += OnExportCompleted;
-    }
-
-    /// <inheritdoc />
-    protected override void OnClosed(EventArgs e)
-    {
-        if (DataContext is ReportsViewModel viewModel)
-        {
-            viewModel.DataLoaded -= OnDataLoaded;
-            viewModel.ExportCompleted -= OnExportCompleted;
-        }
-
-        _viewScope.Dispose();
-        base.OnClosed(e);
     }
 
     //private void OnReportViewerLoaded(object sender, RoutedEventArgs e)
@@ -72,7 +62,7 @@ public partial class ReportsView : Window
     {
         Dispatcher.Invoke(() =>
         {
-            MessageBox.Show(this,
+            MessageBox.Show(
                 $"Report exported to {e.FilePath}",
                 $"Export ({e.Format.ToUpperInvariant()})",
                 MessageBoxButton.OK,

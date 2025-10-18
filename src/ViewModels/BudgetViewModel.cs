@@ -1,10 +1,11 @@
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.Windows;
 using System.Windows.Threading;
 using System.ComponentModel;
-using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
-using CommunityToolkit.Mvvm.Messaging;
+using Prism.Mvvm;
+using Prism.Commands;
+using Prism.Events;
 using WileyWidget.Models;
 using WileyWidget.Business.Interfaces;
 using WileyWidget.ViewModels.Messages;
@@ -18,11 +19,13 @@ namespace WileyWidget.ViewModels;
 /// View model for budget analysis and reporting
 /// Provides comprehensive budget insights and financial analysis
 /// Implements messaging, busy states, input validation, and IDataErrorInfo
+/// Converted from CommunityToolkit.Mvvm to Prism pattern for consistency
 /// </summary>
-public partial class BudgetViewModel : ObservableObject, IDisposable, IDataErrorInfo
+public partial class BudgetViewModel : BindableBase, IDisposable, IDataErrorInfo
 {
     private readonly IEnterpriseRepository _enterpriseRepository;
     private readonly IBudgetRepository _budgetRepository;
+    private readonly IEventAggregator? _eventAggregator;
     private readonly DispatcherTimer _refreshTimer;
     private bool _disposed;
 
@@ -34,80 +37,147 @@ public partial class BudgetViewModel : ObservableObject, IDisposable, IDataError
     /// <summary>
     /// Total revenue across all enterprises
     /// </summary>
-    [ObservableProperty]
-    private decimal totalRevenue;
+    private decimal _totalRevenue;
+    public decimal TotalRevenue
+    {
+        get => _totalRevenue;
+        set => SetProperty(ref _totalRevenue, value);
+    }
 
     /// <summary>
     /// Total expenses across all enterprises
     /// </summary>
-    [ObservableProperty]
-    private decimal totalExpenses;
+    private decimal _totalExpenses;
+    public decimal TotalExpenses
+    {
+        get => _totalExpenses;
+        set => SetProperty(ref _totalExpenses, value);
+    }
 
     /// <summary>
     /// Net balance (revenue - expenses)
     /// </summary>
-    [ObservableProperty]
-    private decimal netBalance;
+    private decimal _netBalance;
+    public decimal NetBalance
+    {
+        get => _netBalance;
+        set => SetProperty(ref _netBalance, value);
+    }
 
     /// <summary>
     /// Total citizens served across all enterprises
     /// </summary>
-    [ObservableProperty]
-    private int totalCitizens;
+    private int _totalCitizens;
+    public int TotalCitizens
+    {
+        get => _totalCitizens;
+        set => SetProperty(ref _totalCitizens, value);
+    }
 
     /// <summary>
     /// Break-even analysis text
     /// </summary>
-    [ObservableProperty]
-    private string breakEvenAnalysisText = "Click 'Break-even Analysis' to generate insights";
+    private string _breakEvenAnalysisText = "Click 'Break-even Analysis' to generate insights";
+    public string BreakEvenAnalysisText
+    {
+        get => _breakEvenAnalysisText;
+        set => SetProperty(ref _breakEvenAnalysisText, value);
+    }
 
     /// <summary>
     /// Trend analysis text
     /// </summary>
-    [ObservableProperty]
-    private string trendAnalysisText = "Click 'Trend Analysis' to view budget trends";
+    private string _trendAnalysisText = "Click 'Trend Analysis' to view budget trends";
+    public string TrendAnalysisText
+    {
+        get => _trendAnalysisText;
+        set => SetProperty(ref _trendAnalysisText, value);
+    }
 
     /// <summary>
     /// Recommendations text
     /// </summary>
-    [ObservableProperty]
-    private string recommendationsText = "Click 'Refresh' to load budget data and generate recommendations";
+    private string _recommendationsText = "Click 'Refresh' to load budget data and generate recommendations";
+    public string RecommendationsText
+    {
+        get => _recommendationsText;
+        set => SetProperty(ref _recommendationsText, value);
+    }
 
     /// <summary>
     /// Last updated timestamp
     /// </summary>
-    [ObservableProperty]
-    private string lastUpdated = "Never";
+    private string _lastUpdated = "Never";
+    public string LastUpdated
+    {
+        get => _lastUpdated;
+        set => SetProperty(ref _lastUpdated, value);
+    }
 
     /// <summary>
     /// Analysis status
     /// </summary>
-    [ObservableProperty]
-    private string analysisStatus = "Ready";
+    private string _analysisStatus = "Ready";
+    public string AnalysisStatus
+    {
+        get => _analysisStatus;
+        set => SetProperty(ref _analysisStatus, value);
+    }
 
     /// <summary>
     /// Whether there's an error
     /// </summary>
-    [ObservableProperty]
-    private bool hasError;
+    private bool _hasError;
+    public bool HasError
+    {
+        get => _hasError;
+        set => SetProperty(ref _hasError, value);
+    }
 
     /// <summary>
     /// Error message if any
     /// </summary>
-    [ObservableProperty]
-    private string errorMessage = string.Empty;
+    private string _errorMessage = string.Empty;
+    public string ErrorMessage
+    {
+        get => _errorMessage;
+        set => SetProperty(ref _errorMessage, value);
+    }
 
     /// <summary>
     /// Busy state for long-running operations
     /// </summary>
-    [ObservableProperty]
-    private bool isBusy;
+    private bool _isBusy;
+    public bool IsBusy
+    {
+        get => _isBusy;
+        set
+        {
+            if (SetProperty(ref _isBusy, value))
+            {
+                // Raise CanExecuteChanged for all commands that depend on IsBusy
+                RefreshBudgetDataCommand?.RaiseCanExecuteChanged();
+                ToggleFiscalYearCommand?.RaiseCanExecuteChanged();
+                SaveConfirmationCommand?.RaiseCanExecuteChanged();
+                NavigateToMunicipalAccountCommand?.RaiseCanExecuteChanged();
+                ImportBudgetCommand?.RaiseCanExecuteChanged();
+                ExportBudgetCommand?.RaiseCanExecuteChanged();
+                AddAccountCommand?.RaiseCanExecuteChanged();
+                DeleteAccountCommand?.RaiseCanExecuteChanged();
+                UpdateAnalysisCommandStates();
+            }
+        }
+    }
 
     /// <summary>
     /// Progress text for user feedback during operations
     /// </summary>
-    [ObservableProperty]
-    private string progressText = string.Empty;
+    private string _progressText = string.Empty;
+    public string ProgressText
+    {
+        get => _progressText;
+        set => SetProperty(ref _progressText, value);
+    }
 
     /// <summary>
     /// Budget items collection
@@ -120,22 +190,44 @@ public partial class BudgetViewModel : ObservableObject, IDisposable, IDataError
     public ObservableCollection<BudgetPerformanceData> BudgetPerformanceData { get; } = new();
 
     /// <summary>
-    /// Budget variance data
+    /// Budget variance value
     /// </summary>
-    [ObservableProperty]
-    private decimal budgetVariance;
+    private decimal _budgetVariance;
+    public decimal BudgetVariance
+    {
+        get => _budgetVariance;
+        set => SetProperty(ref _budgetVariance, value);
+    }
 
     /// <summary>
     /// Loading state
     /// </summary>
-    [ObservableProperty]
-    private bool isLoading;
+    private bool _isLoading;
+    public bool IsLoading
+    {
+        get => _isLoading;
+        set
+        {
+            if (SetProperty(ref _isLoading, value))
+            {
+                RefreshBudgetDataCommand?.RaiseCanExecuteChanged();
+                ToggleFiscalYearCommand?.RaiseCanExecuteChanged();
+                SaveConfirmationCommand?.RaiseCanExecuteChanged();
+                ImportBudgetCommand?.RaiseCanExecuteChanged();
+                ExportBudgetCommand?.RaiseCanExecuteChanged();
+            }
+        }
+    }
 
     /// <summary>
     /// Net income
     /// </summary>
-    [ObservableProperty]
-    private decimal netIncome;
+    private decimal _netIncome;
+    public decimal NetIncome
+    {
+        get => _netIncome;
+        set => SetProperty(ref _netIncome, value);
+    }
 
     /// <summary>
     /// Projected rate data
@@ -168,26 +260,49 @@ public partial class BudgetViewModel : ObservableObject, IDisposable, IDataError
     /// <summary>
     /// Currently selected fiscal year
     /// </summary>
-    [ObservableProperty]
-    private string selectedFiscalYear = "FY 2025";
+    private string _selectedFiscalYear = "FY 2025";
+    public string SelectedFiscalYear
+    {
+        get => _selectedFiscalYear;
+        set
+        {
+            if (SetProperty(ref _selectedFiscalYear, value))
+            {
+                ToggleFiscalYearCommand?.RaiseCanExecuteChanged();
+                OnSelectedFiscalYearChanged(value);
+            }
+        }
+    }
 
     /// <summary>
     /// Total budgeted amount across all accounts
     /// </summary>
-    [ObservableProperty]
-    private decimal totalBudget;
+    private decimal _totalBudgetAmount;
+    public decimal TotalBudget
+    {
+        get => _totalBudgetAmount;
+        set => SetProperty(ref _totalBudgetAmount, value);
+    }
 
     /// <summary>
     /// Total actual expenses across all accounts
     /// </summary>
-    [ObservableProperty]
-    private decimal totalActual;
+    private decimal _totalActualAmount;
+    public decimal TotalActual
+    {
+        get => _totalActualAmount;
+        set => SetProperty(ref _totalActualAmount, value);
+    }
 
     /// <summary>
     /// Total variance (Budget - Actual)
     /// </summary>
-    [ObservableProperty]
-    private decimal totalVariance;
+    private decimal _totalVarianceAmount;
+    public decimal TotalVariance
+    {
+        get => _totalVarianceAmount;
+        set => SetProperty(ref _totalVarianceAmount, value);
+    }
 
     /// <summary>
     /// Budget distribution data for pie chart
@@ -202,34 +317,60 @@ public partial class BudgetViewModel : ObservableObject, IDisposable, IDataError
     /// <summary>
     /// Foreground color (for UI binding)
     /// </summary>
-    [ObservableProperty]
-    private string foreground = "#000000";
+    private string _foreground = "#000000";
+    public string Foreground
+    {
+        get => _foreground;
+        set => SetProperty(ref _foreground, value);
+    }
 
     /// <summary>
     /// Whether budget is over budget
     /// </summary>
-    [ObservableProperty]
-    private bool isOverBudget;
+    private bool _isOverBudget;
+    public bool IsOverBudget
+    {
+        get => _isOverBudget;
+        set => SetProperty(ref _isOverBudget, value);
+    }
 
     /// <summary>
     /// Percentage value
     /// </summary>
-    [ObservableProperty]
-    private decimal percentage;
+    private decimal _percentage;
+    public decimal Percentage
+    {
+        get => _percentage;
+        set => SetProperty(ref _percentage, value);
+    }
 
     /// <summary>
     /// Self-reference for DataContext binding
     /// </summary>
     public BudgetViewModel ViewModel => this;
 
+    // Prism command properties
+    public DelegateCommand RefreshBudgetDataCommand { get; private set; }
+    public DelegateCommand BreakEvenAnalysisCommand { get; private set; }
+    public DelegateCommand TrendAnalysisCommand { get; private set; }
+    public DelegateCommand ExportReportCommand { get; private set; }
+    public DelegateCommand ToggleFiscalYearCommand { get; private set; }
+    public DelegateCommand SaveConfirmationCommand { get; private set; }
+    public DelegateCommand NavigateToMunicipalAccountCommand { get; private set; }
+    public DelegateCommand ImportBudgetCommand { get; private set; }
+    public DelegateCommand ExportBudgetCommand { get; private set; }
+    public DelegateCommand AddAccountCommand { get; private set; }
+    public DelegateCommand DeleteAccountCommand { get; private set; }
+
     /// <summary>
     /// Constructor with dependency injection
     /// Subscribes to enterprise change messages for automatic refresh
     /// </summary>
-    public BudgetViewModel(IEnterpriseRepository enterpriseRepository, IBudgetRepository budgetRepository)
+    public BudgetViewModel(IEnterpriseRepository enterpriseRepository, IBudgetRepository budgetRepository, IEventAggregator eventAggregator)
     {
         _enterpriseRepository = enterpriseRepository ?? throw new ArgumentNullException(nameof(enterpriseRepository));
-        _budgetRepository = budgetRepository ?? throw new ArgumentNullException(nameof(budgetRepository));
+        _budgetRepository = budgetRepository;
+        _eventAggregator = eventAggregator;
 
         // Initialize live update timer (refresh every 5 minutes)
         _refreshTimer = new DispatcherTimer
@@ -239,13 +380,20 @@ public partial class BudgetViewModel : ObservableObject, IDisposable, IDataError
         _refreshTimer.Tick += async (s, e) => await RefreshBudgetsAsync();
 
         // Subscribe to enterprise change messages
-        WeakReferenceMessenger.Default.Register<EnterpriseChangedMessage>(this, (recipient, message) =>
-        {
-            // Automatically refresh budget data when enterprises change
-            Log.Information("Received EnterpriseChangedMessage: {EnterpriseName} ({ChangeType})", 
-                message.EnterpriseName, message.ChangeType);
-            _ = RefreshBudgetDataAsync();
-        });
+        _eventAggregator?.GetEvent<EnterpriseChangedMessage>().Subscribe(OnEnterpriseChanged);
+
+        BudgetDetails.CollectionChanged += OnBudgetDetailsChanged;
+        BudgetAccounts.CollectionChanged += OnBudgetAccountsChanged;
+
+        InitializeCommands();
+    }
+
+    private void OnEnterpriseChanged(EnterpriseChangedMessage message)
+    {
+        // Automatically refresh budget data when enterprises change
+        Log.Information("Received EnterpriseChangedMessage: {EnterpriseName} ({ChangeType})", 
+            message.EnterpriseName, message.ChangeType);
+        _ = RefreshBudgetDataAsync();
     }
 
     /// <summary>
@@ -271,6 +419,49 @@ public partial class BudgetViewModel : ObservableObject, IDisposable, IDataError
             Log.Information("Stopped budget live updates");
         }
     }
+
+    private void InitializeCommands()
+    {
+    RefreshBudgetDataCommand = new DelegateCommand(async () => await RefreshBudgetDataAsync(), () => !IsBusy && !IsLoading);
+        BreakEvenAnalysisCommand = new DelegateCommand(BreakEvenAnalysis, CanRunAnalysis);
+        TrendAnalysisCommand = new DelegateCommand(TrendAnalysis, CanRunAnalysis);
+        ExportReportCommand = new DelegateCommand(ExportReport, CanRunAnalysis);
+    ToggleFiscalYearCommand = new DelegateCommand(async () => await ToggleFiscalYearAsync(), CanToggleFiscalYear);
+    SaveConfirmationCommand = new DelegateCommand(async () => await SaveConfirmationAsync(), CanSaveBudget);
+        NavigateToMunicipalAccountCommand = new DelegateCommand(NavigateToMunicipalAccount, () => !IsBusy);
+    ImportBudgetCommand = new DelegateCommand(async () => await ImportBudgetAsync(), () => !IsBusy && !IsLoading);
+    ExportBudgetCommand = new DelegateCommand(async () => await ExportBudgetAsync(), () => !IsBusy && BudgetAccounts.Any());
+        AddAccountCommand = new DelegateCommand(AddAccount, () => !IsBusy);
+        DeleteAccountCommand = new DelegateCommand(DeleteAccount, () => !IsBusy);
+
+        UpdateAnalysisCommandStates();
+        UpdateBudgetCommandStates();
+    }
+
+    private void OnBudgetDetailsChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        => UpdateAnalysisCommandStates();
+
+    private void OnBudgetAccountsChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        => UpdateBudgetCommandStates();
+
+    private void UpdateAnalysisCommandStates()
+    {
+        BreakEvenAnalysisCommand?.RaiseCanExecuteChanged();
+        TrendAnalysisCommand?.RaiseCanExecuteChanged();
+        ExportReportCommand?.RaiseCanExecuteChanged();
+    }
+
+    private void UpdateBudgetCommandStates()
+    {
+        SaveConfirmationCommand?.RaiseCanExecuteChanged();
+        ExportBudgetCommand?.RaiseCanExecuteChanged();
+    }
+
+    private bool CanRunAnalysis() => !IsBusy && BudgetDetails.Any();
+
+    private bool CanToggleFiscalYear() => !IsBusy && !IsLoading && FiscalYears.Count > 0;
+
+    private bool CanSaveBudget() => !IsBusy && BudgetAccounts.Any();
 
     /// <summary>
     /// Async load budgets for selected fiscal year using Task.Run
@@ -342,7 +533,6 @@ public partial class BudgetViewModel : ObservableObject, IDisposable, IDataError
     /// <summary>
     /// Toggle fiscal year command
     /// </summary>
-    [RelayCommand]
     private async Task ToggleFiscalYearAsync()
     {
         // Find next year in the list
@@ -357,7 +547,6 @@ public partial class BudgetViewModel : ObservableObject, IDisposable, IDataError
     /// <summary>
     /// Save confirmation command with MessageBox
     /// </summary>
-    [RelayCommand]
     private async Task SaveConfirmationAsync()
     {
         if (BudgetAccounts.Any(a => a.IsOverBudget))
@@ -422,11 +611,10 @@ public partial class BudgetViewModel : ObservableObject, IDisposable, IDataError
     /// <summary>
     /// Navigate to Municipal Account View
     /// </summary>
-    [RelayCommand]
     private void NavigateToMunicipalAccount()
     {
         // Send navigation message to MainViewModel
-        WeakReferenceMessenger.Default.Send(new NavigationMessage
+        _eventAggregator?.GetEvent<NavigationMessage>().Publish(new NavigationMessage
         {
             TargetView = "MunicipalAccountView"
         });
@@ -514,18 +702,17 @@ public partial class BudgetViewModel : ObservableObject, IDisposable, IDataError
     /// Constructor with dependency injection (original signature for backward compatibility)
     /// </summary>
     public BudgetViewModel(IEnterpriseRepository enterpriseRepository) 
-        : this(enterpriseRepository, null!)
+        : this(enterpriseRepository, null!, null!)
     {
-        // Fallback constructor - budget repository will be null
+        // Fallback constructor - budget repository and event aggregator will be null
         // This maintains compatibility with existing tests
-        Log.Warning("BudgetViewModel created without IBudgetRepository - some features will be unavailable");
+        Log.Warning("BudgetViewModel created without IBudgetRepository and IEventAggregator - some features will be unavailable");
     }
 
     /// <summary>
     /// Refreshes all budget data from the database
     /// Includes busy state management and error handling
     /// </summary>
-    [RelayCommand]
     public async Task RefreshBudgetDataAsync()
     {
         if (IsBusy) return; // Prevent concurrent refreshes
@@ -575,7 +762,7 @@ public partial class BudgetViewModel : ObservableObject, IDisposable, IDataError
             Log.Information("Successfully refreshed budget data for {Count} enterprises", enterprises.Count());
 
             // Send refresh complete message
-            WeakReferenceMessenger.Default.Send(new BudgetUpdatedMessage
+            _eventAggregator?.GetEvent<BudgetUpdatedMessage>().Publish(new BudgetUpdatedMessage
             {
                 Context = "BudgetViewModel.RefreshBudgetDataAsync"
             });
@@ -598,7 +785,6 @@ public partial class BudgetViewModel : ObservableObject, IDisposable, IDataError
     /// <summary>
     /// Performs break-even analysis
     /// </summary>
-    [RelayCommand]
     private void BreakEvenAnalysis()
     {
         if (!BudgetDetails.Any())
@@ -640,7 +826,6 @@ public partial class BudgetViewModel : ObservableObject, IDisposable, IDataError
     /// <summary>
     /// Performs trend analysis
     /// </summary>
-    [RelayCommand]
     private void TrendAnalysis()
     {
         if (!BudgetDetails.Any())
@@ -689,7 +874,6 @@ public partial class BudgetViewModel : ObservableObject, IDisposable, IDataError
     /// <summary>
     /// Export budget report to file
     /// </summary>
-    [RelayCommand]
     private void ExportReport()
     {
         // Simple implementation - in real app this would export to Excel/CSV
@@ -786,8 +970,10 @@ public partial class BudgetViewModel : ObservableObject, IDisposable, IDataError
             if (disposing)
             {
                 // Unregister from messenger to prevent memory leaks
-                WeakReferenceMessenger.Default.Unregister<EnterpriseChangedMessage>(this);
-                Log.Debug("BudgetViewModel disposed and unregistered from messenger");
+                BudgetDetails.CollectionChanged -= OnBudgetDetailsChanged;
+                BudgetAccounts.CollectionChanged -= OnBudgetAccountsChanged;
+                // Prism EventAggregator subscriptions are automatically cleaned up
+                Log.Debug("BudgetViewModel disposed");
             }
             _disposed = true;
         }

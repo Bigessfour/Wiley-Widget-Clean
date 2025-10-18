@@ -27,11 +27,11 @@ public partial class MunicipalAccountView : UserControl
     {
         try
         {
-            if (DataContext is MunicipalAccountViewModel viewModel)
-            {
-                await viewModel.InitializeAsync();
-                Log.Information("MunicipalAccountView data initialized");
-            }
+                if (DataContext is MunicipalAccountViewModel viewModel)
+                {
+                    await viewModel.InitializeAsync();
+                    Log.Information("MunicipalAccountView data initialized");
+                }
         }
         catch (Exception ex)
         {

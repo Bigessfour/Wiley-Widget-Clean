@@ -5,20 +5,21 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
+using Prism.Commands;
+using Prism.Mvvm;
 using WileyWidget.Services;
 using WileyWidget.Services.Threading;
 using WileyWidget.ViewModels.Base;
 using WileyWidget.Models;
 using WileyWidget.Business.Interfaces;
 
-namespace WileyWidget.ViewModels;
-
 /// <summary>
 /// ViewModel for the Reports section of the application
 /// </summary>
-public class ReportsViewModel : AsyncViewModelBase
+namespace WileyWidget.ViewModels
+{
+    public class ReportsViewModel : BindableBase
 {
     private string? _selectedReportType;
     private string? _selectedFormat;
@@ -34,7 +35,19 @@ public class ReportsViewModel : AsyncViewModelBase
     private readonly ISettingsService _settingsService;
     private readonly IBudgetRepository _budgetRepository;
     private readonly IAuditRepository _auditRepository;
+    private readonly Microsoft.Extensions.Logging.ILogger<ReportsViewModel> _logger;
+    private readonly IDispatcherHelper _dispatcherHelper;
     private ReportData? _currentReportData;
+    private bool _isBusy;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the ViewModel is busy
+    /// </summary>
+    public bool IsBusy
+    {
+        get => _isBusy;
+        set => SetProperty(ref _isBusy, value);
+    }
 
     /// <summary>
     /// Gets the collection of available report types
@@ -108,22 +121,22 @@ public class ReportsViewModel : AsyncViewModelBase
     /// <summary>
     /// Gets the command to generate the selected report
     /// </summary>
-    public IAsyncRelayCommand GenerateReportCommand { get; }
+    public DelegateCommand GenerateReportCommand { get; private set; } = null!;
 
     /// <summary>
     /// Gets the command to preview the report
     /// </summary>
-    public IAsyncRelayCommand PreviewReportCommand { get; }
+    public DelegateCommand PreviewReportCommand { get; private set; } = null!;
 
     /// <summary>
     /// Gets the command to save report settings as default
     /// </summary>
-    public ICommand SaveSettingsCommand { get; }
+    public DelegateCommand SaveSettingsCommand { get; private set; } = null!;
 
     /// <summary>
     /// Gets the command to export reports
     /// </summary>
-    public IAsyncRelayCommand<string> ExportCommand { get; }
+    public DelegateCommand<string> ExportCommand { get; private set; } = null!;
 
     /// <summary>
     /// Gets or sets the selected enterprise ID for filtering reports
@@ -199,15 +212,12 @@ public class ReportsViewModel : AsyncViewModelBase
     /// <param name="budgetRepository">The budget repository for data access</param>
     /// <param name="auditRepository">The audit repository for audit trail data</param>
     public ReportsViewModel(IDispatcherHelper dispatcherHelper, Microsoft.Extensions.Logging.ILogger<ReportsViewModel> logger, ISettingsService settingsService, IBudgetRepository budgetRepository, IAuditRepository auditRepository)
-        : base(dispatcherHelper, logger)
     {
+        _dispatcherHelper = dispatcherHelper;
+        _logger = logger;
         _settingsService = settingsService;
         _budgetRepository = budgetRepository;
         _auditRepository = auditRepository;
-        GenerateReportCommand = new AsyncRelayCommand(GenerateReportAsync, CanGenerateReport);
-        PreviewReportCommand = new AsyncRelayCommand(PreviewReportAsync, CanPreviewReport);
-        SaveSettingsCommand = new RelayCommand(SaveSettings, CanSaveSettings);
-        ExportCommand = new AsyncRelayCommand<string>(ExportReportAsync, CanExportReport);
 
         // Load saved settings
         LoadSavedSettings();
@@ -217,6 +227,16 @@ public class ReportsViewModel : AsyncViewModelBase
             StartDate = DateTime.Today.AddMonths(-1);
         if (!EndDate.HasValue)
             EndDate = DateTime.Today;
+
+        InitializeCommands();
+    }
+
+    private void InitializeCommands()
+    {
+        GenerateReportCommand = new DelegateCommand(async () => await ExecuteGenerateReportAsync(), () => CanGenerateReport());
+        PreviewReportCommand = new DelegateCommand(async () => await ExecutePreviewReportAsync(), () => CanPreviewReport());
+        SaveSettingsCommand = new DelegateCommand(ExecuteSaveSettings, () => CanSaveSettings());
+        ExportCommand = new DelegateCommand<string>(async (format) => await ExecuteExportReportAsync(format), (format) => CanExportReport(format));
     }
 
     private void LoadSavedSettings()
@@ -245,7 +265,7 @@ public class ReportsViewModel : AsyncViewModelBase
         }
         catch (Exception ex)
         {
-            Logger.LogWarning(ex, "Failed to load saved report settings, using defaults");
+            _logger.LogWarning(ex, "Failed to load saved report settings, using defaults");
         }
     }
 
@@ -274,40 +294,37 @@ public class ReportsViewModel : AsyncViewModelBase
                !string.IsNullOrWhiteSpace(SelectedFormat);
     }
 
-    private async Task GenerateReportAsync()
+    private async Task ExecuteGenerateReportAsync()
     {
-        await ExecuteAsync(async () =>
+        // Validate inputs
+        if (string.IsNullOrWhiteSpace(SelectedReportType))
         {
-            // Validate inputs
-            if (string.IsNullOrWhiteSpace(SelectedReportType))
-            {
-                throw new InvalidOperationException("Please select a report type.");
-            }
+            throw new InvalidOperationException("Please select a report type.");
+        }
 
-            if (!StartDate.HasValue || !EndDate.HasValue)
-            {
-                throw new InvalidOperationException("Please specify both start and end dates.");
-            }
+        if (!StartDate.HasValue || !EndDate.HasValue)
+        {
+            throw new InvalidOperationException("Please specify both start and end dates.");
+        }
 
-            if (StartDate > EndDate)
-            {
-                throw new InvalidOperationException("Start date cannot be after end date.");
-            }
+        if (StartDate > EndDate)
+        {
+            throw new InvalidOperationException("Start date cannot be after end date.");
+        }
 
-            // Generate report based on selected type
-            var data = SelectedReportType switch
-            {
-                "Budget Summary" => await GenerateBudgetSummaryReportAsync(),
-                "Variance Analysis" => await GenerateVarianceAnalysisReportAsync(),
-                "Department Report" => await GenerateDepartmentReportAsync(),
-                "Fund Report" => await GenerateFundReportAsync(),
-                "Audit Trail" => await GenerateAuditTrailReportAsync(),
-                "Year-End Summary" => await GenerateYearEndSummaryReportAsync(),
-                _ => throw new InvalidOperationException($"Unknown report type: {SelectedReportType}")
-            };
+        // Generate report based on selected type
+        var data = SelectedReportType switch
+        {
+            "Budget Summary" => await GenerateBudgetSummaryReportAsync(),
+            "Variance Analysis" => await GenerateVarianceAnalysisReportAsync(),
+            "Department Report" => await GenerateDepartmentReportAsync(),
+            "Fund Report" => await GenerateFundReportAsync(),
+            "Audit Trail" => await GenerateAuditTrailReportAsync(),
+            "Year-End Summary" => await GenerateYearEndSummaryReportAsync(),
+            _ => throw new InvalidOperationException($"Unknown report type: '{SelectedReportType ?? "[null]"}'")
+        };
 
-            OnReportDataLoaded(data);
-        }, $"Generating {SelectedReportType} report in {SelectedFormat} format...");
+        OnReportDataLoaded(data);
     }
 
     private async Task<ReportData> GenerateBudgetSummaryReportAsync()
@@ -328,7 +345,7 @@ public class ReportsViewModel : AsyncViewModelBase
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error generating budget summary report");
+            _logger.LogError(ex, "Error generating budget summary report");
             return new ReportData
             {
                 Title = "Budget Summary Report - Error",
@@ -355,7 +372,7 @@ public class ReportsViewModel : AsyncViewModelBase
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error generating variance analysis report");
+            _logger.LogError(ex, "Error generating variance analysis report");
             return new ReportData
             {
                 Title = "Budget Variance Analysis Report - Error",
@@ -380,7 +397,7 @@ public class ReportsViewModel : AsyncViewModelBase
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error generating department report");
+            _logger.LogError(ex, "Error generating department report");
             return new ReportData
             {
                 Title = "Department Budget Report - Error",
@@ -433,28 +450,25 @@ public class ReportsViewModel : AsyncViewModelBase
         };
     }
 
-    private async Task PreviewReportAsync()
+    private async Task ExecutePreviewReportAsync()
     {
-        await ExecuteAsync(async () =>
+        // Generate preview data (lighter version of full report)
+        var data = SelectedReportType switch
         {
-            // Generate preview data (lighter version of full report)
-            var data = SelectedReportType switch
+            "Budget Summary" => await GenerateBudgetSummaryPreviewAsync(),
+            "Variance Analysis" => await GenerateVarianceAnalysisPreviewAsync(),
+            "Department Report" => await GenerateDepartmentReportPreviewAsync(),
+            "Fund Report" => await GenerateFundReportPreviewAsync(),
+            "Audit Trail" => await GenerateAuditTrailPreviewAsync(),
+            "Year-End Summary" => await GenerateYearEndSummaryPreviewAsync(),
+            _ => new ReportData
             {
-                "Budget Summary" => await GenerateBudgetSummaryPreviewAsync(),
-                "Variance Analysis" => await GenerateVarianceAnalysisPreviewAsync(),
-                "Department Report" => await GenerateDepartmentReportPreviewAsync(),
-                "Fund Report" => await GenerateFundReportPreviewAsync(),
-                "Audit Trail" => await GenerateAuditTrailPreviewAsync(),
-                "Year-End Summary" => await GenerateYearEndSummaryPreviewAsync(),
-                _ => new ReportData
-                {
-                    Title = "Unknown Report Type Preview",
-                    GeneratedAt = DateTime.Now
-                }
-            };
+                Title = "Unknown Report Type Preview",
+                GeneratedAt = DateTime.Now
+            }
+        };
 
-            OnReportDataLoaded(data);
-        }, $"Generating preview for {SelectedReportType} report...");
+        OnReportDataLoaded(data);
     }
 
     private async Task<ReportData> GenerateBudgetSummaryPreviewAsync()
@@ -546,7 +560,7 @@ public class ReportsViewModel : AsyncViewModelBase
         };
     }
 
-    private void SaveSettings()
+    private void ExecuteSaveSettings()
     {
         try
         {
@@ -568,7 +582,7 @@ public class ReportsViewModel : AsyncViewModelBase
         catch (Exception ex)
         {
             StatusMessage = $"Error saving report settings: {ex.Message}";
-            Logger.LogError(ex, "Failed to save report settings");
+            _logger.LogError(ex, "Failed to save report settings");
         }
     }
 
@@ -579,31 +593,28 @@ public class ReportsViewModel : AsyncViewModelBase
                !string.IsNullOrWhiteSpace(SelectedReportType);
     }
 
-    private async Task ExportReportAsync(string? format)
+    private async Task ExecuteExportReportAsync(string? format)
     {
         if (string.IsNullOrWhiteSpace(format) || CurrentReportData == null)
         {
             return;
         }
 
-        await ExecuteAsync(async () =>
-        {
-            var directory = Path.Combine(Path.GetTempPath(), "WileyWidget", "Reports", "Exports");
-            Directory.CreateDirectory(directory);
+        var directory = Path.Combine(Path.GetTempPath(), "WileyWidget", "Reports", "Exports");
+        Directory.CreateDirectory(directory);
 
-            var safeTitle = string.IsNullOrWhiteSpace(SelectedReportType)
-                ? "Report"
-                : SelectedReportType.Replace(' ', '_');
+        var safeTitle = string.IsNullOrWhiteSpace(SelectedReportType)
+            ? "Report"
+            : SelectedReportType.Replace(' ', '_');
 
-            var fileName = $"{safeTitle}_{DateTime.Now:yyyyMMddHHmmss}.{format.ToLowerInvariant()}";
-            var filePath = Path.Combine(directory, fileName);
+        var fileName = $"{safeTitle}_{DateTime.Now:yyyyMMddHHmmss}.{format.ToLowerInvariant()}";
+        var filePath = Path.Combine(directory, fileName);
 
-            // Generate actual report content based on format
-            var content = GenerateReportContent(CurrentReportData, format);
-            await File.WriteAllTextAsync(filePath, content);
+        // Generate actual report content based on format
+        var content = GenerateReportContent(CurrentReportData, format);
+        await File.WriteAllTextAsync(filePath, content);
 
-            OnExportCompleted(filePath, format);
-        }, $"Exporting {SelectedReportType} report to {format.ToUpperInvariant()}...");
+        OnExportCompleted(filePath, format);
     }
 
     private void OnReportDataLoaded(ReportData data)
@@ -730,21 +741,22 @@ public class ReportsViewModel : AsyncViewModelBase
         public DateTime GeneratedAt { get; set; } = DateTime.Now;
         
         // Budget Summary Report
-        public Models.BudgetVarianceAnalysis? BudgetSummary { get; set; }
+        public BudgetVarianceAnalysis? BudgetSummary { get; set; }
         
         // Variance Analysis Report
-        public Models.BudgetVarianceAnalysis? VarianceAnalysis { get; set; }
+        public BudgetVarianceAnalysis? VarianceAnalysis { get; set; }
         
         // Department Breakdown Report
-        public List<Models.DepartmentSummary>? Departments { get; set; }
+        public List<DepartmentSummary>? Departments { get; set; }
         
         // Fund Allocations Report
-        public List<Models.FundSummary>? Funds { get; set; }
+        public List<FundSummary>? Funds { get; set; }
         
         // Audit Trail Report
-        public IEnumerable<Models.AuditEntry>? AuditEntries { get; set; }
+        public IEnumerable<AuditEntry>? AuditEntries { get; set; }
         
         // Year-End Summary Report
-        public Models.BudgetVarianceAnalysis? YearEndSummary { get; set; }
+        public BudgetVarianceAnalysis? YearEndSummary { get; set; }
     }
+}
 }

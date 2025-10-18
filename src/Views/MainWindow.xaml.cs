@@ -146,6 +146,11 @@ namespace WileyWidget.Views
                 gcMemoryAfter, gcMemoryDelta, workingSetAfter, workingSetDelta);
             Log.Information("Total Memory Impact - GC Delta: {GCDeltaMB:F2} MB, WorkingSet Delta: {WSDeltaMB:F2} MB",
                 gcMemoryDelta / 1024.0 / 1024.0, workingSetDelta / 1024.0 / 1024.0);
+
+            // Step 5: Show the window now that all initialization is complete
+            Log.Information("MainWindow initialization complete - showing window");
+            Visibility = Visibility.Visible;
+            Log.Information("MainWindow is now visible to user");
         }
 
         private void MainWindow_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -451,21 +456,9 @@ foreach (var combo in invalidCombinations)
                         Log.Information("MainRegion already exists");
                     }
 
-                    // Use ViewRegistrationService for comprehensive registration
-                    var viewRegistrationService = new ViewRegistrationService(_regionManager);
-                    viewRegistrationService.RegisterAllViews();
-
-                    // Validate regions after registration
-                    var validationResult = viewRegistrationService.ValidateRegions();
-                    Log.Information("Region validation result: {Result}", validationResult);
-
-                    if (!validationResult.IsValid)
-                    {
-                        Log.Warning("Some regions are missing: [{MissingRegions}]", 
-                            string.Join(", ", validationResult.MissingRegions));
-                    }
-
-                    Log.Information("Prism regions initialization completed using ViewRegistrationService");
+                    // Note: View registration is now handled by Prism modules
+                    // Each module (DashboardModule, etc.) registers its own views
+                    Log.Information("Prism regions initialization completed - modules will register views");
                 }
                 catch (Exception ex)
                 {

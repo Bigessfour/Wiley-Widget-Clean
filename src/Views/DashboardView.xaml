@@ -404,7 +404,7 @@
                                     <chart:PieSeries ItemsSource="{Binding EnterpriseTypeData}"
                                                    XBindingPath="Type"
                                                    YBindingPath="Count"
-                                                   LabelPosition="OutsideExtended"
+                                                   LabelPosition="Inside"
                                                    EnableAnimation="True"
                                                    ExplodeAll="False"
                                                    ExplodeIndex="0"
@@ -412,7 +412,7 @@
                                                    ShowTooltip="True">
                                         <chart:PieSeries.AdornmentsInfo>
                                             <chart:ChartAdornmentInfo ShowLabel="True" 
-                                                                    LabelPosition="Outer"
+                                                                    LabelPosition="Auto"
                                                                     SegmentLabelFormat="#PERCENT{P0}"
                                                                     Foreground="White"/>
                                         </chart:PieSeries.AdornmentsInfo>
@@ -479,12 +479,6 @@
                                               Label="Total Budget"
                                               ShowTooltip="True"
                                               EnableAnimation="True">
-                                <chart:ColumnSeries.AdornmentsInfo>
-                                    <chart:ChartAdornmentInfo ShowLabel="True"
-                                                            LabelPosition="Top"
-                                                            SegmentLabelFormat="C0"
-                                                            Foreground="White"/>
-                                </chart:ColumnSeries.AdornmentsInfo>
                             </chart:ColumnSeries>
 
                             <chart:ColumnSeries ItemsSource="{Binding ExpenseData}"
@@ -494,12 +488,6 @@
                                               Label="Expenses"
                                               ShowTooltip="True"
                                               EnableAnimation="True">
-                                <chart:ColumnSeries.AdornmentsInfo>
-                                    <chart:ChartAdornmentInfo ShowLabel="True"
-                                                            LabelPosition="Top"
-                                                            SegmentLabelFormat="C0"
-                                                            Foreground="White"/>
-                                </chart:ColumnSeries.AdornmentsInfo>
                             </chart:ColumnSeries>
 
                             <chart:ColumnSeries ItemsSource="{Binding RevenueData}"
@@ -509,12 +497,6 @@
                                               Label="Revenue"
                                               ShowTooltip="True"
                                               EnableAnimation="True">
-                                <chart:ColumnSeries.AdornmentsInfo>
-                                    <chart:ChartAdornmentInfo ShowLabel="True"
-                                                            LabelPosition="Top"
-                                                            SegmentLabelFormat="C0"
-                                                            Foreground="White"/>
-                                </chart:ColumnSeries.AdornmentsInfo>
                             </chart:ColumnSeries>
                         </chart:SfChart>
                     </StackPanel>

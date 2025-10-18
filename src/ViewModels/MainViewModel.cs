@@ -2,13 +2,15 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
+using Prism.Commands;
+using Prism.Dialogs;
 using Prism.Navigation.Regions;
 using System.Windows;
 using WileyWidget.Services.Logging;
@@ -25,16 +27,18 @@ namespace WileyWidget.ViewModels
     public partial class MainViewModel : AsyncViewModelBase
     {
         private readonly IRegionManager regionManager;
+        private readonly IDialogService dialogService;
         private readonly IEnterpriseRepository _enterpriseRepository;
         private readonly IExcelReaderService _excelReaderService;
         private readonly IReportExportService _reportExportService;
         private readonly IBudgetRepository _budgetRepository;
         private readonly IAIService _aiService;
 
-        public MainViewModel(IRegionManager regionManager, IDispatcherHelper dispatcherHelper, ILogger<MainViewModel> logger, IEnterpriseRepository enterpriseRepository, IExcelReaderService excelReaderService, IReportExportService reportExportService, IBudgetRepository budgetRepository, IAIService aiService)
+        public MainViewModel(IRegionManager regionManager, IDialogService dialogService, IDispatcherHelper dispatcherHelper, ILogger<MainViewModel> logger, IEnterpriseRepository enterpriseRepository, IExcelReaderService excelReaderService, IReportExportService reportExportService, IBudgetRepository budgetRepository, IAIService aiService)
             : base(dispatcherHelper, logger)
         {
             this.regionManager = regionManager ?? throw new ArgumentNullException(nameof(regionManager));
+            this.dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
             _enterpriseRepository = enterpriseRepository ?? throw new ArgumentNullException(nameof(enterpriseRepository));
             _excelReaderService = excelReaderService ?? throw new ArgumentNullException(nameof(excelReaderService));
             _reportExportService = reportExportService ?? throw new ArgumentNullException(nameof(reportExportService));
@@ -48,62 +52,61 @@ namespace WileyWidget.ViewModels
             _ = LoadEnterprisesAsync();
 
             // Initialize navigation commands
-            NavigateToDashboardCommand = new AsyncRelayCommand(NavigateToDashboardAsync);
-            NavigateToEnterprisesCommand = new AsyncRelayCommand(NavigateToEnterprisesAsync);
-            NavigateToAccountsCommand = new AsyncRelayCommand(NavigateToAccountsAsync);
-            NavigateToBudgetCommand = new AsyncRelayCommand(NavigateToBudgetAsync);
-            NavigateToAIAssistCommand = new AsyncRelayCommand(NavigateToAIAssistAsync);
-            NavigateToAnalyticsCommand = new AsyncRelayCommand(NavigateToAnalyticsAsync);
+            NavigateToDashboardCommand = new DelegateCommand(async () => await NavigateToDashboardAsync());
+            NavigateToEnterprisesCommand = new DelegateCommand(async () => await NavigateToEnterprisesAsync());
+            NavigateToAccountsCommand = new DelegateCommand(async () => await NavigateToAccountsAsync());
+            NavigateToBudgetCommand = new DelegateCommand(async () => await NavigateToBudgetAsync());
+            NavigateToAIAssistCommand = new DelegateCommand(async () => await NavigateToAIAssistAsync());
+            NavigateToAnalyticsCommand = new DelegateCommand(async () => await NavigateToAnalyticsAsync());
 
             // Initialize UI commands
-            RefreshCommand = new AsyncRelayCommand(RefreshAsync);
-            RefreshAllCommand = new AsyncRelayCommand(RefreshAllAsync);
-            OpenSettingsCommand = new AsyncRelayCommand(OpenSettingsAsync);
-            OpenReportsCommand = new AsyncRelayCommand(OpenReportsAsync);
-            OpenAIAssistCommand = new AsyncRelayCommand(OpenAIAssistAsync);
+            RefreshCommand = new DelegateCommand(async () => await RefreshAsync());
+            RefreshAllCommand = new DelegateCommand(async () => await RefreshAllAsync());
+            OpenSettingsCommand = new DelegateCommand(async () => await OpenSettingsAsync());
+            OpenReportsCommand = new DelegateCommand(async () => await OpenReportsAsync());
+            OpenAIAssistCommand = new DelegateCommand(async () => await OpenAIAssistAsync());
 
             // Initialize theme commands
-            SwitchToMaterialDarkCommand = new AsyncRelayCommand(async () => { CurrentTheme = "MaterialDark"; await Task.CompletedTask; });
-            SwitchToFluentDarkCommand = new AsyncRelayCommand(async () => { CurrentTheme = "FluentDark"; await Task.CompletedTask; });
-            SwitchToFluentLightCommand = new AsyncRelayCommand(async () => { CurrentTheme = "FluentLight"; await Task.CompletedTask; });
+            SwitchToFluentDarkCommand = new DelegateCommand(async () => { CurrentTheme = "FluentDark"; await Task.CompletedTask; });
+            SwitchToFluentLightCommand = new DelegateCommand(async () => { CurrentTheme = "FluentLight"; await Task.CompletedTask; });
 
             // Initialize data commands  
-            ImportExcelCommand = new AsyncRelayCommand(ImportExcelAsync);
-            ExportDataCommand = new AsyncRelayCommand(ExportDataAsync);
-            SyncQuickBooksCommand = new AsyncRelayCommand(SyncQuickBooksAsync);
+            ImportExcelCommand = new DelegateCommand(async () => await ImportExcelAsync());
+            ExportDataCommand = new DelegateCommand(async () => await ExportDataAsync());
+            SyncQuickBooksCommand = new DelegateCommand(async () => await SyncQuickBooksAsync());
 
             // Initialize view commands
-            ShowDashboardCommand = new AsyncRelayCommand(ShowDashboardAsync);
-            ShowAnalyticsCommand = new AsyncRelayCommand(ShowAnalyticsAsync);
+            ShowDashboardCommand = new DelegateCommand(async () => await ShowDashboardAsync());
+            ShowAnalyticsCommand = new DelegateCommand(async () => await ShowAnalyticsAsync());
 
             // Initialize budget commands
-            CreateNewBudgetCommand = new AsyncRelayCommand(CreateNewBudgetAsync);
-            ImportBudgetCommand = new AsyncRelayCommand(ImportBudgetAsync);
-            ExportBudgetCommand = new AsyncRelayCommand(ExportBudgetAsync);
-            ShowBudgetAnalysisCommand = new AsyncRelayCommand(ShowBudgetAnalysisAsync);
-            ShowRateCalculatorCommand = new AsyncRelayCommand(ShowRateCalculatorAsync);
+            CreateNewBudgetCommand = new DelegateCommand(async () => await CreateNewBudgetAsync());
+            ImportBudgetCommand = new DelegateCommand(async () => await ImportBudgetAsync());
+            ExportBudgetCommand = new DelegateCommand(async () => await ExportBudgetAsync());
+            ShowBudgetAnalysisCommand = new DelegateCommand(async () => await ShowBudgetAnalysisAsync());
+            ShowRateCalculatorCommand = new DelegateCommand(async () => await ShowRateCalculatorAsync());
 
             // Initialize enterprise commands
-            AddEnterpriseCommand = new AsyncRelayCommand(AddEnterpriseAsync);
-            EditEnterpriseCommand = new AsyncRelayCommand(EditEnterpriseAsync);
-            DeleteEnterpriseCommand = new AsyncRelayCommand(DeleteEnterpriseAsync);
-            ManageServiceChargesCommand = new AsyncRelayCommand(ManageServiceChargesAsync);
-            ManageUtilityBillsCommand = new AsyncRelayCommand(ManageUtilityBillsAsync);
+            AddEnterpriseCommand = new DelegateCommand(async () => await AddEnterpriseAsync());
+            EditEnterpriseCommand = new DelegateCommand(async () => await EditEnterpriseAsync());
+            DeleteEnterpriseCommand = new DelegateCommand(async () => await DeleteEnterpriseAsync());
+            ManageServiceChargesCommand = new DelegateCommand(async () => await ManageServiceChargesAsync());
+            ManageUtilityBillsCommand = new DelegateCommand(async () => await ManageUtilityBillsAsync());
 
             // Initialize report commands
-            GenerateFinancialSummaryCommand = new AsyncRelayCommand(GenerateFinancialSummaryAsync);
-            GenerateBudgetVsActualCommand = new AsyncRelayCommand(GenerateBudgetVsActualAsync);
-            GenerateEnterprisePerformanceCommand = new AsyncRelayCommand(GenerateEnterprisePerformanceAsync);
-            CreateCustomReportCommand = new AsyncRelayCommand(CreateCustomReportAsync);
-            ShowSavedReportsCommand = new AsyncRelayCommand(ShowSavedReportsAsync);
+            GenerateFinancialSummaryCommand = new DelegateCommand(async () => await GenerateFinancialSummaryAsync());
+            GenerateBudgetVsActualCommand = new DelegateCommand(async () => await GenerateBudgetVsActualAsync());
+            GenerateEnterprisePerformanceCommand = new DelegateCommand(async () => await GenerateEnterprisePerformanceAsync());
+            CreateCustomReportCommand = new DelegateCommand(async () => await CreateCustomReportAsync());
+            ShowSavedReportsCommand = new DelegateCommand(async () => await ShowSavedReportsAsync());
 
             // Initialize AI commands
-            SendAIQueryCommand = new AsyncRelayCommand(SendAIQueryAsync, CanSendAIQuery);
-            ChangeConversationModeCommand = new AsyncRelayCommand<ConversationMode>(async mode => { CurrentConversationMode = mode; await Task.CompletedTask; });
-            ClearAIInsightsCommand = new AsyncRelayCommand(ClearAIInsightsAsync);
+            SendAIQueryCommand = new DelegateCommand(async () => await SendAIQueryAsync(), CanSendAIQuery);
+            ChangeConversationModeCommand = new DelegateCommand<ConversationMode>(async mode => { CurrentConversationMode = mode; await Task.CompletedTask; });
+            ClearAIInsightsCommand = new DelegateCommand(async () => await ClearAIInsightsAsync());
 
             // Initialize legacy commands
-            AddTestEnterpriseCommand = new AsyncRelayCommand(AddTestEnterpriseAsync);
+            AddTestEnterpriseCommand = new DelegateCommand(async () => await AddTestEnterpriseAsync());
         }
 
         // Properties
@@ -239,7 +242,7 @@ namespace WileyWidget.ViewModels
             Logger.LogDebug("Docking visibility update requested: {RegionName} -> {IsVisible}", regionName, isVisible);
         }
 
-        private string currentTheme = "MaterialDark";
+    private string currentTheme = "FluentDark";
         public string CurrentTheme
         {
             get => currentTheme;
@@ -259,13 +262,12 @@ namespace WileyWidget.ViewModels
             // The actual theme application is handled in the view via event
             Logger.LogDebug("Applying theme: {Theme}", themeName);
             // Raise property changed to notify view
-            OnPropertyChanged(nameof(CurrentTheme));
+            RaisePropertyChanged(nameof(CurrentTheme));
         }
 
         // Theme switching commands
-        public AsyncRelayCommand SwitchToMaterialDarkCommand { get; }
-        public AsyncRelayCommand SwitchToFluentDarkCommand { get; }
-        public AsyncRelayCommand SwitchToFluentLightCommand { get; }
+    public DelegateCommand SwitchToFluentDarkCommand { get; }
+    public DelegateCommand SwitchToFluentLightCommand { get; }
 
         private bool isInitialized;
         public bool IsInitialized
@@ -304,8 +306,8 @@ namespace WileyWidget.ViewModels
                 if (SetProperty(ref currentConversationMode, value))
                 {
                     Logger.LogInformation("AI Conversation mode changed to: {Mode}", value);
-                    OnPropertyChanged(nameof(ConversationModeDescription));
-                    SendAIQueryCommand?.NotifyCanExecuteChanged();
+                    RaisePropertyChanged(nameof(ConversationModeDescription));
+                    SendAIQueryCommand?.RaiseCanExecuteChanged();
                 }
             }
         }
@@ -327,7 +329,7 @@ namespace WileyWidget.ViewModels
             {
                 if (SetProperty(ref aiQuery, value))
                 {
-                    SendAIQueryCommand?.NotifyCanExecuteChanged();
+                    SendAIQueryCommand?.RaiseCanExecuteChanged();
                 }
             }
         }
@@ -349,58 +351,58 @@ namespace WileyWidget.ViewModels
         }
 
         // Navigation Commands - Convert to AsyncRelayCommand for better UX
-        public AsyncRelayCommand NavigateToDashboardCommand { get; }
-        public AsyncRelayCommand NavigateToEnterprisesCommand { get; }
-        public AsyncRelayCommand NavigateToEnterpriseCommand => NavigateToEnterprisesCommand; // Alias for tests
-        public AsyncRelayCommand NavigateToAccountsCommand { get; }
-        public AsyncRelayCommand NavigateToBudgetCommand { get; }
-        public AsyncRelayCommand NavigateToAIAssistCommand { get; }
-        public AsyncRelayCommand NavigateToAnalyticsCommand { get; }
+        public DelegateCommand NavigateToDashboardCommand { get; }
+        public DelegateCommand NavigateToEnterprisesCommand { get; }
+        public DelegateCommand NavigateToEnterpriseCommand => NavigateToEnterprisesCommand; // Alias for tests
+        public DelegateCommand NavigateToAccountsCommand { get; }
+        public DelegateCommand NavigateToBudgetCommand { get; }
+        public DelegateCommand NavigateToAIAssistCommand { get; }
+        public DelegateCommand NavigateToAnalyticsCommand { get; }
 
         // UI Commands
-        public AsyncRelayCommand RefreshCommand { get; }
-        public AsyncRelayCommand RefreshAllCommand { get; }
-        public AsyncRelayCommand OpenSettingsCommand { get; }
-        public AsyncRelayCommand OpenReportsCommand { get; }
-        public AsyncRelayCommand OpenAIAssistCommand { get; }
+        public DelegateCommand RefreshCommand { get; }
+        public DelegateCommand RefreshAllCommand { get; }
+        public DelegateCommand OpenSettingsCommand { get; }
+        public DelegateCommand OpenReportsCommand { get; }
+        public DelegateCommand OpenAIAssistCommand { get; }
 
         // Data Commands
-        public AsyncRelayCommand ImportExcelCommand { get; }
-        public AsyncRelayCommand ExportDataCommand { get; }
-        public AsyncRelayCommand SyncQuickBooksCommand { get; }
+        public DelegateCommand ImportExcelCommand { get; }
+        public DelegateCommand ExportDataCommand { get; }
+        public DelegateCommand SyncQuickBooksCommand { get; }
 
         // View Commands
-        public AsyncRelayCommand ShowDashboardCommand { get; }
-        public AsyncRelayCommand ShowAnalyticsCommand { get; }
+        public DelegateCommand ShowDashboardCommand { get; }
+        public DelegateCommand ShowAnalyticsCommand { get; }
 
         // Budget Commands
-        public AsyncRelayCommand CreateNewBudgetCommand { get; }
-        public AsyncRelayCommand ImportBudgetCommand { get; }
-        public AsyncRelayCommand ExportBudgetCommand { get; }
-        public AsyncRelayCommand ShowBudgetAnalysisCommand { get; }
-        public AsyncRelayCommand ShowRateCalculatorCommand { get; }
+        public DelegateCommand CreateNewBudgetCommand { get; }
+        public DelegateCommand ImportBudgetCommand { get; }
+        public DelegateCommand ExportBudgetCommand { get; }
+        public DelegateCommand ShowBudgetAnalysisCommand { get; }
+        public DelegateCommand ShowRateCalculatorCommand { get; }
 
         // Enterprise Commands
-        public AsyncRelayCommand AddEnterpriseCommand { get; }
-        public AsyncRelayCommand EditEnterpriseCommand { get; }
-        public AsyncRelayCommand DeleteEnterpriseCommand { get; }
-        public AsyncRelayCommand ManageServiceChargesCommand { get; }
-        public AsyncRelayCommand ManageUtilityBillsCommand { get; }
+        public DelegateCommand AddEnterpriseCommand { get; }
+        public DelegateCommand EditEnterpriseCommand { get; }
+        public DelegateCommand DeleteEnterpriseCommand { get; }
+        public DelegateCommand ManageServiceChargesCommand { get; }
+        public DelegateCommand ManageUtilityBillsCommand { get; }
 
         // Report Commands
-        public AsyncRelayCommand GenerateFinancialSummaryCommand { get; }
-        public AsyncRelayCommand GenerateBudgetVsActualCommand { get; }
-        public AsyncRelayCommand GenerateEnterprisePerformanceCommand { get; }
-        public AsyncRelayCommand CreateCustomReportCommand { get; }
-        public AsyncRelayCommand ShowSavedReportsCommand { get; }
+        public DelegateCommand GenerateFinancialSummaryCommand { get; }
+        public DelegateCommand GenerateBudgetVsActualCommand { get; }
+        public DelegateCommand GenerateEnterprisePerformanceCommand { get; }
+        public DelegateCommand CreateCustomReportCommand { get; }
+        public DelegateCommand ShowSavedReportsCommand { get; }
 
         // AI Commands
-        public AsyncRelayCommand SendAIQueryCommand { get; }
-        public AsyncRelayCommand<ConversationMode> ChangeConversationModeCommand { get; }
-        public AsyncRelayCommand ClearAIInsightsCommand { get; }
+        public DelegateCommand SendAIQueryCommand { get; }
+        public DelegateCommand<ConversationMode> ChangeConversationModeCommand { get; }
+        public DelegateCommand ClearAIInsightsCommand { get; }
 
         // Legacy Commands
-        public AsyncRelayCommand AddTestEnterpriseCommand { get; }
+        public DelegateCommand AddTestEnterpriseCommand { get; }
 
         // Navigation Methods with region existence checks - Now Async
         private async Task NavigateToDashboardAsync()
@@ -1279,7 +1281,7 @@ namespace WileyWidget.ViewModels
             Logger.LogInformation("Marked insight #{Id} as actioned", insight.Id);
             
             // Refresh the UI
-            OnPropertyChanged(nameof(AIInsights));
+            RaisePropertyChanged(nameof(AIInsights));
         }
 
         /// <summary>
@@ -1807,7 +1809,7 @@ namespace WileyWidget.ViewModels
                 };
 
                 // Show dialog for editing the new enterprise
-                if (ShowEnterpriseDialog(newEnterprise, "Add New Enterprise"))
+                if (await ShowEnterpriseDialogAsync(newEnterprise, "Add New Enterprise"))
                 {
                     // Validate the enterprise before adding
                     if (ValidateEnterprise(newEnterprise, out var validationErrors))
@@ -1872,7 +1874,7 @@ namespace WileyWidget.ViewModels
                 var enterpriseCopy = CreateEnterpriseCopy(SelectedEnterprise);
 
                 // Show dialog for editing
-                if (ShowEnterpriseDialog(enterpriseCopy, "Edit Enterprise"))
+                if (await ShowEnterpriseDialogAsync(enterpriseCopy, "Edit Enterprise"))
                 {
                     // Validate the enterprise before updating
                     if (ValidateEnterprise(enterpriseCopy, out var validationErrors))
@@ -2113,13 +2115,30 @@ namespace WileyWidget.ViewModels
         /// <summary>
         /// Shows a dialog for editing an enterprise
         /// </summary>
-        private bool ShowEnterpriseDialog(Enterprise enterprise, string title)
+        private async Task<bool> ShowEnterpriseDialogAsync(Enterprise enterprise, string title)
         {
             try
             {
-                // Use proper WPF dialog instead of basic input boxes
-                EnterpriseDialogView.ShowDialog(enterprise);
-                return true;
+                var parameters = new DialogParameters();
+                parameters.Add("Enterprise", enterprise);
+
+                var result = await dialogService.ShowDialogAsync("EnterpriseDialogView", parameters);
+                
+                if (result.Result == ButtonResult.OK)
+                {
+                    // Update the enterprise with the result
+                    if (result.Parameters.TryGetValue("Enterprise", out Enterprise updatedEnterprise))
+                    {
+                        // Copy properties back to the original enterprise
+                        enterprise.Name = updatedEnterprise.Name;
+                        enterprise.Type = updatedEnterprise.Type;
+                        enterprise.CitizenCount = updatedEnterprise.CitizenCount;
+                        enterprise.Description = updatedEnterprise.Description;
+                    }
+                    return true;
+                }
+                
+                return false;
             }
             catch (Exception ex)
             {

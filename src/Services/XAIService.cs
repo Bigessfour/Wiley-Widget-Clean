@@ -7,8 +7,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Caching.Memory;
 using Serilog;
 using WileyWidget.Services;
+using Polly;
+using Polly.Retry;
+// using Microsoft.ApplicationInsights;
 
 namespace WileyWidget.Services;
 
@@ -23,6 +27,10 @@ public class XAIService : IAIService, IDisposable
     private readonly IConfiguration _configuration;
     private readonly IWileyWidgetContextService _contextService;
     private readonly IAILoggingService _aiLoggingService;
+    private readonly IMemoryCache _memoryCache;
+    private readonly SemaphoreSlim _concurrencySemaphore;
+    // private readonly dynamic _telemetryClient; // Commented out until Azure is configured
+    private readonly AsyncRetryPolicy<HttpResponseMessage> _retryPolicy;
     private bool _disposed;
 
     /// <summary>
@@ -33,12 +41,17 @@ public class XAIService : IAIService, IDisposable
         IConfiguration configuration, 
         ILogger<XAIService> logger, 
         IWileyWidgetContextService contextService,
-        IAILoggingService aiLoggingService)
+        IAILoggingService aiLoggingService,
+        IMemoryCache memoryCache
+        // TelemetryClient telemetryClient = null // Commented out until Azure is configured
+        )
     {
         _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _contextService = contextService ?? throw new ArgumentNullException(nameof(contextService));
         _aiLoggingService = aiLoggingService ?? throw new ArgumentNullException(nameof(aiLoggingService));
+        _memoryCache = memoryCache ?? throw new ArgumentNullException(nameof(memoryCache));
+        // _telemetryClient = telemetryClient; // Commented out until Azure is configured
         
         _apiKey = configuration["XAI:ApiKey"] ?? throw new ArgumentNullException("XAI:ApiKey", "XAI API key not configured");
 
@@ -51,6 +64,10 @@ public class XAIService : IAIService, IDisposable
             throw new ArgumentException("API key appears to be invalid (too short)", "XAI:ApiKey");
         }
 
+        // Initialize concurrency control (limit to 5 concurrent requests to avoid throttling)
+        var maxConcurrentRequests = int.Parse(configuration["XAI:MaxConcurrentRequests"] ?? "5");
+        _concurrencySemaphore = new SemaphoreSlim(maxConcurrentRequests, maxConcurrentRequests);
+
         _httpClient = httpClientFactory.CreateClient("AIServices");
         _httpClient.BaseAddress = new Uri(baseUrl);
         _httpClient.Timeout = TimeSpan.FromSeconds(timeoutSeconds);
@@ -60,6 +77,80 @@ public class XAIService : IAIService, IDisposable
         {
             _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {_apiKey}");
         }
+
+        // Create Polly retry policy with exponential backoff
+        _retryPolicy = Policy<HttpResponseMessage>
+            .Handle<HttpRequestException>()
+            .OrResult(response => response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+            .OrResult(response => response.StatusCode == System.Net.HttpStatusCode.RequestTimeout)
+            .OrResult(response => response.StatusCode == System.Net.HttpStatusCode.InternalServerError)
+            .OrResult(response => response.StatusCode == System.Net.HttpStatusCode.BadGateway)
+            .OrResult(response => response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable)
+            .OrResult(response => response.StatusCode == System.Net.HttpStatusCode.GatewayTimeout)
+            .WaitAndRetryAsync(
+                retryCount: 3,
+                sleepDurationProvider: (attemptCount, context) => 
+                    TimeSpan.FromMilliseconds(Math.Pow(2, attemptCount) * 500), // Exponential backoff: 500ms, 1s, 2s
+                onRetryAsync: async (outcome, timespan, attemptNumber, context) =>
+                {
+                    var statusCode = outcome.Result?.StatusCode.ToString() ?? "Unknown";
+                    Log.Warning("xAI API request failed (attempt {Attempt}/{MaxAttempts}). Status: {StatusCode}. Retrying in {DelayMs}ms",
+                        attemptNumber, 3, statusCode, timespan.TotalMilliseconds);
+                    await Task.CompletedTask;
+                    
+                    // Track retry telemetry - commented out until Azure is configured
+                    // _telemetryClient?.TrackEvent("XAIServiceRetry", new Dictionary<string, string>
+                    // {
+                    //     ["Attempt"] = attemptNumber.ToString(),
+                    //     ["StatusCode"] = statusCode,
+                    //     ["DelayMs"] = timespan.TotalMilliseconds.ToString()
+                    // });
+                });
+    }
+
+    /// <summary>
+    /// Sanitizes user input to prevent injection attacks and ensure safe API usage
+    /// </summary>
+    /// <param name="input">The input string to sanitize</param>
+    /// <returns>Sanitized string safe for API usage</returns>
+    private static string SanitizeInput(string input)
+    {
+        if (string.IsNullOrEmpty(input))
+            return input;
+
+        // Remove or escape potentially dangerous characters
+        return input
+            .Replace("\\", "\\\\")  // Escape backslashes first
+            .Replace("\"", "\\\"")  // Escape quotes
+            .Replace("\n", " ")     // Replace newlines with spaces
+            .Replace("\r", " ")     // Replace carriage returns with spaces
+            .Replace("\t", " ")     // Replace tabs with spaces
+            .Replace("\0", "")      // Remove null characters
+            .Trim();                // Trim whitespace
+    }
+
+    /// <summary>
+    /// Validates and sanitizes context and question inputs
+    /// </summary>
+    /// <param name="context">The context string to validate and sanitize</param>
+    /// <param name="question">The question string to validate and sanitize</param>
+    private static void ValidateAndSanitizeInputs(ref string context, ref string question)
+    {
+        // Validate inputs
+        if (string.IsNullOrWhiteSpace(context))
+            throw new ArgumentException("Context cannot be null or empty", nameof(context));
+        if (string.IsNullOrWhiteSpace(question))
+            throw new ArgumentException("Question cannot be null or empty", nameof(question));
+
+        // Check for excessively long inputs (potential DoS)
+        if (context.Length > 10000)
+            throw new ArgumentException("Context is too long (maximum 10,000 characters)", nameof(context));
+        if (question.Length > 5000)
+            throw new ArgumentException("Question is too long (maximum 5,000 characters)", nameof(question));
+
+        // Sanitize inputs
+        context = SanitizeInput(context);
+        question = SanitizeInput(question);
     }
 
     /// <summary>
@@ -67,21 +158,40 @@ public class XAIService : IAIService, IDisposable
     /// </summary>
     public async Task<string> GetInsightsAsync(string context, string question, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(context))
-            throw new ArgumentException("Context cannot be null or empty", nameof(context));
-        if (string.IsNullOrWhiteSpace(question))
-            throw new ArgumentException("Question cannot be null or empty", nameof(question));
+        // Validate and sanitize inputs to prevent injection attacks
+        ValidateAndSanitizeInputs(ref context, ref question);
 
-        var startTime = DateTime.UtcNow;
-        var model = _configuration["XAI:Model"] ?? "grok-4-0709";
+        // Create cache key from sanitized inputs
+        var cacheKey = $"XAI:{context.GetHashCode()}:{question.GetHashCode()}";
+        
+        // Check cache first
+        if (_memoryCache.TryGetValue(cacheKey, out string cachedResponse))
+        {
+            Log.Information("Cache hit for XAI query: {Question}", question);
+            _aiLoggingService.LogQuery(question, context, _configuration["XAI:Model"] ?? "grok-4-0709");
+            return cachedResponse;
+        }
 
+        // Acquire concurrency semaphore to limit concurrent requests
+        await _concurrencySemaphore.WaitAsync(cancellationToken);
+        
         try
         {
+            var startTime = DateTime.UtcNow;
+            var model = _configuration["XAI:Model"] ?? "grok-4-0709";
+
             var systemContext = await _contextService.BuildCurrentSystemContextAsync(cancellationToken);
             
             // Log the query
             _aiLoggingService.LogQuery(question, $"{context} | {systemContext}", model);
             
+            // Track telemetry for API call start - commented out until Azure is configured
+            // _telemetryClient?.TrackEvent("XAIServiceRequest", new Dictionary<string, string>
+            // {
+            //     ["Model"] = model,
+            //     ["QuestionLength"] = question?.Length.ToString() ?? "0",
+            //     ["ContextLength"] = context?.Length.ToString() ?? "0"
+            // });
             var request = new
             {
                 messages = new[]
@@ -102,8 +212,8 @@ public class XAIService : IAIService, IDisposable
                 temperature = 0.7
             };
 
-            var response = await ExecuteWithRetryAsync(() =>
-                _httpClient.PostAsJsonAsync("chat/completions", request, cancellationToken), cancellationToken);
+            var response = await _retryPolicy.ExecuteAsync(() =>
+                _httpClient.PostAsJsonAsync("chat/completions", request, cancellationToken));
 
             response.EnsureSuccessStatusCode();
 
@@ -123,7 +233,29 @@ public class XAIService : IAIService, IDisposable
                     var responseTimeMs = (long)(DateTime.UtcNow - startTime).TotalMilliseconds;
                     _aiLoggingService.LogResponse(question, content, responseTimeMs, 0);
                     
+                    // Track successful response telemetry - commented out until Azure is configured
+                    // _telemetryClient?.TrackEvent("XAIServiceSuccess", new Dictionary<string, string>
+                    // {
+                    //     ["Model"] = model,
+                    //     ["ResponseTimeMs"] = responseTimeMs.ToString(),
+                    //     ["ResponseLength"] = content.Length.ToString()
+                    // });
+                    
+                    // Track response time metric - commented out until Azure is configured
+                    // _telemetryClient?.TrackMetric("XAIServiceResponseTime", responseTimeMs, new Dictionary<string, string>
+                    // {
+                    //     ["Model"] = model,
+                    //     ["Operation"] = "GetInsights"
+                    // });
+                    
                     Log.Information("Successfully received xAI response for question: {Question}", question);
+                    
+                    // Cache the successful response (5 minute expiration for supercompute tasks)
+                    var cacheOptions = new MemoryCacheEntryOptions()
+                        .SetAbsoluteExpiration(TimeSpan.FromMinutes(5))
+                        .SetSlidingExpiration(TimeSpan.FromMinutes(2));
+                    _memoryCache.Set(cacheKey, content, cacheOptions);
+                    
                     return content;
                 }
             }
@@ -136,26 +268,205 @@ public class XAIService : IAIService, IDisposable
         {
             Log.Error(ex, "xAI API authentication failed: {Message}", ex.Message);
             _aiLoggingService.LogError(question, ex);
+            
+            // Track authentication failure telemetry - commented out until Azure is configured
+            // _telemetryClient?.TrackEvent("XAIServiceAuthFailure", new Dictionary<string, string>
+            // {
+            //     ["ErrorType"] = "Authentication",
+            //     ["ExceptionType"] = ex.GetType().Name
+            // });
+            
             return "Authentication failed. Please check your API key configuration.";
         }
         catch (HttpRequestException ex)
         {
             Log.Error(ex, "Network error calling xAI API: {Message}", ex.Message);
             _aiLoggingService.LogError(question, ex);
+            
+            // Track network error telemetry - commented out until Azure is configured
+            // _telemetryClient?.TrackEvent("XAIServiceNetworkError", new Dictionary<string, string>
+            // {
+            //     ["ErrorType"] = "Network",
+            //     ["ExceptionType"] = ex.GetType().Name,
+            //     ["StatusCode"] = ex.StatusCode?.ToString() ?? "Unknown"
+            // });
+            
             return "I'm experiencing network connectivity issues. Please check your internet connection and try again.";
         }
         catch (TaskCanceledException ex)
         {
             Log.Error(ex, "xAI API request timed out after {TimeoutSeconds} seconds", _httpClient.Timeout.TotalSeconds);
             _aiLoggingService.LogError(question, $"Request timed out after {_httpClient.Timeout.TotalSeconds} seconds", "Timeout");
+            
+            // Track timeout telemetry - commented out until Azure is configured
+            // _telemetryClient?.TrackEvent("XAIServiceTimeout", new Dictionary<string, string>
+            // {
+            //     ["ErrorType"] = "Timeout",
+            //     ["TimeoutSeconds"] = _httpClient.Timeout.TotalSeconds.ToString()
+            // });
+            
             return $"The request timed out after {_httpClient.Timeout.TotalSeconds} seconds. The xAI service may be experiencing high load. Please try again later.";
         }
         catch (Exception ex)
         {
             Log.Error(ex, "Unexpected error in xAI service: {Message}", ex.Message);
             _aiLoggingService.LogError(question, ex);
+            
+            // Track unexpected error telemetry - commented out until Azure is configured
+            // _telemetryClient?.TrackEvent("XAIServiceUnexpectedError", new Dictionary<string, string>
+            // {
+            //     ["ErrorType"] = "Unexpected",
+            //     ["ExceptionType"] = ex.GetType().Name
+            // });
+            
             return "I encountered an unexpected error. Please try again later.";
         }
+        finally
+        {
+            // Always release the concurrency semaphore
+            _concurrencySemaphore.Release();
+        }
+    }
+
+    /// <summary>
+    /// Get AI insights for multiple context and question pairs (batched for efficiency)
+    /// </summary>
+    public async Task<Dictionary<string, string>> BatchGetInsightsAsync(
+        IEnumerable<(string context, string question)> requests, 
+        CancellationToken cancellationToken = default)
+    {
+        var results = new Dictionary<string, string>();
+        var apiRequests = new List<(string cacheKey, string context, string question, int index)>();
+
+        // First pass: check cache and prepare API requests
+        int index = 0;
+        foreach (var (context, question) in requests)
+        {
+            // Validate and sanitize inputs
+            var sanitizedContext = context;
+            var sanitizedQuestion = question;
+            ValidateAndSanitizeInputs(ref sanitizedContext, ref sanitizedQuestion);
+
+            var cacheKey = $"XAI:{sanitizedContext.GetHashCode()}:{sanitizedQuestion.GetHashCode()}";
+            
+            // Check cache first
+            if (_memoryCache.TryGetValue(cacheKey, out string cachedResponse))
+            {
+                Log.Information("Cache hit for batched XAI query: {Question}", sanitizedQuestion);
+                results[cacheKey] = cachedResponse;
+            }
+            else
+            {
+                apiRequests.Add((cacheKey, sanitizedContext, sanitizedQuestion, index));
+            }
+            index++;
+        }
+
+        // Process API requests in batches to avoid overwhelming the service
+        const int batchSize = 3; // Process 3 requests at a time
+        for (int i = 0; i < apiRequests.Count; i += batchSize)
+        {
+            var batch = apiRequests.Skip(i).Take(batchSize);
+            var tasks = batch.Select(async req =>
+            {
+                // Use semaphore to limit concurrency
+                await _concurrencySemaphore.WaitAsync(cancellationToken);
+                try
+                {
+                    var result = await GetInsightsInternalAsync(req.context, req.question, req.cacheKey, cancellationToken);
+                    return (req.cacheKey, result);
+                }
+                finally
+                {
+                    _concurrencySemaphore.Release();
+                }
+            });
+
+            var batchResults = await Task.WhenAll(tasks);
+            foreach (var (key, response) in batchResults)
+            {
+                results[key] = response;
+            }
+
+            // Small delay between batches to be respectful to the API
+            if (i + batchSize < apiRequests.Count)
+            {
+                await Task.Delay(100, cancellationToken);
+            }
+        }
+
+        return results;
+    }
+
+    /// <summary>
+    /// Internal method for getting insights (used by batch processing)
+    /// </summary>
+    private async Task<string> GetInsightsInternalAsync(string context, string question, string cacheKey, CancellationToken cancellationToken)
+    {
+        var startTime = DateTime.UtcNow;
+        var model = _configuration["XAI:Model"] ?? "grok-4-0709";
+
+        var systemContext = await _contextService.BuildCurrentSystemContextAsync(cancellationToken);
+        
+        // Log the query
+        _aiLoggingService.LogQuery(question, $"{context} | {systemContext}", model);
+        
+        var request = new
+        {
+            messages = new[]
+            {
+                new
+                {
+                    role = "system",
+                    content = $"You are a helpful AI assistant for a municipal utility management application called Wiley Widget. System Context: {systemContext}. Context: {context}"
+                },
+                new
+                {
+                    role = "user",
+                    content = question
+                }
+            },
+            model = model,
+            stream = false,
+            temperature = 0.7
+        };
+
+        var response = await _retryPolicy.ExecuteAsync(() =>
+            _httpClient.PostAsJsonAsync("chat/completions", request, cancellationToken));
+
+        response.EnsureSuccessStatusCode();
+
+        var result = await response.Content.ReadFromJsonAsync<XAIResponse>(cancellationToken: cancellationToken);
+        if (result?.error != null)
+        {
+            Log.Error("xAI API error: {ErrorType} - {ErrorMessage}", result.error.type, result.error.message);
+            _aiLoggingService.LogError(question, result.error.message, result.error.type ?? "API Error");
+            return $"API error: {result.error.message}";
+        }
+
+        if (result?.choices?.Length > 0)
+        {
+            var content = result.choices[0].message?.content;
+            if (!string.IsNullOrEmpty(content))
+            {
+                var responseTimeMs = (long)(DateTime.UtcNow - startTime).TotalMilliseconds;
+                _aiLoggingService.LogResponse(question, content, responseTimeMs, 0);
+                
+                Log.Information("Successfully received xAI response for question: {Question}", question);
+                
+                // Cache the successful response
+                var cacheOptions = new MemoryCacheEntryOptions()
+                    .SetAbsoluteExpiration(TimeSpan.FromMinutes(5))
+                    .SetSlidingExpiration(TimeSpan.FromMinutes(2));
+                _memoryCache.Set(cacheKey, content, cacheOptions);
+                
+                return content;
+            }
+        }
+
+        Log.Warning("xAI API returned empty or invalid response");
+        _aiLoggingService.LogError(question, "Empty or invalid response from XAI API", "Empty Response");
+        return "I apologize, but I received an empty response. Please try rephrasing your question.";
     }
 
     /// <summary>
@@ -183,56 +494,6 @@ public class XAIService : IAIService, IDisposable
     {
         var question = $"Please suggest mock data for {dataType} with these requirements: {requirements}";
         return await GetInsightsAsync("Mock Data Generation", question, cancellationToken);
-    }
-
-    /// <summary>
-    /// Execute HTTP request with retry logic
-    /// </summary>
-    private async Task<HttpResponseMessage> ExecuteWithRetryAsync(Func<Task<HttpResponseMessage>> operation, CancellationToken cancellationToken = default)
-    {
-        var maxRetries = 3;
-        var delay = TimeSpan.FromMilliseconds(500);
-
-        for (int attempt = 0; attempt <= maxRetries; attempt++)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            try
-            {
-                var response = await operation();
-
-                // Handle authentication errors
-                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized || response.StatusCode == System.Net.HttpStatusCode.Forbidden)
-                {
-                    Log.Error("xAI API authentication failed. Check API key.");
-                    throw new InvalidOperationException("Authentication failed. Please check your API key configuration.");
-                }
-
-                // If rate limited, wait and retry
-                if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
-                {
-                    if (attempt < maxRetries)
-                    {
-                        Log.Warning("xAI API rate limit hit, retrying in {DelayMs}ms (attempt {Attempt})",
-                                   delay.TotalMilliseconds, attempt + 1);
-                        await Task.Delay(delay, cancellationToken);
-                        delay = delay * 2; // Exponential backoff
-                        continue;
-                    }
-                }
-
-                return response;
-            }
-            catch (HttpRequestException ex) when (attempt < maxRetries)
-            {
-                Log.Warning(ex, "HTTP request failed, retrying in {DelayMs}ms (attempt {Attempt})",
-                           delay.TotalMilliseconds, attempt + 1);
-                await Task.Delay(delay, cancellationToken);
-                delay = delay * 2;
-            }
-        }
-
-        throw new Exception($"Operation failed after {maxRetries + 1} attempts");
     }
 
     /// <summary>
@@ -280,6 +541,7 @@ public class XAIService : IAIService, IDisposable
             if (disposing)
             {
                 _httpClient?.Dispose();
+                _concurrencySemaphore?.Dispose();
             }
             _disposed = true;
         }

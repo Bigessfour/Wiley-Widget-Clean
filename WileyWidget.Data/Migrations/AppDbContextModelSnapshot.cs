@@ -38,6 +38,24 @@ namespace WileyWidget.Data.Migrations
                     b.Property<bool>("EnableFileLogging")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IncludeChartsInReports")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastReportEndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("LastReportStartDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("LastSelectedEnterpriseId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("LastSelectedFormat")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("LastSelectedReportType")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("LogFilePath")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -96,6 +114,46 @@ namespace WileyWidget.Data.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("AppSettings");
+                });
+
+            modelBuilder.Entity("WileyWidget.Models.AuditEntry", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Changes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("EntityId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("NewValues")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OldValues")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("User")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("AuditEntries");
                 });
 
             modelBuilder.Entity("WileyWidget.Models.BudgetEntry", b =>
@@ -281,7 +339,13 @@ namespace WileyWidget.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("BudgetPeriod");
+                    b.HasIndex("IsActive");
+
+                    b.HasIndex("Year");
+
+                    b.HasIndex("Year", "Status");
+
+                    b.ToTable("BudgetPeriods");
                 });
 
             modelBuilder.Entity("WileyWidget.Models.Department", b =>
@@ -328,6 +392,9 @@ namespace WileyWidget.Data.Migrations
 
                     b.Property<int>("CitizenCount")
                         .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("CreatedBy")
                         .HasColumnType("nvarchar(max)");
@@ -400,59 +467,12 @@ namespace WileyWidget.Data.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
                     b.HasKey("Id");
 
                     b.ToTable("Enterprises");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            BudgetAmount = 285755.00m,
-                            CitizenCount = 12500,
-                            CreatedDate = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CurrentRate = 45.50m,
-                            IsDeleted = false,
-                            ModifiedDate = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            MonthlyExpenses = 0m,
-                            Name = "Town of Wiley Water Department",
-                            RowVersion = new byte[0],
-                            Status = 0,
-                            TotalBudget = 0m,
-                            Type = "Water"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            BudgetAmount = 5879527.00m,
-                            CitizenCount = 12500,
-                            CreatedDate = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CurrentRate = 125.75m,
-                            IsDeleted = false,
-                            ModifiedDate = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            MonthlyExpenses = 0m,
-                            Name = "Town of Wiley Sewer Department",
-                            RowVersion = new byte[0],
-                            Status = 0,
-                            TotalBudget = 0m,
-                            Type = "Sewer"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            BudgetAmount = 285755.00m,
-                            CitizenCount = 12500,
-                            CreatedDate = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CurrentRate = 0.12m,
-                            IsDeleted = false,
-                            ModifiedDate = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            MonthlyExpenses = 0m,
-                            Name = "Town of Wiley Electric Department",
-                            RowVersion = new byte[0],
-                            Status = 0,
-                            TotalBudget = 0m,
-                            Type = "Electric"
-                        });
                 });
 
             modelBuilder.Entity("WileyWidget.Models.Entities.Fund", b =>
@@ -545,11 +565,13 @@ namespace WileyWidget.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("InvoiceDate");
+
                     b.HasIndex("MunicipalAccountId");
 
                     b.HasIndex("VendorId");
 
-                    b.ToTable("Invoice");
+                    b.ToTable("Invoices");
                 });
 
             modelBuilder.Entity("WileyWidget.Models.MunicipalAccount", b =>
@@ -575,7 +597,7 @@ namespace WileyWidget.Data.Migrations
                     b.Property<int>("Fund")
                         .HasColumnType("int");
 
-                    b.Property<int>("FundClass")
+                    b.Property<int?>("FundClass")
                         .HasColumnType("int");
 
                     b.Property<bool>("IsActive")
@@ -616,6 +638,8 @@ namespace WileyWidget.Data.Migrations
                     b.HasIndex("DepartmentId");
 
                     b.HasIndex("ParentAccountId");
+
+                    b.HasIndex("Fund", "Type");
 
                     b.ToTable("MunicipalAccounts");
                 });
@@ -834,22 +858,23 @@ namespace WileyWidget.Data.Migrations
                     b.HasOne("WileyWidget.Models.Department", "Department")
                         .WithMany("BudgetEntries")
                         .HasForeignKey("DepartmentId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("WileyWidget.Models.Entities.Fund", "Fund")
                         .WithMany("BudgetEntries")
                         .HasForeignKey("FundId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("WileyWidget.Models.MunicipalAccount", null)
                         .WithMany("BudgetEntries")
-                        .HasForeignKey("MunicipalAccountId");
+                        .HasForeignKey("MunicipalAccountId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("WileyWidget.Models.BudgetEntry", "Parent")
                         .WithMany("Children")
                         .HasForeignKey("ParentId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Department");
 
@@ -862,18 +887,19 @@ namespace WileyWidget.Data.Migrations
                 {
                     b.HasOne("WileyWidget.Models.Enterprise", null)
                         .WithMany("BudgetInteractions")
-                        .HasForeignKey("EnterpriseId");
+                        .HasForeignKey("EnterpriseId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("WileyWidget.Models.Enterprise", "PrimaryEnterprise")
                         .WithMany()
                         .HasForeignKey("PrimaryEnterpriseId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("WileyWidget.Models.Enterprise", "SecondaryEnterprise")
                         .WithMany()
                         .HasForeignKey("SecondaryEnterpriseId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("PrimaryEnterprise");
 
@@ -901,7 +927,7 @@ namespace WileyWidget.Data.Migrations
                     b.HasOne("WileyWidget.Models.Vendor", "Vendor")
                         .WithMany("Invoices")
                         .HasForeignKey("VendorId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("MunicipalAccount");
@@ -914,18 +940,19 @@ namespace WileyWidget.Data.Migrations
                     b.HasOne("WileyWidget.Models.BudgetPeriod", "BudgetPeriod")
                         .WithMany("Accounts")
                         .HasForeignKey("BudgetPeriodId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("WileyWidget.Models.Department", "Department")
                         .WithMany()
                         .HasForeignKey("DepartmentId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("WileyWidget.Models.MunicipalAccount", "ParentAccount")
                         .WithMany("ChildAccounts")
-                        .HasForeignKey("ParentAccountId");
+                        .HasForeignKey("ParentAccountId")
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.OwnsOne("WileyWidget.Models.AccountNumber", "AccountNumber", b1 =>
                         {
@@ -934,7 +961,9 @@ namespace WileyWidget.Data.Migrations
 
                             b1.Property<string>("Value")
                                 .IsRequired()
-                                .HasColumnType("nvarchar(max)");
+                                .HasMaxLength(20)
+                                .HasColumnType("nvarchar(20)")
+                                .HasColumnName("AccountNumber");
 
                             b1.HasKey("MunicipalAccountId");
 
@@ -959,12 +988,13 @@ namespace WileyWidget.Data.Migrations
                     b.HasOne("WileyWidget.Models.BudgetEntry", "BudgetEntry")
                         .WithMany("Transactions")
                         .HasForeignKey("BudgetEntryId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("WileyWidget.Models.MunicipalAccount", null)
                         .WithMany("Transactions")
-                        .HasForeignKey("MunicipalAccountId");
+                        .HasForeignKey("MunicipalAccountId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("BudgetEntry");
                 });

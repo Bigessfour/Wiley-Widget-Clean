@@ -62,35 +62,15 @@ namespace WileyWidget.Services
 
         public void RegisterAllViews()
         {
-            Log.Information("Starting comprehensive view registration");
-
-            try
-            {
-                // Document regions (main content areas)
-                RegisterView("DashboardRegion", typeof(DashboardView));
-                RegisterView("EnterpriseRegion", typeof(EnterpriseView));
-                RegisterView("BudgetRegion", typeof(BudgetView));
-                RegisterView("MunicipalAccountRegion", typeof(MunicipalAccountView));
-                RegisterView("UtilityCustomerRegion", typeof(UtilityCustomerView));
-                RegisterView("ReportsRegion", typeof(ReportsView));
-                RegisterView("AnalyticsRegion", typeof(AnalyticsView));
-
-                // Panel regions (side/auxiliary panels)
-                RegisterView("LeftPanelRegion", typeof(DashboardPanelView));
-                RegisterView("RightPanelRegion", typeof(SettingsPanelView));
-                RegisterView("BottomPanelRegion", typeof(ToolsPanelView));
-
-                // Additional specialized views
-                RegisterView("AIAssistRegion", typeof(AIAssistView));
-                RegisterView("SettingsRegion", typeof(SettingsView));
-
-                Log.Information("View registration completed successfully. Total regions: {RegionCount}", _registeredViews.Count);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Failed to register all views");
-                throw;
-            }
+            Log.Information("ViewRegistrationService: RegisterAllViews() is deprecated");
+            Log.Information("View registration is now handled by Prism modules");
+            
+            // This method is kept for backward compatibility but does nothing
+            // All view registration should be done in Prism modules:
+            // - DashboardModule registers DashboardView
+            // - EnterpriseModule should register EnterpriseView
+            // - BudgetModule should register BudgetView
+            // etc.
         }
 
         public bool RegisterView(string regionName, Type viewType)

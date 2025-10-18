@@ -18,6 +18,7 @@
         WindowState="Maximized"
         WindowStartupLocation="CenterScreen"
         ShowInTaskbar="True"
+        Visibility="Hidden"
         prism:ViewModelLocator.AutoWireViewModel="True"
         DataContext="{Binding}">
 
@@ -38,8 +39,8 @@
         </ResourceDictionary>
     </Window.Resources>
 
-    <!-- Apply Syncfusion theme at window level -->
-    <Grid syncfusionskin:SfSkinManager.VisualStyle="MaterialDark">
+    <!-- Apply Syncfusion theme globally via SfSkinManager.ApplicationTheme -->
+    <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
@@ -50,8 +51,7 @@
         <syncfusion:Ribbon x:Name="MainRibbon" 
                           Grid.Row="0"
                           AutomationProperties.Name="Main Application Ribbon"
-                          AutomationProperties.HelpText="Main navigation and command ribbon"
-                          syncfusionskin:SfSkinManager.VisualStyle="MaterialDark">
+                          AutomationProperties.HelpText="Main navigation and command ribbon">
             
             <!-- Quick Access Toolbar -->
             <syncfusion:Ribbon.QuickAccessToolBar>
@@ -218,128 +218,77 @@
             </syncfusion:RibbonTab>
         </syncfusion:Ribbon>
 
-        <!-- DockingManager in Row 1 with Advanced Configuration -->
+        <!-- DockingManager with Complete Region Configuration -->
         <syncfusion:DockingManager x:Name="MainDockingManager"
                                  Grid.Row="1"
                                  AutomationProperties.Name="Main Docking Manager"
                                  AutomationProperties.HelpText="Main content area with dockable panels"
                                  UseDocumentContainer="True"
                                  ContainerMode="TDI"
-                                 PersistState="True"
-                                 MaximizeButtonEnabled="True"
-                                 MinimizeButtonEnabled="True"
-                                 MaximizeMode="FullScreen"
-                                 IsEnableHotTracking="True"
-                                 UseLayoutRounding="True"
-                                 UseNativeFloatWindow="False"
-                                 AnimationDelay="200"
+                                 PersistState="False"
                                  DockToFill="True"
-                                 DockFill="True"
-                                 CloseTabOnMiddleClick="False"
-                                 SwitchMode="Immediate"
-                                 EnableScrollableSidePanel="True"
                                  IsVS2010DraggingEnabled="True"
-                                 ShowTabItemContextMenu="True"
-                                 syncfusionskin:SfSkinManager.VisualStyle="MaterialDark"
                                  DockStateChanged="DockingManager_DockStateChanged"
                                  ActiveWindowChanged="DockingManager_ActiveWindowChanged">
 
-            <!-- Dashboard Region (Main Document Area) -->
+            <!-- Document Regions (Tabbed Interface) -->
             <ContentControl x:Name="DashboardRegion"
                           prism:RegionManager.RegionName="DashboardRegion"
                           syncfusion:DockingManager.State="Document"
                           syncfusion:DockingManager.Header="Dashboard"
                           syncfusion:DockingManager.CanClose="False"
-                          syncfusion:DockingManager.CaptionToolTip="Main Dashboard View"
-                          syncfusion:DockingManager.CanSerialize="True"
-                          syncfusion:DockingManager.CanDrag="True"
-                          syncfusion:DockingManager.CanFloat="True"
-                          syncfusion:DockingManager.CanDocument="True"
                           MinWidth="400" MinHeight="300"/>
 
-            <!-- Enterprise Region -->
             <ContentControl x:Name="EnterpriseRegion"
                           prism:RegionManager.RegionName="EnterpriseRegion"
                           syncfusion:DockingManager.State="Document"
                           syncfusion:DockingManager.Header="Enterprises"
-                          syncfusion:DockingManager.CanClose="True"
-                          syncfusion:DockingManager.CaptionToolTip="Enterprise Management"
-                          syncfusion:DockingManager.CanSerialize="True"/>
+                          syncfusion:DockingManager.CanClose="False"
+                          MinWidth="400" MinHeight="300"/>
 
-            <!-- Budget Region -->
-            <ContentControl x:Name="BudgetRegion"
-                          prism:RegionManager.RegionName="BudgetRegion"
-                          syncfusion:DockingManager.State="Document"
-                          syncfusion:DockingManager.Header="Budget"
-                          syncfusion:DockingManager.CanClose="True"
-                          syncfusion:DockingManager.CaptionToolTip="Budget Management"
-                          syncfusion:DockingManager.CanSerialize="True"/>
-
-            <!-- Municipal Accounts Region -->
             <ContentControl x:Name="MunicipalAccountRegion"
                           prism:RegionManager.RegionName="MunicipalAccountRegion"
                           syncfusion:DockingManager.State="Document"
                           syncfusion:DockingManager.Header="Municipal Accounts"
-                          syncfusion:DockingManager.CanClose="True"
-                          syncfusion:DockingManager.CaptionToolTip="Municipal Account Management"
-                          syncfusion:DockingManager.CanSerialize="True"/>
+                          syncfusion:DockingManager.CanClose="False"
+                          MinWidth="400" MinHeight="300"/>
 
-            <!-- Utility Customers Region -->
-            <ContentControl x:Name="UtilityCustomerRegion"
-                          prism:RegionManager.RegionName="UtilityCustomerRegion"
+            <ContentControl x:Name="BudgetRegion"
+                          prism:RegionManager.RegionName="BudgetRegion"
                           syncfusion:DockingManager.State="Document"
-                          syncfusion:DockingManager.Header="Utility Customers"
-                          syncfusion:DockingManager.CanClose="True"
-                          syncfusion:DockingManager.CaptionToolTip="Utility Customer Management"
-                          syncfusion:DockingManager.CanSerialize="True"/>
+                          syncfusion:DockingManager.Header="Budget"
+                          syncfusion:DockingManager.CanClose="False"
+                          MinWidth="400" MinHeight="300"/>
 
-            <!-- Reports Region -->
-            <ContentControl x:Name="ReportsRegion"
-                          prism:RegionManager.RegionName="ReportsRegion"
-                          syncfusion:DockingManager.State="Document"
-                          syncfusion:DockingManager.Header="Reports"
-                          syncfusion:DockingManager.CanClose="True"
-                          syncfusion:DockingManager.CaptionToolTip="Reports and Analytics"
-                          syncfusion:DockingManager.CanSerialize="True"/>
-
-            <!-- Analytics Region -->
-            <ContentControl x:Name="AnalyticsRegion"
-                          prism:RegionManager.RegionName="AnalyticsRegion"
-                          syncfusion:DockingManager.State="Document"
-                          syncfusion:DockingManager.Header="Analytics"
-                          syncfusion:DockingManager.CanClose="True"
-                          syncfusion:DockingManager.CaptionToolTip="Advanced Analytics"
-                          syncfusion:DockingManager.CanSerialize="True"/>
-
-            <!-- AI Assist Region -->
             <ContentControl x:Name="AIAssistRegion"
                           prism:RegionManager.RegionName="AIAssistRegion"
                           syncfusion:DockingManager.State="Document"
                           syncfusion:DockingManager.Header="AI Assistant"
-                          syncfusion:DockingManager.CanClose="True"
-                          syncfusion:DockingManager.CaptionToolTip="AI-Powered Assistant"
-                          syncfusion:DockingManager.CanSerialize="True"/>
+                          syncfusion:DockingManager.CanClose="False"
+                          MinWidth="400" MinHeight="300"/>
 
-            <!-- Settings Region -->
+            <ContentControl x:Name="AnalyticsRegion"
+                          prism:RegionManager.RegionName="AnalyticsRegion"
+                          syncfusion:DockingManager.State="Document"
+                          syncfusion:DockingManager.Header="Analytics"
+                          syncfusion:DockingManager.CanClose="False"
+                          MinWidth="400" MinHeight="300"/>
+
             <ContentControl x:Name="SettingsRegion"
                           prism:RegionManager.RegionName="SettingsRegion"
                           syncfusion:DockingManager.State="Document"
                           syncfusion:DockingManager.Header="Settings"
-                          syncfusion:DockingManager.CanClose="True"
-                          syncfusion:DockingManager.CaptionToolTip="Application Settings"
-                          syncfusion:DockingManager.CanSerialize="True"/>
+                          syncfusion:DockingManager.CanClose="False"
+                          MinWidth="400" MinHeight="300"/>
 
-            <!-- Main Region for dialogs/temporary views -->
-            <ContentControl x:Name="MainRegion"
-                          prism:RegionManager.RegionName="MainRegion"
+            <ContentControl x:Name="ReportsRegion"
+                          prism:RegionManager.RegionName="ReportsRegion"
                           syncfusion:DockingManager.State="Document"
-                          syncfusion:DockingManager.Header="Main"
-                          syncfusion:DockingManager.CanClose="True"
-                          syncfusion:DockingManager.CaptionToolTip="Main Content Area"
-                          syncfusion:DockingManager.CanSerialize="True"
-                          Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=Inverse}"/>
+                          syncfusion:DockingManager.Header="Reports"
+                          syncfusion:DockingManager.CanClose="False"
+                          MinWidth="400" MinHeight="300"/>
 
-            <!-- Left Panel: Navigation/Tree -->
+            <!-- Panel Regions (Fixed Docking Positions) -->
             <ContentControl x:Name="LeftPanelRegion"
                           prism:RegionManager.RegionName="LeftPanelRegion"
                           syncfusion:DockingManager.State="Dock"
@@ -348,7 +297,6 @@
                           syncfusion:DockingManager.Header="Navigation"
                           syncfusion:DockingManager.CanClose="False"/>
 
-            <!-- Right Panel: Properties/Details -->
             <ContentControl x:Name="RightPanelRegion"
                           prism:RegionManager.RegionName="RightPanelRegion"
                           syncfusion:DockingManager.State="Dock"
@@ -357,7 +305,6 @@
                           syncfusion:DockingManager.Header="Properties"
                           syncfusion:DockingManager.CanClose="False"/>
 
-            <!-- Bottom Panel: Logs/Alerts -->
             <ContentControl x:Name="BottomPanelRegion"
                           prism:RegionManager.RegionName="BottomPanelRegion"
                           syncfusion:DockingManager.State="Dock"

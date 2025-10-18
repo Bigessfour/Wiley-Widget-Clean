@@ -1,5 +1,6 @@
 using System;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Media;
 using WileyWidget.ViewModels;
 using Syncfusion.SfSkinManager;
@@ -14,10 +15,8 @@ namespace WileyWidget
     /// <summary>
     /// Interaction logic for SettingsView.xaml
     /// </summary>
-    public partial class SettingsView : Window
+    public partial class SettingsView : UserControl
     {
-        private readonly SettingsViewModel? _viewModel;
-
         public SettingsView()
         {
             InitializeComponent();
@@ -25,40 +24,7 @@ namespace WileyWidget
             // Apply current theme
             TryApplyTheme(SettingsService.Instance.Current.Theme);
 
-            // Get the ViewModel from the service provider
-            IServiceProvider? provider = null;
-            try
-            {
-                provider = App.GetActiveServiceProvider();
-            }
-            catch (InvalidOperationException)
-            {
-                provider = null;
-            }
-
-            if (provider != null) {
-                _viewModel = (SettingsViewModel?)provider.GetService(typeof(SettingsViewModel));
-                if (_viewModel == null)
-                {
-                        // Don't show modal dialogs or close the window from the constructor —
-                        // that causes tests which construct the window to fail when they call Show().
-                        // Instead, fall back to a lightweight DataContext so the view can render in tests.
-                        Serilog.Log.Error("Settings ViewModel could not be loaded. Falling back to test-friendly DataContext.");
-                        DataContext = new { Title = "Settings" };
-                        // Ensure the Window Title is what tests expect
-                        this.Title = "Settings";
-                }
-                else
-                {
-                    DataContext = _viewModel;
-                }
-            }
-            else
-            {
-                // In test environments, ServiceProvider might not be available
-                // Set a minimal DataContext to prevent null reference exceptions
-                DataContext = new { Title = "Settings (Test Mode)" };
-            }
+            // DataContext will be auto-wired by Prism ViewModelLocator
 
             // Load settings when window opens
             Loaded += SettingsView_Loaded;
@@ -66,33 +32,10 @@ namespace WileyWidget
 
         private async void SettingsView_Loaded(object sender, RoutedEventArgs e)
         {
-            if (_viewModel != null)
+            if (DataContext is SettingsViewModel viewModel)
             {
-                await _viewModel.LoadSettingsAsync();
+                await viewModel.LoadSettingsAsync();
             }
-        }
-
-        protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
-        {
-            // Optionally prompt to save changes
-            if (_viewModel?.HasUnsavedChanges == true)
-            {
-                var result = MessageBox.Show("You have unsaved changes. Do you want to save them before closing?",
-                                           "Unsaved Changes", MessageBoxButton.YesNoCancel);
-
-                switch (result)
-                {
-                    case MessageBoxResult.Yes:
-                        // Save changes synchronously to avoid async issues during closing
-                        _viewModel.SaveSettingsCommand.Execute(null);
-                        break;
-                    case MessageBoxResult.Cancel:
-                        e.Cancel = true;
-                        return;
-                }
-            }
-
-            base.OnClosing(e);
         }
 
         /// <summary>
@@ -100,7 +43,8 @@ namespace WileyWidget
         /// </summary>
         private void TryApplyTheme(string themeName)
         {
-            Services.ThemeUtility.TryApplyTheme(this, themeName);
+            // Theme application is handled at the Window level for UserControls
+            // Services.ThemeUtility.TryApplyTheme(this, themeName);
         }
     }
 }

@@ -4,14 +4,16 @@ using System;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
+using Prism.Mvvm;
+using Prism.Commands;
+using Prism.Events;
 using Microsoft.Extensions.Logging;
 using WileyWidget.Business.Interfaces;
 using WileyWidget.Models;
 using WileyWidget.Services;
 using WileyWidget.Services.Threading;
 using WileyWidget.ViewModels.Base;
+using WileyWidget.ViewModels.Messages;
 
 namespace WileyWidget.ViewModels;
 
@@ -23,6 +25,7 @@ public partial class AnalyticsViewModel : AsyncViewModelBase
     private string? _selectedChartType;
     private string? _selectedTimePeriod;
     private bool _isDataLoaded;
+    private readonly IEventAggregator _eventAggregator;
 
     /// <summary>
     /// Gets the collection of available chart types
@@ -109,6 +112,11 @@ public partial class AnalyticsViewModel : AsyncViewModelBase
     }
 
     /// <summary>
+    /// Gets the collection of available enterprises for filtering
+    /// </summary>
+    public ObservableCollection<Enterprise> Enterprises { get; } = new();
+
+    /// <summary>
     /// Gets or sets the current filter text
     /// </summary>
     public string? Filter
@@ -125,37 +133,37 @@ public partial class AnalyticsViewModel : AsyncViewModelBase
     /// <summary>
     /// Gets the command to load analytics data
     /// </summary>
-    public IAsyncRelayCommand LoadDataCommand { get; }
+    public DelegateCommand LoadDataCommand { get; private set; } = null!;
 
     /// <summary>
     /// Gets the command to refresh the analytics data
     /// </summary>
-    public IAsyncRelayCommand RefreshDataCommand { get; }
+    public DelegateCommand RefreshDataCommand { get; private set; } = null!;
 
     /// <summary>
     /// Gets the command to export the current chart
     /// </summary>
-    public IAsyncRelayCommand ExportChartCommand { get; }
+    public DelegateCommand ExportChartCommand { get; private set; } = null!;
 
     /// <summary>
     /// Gets the command to drill down into analytics data
     /// </summary>
-    public IAsyncRelayCommand DrillDownCommand { get; }
+    public DelegateCommand DrillDownCommand { get; private set; } = null!;
 
     /// <summary>
     /// Gets the command to select item for drill down
     /// </summary>
-    public IRelayCommand SelectDrillDownItemCommand { get; }
+    public DelegateCommand<object> SelectDrillDownItemCommand { get; private set; } = null!;
 
     /// <summary>
     /// Gets the command to go back from drill down
     /// </summary>
-    public IRelayCommand BackFromDrillDownCommand { get; }
+    public DelegateCommand BackFromDrillDownCommand { get; private set; } = null!;
 
     /// <summary>
     /// Gets the command to refresh analytics data
     /// </summary>
-    public IAsyncRelayCommand RefreshAnalyticsCommand { get; }
+    public DelegateCommand RefreshAnalyticsCommand { get; private set; } = null!;
 
     /// <summary>
     /// Event raised when analytics data has been loaded
@@ -180,20 +188,54 @@ public partial class AnalyticsViewModel : AsyncViewModelBase
     /// <summary>
     /// Indicates if drill down data is available
     /// </summary>
-    [ObservableProperty]
-    private bool hasDrillDownData;
+    private bool _hasDrillDownData;
+    public bool HasDrillDownData
+    {
+        get => _hasDrillDownData;
+        set
+        {
+            if (_hasDrillDownData != value)
+            {
+                _hasDrillDownData = value;
+                RaisePropertyChanged();
+                BackFromDrillDownCommand?.RaiseCanExecuteChanged();
+            }
+        }
+    }
 
     /// <summary>
     /// Current drill down level
     /// </summary>
-    [ObservableProperty]
-    private int drillDownLevel;
+    private int _drillDownLevel;
+    public int DrillDownLevel
+    {
+        get => _drillDownLevel;
+        set
+        {
+            if (_drillDownLevel != value)
+            {
+                _drillDownLevel = value;
+                RaisePropertyChanged();
+            }
+        }
+    }
 
     /// <summary>
     /// Selected item for drill down
     /// </summary>
-    [ObservableProperty]
-    private object? selectedDrillDownItem;
+    private object? _selectedDrillDownItem;
+    public object? SelectedDrillDownItem
+    {
+        get => _selectedDrillDownItem;
+        set
+        {
+            if (_selectedDrillDownItem != value)
+            {
+                _selectedDrillDownItem = value;
+                RaisePropertyChanged();
+            }
+        }
+    }
 
     /// <summary>
     /// Budget repository for data access
@@ -211,6 +253,11 @@ public partial class AnalyticsViewModel : AsyncViewModelBase
     private readonly IReportExportService _reportExportService;
 
     /// <summary>
+    /// Enterprise repository for data access
+    /// </summary>
+    private readonly IEnterpriseRepository _enterpriseRepository;
+
+    /// <summary>
     /// Initializes a new instance of the AnalyticsViewModel class
     /// </summary>
     /// <param name="dispatcherHelper">The dispatcher helper for UI thread operations</param>
@@ -218,24 +265,51 @@ public partial class AnalyticsViewModel : AsyncViewModelBase
     /// <param name="budgetRepository">The budget repository for data access</param>
     /// <param name="municipalAccountRepository">The municipal account repository for data access</param>
     /// <param name="reportExportService">The report export service for exporting data</param>
-    public AnalyticsViewModel(IDispatcherHelper dispatcherHelper, Microsoft.Extensions.Logging.ILogger<AnalyticsViewModel> logger, IBudgetRepository budgetRepository, IMunicipalAccountRepository municipalAccountRepository, IReportExportService reportExportService)
+    /// <param name="enterpriseRepository">The enterprise repository for data access</param>
+    public AnalyticsViewModel(IDispatcherHelper dispatcherHelper, Microsoft.Extensions.Logging.ILogger<AnalyticsViewModel> logger, IBudgetRepository budgetRepository, IMunicipalAccountRepository municipalAccountRepository, IReportExportService reportExportService, IEnterpriseRepository enterpriseRepository, IEventAggregator eventAggregator)
         : base(dispatcherHelper, logger)
     {
         _budgetRepository = budgetRepository ?? throw new ArgumentNullException(nameof(budgetRepository));
         _municipalAccountRepository = municipalAccountRepository ?? throw new ArgumentNullException(nameof(municipalAccountRepository));
         _reportExportService = reportExportService ?? throw new ArgumentNullException(nameof(reportExportService));
+        _enterpriseRepository = enterpriseRepository ?? throw new ArgumentNullException(nameof(enterpriseRepository));
+        _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
 
-        LoadDataCommand = new AsyncRelayCommand(LoadAnalyticsDataAsync, CanLoadData);
-        RefreshDataCommand = new AsyncRelayCommand(RefreshAnalyticsDataAsync, CanRefreshData);
-        ExportChartCommand = new AsyncRelayCommand(ExportChartAsync, CanExportChart);
-        DrillDownCommand = new AsyncRelayCommand(DrillDownAsync, CanDrillDown);
-        SelectDrillDownItemCommand = new RelayCommand<object>(SelectDrillDownItem);
-        BackFromDrillDownCommand = new RelayCommand(BackFromDrillDown, () => HasDrillDownData);
-        RefreshAnalyticsCommand = new AsyncRelayCommand(RefreshAnalyticsDataAsync, CanRefreshData);
+        Enterprises = new ObservableCollection<Enterprise>();
+
+        // Subscribe to DataLoadedEvent from DashboardViewModel
+        _eventAggregator.GetEvent<DataLoadedEvent>().Subscribe(OnDataLoaded, ThreadOption.UIThread);
+
+        InitializeCommands();
 
         // Initialize default selections
         SelectedChartType = ChartTypes.FirstOrDefault();
         SelectedTimePeriod = TimePeriods.FirstOrDefault();
+    }
+
+    private void OnDataLoaded(DataLoadedEvent message)
+    {
+        // Handle dashboard data loaded event - refresh analytics data if needed
+        if (message.ViewModelName == "DashboardViewModel" && !_isDataLoaded)
+        {
+            Logger.LogInformation("Received DataLoadedEvent from {ViewModelName} with {ItemCount} items. Refreshing analytics data.",
+                message.ViewModelName, message.ItemCount);
+            
+            // Optionally refresh analytics data when dashboard loads
+            // This ensures analytics stays in sync with dashboard data
+            _ = ExecuteRefreshAnalyticsDataAsync();
+        }
+    }
+
+    private void InitializeCommands()
+    {
+        LoadDataCommand = new DelegateCommand(async () => await ExecuteLoadAnalyticsDataAsync(), () => CanLoadData());
+        RefreshDataCommand = new DelegateCommand(async () => await ExecuteRefreshAnalyticsDataAsync(), () => CanRefreshData());
+        ExportChartCommand = new DelegateCommand(async () => await ExecuteExportChartAsync(), () => CanExportChart());
+        DrillDownCommand = new DelegateCommand(async () => await ExecuteDrillDownAsync(), () => CanDrillDown());
+        SelectDrillDownItemCommand = new DelegateCommand<object>(ExecuteSelectDrillDownItem);
+        BackFromDrillDownCommand = new DelegateCommand(ExecuteBackFromDrillDown, () => HasDrillDownData);
+        RefreshAnalyticsCommand = new DelegateCommand(async () => await ExecuteRefreshAnalyticsDataAsync(), () => CanRefreshData());
     }
 
     private bool CanLoadData()
@@ -253,7 +327,7 @@ public partial class AnalyticsViewModel : AsyncViewModelBase
         return IsDataLoaded && !IsBusy;
     }
 
-    private async Task LoadAnalyticsDataAsync()
+    private async Task ExecuteLoadAnalyticsDataAsync()
     {
         await ExecuteAsync(async () =>
         {
@@ -293,7 +367,7 @@ public partial class AnalyticsViewModel : AsyncViewModelBase
         }, $"Loading {SelectedChartType} data for {SelectedTimePeriod}...");
     }
 
-    private async Task RefreshAnalyticsDataAsync()
+    private async Task ExecuteRefreshAnalyticsDataAsync()
     {
         await ExecuteAsync(async () =>
         {
@@ -301,13 +375,13 @@ public partial class AnalyticsViewModel : AsyncViewModelBase
             IsDataLoaded = false;
 
             // Reload data
-            await LoadAnalyticsDataAsync();
+            await ExecuteLoadAnalyticsDataAsync();
 
             Logger.LogInformation("Refreshed analytics data");
         }, "Refreshing analytics data...");
     }
 
-    private async Task ExportChartAsync()
+    private async Task ExecuteExportChartAsync()
     {
         await ExecuteAsync(async () =>
         {
@@ -349,7 +423,7 @@ public partial class AnalyticsViewModel : AsyncViewModelBase
         return IsDataLoaded && !IsBusy;
     }
 
-    private async Task DrillDownAsync()
+    private async Task ExecuteDrillDownAsync()
     {
         await ExecuteAsync(async () =>
         {
@@ -378,7 +452,7 @@ public partial class AnalyticsViewModel : AsyncViewModelBase
         }, "Drilling down into data...");
     }
 
-    private void SelectDrillDownItem(object? item)
+    private void ExecuteSelectDrillDownItem(object? item)
     {
         if (item != null)
         {
@@ -387,7 +461,7 @@ public partial class AnalyticsViewModel : AsyncViewModelBase
         }
     }
 
-    private void BackFromDrillDown()
+    private void ExecuteBackFromDrillDown()
     {
         DrillDownData.Clear();
         HasDrillDownData = false;
@@ -844,6 +918,38 @@ public partial class AnalyticsViewModel : AsyncViewModelBase
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to drill down into variance report data");
+        }
+    }
+
+    /// <summary>
+    /// Initializes the ViewModel by loading enterprise data
+    /// </summary>
+    public async Task InitializeAsync()
+    {
+        await LoadEnterprisesAsync();
+    }
+
+    /// <summary>
+    /// Loads enterprise data for the analytics filters
+    /// </summary>
+    private async Task LoadEnterprisesAsync()
+    {
+        try
+        {
+            var enterprises = await _enterpriseRepository.GetAllAsync();
+            await DispatcherHelper.InvokeAsync(() =>
+            {
+                Enterprises.Clear();
+                foreach (var enterprise in enterprises)
+                {
+                    Enterprises.Add(enterprise);
+                }
+            });
+            Logger.LogInformation("Loaded {Count} enterprises for analytics filters", enterprises.Count());
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load enterprises for analytics");
         }
     }
 

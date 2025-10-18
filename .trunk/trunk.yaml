@@ -36,7 +36,7 @@ lint:
     - pyright@1.1.406
     # - dotnet-format@8.0.0  # Disabled due to version availability issues
     # Comprehensive Python linting (replaces black, isort, bandit)
-    - ruff@0.14.0
+    - ruff@0.14.1
     # PowerShell script analysis
     - psscriptanalyzer@1.24.0
     # General code formatting (JSON, YAML, Markdown, etc.)
@@ -45,7 +45,7 @@ lint:
     # - yamllint  # Disabled due to installation issues
     # Security scanning (optimized selection)
     - gitleaks@8.28.0
-    - trufflehog@3.90.8
+    - trufflehog@3.90.11
     # GitHub Actions workflow validation
     - actionlint@1.7.8
     # Infrastructure security (scoped to avoid memory issues)

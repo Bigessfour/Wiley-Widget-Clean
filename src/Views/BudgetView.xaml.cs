@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Extensions.DependencyInjection;
 using WileyWidget.ViewModels;
+using WileyWidget.Services;
 using Syncfusion.SfSkinManager;
 using Syncfusion.UI.Xaml.TreeGrid;
 using Syncfusion.UI.Xaml.Grid;
@@ -19,7 +20,6 @@ public partial class BudgetView : UserControl
     public BudgetView()
     {
         InitializeBudgetView();
-        ApplyTheme();
     }
 
     /// <summary>
@@ -32,7 +32,6 @@ public partial class BudgetView : UserControl
 
         InitializeBudgetView();
         DataContext = viewModel;
-        ApplyTheme();
     }
 
     /// <summary>
@@ -49,32 +48,6 @@ public partial class BudgetView : UserControl
         {
             Log.Error(ex, "Failed to load BudgetView XAML content");
             throw;
-        }
-    }
-
-    /// <summary>
-    /// Apply FluentDark theme with FluentLight fallback
-    /// </summary>
-    private void ApplyTheme()
-    {
-        try
-        {
-            using var darkTheme = new Theme("FluentDark");
-            SfSkinManager.SetTheme(this, darkTheme);
-            Log.Information("Applied FluentDark theme to BudgetView");
-        }
-        catch (Exception ex)
-        {
-            Log.Warning(ex, "Failed to apply FluentDark theme, falling back to FluentLight");
-            try
-            {
-                using var lightTheme = new Theme("FluentLight");
-                SfSkinManager.SetTheme(this, lightTheme);
-            }
-            catch (Exception fallbackEx)
-            {
-                Log.Error(fallbackEx, "Failed to apply FluentLight fallback theme");
-            }
         }
     }
 
@@ -107,7 +80,7 @@ public partial class BudgetView : UserControl
         if (DataContext is BudgetViewModel vm)
         {
             // Recalculate totals when any cell is edited
-            vm.RefreshBudgetDataCommand?.Execute(null);
+            vm.RefreshBudgetDataCommand?.Execute();
         }
 
         Log.Information("Cell edit completed in BudgetTreeGrid");

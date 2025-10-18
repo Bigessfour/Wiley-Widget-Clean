@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Windows;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -397,7 +398,8 @@ public static class WpfHostingExtensions
                             {
                                 logger.LogInformation("Initializing XAIService with provided API key (length {Len}).", apiKey.Length);
                                 var aiLoggingService = _serviceProvider.GetRequiredService<IAILoggingService>();
-                                _instance = new XAIService(httpClientFactory, configuration, logger, contextService, aiLoggingService);
+                                var memoryCache = _serviceProvider.GetRequiredService<IMemoryCache>();
+                                _instance = new XAIService(httpClientFactory, configuration, logger, contextService, aiLoggingService, memoryCache);
                             }
                             catch (Exception ex)
                             {

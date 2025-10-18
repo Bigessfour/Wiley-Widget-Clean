@@ -7,6 +7,8 @@ using System.Windows.Threading;
 using Syncfusion.UI.Xaml.Charts;
 using Syncfusion.SfSkinManager;
 using WileyWidget.ViewModels;
+using WileyWidget.Services;
+using Serilog;
 
 namespace WileyWidget;
 
@@ -41,6 +43,9 @@ public partial class AnalyticsView : UserControl
         // Clean up when the control is unloaded
         Unloaded += AnalyticsView_Unloaded;
 
+        // Initialize data when the control is loaded
+        Loaded += AnalyticsView_Loaded;
+
         // Initialize default selections if not set
         if (viewModel != null && string.IsNullOrEmpty(viewModel.SelectedChartType) && viewModel.ChartTypes.Any())
         {
@@ -59,6 +64,27 @@ public partial class AnalyticsView : UserControl
         {
             viewModel.DataLoaded -= OnAnalyticsDataLoaded;
             viewModel.PropertyChanged -= OnViewModelPropertyChanged;
+        }
+    }
+
+    private async void AnalyticsView_Loaded(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            if (DataContext is AnalyticsViewModel viewModel)
+            {
+                await viewModel.InitializeAsync();
+                Log.Information("AnalyticsView data initialized");
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to initialize AnalyticsView data");
+            MessageBox.Show(
+                $"Failed to load analytics data: {ex.Message}",
+                "Initialization Error",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
         }
     }
 
@@ -182,19 +208,9 @@ public partial class AnalyticsView : UserControl
 
         // Handle chart selection for drill-down
         // Simplified implementation - trigger drill-down when any series is selected
-        if (e.SelectedSeries != null && viewModel.DrillDownCommand.CanExecute(null))
+        if (e.SelectedSeries != null && viewModel.DrillDownCommand.CanExecute())
         {
-            viewModel.DrillDownCommand.Execute(null);
-        }
-    }
-
-    private void ThemeSelector_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
-    {
-        if (sender is ComboBox comboBox && comboBox.SelectedItem is ComboBoxItem selectedItem && selectedItem.Tag is string themeName)
-        {
-            // Apply the selected theme to this control
-            using var theme = new Theme(themeName);
-            SfSkinManager.SetTheme(this, theme);
+            viewModel.DrillDownCommand.Execute();
         }
     }
 

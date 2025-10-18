@@ -8,7 +8,6 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using WileyWidget.ViewModels.Base;
 
@@ -61,10 +60,10 @@ public class ToolsViewModel : AsyncViewModelBase
         get => _selectedTool;
         set
         {
-            if (SetProperty(ref _selectedTool, value))
-            {
-                ExecuteToolCommand.NotifyCanExecuteChanged();
-            }
+                if (SetProperty(ref _selectedTool, value))
+                {
+                    ExecuteToolCommand.RaiseCanExecuteChanged();
+                }
         }
     }
 
@@ -80,7 +79,7 @@ public class ToolsViewModel : AsyncViewModelBase
     /// <summary>
     /// Gets the command to execute the selected tool
     /// </summary>
-    public IAsyncRelayCommand ExecuteToolCommand { get; }
+    public Prism.Commands.DelegateCommand ExecuteToolCommand { get; }
 
     /// <summary>
     /// Gets the command to clear the tool output
@@ -112,52 +111,52 @@ public class ToolsViewModel : AsyncViewModelBase
     /// <summary>
     /// Gets the command for entering calculator numbers
     /// </summary>
-    public IRelayCommand<string> CalculatorNumberCommand { get; }
+    public Prism.Commands.DelegateCommand<string> CalculatorNumberCommand { get; }
 
     /// <summary>
     /// Gets the command for calculator decimal entry
     /// </summary>
-    public IRelayCommand CalculatorDecimalCommand { get; }
+    public Prism.Commands.DelegateCommand CalculatorDecimalCommand { get; }
 
     /// <summary>
     /// Gets the command for calculator operations (+, -, *, /)
     /// </summary>
-    public IRelayCommand<string> CalculatorOperationCommand { get; }
+    public Prism.Commands.DelegateCommand<string> CalculatorOperationCommand { get; }
 
     /// <summary>
     /// Gets the command to evaluate the calculator expression
     /// </summary>
-    public IRelayCommand CalculatorEqualsCommand { get; }
+    public Prism.Commands.DelegateCommand CalculatorEqualsCommand { get; }
 
     /// <summary>
     /// Gets the command to clear the calculator
     /// </summary>
-    public IRelayCommand CalculatorClearCommand { get; }
+    public Prism.Commands.DelegateCommand CalculatorClearCommand { get; }
 
     /// <summary>
     /// Gets the command to clear the current calculator entry
     /// </summary>
-    public IRelayCommand CalculatorClearEntryCommand { get; }
+    public Prism.Commands.DelegateCommand CalculatorClearEntryCommand { get; }
 
     /// <summary>
     /// Gets the command to clear calculator memory
     /// </summary>
-    public IRelayCommand CalculatorMemoryClearCommand { get; }
+    public Prism.Commands.DelegateCommand CalculatorMemoryClearCommand { get; }
 
     /// <summary>
     /// Gets the command to recall calculator memory
     /// </summary>
-    public IRelayCommand CalculatorMemoryRecallCommand { get; }
+    public Prism.Commands.DelegateCommand CalculatorMemoryRecallCommand { get; }
 
     /// <summary>
     /// Gets the command to store calculator memory
     /// </summary>
-    public IRelayCommand CalculatorMemoryStoreCommand { get; }
+    public Prism.Commands.DelegateCommand CalculatorMemoryStoreCommand { get; }
 
     /// <summary>
     /// Gets the command to add the current value to memory
     /// </summary>
-    public IRelayCommand CalculatorMemoryAddCommand { get; }
+    public Prism.Commands.DelegateCommand CalculatorMemoryAddCommand { get; }
 
     /// <summary>
     /// Gets the collection of unit categories
@@ -182,11 +181,11 @@ public class ToolsViewModel : AsyncViewModelBase
         get => _selectedUnitCategory;
         set
         {
-            if (SetProperty(ref _selectedUnitCategory, value))
-            {
-                UpdateUnitsForCategory();
-                ConvertUnitsCommand.NotifyCanExecuteChanged();
-            }
+                if (SetProperty(ref _selectedUnitCategory, value))
+                {
+                    UpdateUnitsForCategory();
+                    ConvertUnitsCommand.RaiseCanExecuteChanged();
+                }
         }
     }
 
@@ -200,7 +199,7 @@ public class ToolsViewModel : AsyncViewModelBase
         {
             if (SetProperty(ref _fromValue, value))
             {
-                ConvertUnitsCommand.NotifyCanExecuteChanged();
+                ConvertUnitsCommand.RaiseCanExecuteChanged();
             }
         }
     }
@@ -223,7 +222,7 @@ public class ToolsViewModel : AsyncViewModelBase
         {
             if (SetProperty(ref _selectedFromUnit, value))
             {
-                ConvertUnitsCommand.NotifyCanExecuteChanged();
+                ConvertUnitsCommand.RaiseCanExecuteChanged();
             }
         }
     }
@@ -238,7 +237,7 @@ public class ToolsViewModel : AsyncViewModelBase
         {
             if (SetProperty(ref _selectedToUnit, value))
             {
-                ConvertUnitsCommand.NotifyCanExecuteChanged();
+                ConvertUnitsCommand.RaiseCanExecuteChanged();
             }
         }
     }
@@ -246,7 +245,7 @@ public class ToolsViewModel : AsyncViewModelBase
     /// <summary>
     /// Gets the command used to convert units
     /// </summary>
-    public IRelayCommand ConvertUnitsCommand { get; }
+    public Prism.Commands.DelegateCommand ConvertUnitsCommand { get; }
 
     /// <summary>
     /// Gets the collection of date calculator operations
@@ -262,9 +261,9 @@ public class ToolsViewModel : AsyncViewModelBase
         set
         {
             if (SetProperty(ref _startDate, value))
-            {
-                CalculateDateCommand.NotifyCanExecuteChanged();
-            }
+        {
+            CalculateDateCommand.RaiseCanExecuteChanged();
+        }
         }
     }
 
@@ -277,9 +276,9 @@ public class ToolsViewModel : AsyncViewModelBase
         set
         {
             if (SetProperty(ref _dateValue, value))
-            {
-                CalculateDateCommand.NotifyCanExecuteChanged();
-            }
+        {
+            CalculateDateCommand.RaiseCanExecuteChanged();
+        }
         }
     }
 
@@ -292,9 +291,9 @@ public class ToolsViewModel : AsyncViewModelBase
         set
         {
             if (SetProperty(ref _selectedDateOperation, value))
-            {
-                CalculateDateCommand.NotifyCanExecuteChanged();
-            }
+        {
+            CalculateDateCommand.RaiseCanExecuteChanged();
+        }
         }
     }
 
@@ -310,7 +309,7 @@ public class ToolsViewModel : AsyncViewModelBase
     /// <summary>
     /// Gets the command to execute the date calculation
     /// </summary>
-    public IRelayCommand CalculateDateCommand { get; }
+    public Prism.Commands.DelegateCommand CalculateDateCommand { get; }
 
     /// <summary>
     /// Gets or sets the notes text
@@ -324,12 +323,12 @@ public class ToolsViewModel : AsyncViewModelBase
     /// <summary>
     /// Gets the command to save notes
     /// </summary>
-    public IRelayCommand SaveNotesCommand { get; }
+    public Prism.Commands.DelegateCommand SaveNotesCommand { get; }
 
     /// <summary>
     /// Gets the command to clear notes
     /// </summary>
-    public IRelayCommand ClearNotesCommand { get; }
+    public Prism.Commands.DelegateCommand ClearNotesCommand { get; }
 
     /// <summary>
     /// Initializes a new instance of the ToolsViewModel class
@@ -337,24 +336,24 @@ public class ToolsViewModel : AsyncViewModelBase
     public ToolsViewModel(Services.Threading.IDispatcherHelper dispatcherHelper, Microsoft.Extensions.Logging.ILogger<ToolsViewModel> logger)
         : base(dispatcherHelper, logger)
     {
-        ExecuteToolCommand = new AsyncRelayCommand(ExecuteSelectedToolAsync, CanExecuteTool);
-        ClearOutputCommand = new RelayCommand(ClearOutput);
+    ExecuteToolCommand = new Prism.Commands.DelegateCommand(async () => await ExecuteSelectedToolAsync(), () => CanExecuteTool());
+    ClearOutputCommand = new Prism.Commands.DelegateCommand(ClearOutput);
 
-        CalculatorNumberCommand = new RelayCommand<string>(AppendNumber);
-        CalculatorDecimalCommand = new RelayCommand(AppendDecimal);
-        CalculatorOperationCommand = new RelayCommand<string>(SetOperation, op => !string.IsNullOrWhiteSpace(op));
-        CalculatorEqualsCommand = new RelayCommand(EvaluateCalculator);
-        CalculatorClearCommand = new RelayCommand(ClearCalculator);
-        CalculatorClearEntryCommand = new RelayCommand(ClearEntry);
-        CalculatorMemoryClearCommand = new RelayCommand(() => CalculatorMemory = 0);
-        CalculatorMemoryRecallCommand = new RelayCommand(RecallMemory);
-        CalculatorMemoryStoreCommand = new RelayCommand(StoreMemory);
-        CalculatorMemoryAddCommand = new RelayCommand(AddToMemory);
+    CalculatorNumberCommand = new Prism.Commands.DelegateCommand<string>(AppendNumber);
+    CalculatorDecimalCommand = new Prism.Commands.DelegateCommand(AppendDecimal);
+    CalculatorOperationCommand = new Prism.Commands.DelegateCommand<string>(SetOperation, op => !string.IsNullOrWhiteSpace(op));
+    CalculatorEqualsCommand = new Prism.Commands.DelegateCommand(EvaluateCalculator);
+    CalculatorClearCommand = new Prism.Commands.DelegateCommand(ClearCalculator);
+    CalculatorClearEntryCommand = new Prism.Commands.DelegateCommand(ClearEntry);
+    CalculatorMemoryClearCommand = new Prism.Commands.DelegateCommand(() => CalculatorMemory = 0);
+    CalculatorMemoryRecallCommand = new Prism.Commands.DelegateCommand(RecallMemory);
+    CalculatorMemoryStoreCommand = new Prism.Commands.DelegateCommand(StoreMemory);
+    CalculatorMemoryAddCommand = new Prism.Commands.DelegateCommand(AddToMemory);
 
-        ConvertUnitsCommand = new RelayCommand(ConvertUnits, CanConvertUnits);
-        CalculateDateCommand = new RelayCommand(CalculateDate, CanCalculateDate);
-        SaveNotesCommand = new RelayCommand(SaveNotes);
-        ClearNotesCommand = new RelayCommand(() => NotesText = string.Empty);
+    ConvertUnitsCommand = new Prism.Commands.DelegateCommand(ConvertUnits, CanConvertUnits);
+    CalculateDateCommand = new Prism.Commands.DelegateCommand(CalculateDate, CanCalculateDate);
+    SaveNotesCommand = new Prism.Commands.DelegateCommand(SaveNotes);
+    ClearNotesCommand = new Prism.Commands.DelegateCommand(() => NotesText = string.Empty);
 
         _unitConversions = CreateUnitConversionDefinitions();
         InitializeUnitConverter();

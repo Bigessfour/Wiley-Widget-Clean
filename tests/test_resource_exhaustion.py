@@ -9,19 +9,21 @@ Enterprise-level tests for resource exhaustion scenarios including:
 - Disk space exhaustion
 """
 
-import pytest
+from __future__ import annotations
+
 import asyncio
 import gc
 import os
+import sys
 import tempfile
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from unittest.mock import patch, MagicMock
-import psutil
-import sys
-from typing import Optional
 from pathlib import Path
+from unittest.mock import patch
+
+import psutil
+import pytest
 
 # Add project root to path
 project_root = Path(__file__).parent.parent
@@ -57,20 +59,24 @@ class ResourceExhaustionTester:
                 pass  # File may already be deleted
         self.temp_files.clear()
 
+    def cleanup(self):
+        """General cleanup method"""
+        self.cleanup_temp_files()
+        # Clean up threads
+        for thread in self.threads:
+            if thread.is_alive():
+                thread.join(timeout=1.0)
+        self.threads.clear()
+        # Clean up connections (mock cleanup)
+        self.connections.clear()
+
 
 class TestMemoryExhaustion:
     """Tests for memory exhaustion scenarios"""
 
-    @pytest.fixture
-    def resource_tester(self):
-        """Resource exhaustion test harness"""
-        tester = ResourceExhaustionTester()
-        yield tester
-        tester.cleanup_temp_files()
-
     @pytest.mark.stress
     @pytest.mark.slow
-    def test_memory_pressure_handling(self, resource_tester):
+    def test_memory_pressure_handling(self):
         """Test application behavior under memory pressure"""
         # Get initial memory usage
         process = psutil.Process()
@@ -82,7 +88,7 @@ class TestMemoryExhaustion:
 
         try:
             # Allocate memory until we hit a reasonable limit
-            for i in range(50):  # Try to allocate ~500MB
+            for _ in range(50):  # Try to allocate ~500MB
                 try:
                     large_objects.append(bytearray(allocation_size))
                 except MemoryError:
@@ -114,10 +120,10 @@ class TestMemoryExhaustion:
         # Create circular references that should be collected
         class CircularRef:
             def __init__(self):
-                self.ref: Optional['CircularRef'] = None
+                self.ref: CircularRef | None = None
 
         objects = []
-        for i in range(1000):
+        for _ in range(1000):
             obj1 = CircularRef()
             obj2 = CircularRef()
             obj1.ref = obj2
@@ -140,7 +146,7 @@ class TestMemoryExhaustion:
         large_objects = []
 
         try:
-            for i in range(10):
+            for _ in range(10):
                 # Create objects larger than LOH threshold
                 large_obj = bytearray(100 * 1024)  # 100KB
                 large_objects.append(large_obj)
@@ -208,10 +214,10 @@ class TestFileHandleExhaustion:
 
         try:
             # Try to open as many files as possible
-            for i in range(1000):  # Reasonable upper limit
+            for _ in range(1000):  # Reasonable upper limit
                 try:
                     temp_file = resource_tester.create_temp_file(1)  # 1MB file
-                    f = open(temp_file, 'r')
+                    f = open(temp_file)
                     open_files.append(f)
                 except OSError as e:
                     if "Too many open files" in str(e) or "No more files" in str(e):
@@ -341,9 +347,9 @@ class TestResourceLeakDetection:
 
         # Create and "forget" to close some files
         leaked_files = []
-        for i in range(10):
+        for _ in range(10):
             temp_file = resource_tester.create_temp_file(1)
-            f = open(temp_file, 'r')
+            f = open(temp_file)
             leaked_files.append(f)
             # Intentionally don't close the file
 
@@ -373,16 +379,17 @@ class TestResourceLeakDetection:
             obj = TestObject(i)
             leaked_objects.append(obj)
 
-        initial_ref_count = len(leaked_objects)
-
-        # Delete half the references
+        # Delete half the references (simulate leak by keeping some references)
         del leaked_objects[:500]
 
         # Force garbage collection
-        collected = gc.collect()
+        gc.collect()
 
-        # Should collect some objects
-        assert collected > 0, "Should have collected some garbage"
-
-        # Remaining objects should still exist
+        # The test is about detecting that we still have 500 objects
+        # GC might collect 0 if there are no cyclic references
+        # The real test is that we have the expected number of remaining objects
         assert len(leaked_objects) == 500
+
+        # Cleanup
+        del leaked_objects
+        gc.collect()

@@ -14,6 +14,7 @@ namespace WileyWidget.Startup.Modules
     /// Prism module responsible for Syncfusion license registration.
     /// Replaces SyncfusionStartupTask in the new bootstrapper-based architecture.
     /// </summary>
+    [Module(ModuleName = "SyncfusionModule")]
     public class SyncfusionModule : IModule
     {
         public void OnInitialized(IContainerProvider containerProvider)

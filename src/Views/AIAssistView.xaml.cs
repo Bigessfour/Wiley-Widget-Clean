@@ -19,46 +19,32 @@ namespace WileyWidget;
 /// </summary>
 public partial class AIAssistView : UserControl
 {
-    private readonly IServiceScope _viewScope;
     public AIAssistView()
     {
         InitializeComponent();
 
-        // Create a scope for the view to resolve scoped services
-        IServiceProvider? provider = null;
-        try
-        {
-            provider = App.GetActiveServiceProvider();
-        }
-        catch (InvalidOperationException)
-        {
-            provider = Application.Current?.Properties["ServiceProvider"] as IServiceProvider;
-        }
-
-        if (provider == null)
-            throw new InvalidOperationException("ServiceProvider is not available for AIAssistView");
-
-        _viewScope = provider.CreateScope();
-        // Resolve scoped services from the scope
-        var aiService = _viewScope.ServiceProvider.GetRequiredService<IAIService>();
-        var chargeCalculator = _viewScope.ServiceProvider.GetRequiredService<IChargeCalculatorService>();
-        var whatIfEngine = _viewScope.ServiceProvider.GetRequiredService<IWhatIfScenarioEngine>();
-    var grokSupercomputer = _viewScope.ServiceProvider.GetRequiredService<IGrokSupercomputer>();
-        var enterpriseRepository = _viewScope.ServiceProvider.GetRequiredService<BusinessInterfaces.IEnterpriseRepository>();
-        var dispatcherHelper = _viewScope.ServiceProvider.GetRequiredService<WileyWidget.Services.Threading.IDispatcherHelper>();
-        var logger = _viewScope.ServiceProvider.GetRequiredService<Microsoft.Extensions.Logging.ILogger<ViewModels.AIAssistViewModel>>();
-        DataContext = new ViewModels.AIAssistViewModel(aiService, chargeCalculator, whatIfEngine, grokSupercomputer, enterpriseRepository, dispatcherHelper, logger);
-
-        // Subscribe to ViewModel property changes for auto-scroll
-        if (DataContext is ViewModels.AIAssistViewModel vm)
-        {
-            vm.PropertyChanged += OnViewModelPropertyChanged;
-        }
+        // Subscribe to DataContext changes to handle ViewModel setup
+        DataContextChanged += OnDataContextChanged;
 
         // Apply current theme
         TryApplyTheme(SettingsService.Instance.Current.Theme);
 
         Log.Information("AI Assist View initialized");
+    }
+
+    private void OnDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        // Unsubscribe from old ViewModel
+        if (e.OldValue is ViewModels.AIAssistViewModel oldVm)
+        {
+            oldVm.PropertyChanged -= OnViewModelPropertyChanged;
+        }
+
+        // Subscribe to new ViewModel
+        if (e.NewValue is ViewModels.AIAssistViewModel newVm)
+        {
+            newVm.PropertyChanged += OnViewModelPropertyChanged;
+        }
     }
 
     private void AIAssistView_Loaded(object sender, RoutedEventArgs e)
@@ -72,54 +58,13 @@ public partial class AIAssistView : UserControl
     }
 
     /// <summary>
-    /// Refresh live enterprise data from GrokSupercomputer
-    /// </summary>
-    private async void OnRefreshLiveDataClick(object sender, RoutedEventArgs e)
-    {
-        if (ViewModel == null) return;
-
-        try
-        {
-            Log.Information("Refreshing live enterprise data from GrokSupercomputer");
-
-            // Fetch latest enterprise data
-            var reportData = await ViewModel.GrokSupercomputer.FetchEnterpriseDataAsync();
-
-            // Add system message to chat using the correct ChatMessage from WileyWidget.Models
-            var systemMessage = new { 
-                Author = new { Name = "System" },
-                Text = $"✓ Live data refreshed: {reportData?.EnterpriseCount ?? 0} enterprises loaded. Context updated with latest municipal data.",
-                DateTime = DateTime.Now
-            };
-
-            ViewModel.Responses.Add(systemMessage);
-
-            Log.Information("Live data refresh completed: {Count} enterprises", reportData?.EnterpriseCount ?? 0);
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Error refreshing live enterprise data");
-            
-            if (ViewModel != null)
-            {
-                var errorMessage = new {
-                    Author = new { Name = "System" },
-                    Text = $"⚠ Error refreshing data: {ex.Message}",
-                    DateTime = DateTime.Now
-                };
-                ViewModel.Responses.Add(errorMessage);
-            }
-        }
-    }
-
-    /// <summary>
     /// Handle Enter key in message input
     /// </summary>
     private void OnMessageInputKeyDown(object sender, KeyEventArgs e)
     {
         if (e.Key == Key.Enter && ViewModel != null)
         {
-            ViewModel.SendCommand.Execute(null);
+            ViewModel.SendCommand.Execute();
             e.Handled = true;
         }
     }

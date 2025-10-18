@@ -23,6 +23,8 @@ public static class ThemeUtility
         {
             "FluentDark" => "FluentDark",
             "FluentLight" => "FluentLight",
+            "MaterialDark" => "FluentDark", // Map legacy MaterialDark to FluentDark
+            "MaterialLight" => "FluentLight", // Map legacy MaterialLight to FluentLight
             _ => "FluentDark" // default
         };
     }

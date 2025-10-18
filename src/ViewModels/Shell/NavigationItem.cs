@@ -17,7 +17,7 @@ public partial class NavigationItem : ObservableObject
         string name,
         string icon,
         string description,
-        ObservableObject viewModel,
+        object viewModel,
         IReadOnlyList<string>? breadcrumb = null)
     {
         if (string.IsNullOrWhiteSpace(route))
@@ -68,7 +68,7 @@ public partial class NavigationItem : ObservableObject
     /// <summary>
     /// View model instance associated with the navigation entry.
     /// </summary>
-    public ObservableObject ViewModel { get; }
+    public object ViewModel { get; }
 
     [ObservableProperty]
     private string name = string.Empty;

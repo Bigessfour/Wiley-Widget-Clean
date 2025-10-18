@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
 using Syncfusion.SfSkinManager;
 using Syncfusion.Windows.Shared;
+using Syncfusion.Windows.Tools.Controls;
 using WileyWidget.Data;
 using WileyWidget.Models;
 using WileyWidget.Services;
@@ -50,12 +52,12 @@ public partial class UtilityCustomerView : Window
         if (viewModel is not null)
         {
             _viewScope = null;
-            DataContext = viewModel;
+            // DataContext will be auto-wired by Prism ViewModelLocator
         }
         else
         {
             var resolvedProvider = ResolveServiceProvider(serviceProvider);
-            DataContext = CreateViewModel(resolvedProvider);
+            // DataContext will be auto-wired by Prism ViewModelLocator
         }
 
         if (_viewScope != null)
@@ -72,11 +74,11 @@ public partial class UtilityCustomerView : Window
             };
         }
 
-        Loaded += async (_, _) =>
+        Loaded += (_, _) =>
         {
             if (DataContext is UtilityCustomerViewModel vm && vm.Customers.Count == 0)
             {
-                await vm.LoadCustomersAsync();
+                vm.LoadCustomersCommand.Execute();
             }
         };
     }
@@ -150,6 +152,8 @@ public partial class UtilityCustomerView : Window
         return window.ShowDialog();
     }
 
+    // Change to a regular method (remove 'override' since base.FindName is not overridable)
+    // This shadows the base method but allows custom name resolution for specific controls
     public new object? FindName(string name)
     {
         var result = base.FindName(name);
@@ -158,12 +162,8 @@ public partial class UtilityCustomerView : Window
             return result;
         }
 
-        return name switch
-        {
-            nameof(CustomerGrid) => CustomerGrid,
-            nameof(CustomerRibbon) => CustomerRibbon,
-            _ => null
-        };
+        // Controls with x:Name should be found by base.FindName
+        return null;
     }
 
     private IServiceProvider? ResolveServiceProvider(IServiceProvider? overrideProvider)
@@ -215,7 +215,8 @@ public partial class UtilityCustomerView : Window
                 _viewScope = provider.CreateScope();
                 var scopedProvider = _viewScope.ServiceProvider;
                 var unitOfWork = scopedProvider.GetRequiredService<IUnitOfWork>();
-                return new UtilityCustomerViewModel(unitOfWork);
+                var grokSupercomputer = scopedProvider.GetRequiredService<IGrokSupercomputer>();
+                return new UtilityCustomerViewModel(unitOfWork, grokSupercomputer);
             }
             catch (Exception ex)
             {
@@ -226,7 +227,7 @@ public partial class UtilityCustomerView : Window
         }
 
 #pragma warning disable CA2000 // The ViewModel takes ownership of the FallbackUnitOfWork and disposes it
-        return new UtilityCustomerViewModel(new FallbackUnitOfWork());
+        return new UtilityCustomerViewModel(new FallbackUnitOfWork(), new NullGrokSupercomputer());
 #pragma warning restore CA2000
     }
 }

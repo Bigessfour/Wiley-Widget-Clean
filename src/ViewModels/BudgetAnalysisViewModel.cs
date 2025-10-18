@@ -2,8 +2,8 @@
 
 using System;
 using System.Collections.ObjectModel;
-using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
+using Prism.Mvvm;
+using Prism.Commands;
 using Microsoft.Extensions.Logging;
 using WileyWidget.Services;
 using WileyWidget.Services.Threading;
@@ -33,8 +33,19 @@ public partial class BudgetAnalysisViewModel : AsyncViewModelBase
     /// <summary>
     /// Selected budget period
     /// </summary>
-    [ObservableProperty]
-    private string? selectedBudgetPeriod = "Current Year";
+    private string? _selectedBudgetPeriod = "Current Year";
+    public string? SelectedBudgetPeriod
+    {
+        get => _selectedBudgetPeriod;
+        set
+        {
+            if (_selectedBudgetPeriod != value)
+            {
+                _selectedBudgetPeriod = value;
+                RaisePropertyChanged();
+            }
+        }
+    }
 
     /// <summary>
     /// Available analysis types
@@ -50,19 +61,42 @@ public partial class BudgetAnalysisViewModel : AsyncViewModelBase
     /// <summary>
     /// Selected analysis type
     /// </summary>
-    [ObservableProperty]
-    private string? selectedAnalysisType = "Budget vs Actual";
+    private string? _selectedAnalysisType = "Budget vs Actual";
+    public string? SelectedAnalysisType
+    {
+        get => _selectedAnalysisType;
+        set
+        {
+            if (_selectedAnalysisType != value)
+            {
+                _selectedAnalysisType = value;
+                RaisePropertyChanged();
+            }
+        }
+    }
 
     /// <summary>
     /// Generate analysis command
     /// </summary>
-    public ICommand GenerateAnalysisCommand { get; }
+    public DelegateCommand GenerateAnalysisCommand { get; private set; } = null!;
 
     /// <summary>
     /// Whether analysis can be generated
     /// </summary>
-    [ObservableProperty]
-    private bool canGenerateAnalysis = true;
+    private bool _canGenerateAnalysis = true;
+    public bool CanGenerateAnalysis
+    {
+        get => _canGenerateAnalysis;
+        set
+        {
+            if (_canGenerateAnalysis != value)
+            {
+                _canGenerateAnalysis = value;
+                RaisePropertyChanged();
+                GenerateAnalysisCommand?.RaiseCanExecuteChanged();
+            }
+        }
+    }
 
     /// <summary>
     /// Fund sort options
@@ -78,14 +112,36 @@ public partial class BudgetAnalysisViewModel : AsyncViewModelBase
     /// <summary>
     /// Selected fund sort option
     /// </summary>
-    [ObservableProperty]
-    private string? selectedFundSortOption = "Fund Name";
+    private string? _selectedFundSortOption = "Fund Name";
+    public string? SelectedFundSortOption
+    {
+        get => _selectedFundSortOption;
+        set
+        {
+            if (_selectedFundSortOption != value)
+            {
+                _selectedFundSortOption = value;
+                RaisePropertyChanged();
+            }
+        }
+    }
 
     /// <summary>
     /// Fund filter text
     /// </summary>
-    [ObservableProperty]
-    private string fundFilterText = string.Empty;
+    private string _fundFilterText = string.Empty;
+    public string FundFilterText
+    {
+        get => _fundFilterText;
+        set
+        {
+            if (_fundFilterText != value)
+            {
+                _fundFilterText = value;
+                RaisePropertyChanged();
+            }
+        }
+    }
 
     /// <summary>
     /// Fund grid data
@@ -95,7 +151,7 @@ public partial class BudgetAnalysisViewModel : AsyncViewModelBase
     /// <summary>
     /// Export fund data command
     /// </summary>
-    public ICommand ExportFundDataCommand { get; }
+    public DelegateCommand ExportFundDataCommand { get; private set; } = null!;
 
     /// <summary>
     /// Department sort options
@@ -111,14 +167,36 @@ public partial class BudgetAnalysisViewModel : AsyncViewModelBase
     /// <summary>
     /// Selected department sort option
     /// </summary>
-    [ObservableProperty]
-    private string? selectedDepartmentSortOption = "Department Name";
+    private string? _selectedDepartmentSortOption = "Department Name";
+    public string? SelectedDepartmentSortOption
+    {
+        get => _selectedDepartmentSortOption;
+        set
+        {
+            if (_selectedDepartmentSortOption != value)
+            {
+                _selectedDepartmentSortOption = value;
+                RaisePropertyChanged();
+            }
+        }
+    }
 
     /// <summary>
     /// Department filter text
     /// </summary>
-    [ObservableProperty]
-    private string departmentFilterText = string.Empty;
+    private string _departmentFilterText = string.Empty;
+    public string DepartmentFilterText
+    {
+        get => _departmentFilterText;
+        set
+        {
+            if (_departmentFilterText != value)
+            {
+                _departmentFilterText = value;
+                RaisePropertyChanged();
+            }
+        }
+    }
 
     /// <summary>
     /// Department grid data
@@ -128,19 +206,41 @@ public partial class BudgetAnalysisViewModel : AsyncViewModelBase
     /// <summary>
     /// Export department data command
     /// </summary>
-    public ICommand ExportDepartmentDataCommand { get; }
+    public DelegateCommand ExportDepartmentDataCommand { get; private set; } = null!;
 
     /// <summary>
     /// Variance threshold
     /// </summary>
-    [ObservableProperty]
-    private decimal varianceThreshold = 0.05m;
+    private decimal _varianceThreshold = 0.05m;
+    public decimal VarianceThreshold
+    {
+        get => _varianceThreshold;
+        set
+        {
+            if (_varianceThreshold != value)
+            {
+                _varianceThreshold = value;
+                RaisePropertyChanged();
+            }
+        }
+    }
 
     /// <summary>
     /// Error message for display
     /// </summary>
-    [ObservableProperty]
-    private string? errorMessage;
+    private string? _errorMessage;
+    public string? ErrorMessage
+    {
+        get => _errorMessage;
+        set
+        {
+            if (_errorMessage != value)
+            {
+                _errorMessage = value;
+                RaisePropertyChanged();
+            }
+        }
+    }
 
     /// <summary>
     /// Variance sort options
@@ -155,14 +255,36 @@ public partial class BudgetAnalysisViewModel : AsyncViewModelBase
     /// <summary>
     /// Selected variance sort option
     /// </summary>
-    [ObservableProperty]
-    private string? selectedVarianceSortOption = "Variance Amount";
+    private string? _selectedVarianceSortOption = "Variance Amount";
+    public string? SelectedVarianceSortOption
+    {
+        get => _selectedVarianceSortOption;
+        set
+        {
+            if (_selectedVarianceSortOption != value)
+            {
+                _selectedVarianceSortOption = value;
+                RaisePropertyChanged();
+            }
+        }
+    }
 
     /// <summary>
     /// Variance filter text
     /// </summary>
-    [ObservableProperty]
-    private string varianceFilterText = string.Empty;
+    private string _varianceFilterText = string.Empty;
+    public string VarianceFilterText
+    {
+        get => _varianceFilterText;
+        set
+        {
+            if (_varianceFilterText != value)
+            {
+                _varianceFilterText = value;
+                RaisePropertyChanged();
+            }
+        }
+    }
 
     /// <summary>
     /// Variance hierarchy data
@@ -177,26 +299,70 @@ public partial class BudgetAnalysisViewModel : AsyncViewModelBase
     /// <summary>
     /// Account variance for editing
     /// </summary>
-    [ObservableProperty]
-    private decimal accountVariance;
+    private decimal _accountVariance;
+    public decimal AccountVariance
+    {
+        get => _accountVariance;
+        set
+        {
+            if (_accountVariance != value)
+            {
+                _accountVariance = value;
+                RaisePropertyChanged();
+            }
+        }
+    }
 
     /// <summary>
     /// Key for editing
     /// </summary>
-    [ObservableProperty]
-    private string key = string.Empty;
+    private string _key = string.Empty;
+    public string Key
+    {
+        get => _key;
+        set
+        {
+            if (_key != value)
+            {
+                _key = value;
+                RaisePropertyChanged();
+            }
+        }
+    }
 
     /// <summary>
     /// Value for editing
     /// </summary>
-    [ObservableProperty]
-    private decimal value;
+    private decimal _value;
+    public decimal Value
+    {
+        get => _value;
+        set
+        {
+            if (_value != value)
+            {
+                _value = value;
+                RaisePropertyChanged();
+            }
+        }
+    }
 
     /// <summary>
     /// Analysis results
     /// </summary>
-    [ObservableProperty]
-    private BudgetAnalysisResult? analysis;
+    private BudgetAnalysisResult? _analysis;
+    public BudgetAnalysisResult? Analysis
+    {
+        get => _analysis;
+        set
+        {
+            if (_analysis != value)
+            {
+                _analysis = value;
+                RaisePropertyChanged();
+            }
+        }
+    }
 
     /// <summary>
     /// Report export service
@@ -216,12 +382,17 @@ public partial class BudgetAnalysisViewModel : AsyncViewModelBase
     {
         _reportExportService = reportExportService ?? throw new ArgumentNullException(nameof(reportExportService));
         _budgetRepository = budgetRepository ?? throw new ArgumentNullException(nameof(budgetRepository));
-        GenerateAnalysisCommand = new RelayCommand(GenerateAnalysis, () => CanGenerateAnalysis);
-        ExportFundDataCommand = new RelayCommand(ExportFundData);
-        ExportDepartmentDataCommand = new RelayCommand(ExportDepartmentData);
+        InitializeCommands();
     }
 
-    private async void GenerateAnalysis()
+    private void InitializeCommands()
+    {
+        GenerateAnalysisCommand = new DelegateCommand(ExecuteGenerateAnalysis, () => CanGenerateAnalysis);
+        ExportFundDataCommand = new DelegateCommand(ExecuteExportFundData);
+        ExportDepartmentDataCommand = new DelegateCommand(ExecuteExportDepartmentData);
+    }
+
+    private async void ExecuteGenerateAnalysis()
     {
         try
         {
@@ -285,7 +456,7 @@ public partial class BudgetAnalysisViewModel : AsyncViewModelBase
         }
     }
 
-    private async void ExportFundData()
+    private async void ExecuteExportFundData()
     {
         try
         {
@@ -320,7 +491,7 @@ public partial class BudgetAnalysisViewModel : AsyncViewModelBase
         }
     }
 
-    private async void ExportDepartmentData()
+    private async void ExecuteExportDepartmentData()
     {
         try
         {

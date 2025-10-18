@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using WileyWidget.Models;
 using WileyWidget.Business.Interfaces;
+using Microsoft.Extensions.Logging;
 
 namespace WileyWidget.Data;
 
@@ -10,13 +11,16 @@ namespace WileyWidget.Data;
 public class UtilityCustomerRepository : IUtilityCustomerRepository
 {
     private readonly IDbContextFactory<AppDbContext> _contextFactory;
+    private readonly Microsoft.Extensions.Logging.ILogger<UtilityCustomerRepository> _logger;
 
     /// <summary>
     /// Constructor with dependency injection
     /// </summary>
-    public UtilityCustomerRepository(IDbContextFactory<AppDbContext> contextFactory)
+    public UtilityCustomerRepository(IDbContextFactory<AppDbContext> contextFactory, Microsoft.Extensions.Logging.ILogger<UtilityCustomerRepository> logger)
     {
         _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _logger.LogInformation("UtilityCustomerRepository constructed and DB factory injected");
     }
 
     /// <summary>

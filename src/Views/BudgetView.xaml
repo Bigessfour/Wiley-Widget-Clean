@@ -343,13 +343,13 @@
                                      YBindingPath="Amount"
                                      EnableAnimation="True"
                                      EnableSmartLabels="True"
-                                     LabelPosition="OutsideExtended"
+                                     LabelPosition="Inside"
                                      Palette="Metro">
                         <chart:PieSeries.AdornmentsInfo>
                             <chart:ChartAdornmentInfo 
                                 ShowLabel="True" 
                                 LabelTemplate="{StaticResource PieChartLabelTemplate}"
-                                LabelPosition="Outer" />
+                                LabelPosition="Auto" />
                         </chart:PieSeries.AdornmentsInfo>
                         
                         <chart:PieSeries.TooltipTemplate>
@@ -432,4 +432,3 @@
         </Grid>
     </Grid>
 </UserControl>
-

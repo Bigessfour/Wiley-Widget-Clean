@@ -22,7 +22,7 @@ public sealed record NavigationSnapshot(
     string DisplayName,
     string Icon,
     string Description,
-    ObservableObject ViewModel,
+    object ViewModel,
     DateTimeOffset Timestamp,
     IReadOnlyList<string> Breadcrumb)
 {
@@ -31,7 +31,7 @@ public sealed record NavigationSnapshot(
         string displayName,
         string icon,
         string description,
-        ObservableObject viewModel,
+        object viewModel,
         IReadOnlyList<string> breadcrumb)
     {
         ArgumentNullException.ThrowIfNull(route);

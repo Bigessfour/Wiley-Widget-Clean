@@ -184,7 +184,7 @@ public partial class SplashScreenWindow : Window, INotifyPropertyChanged, IDispo
         _logger = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<SplashScreenWindow>.Instance;
         _eventAggregator = eventAggregator ?? new EventAggregator();
         InitializeComponent();
-        DataContext = this;
+        // DataContext will be auto-wired by Prism ViewModelLocator
 
         // Apply advanced Fluent Dark theme features
         ApplyAdvancedThemeFeatures();

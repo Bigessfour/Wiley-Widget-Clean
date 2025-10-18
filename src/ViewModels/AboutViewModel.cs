@@ -3,7 +3,6 @@
 using System;
 using System.Reflection;
 using System.Windows.Input;
-using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using WileyWidget.Services;
 using WileyWidget.Services.Threading;
@@ -60,12 +59,12 @@ public class AboutViewModel : AsyncViewModelBase
     /// <summary>
     /// Gets the command to close the about window
     /// </summary>
-    public ICommand CloseCommand { get; }
+    public Prism.Commands.DelegateCommand CloseCommand { get; }
 
     /// <summary>
     /// Gets the command to open URLs
     /// </summary>
-    public ICommand OpenUrlCommand { get; }
+    public Prism.Commands.DelegateCommand<string> OpenUrlCommand { get; }
 
     /// <summary>
     /// Gets or sets the action to close the window
@@ -80,8 +79,8 @@ public class AboutViewModel : AsyncViewModelBase
     public AboutViewModel(IDispatcherHelper dispatcherHelper, Microsoft.Extensions.Logging.ILogger<AboutViewModel> logger)
         : base(dispatcherHelper, logger)
     {
-        CloseCommand = new RelayCommand(Close);
-        OpenUrlCommand = new RelayCommand<string>(OpenUrl);
+    CloseCommand = new Prism.Commands.DelegateCommand(Close);
+    OpenUrlCommand = new Prism.Commands.DelegateCommand<string>(OpenUrl);
 
         // Initialize with assembly information
         var assembly = Assembly.GetExecutingAssembly();

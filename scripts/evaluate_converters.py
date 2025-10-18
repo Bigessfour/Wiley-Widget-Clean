@@ -27,7 +27,7 @@ Converters evaluated:
 """
 
 import sys
-from typing import Any, Dict, List, Tuple
+from typing import Any
 from dataclasses import dataclass
 from enum import Enum
 import re
@@ -60,7 +60,7 @@ class TestCase:
 class TestSuite:
     """Represents a collection of test cases for a converter"""
     converter_name: str
-    test_cases: List[TestCase]
+    test_cases: list[TestCase]
     converter_description: str = ""
 
 
@@ -289,7 +289,7 @@ class ConverterTestRunner:
         self.evaluator = ConverterEvaluator()
         self.test_suites = self._create_test_suites()
 
-    def _create_test_suites(self) -> List[TestSuite]:
+    def _create_test_suites(self) -> list[TestSuite]:
         """Create all test suites for converter evaluation"""
         return [
             TestSuite(
@@ -477,7 +477,7 @@ class ConverterTestRunner:
             ),
         ]
 
-    def run_evaluation(self) -> Dict[str, List[Tuple[TestCase, TestResult, Any]]]:
+    def run_evaluation(self) -> dict[str, list[tuple[TestCase, TestResult, Any]]]:
         """Run all converter evaluations and return results"""
         results = {}
 
@@ -508,7 +508,7 @@ class ConverterTestRunner:
 
         return results
 
-    def print_results(self, results: Dict[str, List[Tuple[TestCase, TestResult, Any]]]):
+    def print_results(self, results: dict[str, list[tuple[TestCase, TestResult, Any]]]):
         """Print formatted evaluation results"""
         print("=" * 80)
         print("WILEY WIDGET CONVERTER EVALUATION RESULTS")

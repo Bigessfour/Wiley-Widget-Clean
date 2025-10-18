@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
-using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
+using Prism.Mvvm;
+using Prism.Commands;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using WileyWidget.Services;
@@ -74,6 +74,7 @@ public partial class ShellViewModel : AsyncViewModelBase
 
         Theme = _settingsService.Current.Theme ?? "FluentDark";
         LoadInitialContent();
+        InitializeCommands();
     }
 
     /// <summary>
@@ -84,37 +85,167 @@ public partial class ShellViewModel : AsyncViewModelBase
     /// <summary>
     /// The active view model currently hosted by the shell.
     /// </summary>
-    public ObservableObject? ActiveViewModel => CurrentSnapshot?.ViewModel;
+    public object? ActiveViewModel => CurrentSnapshot?.ViewModel;
 
-    [ObservableProperty]
-    private NavigationSnapshot? currentSnapshot;
+    private NavigationSnapshot? _currentSnapshot;
+    public NavigationSnapshot? CurrentSnapshot
+    {
+        get => _currentSnapshot;
+        set
+        {
+            if (_currentSnapshot != value)
+            {
+                _currentSnapshot = value;
+                RaisePropertyChanged();
+                RefreshCurrentViewCommand?.RaiseCanExecuteChanged();
+            }
+        }
+    }
 
-    [ObservableProperty]
-    private string currentViewName = "Dashboard";
+    private string _currentViewName = "Dashboard";
+    public string CurrentViewName
+    {
+        get => _currentViewName;
+        set
+        {
+            if (_currentViewName != value)
+            {
+                _currentViewName = value;
+                RaisePropertyChanged();
+            }
+        }
+    }
 
-    [ObservableProperty]
-    private string currentBreadcrumb = string.Empty;
+    private string _currentBreadcrumb = string.Empty;
+    public string CurrentBreadcrumb
+    {
+        get => _currentBreadcrumb;
+        set
+        {
+            if (_currentBreadcrumb != value)
+            {
+                _currentBreadcrumb = value;
+                RaisePropertyChanged();
+            }
+        }
+    }
 
-    [ObservableProperty]
-    private string statusMessage = string.Empty;
+    private string _statusMessage = string.Empty;
+    public string StatusMessage
+    {
+        get => _statusMessage;
+        set
+        {
+            if (_statusMessage != value)
+            {
+                _statusMessage = value;
+                RaisePropertyChanged();
+            }
+        }
+    }
 
-    [ObservableProperty]
-    private bool isLoading;
+    private bool _isLoading;
+    public bool IsLoading
+    {
+        get => _isLoading;
+        set
+        {
+            if (_isLoading != value)
+            {
+                _isLoading = value;
+                RaisePropertyChanged();
+            }
+        }
+    }
 
-    [ObservableProperty]
-    private string theme = "FluentDark";
+    private string _theme = "FluentDark";
+    public string Theme
+    {
+        get => _theme;
+        set
+        {
+            if (_theme != value)
+            {
+                _theme = value;
+                RaisePropertyChanged();
+            }
+        }
+    }
 
-    [ObservableProperty]
-    private NavigationItem? selectedNavigationItem;
+    private NavigationItem? _selectedNavigationItem;
+    public NavigationItem? SelectedNavigationItem
+    {
+        get => _selectedNavigationItem;
+        set
+        {
+            if (_selectedNavigationItem != value)
+            {
+                _selectedNavigationItem = value;
+                RaisePropertyChanged();
 
-    [ObservableProperty]
-    private int navigationIndex;
+                if (!_suppressSelectionChange && value is not null)
+                {
+                    NavigateToItem(value, NavigationTrigger.Selection, recordHistory: true);
+                }
+            }
+        }
+    }
 
-    [ObservableProperty]
-    private bool canNavigateBack;
+    private int _navigationIndex;
+    public int NavigationIndex
+    {
+        get => _navigationIndex;
+        set
+        {
+            if (_navigationIndex != value)
+            {
+                _navigationIndex = value;
+                RaisePropertyChanged();
+            }
+        }
+    }
 
-    [ObservableProperty]
-    private bool canNavigateForward;
+    private bool _canNavigateBack;
+    public bool CanNavigateBack
+    {
+        get => _canNavigateBack;
+        set
+        {
+            if (_canNavigateBack != value)
+            {
+                _canNavigateBack = value;
+                RaisePropertyChanged();
+                NavigateBackCommand?.RaiseCanExecuteChanged();
+            }
+        }
+    }
+
+    private bool _canNavigateForward;
+    public bool CanNavigateForward
+    {
+        get => _canNavigateForward;
+        set
+        {
+            if (_canNavigateForward != value)
+            {
+                _canNavigateForward = value;
+                RaisePropertyChanged();
+                NavigateForwardCommand?.RaiseCanExecuteChanged();
+            }
+        }
+    }
+
+    public DelegateCommand NavigateBackCommand { get; private set; } = null!;
+    public DelegateCommand NavigateForwardCommand { get; private set; } = null!;
+    public DelegateCommand ClearNavigationHistoryCommand { get; private set; } = null!;
+    public DelegateCommand RefreshCurrentViewCommand { get; private set; } = null!;
+    public DelegateCommand NavigateToDashboardCommand { get; private set; } = null!;
+    public DelegateCommand NavigateToEnterprisesCommand { get; private set; } = null!;
+    public DelegateCommand NavigateToBudgetCommand { get; private set; } = null!;
+    public DelegateCommand NavigateToCustomersCommand { get; private set; } = null!;
+    public DelegateCommand NavigateToAIAssistantCommand { get; private set; } = null!;
+    public DelegateCommand NavigateToToolsCommand { get; private set; } = null!;
+    public DelegateCommand NavigateToSettingsCommand { get; private set; } = null!;
 
     private void LoadInitialContent()
     {
@@ -126,6 +257,21 @@ public partial class ShellViewModel : AsyncViewModelBase
         }
 
         ApplySnapshot(initialItem.CreateSnapshot(), NavigationTrigger.Startup, recordHistory: false);
+    }
+
+    private void InitializeCommands()
+    {
+        NavigateBackCommand = new DelegateCommand(ExecuteNavigateBack, () => CanNavigateBack);
+        NavigateForwardCommand = new DelegateCommand(ExecuteNavigateForward, () => CanNavigateForward);
+        ClearNavigationHistoryCommand = new DelegateCommand(ExecuteClearNavigationHistory, () => _backStack.Count > 0 || _forwardStack.Count > 0);
+        RefreshCurrentViewCommand = new DelegateCommand(async () => await ExecuteRefreshCurrentView(), () => ActiveViewModel is not null);
+        NavigateToDashboardCommand = new DelegateCommand(ExecuteNavigateToDashboard);
+        NavigateToEnterprisesCommand = new DelegateCommand(ExecuteNavigateToEnterprises);
+        NavigateToBudgetCommand = new DelegateCommand(ExecuteNavigateToBudget);
+        NavigateToCustomersCommand = new DelegateCommand(ExecuteNavigateToCustomers);
+        NavigateToAIAssistantCommand = new DelegateCommand(ExecuteNavigateToAIAssistant);
+        NavigateToToolsCommand = new DelegateCommand(ExecuteNavigateToTools);
+        NavigateToSettingsCommand = new DelegateCommand(ExecuteNavigateToSettings);
     }
 
     private static IEnumerable<NavigationItem> BuildDefaultNavigation(
@@ -151,7 +297,7 @@ public partial class ShellViewModel : AsyncViewModelBase
         string name,
         string icon,
     string description,
-    ObservableObject viewModel)
+    object viewModel)
     {
         return new NavigationItem(route, name, icon, description, viewModel);
     }
@@ -216,18 +362,7 @@ public partial class ShellViewModel : AsyncViewModelBase
         TrackNavigationTelemetry(snapshot, trigger);
     }
 
-    partial void OnSelectedNavigationItemChanged(NavigationItem? value)
-    {
-        if (_suppressSelectionChange || value is null)
-        {
-            return;
-        }
-
-        NavigateToItem(value, NavigationTrigger.Selection, recordHistory: true);
-    }
-
-    [RelayCommand]
-    private void NavigateBack()
+    private void ExecuteNavigateBack()
     {
         if (_backStack.Count == 0)
         {
@@ -245,8 +380,7 @@ public partial class ShellViewModel : AsyncViewModelBase
         CanNavigateForward = _forwardStack.Count > 0;
     }
 
-    [RelayCommand]
-    private void NavigateForward()
+    private void ExecuteNavigateForward()
     {
         if (_forwardStack.Count == 0)
         {
@@ -264,20 +398,19 @@ public partial class ShellViewModel : AsyncViewModelBase
         CanNavigateForward = _forwardStack.Count > 0;
     }
 
-    [RelayCommand]
-    private void ClearNavigationHistory()
+    private void ExecuteClearNavigationHistory()
     {
         _backStack.Clear();
         _forwardStack.Clear();
         NavigationIndex = 0;
         CanNavigateBack = false;
         CanNavigateForward = false;
+        ClearNavigationHistoryCommand.RaiseCanExecuteChanged();
 
         Logger.LogDebug("Shell navigation history cleared.");
     }
 
-    [RelayCommand]
-    private async Task RefreshCurrentView()
+    private async Task ExecuteRefreshCurrentView()
     {
         if (ActiveViewModel is null)
         {
@@ -304,26 +437,19 @@ public partial class ShellViewModel : AsyncViewModelBase
         }
     }
 
-    [RelayCommand]
-    private void NavigateToDashboard() => NavigateToRoute("dashboard");
+    private void ExecuteNavigateToDashboard() => NavigateToRoute("dashboard");
 
-    [RelayCommand]
-    private void NavigateToEnterprises() => NavigateToRoute("enterprises");
+    private void ExecuteNavigateToEnterprises() => NavigateToRoute("enterprises");
 
-    [RelayCommand]
-    private void NavigateToBudget() => NavigateToRoute("budget");
+    private void ExecuteNavigateToBudget() => NavigateToRoute("budget");
 
-    [RelayCommand]
-    private void NavigateToCustomers() => NavigateToRoute("customers");
+    private void ExecuteNavigateToCustomers() => NavigateToRoute("customers");
 
-    [RelayCommand]
-    private void NavigateToAIAssistant() => NavigateToRoute("ai-assistant");
+    private void ExecuteNavigateToAIAssistant() => NavigateToRoute("ai-assistant");
 
-    [RelayCommand]
-    private void NavigateToTools() => NavigateToRoute("tools");
+    private void ExecuteNavigateToTools() => NavigateToRoute("tools");
 
-    [RelayCommand]
-    private void NavigateToSettings() => NavigateToRoute("settings");
+    private void ExecuteNavigateToSettings() => NavigateToRoute("settings");
 
     public void NavigateToRoute(string route, NavigationTrigger trigger = NavigationTrigger.Command, bool recordHistory = true)
     {

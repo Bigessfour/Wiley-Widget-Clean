@@ -38,22 +38,22 @@ indent-width = 4
 # Assume Python 3.11+
 target-version = "py311"
 
+fix = true
+
 [tool.ruff.lint]
-# Enable pycodestyle (`E`) and Pyflakes (`F`) codes by default.
+# Keep Ruff conservative: only enable Pyflakes errors (real code issues such as
+# undefined names and other errors that can cause runtime failures). This
+# reduces noise from stylistic rules. Add extensions later if desired.
 select = [
-    "E",  # pycodestyle errors
-    "W",  # pycodestyle warnings
-    "F",  # Pyflakes
-    "I",  # isort
-    "B",  # flake8-bugbear
-    "C4", # flake8-comprehensions
-    "UP", # pyupgrade
+    "F",  # Pyflakes: real problems like undefined names, unused imports
 ]
 ignore = [
     "E501", # line too long, handled by black
     "B008", # do not perform function calls in argument defaults
     "C901", # too complex
 ]
+
+fixable = ["F"]
 
 [tool.ruff.lint.per-file-ignores]
 # Tests can use magic values, assertions, and imports

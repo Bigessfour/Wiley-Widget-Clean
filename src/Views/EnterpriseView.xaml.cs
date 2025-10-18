@@ -1,12 +1,9 @@
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Markup;
-using System.Windows.Media;
-using WileyWidget.Services;
 using WileyWidget.ViewModels;
-using Microsoft.Extensions.DependencyInjection;
-using WileyWidget.Data;
-using Syncfusion.UI.Xaml.Grid;
 using WileyWidget.ViewModels.Messages;
 
 namespace WileyWidget;
@@ -34,8 +31,6 @@ public partial class EnterpriseView : UserControl
     {
         InitializeComponent();
 
-        EnsureNamedElementsAreDiscoverable();
-
         if (viewModel != null)
         {
             DataContext = viewModel;
@@ -46,90 +41,18 @@ public partial class EnterpriseView : UserControl
         _eventAggregator?.GetEvent<GroupingMessage>().Subscribe(HandleGroupingMessage);
 
         // Load enterprises when window opens
-        Loaded += async (s, e) =>
+        Loaded += (s, e) =>
         {
             if (DataContext is EnterpriseViewModel vm)
             {
-                await vm.LoadEnterprisesAsync();
+                vm.LoadEnterprisesCommand.Execute();
             }
         };
     }
 
-    private T? FindVisualChildByName<T>(DependencyObject parent, string name) where T : FrameworkElement
+    private void HandleGroupingMessage(GroupingMessage message)
     {
-        for (var index = 0; index < VisualTreeHelper.GetChildrenCount(parent); index++)
-        {
-            var child = VisualTreeHelper.GetChild(parent, index);
-            if (child is T frameworkElement && frameworkElement.Name == name)
-            {
-                return frameworkElement;
-            }
-
-            var result = FindVisualChildByName<T>(child, name);
-            if (result is not null)
-            {
-                return result;
-            }
-        }
-
-        return null;
-    }
-
-    private void EnsureNamedElementsAreDiscoverable()
-    {
-        RegisterNameIfMissing(nameof(EnterpriseDataGrid), EnterpriseDataGrid);
-        RegisterNameIfMissing(nameof(SearchTextBox), SearchTextBox);
-        RegisterNameIfMissing(nameof(StatusFilterCombo), StatusFilterCombo);
-        RegisterNameIfMissing(nameof(dataPager), dataPager);
-    }
-
-    private void RegisterNameIfMissing(string name, FrameworkElement? element)
-    {
-        if (element is null || base.FindName(name) is not null)
-        {
-            return;
-        }
-
-        if (NameScope.GetNameScope(this) is not NameScope scope)
-        {
-            scope = new NameScope();
-            NameScope.SetNameScope(this, scope);
-        }
-
-        if (scope.FindName(name) is null)
-        {
-            scope.RegisterName(name, element);
-        }
-    }
-
-    public new object? FindName(string name)
-    {
-        return name switch
-        {
-            nameof(EnterpriseDataGrid) when EnterpriseDataGrid is not null => EnterpriseDataGrid,
-            nameof(SearchTextBox) when SearchTextBox is not null => SearchTextBox,
-            nameof(StatusFilterCombo) when StatusFilterCombo is not null => StatusFilterCombo,
-            nameof(dataPager) when dataPager is not null => dataPager,
-            _ => base.FindName(name) ?? TryResolveField(name) ?? TryFindInVisualTree(name)
-        };
-    }
-
-    private object? TryResolveField(string name)
-    {
-        var field = GetType().GetField(
-            name,
-            System.Reflection.BindingFlags.Instance |
-            System.Reflection.BindingFlags.NonPublic |
-            System.Reflection.BindingFlags.IgnoreCase);
-
-        return field?.GetValue(this);
-    }
-
-    private FrameworkElement? TryFindInVisualTree(string name)
-    {
-        return Content is DependencyObject dependencyObject
-            ? FindVisualChildByName<FrameworkElement>(dependencyObject, name)
-            : null;
+        // Handle grouping messages if needed
     }
 
     /// <summary>
@@ -138,7 +61,7 @@ public partial class EnterpriseView : UserControl
     private void EnterpriseDataGrid_SelectionChanged(object sender, Syncfusion.UI.Xaml.Grid.GridSelectionChangedEventArgs e)
     {
         // Selection changed - no drill-down implementation as requested
-        // The ViewModel's SelectionChangedCommand is called via binding
+        // The ViewModel'\''s SelectionChangedCommand is called via binding
     }
 
     /// <summary>
@@ -161,20 +84,20 @@ public partial class EnterpriseView : UserControl
 
             if (saveFileDialog.ShowDialog() == true)
             {
-                await System.Threading.Tasks.Task.Run(() =>
+                await Task.Run(() =>
                 {
                     // Use CSV export as reliable fallback - Excel export requires additional Syncfusion licensing
                     var csvFileName = System.IO.Path.ChangeExtension(saveFileDialog.FileName, ".csv");
                     ExportToCsv(csvFileName);
                 });
 
-                System.Windows.MessageBox.Show($"Data exported successfully to {saveFileDialog.FileName}",
+                MessageBox.Show($"Data exported successfully to {saveFileDialog.FileName}",
                     "Export Complete", MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
         catch (Exception ex)
         {
-            System.Windows.MessageBox.Show($"Error exporting to Excel: {ex.Message}",
+            MessageBox.Show($"Error exporting to Excel: {ex.Message}",
                 "Export Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
@@ -199,97 +122,63 @@ public partial class EnterpriseView : UserControl
 
             if (saveFileDialog.ShowDialog() == true)
             {
-                await System.Threading.Tasks.Task.Run(() =>
+                await Task.Run(() =>
                 {
                     // Use CSV export as reliable fallback - PDF export requires additional Syncfusion licensing
                     var csvFileName = System.IO.Path.ChangeExtension(saveFileDialog.FileName, ".csv");
                     ExportToCsv(csvFileName);
                 });
 
-                System.Windows.MessageBox.Show($"Data exported successfully to {saveFileDialog.FileName}",
+                MessageBox.Show($"Data exported successfully to {saveFileDialog.FileName}",
                     "Export Complete", MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
         catch (Exception ex)
         {
-            System.Windows.MessageBox.Show($"Error exporting to PDF: {ex.Message}",
+            MessageBox.Show($"Error exporting to PDF: {ex.Message}",
                 "Export Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
     /// <summary>
-    /// Exports data to CSV format
+    /// Exports the SfDataGrid data to CSV format
     /// </summary>
     private void ExportToCsv(string fileName)
     {
-        var dataGrid = FindName("EnterpriseDataGrid") as Syncfusion.UI.Xaml.Grid.SfDataGrid;
-        if (dataGrid?.ItemsSource == null) return;
-
-        using (var writer = new System.IO.StreamWriter(fileName))
+        try
         {
-            // Write headers
-            var headers = new List<string>();
-            foreach (var column in dataGrid.Columns)
-            {
-                if (column is Syncfusion.UI.Xaml.Grid.GridColumn gridColumn)
-                {
-                    headers.Add(gridColumn.HeaderText ?? gridColumn.MappingName ?? "");
-                }
-            }
-            writer.WriteLine(string.Join(",", headers.Select(h => $"\"{h}\"")));
+            var dataGrid = FindName("EnterpriseDataGrid") as Syncfusion.UI.Xaml.Grid.SfDataGrid;
+            if (dataGrid?.ItemsSource == null) return;
 
-            // Write data
+            using var writer = new System.IO.StreamWriter(fileName);
             var items = dataGrid.ItemsSource as System.Collections.IEnumerable;
+
             if (items != null)
             {
+                // Write CSV header
+                var firstItem = items.Cast<object>().FirstOrDefault();
+                if (firstItem != null)
+                {
+                    var properties = firstItem.GetType().GetProperties()
+                        .Where(p => p.CanRead)
+                        .Select(p => p.Name);
+                    writer.WriteLine(string.Join(",", properties));
+                }
+
+                // Write CSV data
                 foreach (var item in items)
                 {
-                    if (item is Models.Enterprise enterprise)
-                    {
-                        var values = new List<string>
-                        {
-                            enterprise.Name ?? "",
-                            enterprise.Type ?? "",
-                            enterprise.Status.ToString(),
-                            enterprise.CitizenCount.ToString(),
-                            enterprise.CurrentRate.ToString("F2"),
-                            enterprise.MonthlyRevenue.ToString("F2"),
-                            enterprise.MonthlyExpenses.ToString("F2"),
-                            enterprise.MonthlyBalance.ToString("F2"),
-                            enterprise.LastUpdated.ToString("yyyy-MM-dd HH:mm:ss")
-                        };
-                        writer.WriteLine(string.Join(",", values.Select(v => $"\"{v}\"")));
-                    }
+                    var values = item.GetType().GetProperties()
+                        .Where(p => p.CanRead)
+                        .Select(p => p.GetValue(item)?.ToString() ?? "");
+                    writer.WriteLine(string.Join(",", values));
                 }
             }
         }
-    }
-
-    /// <summary>
-    /// Handles grouping messages to update the data grid grouping
-    /// </summary>
-    private void HandleGroupingMessage(GroupingMessage message)
-    {
-        if (EnterpriseDataGrid == null) return;
-
-        switch (message.Operation)
+        catch (Exception ex)
         {
-            case GroupingOperation.Clear:
-                EnterpriseDataGrid.GroupColumnDescriptions.Clear();
-                break;
-            case GroupingOperation.GroupByColumn:
-                EnterpriseDataGrid.GroupColumnDescriptions.Clear();
-                if (!string.IsNullOrEmpty(message.ColumnName))
-                {
-                    EnterpriseDataGrid.GroupColumnDescriptions.Add(new GroupColumnDescription { ColumnName = message.ColumnName });
-                }
-                break;
-            case GroupingOperation.AddGroupByColumn:
-                if (!string.IsNullOrEmpty(message.ColumnName))
-                {
-                    EnterpriseDataGrid.GroupColumnDescriptions.Add(new GroupColumnDescription { ColumnName = message.ColumnName });
-                }
-                break;
+            MessageBox.Show($"Error exporting to CSV: {ex.Message}",
+                "Export Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 }

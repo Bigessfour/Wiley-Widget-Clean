@@ -12,6 +12,7 @@ namespace WileyWidget.Startup.Modules
     /// Prism module responsible for capturing diagnostics snapshot.
     /// Replaces DiagnosticsStartupTask in the new bootstrapper-based architecture.
     /// </summary>
+    [Module(ModuleName = "DiagnosticsModule")]
     public class DiagnosticsModule : IModule
     {
         public void OnInitialized(IContainerProvider containerProvider)

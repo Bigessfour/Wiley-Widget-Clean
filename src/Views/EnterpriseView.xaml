@@ -10,7 +10,6 @@
              xmlns:notification="http://schemas.syncfusion.com/wpf"
              xmlns:syncfusionskin="clr-namespace:Syncfusion.SfSkinManager;assembly=Syncfusion.SfSkinManager.WPF"
              xmlns:prism="http://prismlibrary.com/"
-             syncfusionskin:SfSkinManager.Theme="{syncfusionskin:SkinManagerExtension ThemeName=FluentDark}"
              prism:ViewModelLocator.AutoWireViewModel="True"
              mc:Ignorable="d">
     <UserControl.Resources>

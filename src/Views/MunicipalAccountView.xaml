@@ -8,11 +8,11 @@
              xmlns:notification="clr-namespace:Syncfusion.Windows.Controls.Notification;assembly=Syncfusion.SfBusyIndicator.WPF"
              xmlns:sys="clr-namespace:System;assembly=mscorlib"
              xmlns:models="clr-namespace:WileyWidget.Models;assembly=WileyWidget.Models"
+             xmlns:entities="clr-namespace:WileyWidget.Models.Entities;assembly=WileyWidget.Models"
              xmlns:viewmodels="clr-namespace:WileyWidget.ViewModels"
              xmlns:views="clr-namespace:WileyWidget.Views"
              xmlns:converters="clr-namespace:WileyWidget.Converters"
              xmlns:prism="http://prismlibrary.com/"
-             syncfusionskin:SfSkinManager.Theme="{syncfusionskin:SkinManagerExtension ThemeName=FluentDark}"
              prism:ViewModelLocator.AutoWireViewModel="True"
              mc:Ignorable="d">
 
@@ -21,19 +21,6 @@
         <views:BalanceColorConverter x:Key="BalanceColorConverter" />
         <views:UniqueDepartmentsConverter x:Key="UniqueDepartmentsConverter" />
         <converters:ZeroToVisibleConverter x:Key="ZeroToVisibleConverter" />
-        
-        <!-- Enum Data Providers -->
-        <ObjectDataProvider x:Key="FundTypeValues" MethodName="GetValues" ObjectType="{x:Type sys:Enum}">
-            <ObjectDataProvider.MethodParameters>
-                <x:Type TypeName="models:FundType" />
-            </ObjectDataProvider.MethodParameters>
-        </ObjectDataProvider>
-        
-        <ObjectDataProvider x:Key="AccountTypeValues" MethodName="GetValues" ObjectType="{x:Type sys:Enum}">
-            <ObjectDataProvider.MethodParameters>
-                <x:Type TypeName="models:AccountType" />
-            </ObjectDataProvider.MethodParameters>
-        </ObjectDataProvider>
         
         <!-- Balance Color Converter -->
         <Style x:Key="PositiveBalanceStyle" TargetType="TextBlock">
@@ -85,25 +72,21 @@
                     <syncfusion:RibbonBar Header="Data Operations">
                         <syncfusion:RibbonButton Label="Load Accounts"
                                                   SizeForm="Large"
-                                                  LargeIcon="Pack://application:,,,/Assets/Icons/Refresh32.png"
                                                   Command="{Binding LoadAccountsCommand}"
                                                   ToolTip="Load all municipal accounts from database" />
                         
                         <syncfusion:RibbonButton Label="Sync QuickBooks"
                                                   SizeForm="Large"
-                                                  LargeIcon="Pack://application:,,,/Assets/Icons/Sync32.png"
                                                   Command="{Binding SyncFromQuickBooksCommand}"
                                                   ToolTip="Synchronize accounts from QuickBooks Online" />
                         
                         <syncfusion:RibbonButton Label="Budget Analysis"
                                                   SizeForm="Small"
-                                                  SmallIcon="Pack://application:,,,/Assets/Icons/Chart16.png"
                                                   Command="{Binding LoadBudgetAnalysisCommand}"
                                                   ToolTip="Load budget analysis data" />
                         
                         <syncfusion:RibbonButton Label="Refresh"
                                                   SizeForm="Small"
-                                                  SmallIcon="Pack://application:,,,/Assets/Icons/Refresh16.png"
                                                   Command="{Binding LoadAccountsCommand}"
                                                   ToolTip="Refresh account data" />
                     </syncfusion:RibbonBar>
@@ -122,14 +105,14 @@
                             <!-- Basic Filters -->
                             <TextBlock Text="Fund Type" Margin="0,0,0,4" 
                                       Foreground="#FFE0E6F0" FontWeight="SemiBold" />
-                            <ComboBox ItemsSource="{Binding Source={StaticResource FundTypeValues}}"
+                            <ComboBox ItemsSource="{Binding FundTypeValues}"
                                       SelectedItem="{Binding SelectedFundFilter, Mode=TwoWay}"
                                       Margin="0,0,0,8"
                                       ToolTip="Filter accounts by fund type" />
                             
                             <TextBlock Text="Account Type" Margin="0,0,0,4" 
                                       Foreground="#FFE0E6F0" FontWeight="SemiBold" />
-                            <ComboBox ItemsSource="{Binding Source={StaticResource AccountTypeValues}}"
+                            <ComboBox ItemsSource="{Binding AccountTypeValues}"
                                       SelectedItem="{Binding SelectedTypeFilter, Mode=TwoWay}"
                                       Margin="0,0,0,8"
                                       ToolTip="Filter accounts by account type" />
@@ -190,26 +173,22 @@
                     
                     <!-- Navigation Bar -->
                     <syncfusion:RibbonBar Header="Navigation">
-                        <syncfusion:RibbonButton Label="Back to Dashboard"
+                        <syncfusion:RibbonButton Label="Back"
                                                   SizeForm="Large"
-                                                  LargeIcon="Pack://application:,,,/Assets/Icons/Back32.png"
                                                   Command="{Binding NavigateBackCommand}"
                                                   ToolTip="Return to main dashboard" />
                         
                         <syncfusion:RibbonButton Label="Budget Analysis"
                                                   SizeForm="Large"
-                                                  LargeIcon="Pack://application:,,,/Assets/Icons/Budget32.png"
                                                   Command="{Binding NavigateToBudgetCommand}"
                                                   ToolTip="Navigate to Budget Analysis view" />
                         
                         <syncfusion:RibbonButton Label="Export"
                                                   SizeForm="Small"
-                                                  SmallIcon="Pack://application:,,,/Assets/Icons/Export16.png"
                                                   ToolTip="Export account data to Excel" />
                         
                         <syncfusion:RibbonButton Label="Print"
                                                   SizeForm="Small"
-                                                  SmallIcon="Pack://application:,,,/Assets/Icons/Print16.png"
                                                   ToolTip="Print account report" />
                     </syncfusion:RibbonBar>
                     
@@ -217,17 +196,14 @@
                     <syncfusion:RibbonBar Header="View">
                         <syncfusion:RibbonButton Label="Expand All"
                                                   SizeForm="Small"
-                                                  SmallIcon="Pack://application:,,,/Assets/Icons/Expand16.png"
                                                   ToolTip="Expand all hierarchical accounts" />
                         
                         <syncfusion:RibbonButton Label="Collapse All"
                                                   SizeForm="Small"
-                                                  SmallIcon="Pack://application:,,,/Assets/Icons/Collapse16.png"
                                                   ToolTip="Collapse all hierarchical accounts" />
                         
                         <syncfusion:RibbonButton Label="Clear Error"
                                                   SizeForm="Small"
-                                                  SmallIcon="Pack://application:,,,/Assets/Icons/Clear16.png"
                                                   Command="{Binding ClearErrorCommand}"
                                                   ToolTip="Clear error messages" />
                     </syncfusion:RibbonBar>
@@ -280,7 +256,6 @@
                                           EditTrigger="OnTap"
                                           LiveDataUpdateMode="AllowDataShaping"
                                           EnableDataVirtualization="True"
-                                          UseDrawing="True"
                                           VirtualizingStackPanel.IsVirtualizing="True">
                         
                         <!-- Column Definitions -->
@@ -360,7 +335,7 @@
                             <!-- Notes Column -->
                             <syncfusion:GridTextColumn HeaderText="Notes" 
                                                       MappingName="Notes" 
-                                                      Width="*"
+                                                      Width="300"
                                                       MinimumWidth="200"
                                                       AllowEditing="True"
                                                       ShowToolTip="True">
@@ -635,7 +610,7 @@
                                 <!-- Description -->
                                 <syncfusion:GridTextColumn HeaderText="Description" 
                                                           MappingName="Description" 
-                                                          Width="*"
+                                                          Width="250"
                                                           ShowToolTip="True">
                                     <syncfusion:GridTextColumn.ToolTipTemplate>
                                         <DataTemplate>

@@ -45,6 +45,7 @@
   <ItemGroup>
     <PackageReference Include="BoldReports.WPF" />
     <PackageReference Include="CommunityToolkit.Mvvm" />
+    <PackageReference Include="Microsoft.ApplicationInsights" />
     <PackageReference Include="Microsoft.CodeAnalysis.Common" />
     <PackageReference Include="Microsoft.CodeAnalysis.VisualBasic" />
     <PackageReference Include="Prism.Core" />

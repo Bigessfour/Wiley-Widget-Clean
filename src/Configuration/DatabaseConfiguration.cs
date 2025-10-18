@@ -3,6 +3,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Sqlite;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -731,7 +732,8 @@ public static class DatabaseConfiguration
                 var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
                 var contextService = sp.GetRequiredService<IWileyWidgetContextService>();
                 var aiLoggingService = sp.GetRequiredService<IAILoggingService>();
-                return new XAIService(httpClientFactory, configuration, sp.GetRequiredService<ILogger<XAIService>>(), contextService, aiLoggingService);
+                var memoryCache = sp.GetRequiredService<IMemoryCache>();
+                return new XAIService(httpClientFactory, configuration, sp.GetRequiredService<ILogger<XAIService>>(), contextService, aiLoggingService, memoryCache);
         }
         catch (Exception ex)
         {

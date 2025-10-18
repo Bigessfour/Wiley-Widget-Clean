@@ -2,7 +2,6 @@ using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
 using WileyWidget.Models;
 using WileyWidget.ViewModels;
 
@@ -13,60 +12,16 @@ namespace WileyWidget.Views
     /// </summary>
     public partial class EnterpriseDialogView : Window
     {
-        public EnterpriseDialogView()
+    public EnterpriseDialogView()
+    {
+        InitializeComponent();
+        // DataContext will be set by Prism dialog service
+    }        public EnterpriseDialogView(Enterprise enterprise) : this()
         {
-            InitializeComponent();
-            DataContext = new WileyWidget.ViewModels.EnterpriseDialogViewModel(this);
+            // For backward compatibility - parameters will be handled by ViewModel via IDialogParameters
         }
 
-        public EnterpriseDialogView(Enterprise enterprise) : this()
-        {
-            if (DataContext is WileyWidget.ViewModels.EnterpriseDialogViewModel viewModel)
-            {
-                viewModel.Enterprise = enterprise;
-            }
-        }
-
-        private void OkButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (DataContext is WileyWidget.ViewModels.EnterpriseDialogViewModel viewModel)
-            {
-                if (string.IsNullOrWhiteSpace(viewModel.Enterprise.Name))
-                {
-                    MessageBox.Show("Enterprise name is required.", "Validation Error",
-                                  MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
-
-                if (string.IsNullOrWhiteSpace(viewModel.Enterprise.Type))
-                {
-                    MessageBox.Show("Enterprise type is required.", "Validation Error",
-                                  MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
-
-                if (viewModel.Enterprise.CitizenCount <= 0)
-                {
-                    MessageBox.Show("Citizen count must be greater than zero.", "Validation Error",
-                                  MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
-
-                DialogResult = true;
-            }
-        }
-
-        private void CancelButton_Click(object sender, RoutedEventArgs e)
-        {
-            DialogResult = false;
-        }
-
-        public static bool ShowDialog(Enterprise enterprise)
-        {
-            var dialog = new EnterpriseDialogView(enterprise);
-            var result = dialog.ShowDialog();
-            return result == true;
-        }
+        // Note: Static ShowDialog method removed - now using Prism IDialogService
     }
 
     public class NotEmptyValidationRule : ValidationRule

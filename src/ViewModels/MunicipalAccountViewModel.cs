@@ -3,7 +3,6 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
 using Serilog;
 using WileyWidget.Business.Interfaces;
 using WileyWidget.Models;
@@ -19,16 +18,25 @@ public partial class MunicipalAccountViewModel : ObservableObject, IDataErrorInf
 {
     private readonly IMunicipalAccountRepository _accountRepository;
     private readonly IQuickBooksService? _quickBooksService;
+    private readonly IGrokSupercomputer _grokSupercomputer;
+    private readonly IRegionManager _regionManager;
+    private readonly IEventAggregator _eventAggregator;
 
     public MunicipalAccountViewModel(
         IMunicipalAccountRepository accountRepository,
-        IQuickBooksService? quickBooksService)
+        IQuickBooksService? quickBooksService,
+        IGrokSupercomputer grokSupercomputer,
+        IRegionManager regionManager,
+        IEventAggregator eventAggregator)
     {
         var constructorTimer = Stopwatch.StartNew();
         App.LogDebugEvent("VIEWMODEL_INIT", "MunicipalAccountViewModel constructor started");
 
         _accountRepository = accountRepository ?? throw new ArgumentNullException(nameof(accountRepository));
         _quickBooksService = quickBooksService;
+        _grokSupercomputer = grokSupercomputer ?? throw new ArgumentNullException(nameof(grokSupercomputer));
+        _regionManager = regionManager ?? throw new ArgumentNullException(nameof(regionManager));
+        _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
 
         App.LogDebugEvent("VIEWMODEL_INIT", "Initializing MunicipalAccounts and BudgetAnalysis collections");
         MunicipalAccounts = new ObservableCollection<MunicipalAccount>();
@@ -37,6 +45,23 @@ public partial class MunicipalAccountViewModel : ObservableObject, IDataErrorInf
         constructorTimer.Stop();
         App.LogDebugEvent("VIEWMODEL_INIT", $"MunicipalAccountViewModel constructor completed in {constructorTimer.ElapsedMilliseconds}ms");
         App.LogStartupTiming("MunicipalAccountViewModel Constructor", constructorTimer.Elapsed);
+        // Initialize Prism commands
+        LoadAccountsCommand = new Prism.Commands.DelegateCommand(async () => await LoadAccountsAsync());
+
+        // Initialize converted RelayCommand methods as DelegateCommand
+        SyncFromQuickBooksCommand = new Prism.Commands.DelegateCommand(async () => await SyncFromQuickBooksAsync());
+        LoadBudgetAnalysisCommand = new Prism.Commands.DelegateCommand(async () => await LoadBudgetAnalysisAsync());
+        FilterByFundCommand = new Prism.Commands.DelegateCommand(async () => await FilterByFundAsync());
+        FilterByTypeCommand = new Prism.Commands.DelegateCommand(async () => await FilterByTypeAsync());
+        ApplyFiltersCommand = new Prism.Commands.DelegateCommand(async () => await ApplyFiltersAsync());
+        ClearFiltersCommand = new Prism.Commands.DelegateCommand(async () => await ClearFiltersAsync());
+        NavigateBackCommand = new Prism.Commands.DelegateCommand(() => NavigateBack());
+        NavigateToBudgetCommand = new Prism.Commands.DelegateCommand(() => NavigateToBudget());
+        ExportToExcelCommand = new Prism.Commands.DelegateCommand(() => ExportToExcel());
+        PrintReportCommand = new Prism.Commands.DelegateCommand(() => PrintReport());
+        ClearErrorCommand = new Prism.Commands.DelegateCommand(() => ClearError());
+        SearchCommand = new Prism.Commands.DelegateCommand(async () => await SearchAsync());
+        AnalyzeSelectedAccountCommand = new Prism.Commands.DelegateCommand(async () => await AnalyzeSelectedAccountAsync());
     }
 
     /// <summary>
@@ -45,9 +70,35 @@ public partial class MunicipalAccountViewModel : ObservableObject, IDataErrorInf
     public ObservableCollection<MunicipalAccount> MunicipalAccounts { get; }
 
     /// <summary>
-    /// Collection of accounts for budget analysis
+    /// Collection of budget analysis results
     /// </summary>
     public ObservableCollection<MunicipalAccount> BudgetAnalysis { get; }
+
+    // Prism DelegateCommand properties (replace CommunityToolkit RelayCommand)
+    public Prism.Commands.DelegateCommand LoadAccountsCommand { get; private set; }
+    public Prism.Commands.DelegateCommand SyncFromQuickBooksCommand { get; private set; }
+    public Prism.Commands.DelegateCommand LoadBudgetAnalysisCommand { get; private set; }
+    public Prism.Commands.DelegateCommand FilterByFundCommand { get; private set; }
+    public Prism.Commands.DelegateCommand FilterByTypeCommand { get; private set; }
+    public Prism.Commands.DelegateCommand ApplyFiltersCommand { get; private set; }
+    public Prism.Commands.DelegateCommand ClearFiltersCommand { get; private set; }
+    public Prism.Commands.DelegateCommand NavigateBackCommand { get; private set; }
+    public Prism.Commands.DelegateCommand NavigateToBudgetCommand { get; private set; }
+    public Prism.Commands.DelegateCommand ExportToExcelCommand { get; private set; }
+    public Prism.Commands.DelegateCommand PrintReportCommand { get; private set; }
+    public Prism.Commands.DelegateCommand ClearErrorCommand { get; private set; }
+    public Prism.Commands.DelegateCommand SearchCommand { get; private set; }
+    public Prism.Commands.DelegateCommand AnalyzeSelectedAccountCommand { get; private set; }
+
+    /// <summary>
+    /// Available fund type values for filter dropdown
+    /// </summary>
+    public IEnumerable<MunicipalFundType> FundTypeValues => Enum.GetValues<MunicipalFundType>();
+
+    /// <summary>
+    /// Available account type values for filter dropdown
+    /// </summary>
+    public IEnumerable<AccountType> AccountTypeValues => Enum.GetValues<AccountType>();
 
     /// <summary>
     /// Currently selected account in the grid
@@ -78,6 +129,18 @@ public partial class MunicipalAccountViewModel : ObservableObject, IDataErrorInf
     /// </summary>
     [ObservableProperty]
     private string errorMessage = string.Empty;
+
+    /// <summary>
+    /// Analysis result from Grok AI for the selected account
+    /// </summary>
+    [ObservableProperty]
+    private string accountAnalysisResult = string.Empty;
+
+    /// <summary>
+    /// Whether account analysis is currently running
+    /// </summary>
+    [ObservableProperty]
+    private bool isAnalyzingAccount;
 
     /// <summary>
     /// Selected fund type filter
@@ -178,7 +241,6 @@ public partial class MunicipalAccountViewModel : ObservableObject, IDataErrorInf
     /// <summary>
     /// Load all municipal accounts from database with async background processing
     /// </summary>
-    [RelayCommand]
     private async Task LoadAccountsAsync()
     {
         var loadTimer = Stopwatch.StartNew();
@@ -234,7 +296,6 @@ public partial class MunicipalAccountViewModel : ObservableObject, IDataErrorInf
     /// <summary>
     /// Sync accounts from QuickBooks
     /// </summary>
-    [RelayCommand]
     private async Task SyncFromQuickBooksAsync()
     {
         if (_quickBooksService == null)
@@ -277,7 +338,6 @@ public partial class MunicipalAccountViewModel : ObservableObject, IDataErrorInf
     /// <summary>
     /// Load budget analysis data
     /// </summary>
-    [RelayCommand]
     private async Task LoadBudgetAnalysisAsync()
     {
         try
@@ -311,7 +371,6 @@ public partial class MunicipalAccountViewModel : ObservableObject, IDataErrorInf
     /// <summary>
     /// Filter accounts by fund type
     /// </summary>
-    [RelayCommand]
     private async Task FilterByFundAsync()
     {
         try
@@ -336,7 +395,6 @@ public partial class MunicipalAccountViewModel : ObservableObject, IDataErrorInf
     /// <summary>
     /// Filter accounts by account type
     /// </summary>
-    [RelayCommand]
     private async Task FilterByTypeAsync()
     {
         try
@@ -361,7 +419,6 @@ public partial class MunicipalAccountViewModel : ObservableObject, IDataErrorInf
     /// <summary>
     /// Apply comprehensive search and filters
     /// </summary>
-    [RelayCommand]
     private async Task ApplyFiltersAsync()
     {
         try
@@ -442,7 +499,6 @@ public partial class MunicipalAccountViewModel : ObservableObject, IDataErrorInf
     /// <summary>
     /// Clear all filters and show all accounts
     /// </summary>
-    [RelayCommand]
     private async Task ClearFiltersAsync()
     {
         try
@@ -468,7 +524,6 @@ public partial class MunicipalAccountViewModel : ObservableObject, IDataErrorInf
     /// <summary>
     /// Navigate back to the main dashboard or parent view
     /// </summary>
-    [RelayCommand]
     private void NavigateBack()
     {
         try
@@ -495,43 +550,20 @@ public partial class MunicipalAccountViewModel : ObservableObject, IDataErrorInf
     /// <summary>
     /// Navigate to Budget View for budget analysis
     /// </summary>
-    [RelayCommand]
     private void NavigateToBudget()
     {
         try
         {
-            // Get the service provider from Application.Current
-            if (Application.Current.Properties["ServiceProvider"] is IServiceProvider serviceProvider)
-            {
-                // Get the MainViewModel which handles region navigation
-                var mainViewModel = serviceProvider.GetService(typeof(MainViewModel)) as MainViewModel;
-                
-                if (mainViewModel != null)
-                {
-                    // Navigate to Budget view using region navigation pattern
-                    // This assumes MainViewModel has a NavigateTo method or similar
-                    StatusMessage = "Navigating to Budget Analysis...";
-                    Log.Information("Navigating to Budget view from MunicipalAccountView");
-                    
-                    // Close current view
-                    var currentWindow = Application.Current.Windows
-                        .OfType<Window>()
-                        .FirstOrDefault(w => w.DataContext == this);
-                    currentWindow?.Close();
-                }
-                else
-                {
-                    ErrorMessage = "Navigation service not available";
-                    HasError = true;
-                    Log.Warning("MainViewModel not found in service provider for navigation");
-                }
-            }
-            else
-            {
-                ErrorMessage = "Service provider not available";
-                HasError = true;
-                Log.Warning("ServiceProvider not found in Application.Current.Properties");
-            }
+            // Use region navigation instead of static service access
+            _regionManager.RequestNavigate("MainRegion", "BudgetView");
+            StatusMessage = "Navigating to Budget Analysis...";
+            Log.Information("Navigating to Budget view from MunicipalAccountView");
+            
+            // Close current view
+            var currentWindow = Application.Current.Windows
+                .OfType<Window>()
+                .FirstOrDefault(w => w.DataContext == this);
+            currentWindow?.Close();
         }
         catch (Exception ex)
         {
@@ -544,7 +576,6 @@ public partial class MunicipalAccountViewModel : ObservableObject, IDataErrorInf
     /// <summary>
     /// Export accounts to Excel
     /// </summary>
-    [RelayCommand]
     private void ExportToExcel()
     {
         try
@@ -563,7 +594,6 @@ public partial class MunicipalAccountViewModel : ObservableObject, IDataErrorInf
     /// <summary>
     /// Print account report
     /// </summary>
-    [RelayCommand]
     private void PrintReport()
     {
         try
@@ -582,7 +612,6 @@ public partial class MunicipalAccountViewModel : ObservableObject, IDataErrorInf
     /// <summary>
     /// Clear error messages
     /// </summary>
-    [RelayCommand]
     private void ClearError()
     {
         HasError = false;
@@ -602,7 +631,6 @@ public partial class MunicipalAccountViewModel : ObservableObject, IDataErrorInf
     /// <summary>
     /// Search command for filtering accounts - triggered by SearchText property changes
     /// </summary>
-    [RelayCommand]
     private async Task SearchAsync()
     {
         if (string.IsNullOrWhiteSpace(SearchText))
@@ -708,6 +736,58 @@ public partial class MunicipalAccountViewModel : ObservableObject, IDataErrorInf
             }
 
             return error;
+        }
+    }
+
+    /// <summary>
+    /// Analyzes the selected account using Grok AI for natural language processing
+    /// </summary>
+    public async Task AnalyzeSelectedAccountAsync()
+    {
+        if (SelectedAccount == null)
+        {
+            AccountAnalysisResult = "No account selected for analysis.";
+            return;
+        }
+
+        try
+        {
+            IsAnalyzingAccount = true;
+            AccountAnalysisResult = "Analyzing account data...";
+            StatusMessage = "Running AI analysis on account data...";
+
+            // Prepare account data for analysis
+            var accountData = new
+            {
+                SelectedAccount.Id,
+                AccountNumber = SelectedAccount.AccountNumber?.Value,
+                SelectedAccount.Name,
+                SelectedAccount.Type,
+                SelectedAccount.Fund,
+                SelectedAccount.Balance,
+                SelectedAccount.BudgetAmount,
+                SelectedAccount.IsActive,
+                SelectedAccount.Notes
+            };
+
+            // Call Grok API for analysis
+            var analysis = await _grokSupercomputer.AnalyzeMunicipalDataAsync(
+                accountData,
+                $"Analyze this municipal account data and provide insights about budget performance, financial health, spending patterns, and recommendations for fiscal management and compliance."
+            );
+
+            AccountAnalysisResult = analysis;
+            StatusMessage = "Account analysis completed.";
+        }
+        catch (Exception ex)
+        {
+            AccountAnalysisResult = $"Error analyzing account: {ex.Message}";
+            StatusMessage = "Account analysis failed.";
+            Log.Error(ex, "Error analyzing selected account with Grok AI");
+        }
+        finally
+        {
+            IsAnalyzingAccount = false;
         }
     }
 

@@ -1,6 +1,6 @@
 using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
+using Prism.Dialogs;
 using WileyWidget.Models;
 
 namespace WileyWidget.ViewModels;
@@ -8,9 +8,8 @@ namespace WileyWidget.ViewModels;
 /// <summary>
 /// ViewModel for the Enterprise Dialog
 /// </summary>
-public partial class EnterpriseDialogViewModel : ObservableObject
+public partial class EnterpriseDialogViewModel : ObservableObject, IDialogAware
 {
-    private readonly Window _window;
     private Enterprise _enterprise = new();
 
     /// <summary>
@@ -19,26 +18,59 @@ public partial class EnterpriseDialogViewModel : ObservableObject
     public Enterprise Enterprise
     {
         get => _enterprise;
-        set => SetProperty(ref _enterprise, value);
+        set
+        {
+            if (SetProperty(ref _enterprise, value))
+            {
+                OkCommand.RaiseCanExecuteChanged();
+            }
+        }
     }
 
     /// <summary>
     /// Gets the OK command
     /// </summary>
-    public RelayCommand OkCommand => new(ExecuteOk, CanExecuteOk);
+    public Prism.Commands.DelegateCommand OkCommand { get; private set; }
 
     /// <summary>
     /// Gets the Cancel command
     /// </summary>
-    public RelayCommand CancelCommand => new(ExecuteCancel);
+    public Prism.Commands.DelegateCommand CancelCommand { get; private set; }
+
+    /// <summary>
+    /// Callback to close the dialog
+    /// </summary>
+    public DialogCloseListener RequestClose { get; set; }
+
+    /// <summary>
+    /// Gets whether the dialog can be closed
+    /// </summary>
+    public bool CanCloseDialog() => true;
+
+    /// <summary>
+    /// Called when the dialog is opened
+    /// </summary>
+    public void OnDialogOpened(IDialogParameters parameters)
+    {
+        // Get the enterprise from dialog parameters if provided
+        if (parameters.TryGetValue("Enterprise", out Enterprise enterprise))
+        {
+            Enterprise = enterprise;
+        }
+    }
+
+    /// <summary>
+    /// Called when the dialog is closed
+    /// </summary>
+    public void OnDialogClosed() { }
 
     /// <summary>
     /// Initializes a new instance of the EnterpriseDialogViewModel class
     /// </summary>
-    /// <param name="window">The dialog window</param>
-    public EnterpriseDialogViewModel(Window window)
+    public EnterpriseDialogViewModel()
     {
-        _window = window ?? throw new ArgumentNullException(nameof(window));
+        OkCommand = new Prism.Commands.DelegateCommand(ExecuteOk, CanExecuteOk);
+        CancelCommand = new Prism.Commands.DelegateCommand(ExecuteCancel);
     }
 
     private void ExecuteOk()
@@ -65,7 +97,10 @@ public partial class EnterpriseDialogViewModel : ObservableObject
             return;
         }
 
-        _window.DialogResult = true;
+        // Close dialog with OK result
+        var result = new DialogResult(ButtonResult.OK);
+        result.Parameters.Add("Enterprise", Enterprise);
+        RequestClose.Invoke(result);
     }
 
     private bool CanExecuteOk()
@@ -77,6 +112,8 @@ public partial class EnterpriseDialogViewModel : ObservableObject
 
     private void ExecuteCancel()
     {
-        _window.DialogResult = false;
+        // Close dialog with Cancel result
+        var result = new DialogResult(ButtonResult.Cancel);
+        RequestClose.Invoke(result);
     }
 }
