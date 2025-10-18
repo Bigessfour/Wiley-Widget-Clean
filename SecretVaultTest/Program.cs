@@ -58,10 +58,10 @@ namespace SecretVaultTest
                 Console.WriteLine("\n3. Testing multiple secrets...");
                 var testSecrets = new Dictionary<string, string>
                 {
-                    { "api-key", "sk-1234567890abcdef" },
+                    { "api-key", "fake-api-key-value" },
                     { "db-password", "super-secret-db-pass" },
                     { "license-key", "LICENSE-ABC-123-XYZ" },
-                    { "token", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." }
+                    { "token", "fake-jwt-token" }
                 };
 
                 foreach (var kvp in testSecrets)

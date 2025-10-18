@@ -44,7 +44,7 @@ HAS_PYTHONNET = _has_pythonnet()
 HAS_PRISM = _has_prism()
 
 
-def _ensure_pythonnet() -> clr:  # type: ignore[name-defined]
+def _ensure_pythonnet():
     """Ensure pythonnet is available or skip tests."""
     try:
         import clr  # type: ignore[import-not-found]

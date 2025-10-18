@@ -94,11 +94,10 @@ class XamlSleuth:
                 remove_blank_text=True, resolve_entities=False, recover=True
             )
 
-    @staticmethod
-    def _default_window_title(runtime_target: Path | None) -> str:
-        """Generate a default window title for runtime inspection."""
-        if runtime_target:
-            return runtime_target.stem
+    def _default_window_title(self):
+        """Generate a default window title based on the runtime target."""
+        if hasattr(self, 'runtime_target') and self.runtime_target:
+            return self.runtime_target.stem
         return ""
 
     # ------------------------------------------------------------------
@@ -287,10 +286,10 @@ class XamlSleuth:
                 "Install it via 'pip install uiautomation'."
             )
         if window_title is None:
-            window_title = self._default_window_title(self.runtime_target)
+            window_title = self._default_window_title()
         if not window_title:
             raise ValueError(
-                "Unable to derive a window title. Provide --window-title explicitly."
+                "Unable to derive a window title. Provide --window-title explicitly, or ensure your executable name matches the window title."
             )
 
         if self.verbose:

@@ -123,16 +123,22 @@ def test_register_view_multiple_registrations(view_registration_service, mock_re
 
 def test_register_view_invalid_region(view_registration_service):
     """Test RegisterView method with invalid region names raises exceptions."""
+    # Import .NET exception types for specificity
+    from System import (  # type: ignore[attr-defined]
+        ArgumentException,
+        ArgumentNullException,
+    )
+
     # Test empty region name - should raise ArgumentException
-    with pytest.raises(Exception):  # Simulating ArgumentException
+    with pytest.raises(ArgumentException):
         view_registration_service.RegisterView("", DashboardView)
 
     # Test null region name - should raise ArgumentException
-    with pytest.raises(Exception):  # Simulating ArgumentException
+    with pytest.raises(ArgumentException):
         view_registration_service.RegisterView(None, DashboardView)
 
     # Test null view type - should raise ArgumentNullException
-    with pytest.raises(Exception):  # Simulating ArgumentNullException
+    with pytest.raises(ArgumentNullException):
         view_registration_service.RegisterView("DashboardRegion", None)
 
 

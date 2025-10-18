@@ -7,7 +7,8 @@ Note: Uses mocked Prism types to avoid CLR integration issues while
 providing comprehensive test coverage for navigation logic.
 """
 
-from unittest.mock import Mock, MagicMock, call
+from unittest.mock import Mock
+
 import pytest
 
 

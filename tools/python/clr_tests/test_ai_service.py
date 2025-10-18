@@ -34,9 +34,7 @@ try:
         StringContent,
     )
     from System.Text import Encoding  # type: ignore[attr-defined]
-    from System.Threading.Tasks import (
-        Task,  # type: ignore[attr-defined, import-not-found]
-    )
+    from System.Threading.Tasks import Task  # type: ignore[attr-defined, import-not-found]
 except Exception as exc:  # pragma: no cover - environment guard
     pytest.skip(f"Skipping CLR-backed tests (missing CLR or assemblies): {exc}", allow_module_level=True)
 

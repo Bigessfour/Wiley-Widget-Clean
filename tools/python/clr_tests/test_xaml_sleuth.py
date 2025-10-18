@@ -262,6 +262,7 @@ def test_is_element_node():
 def test_default_window_title():
     """Test default window title generation."""
     sleuth = xaml_sleuth.XamlSleuth()
+    sleuth.runtime_target = None  # Simulate no runtime target
     title = sleuth._default_window_title()
     assert isinstance(title, str)
     # When no runtime target is set, returns empty string
@@ -743,6 +744,13 @@ def test_default_window_title_runtime_target(tmp_path):
     sleuth = xaml_sleuth.XamlSleuth(runtime_target=target_exe)
     title = sleuth._default_window_title()
     assert title == "TestApp"
+
+    # Test with multiple dots in filename
+    multi_dot_exe = tmp_path / "My.App.exe"
+    multi_dot_exe.write_text("dummy exe", encoding="utf-8")
+    sleuth_multi = xaml_sleuth.XamlSleuth(runtime_target=multi_dot_exe)
+    title_multi = sleuth_multi._default_window_title()
+    assert title_multi == "My.App"
 
 
 def test_default_window_title_no_runtime_target():

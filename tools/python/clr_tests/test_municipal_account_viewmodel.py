@@ -3,21 +3,31 @@
 from __future__ import annotations
 
 import pytest
-from System import (  # type: ignore[attr-defined, import-not-found]
-    Activator,
-    Array,
-    Object,
-)
-from System import (
-    Exception as NetException,  # type: ignore[attr-defined, import-not-found]
-)
-from System.Collections.Generic import (
-    List,  # type: ignore[attr-defined, import-not-found]
-)
-from System.Threading.Tasks import Task  # type: ignore[attr-defined, import-not-found]
-from WileyWidget.Business.Interfaces import (
-    IMunicipalAccountRepository,  # type: ignore[attr-defined]
-)
+
+# Defensive import: skip the entire module when CLR or required assemblies are
+# not available at collection time. This prevents pytest from aborting
+# collection with ModuleNotFoundError in environments without pythonnet or the
+# expected framework assemblies.
+try:
+    from System import (  # type: ignore[attr-defined, import-not-found]
+        Activator,
+        Array,
+        Object,
+    )
+    from System import (  # type: ignore[attr-defined, import-not-found]
+        Exception as NetException,
+    )
+    from System.Collections.Generic import (
+        List,  # type: ignore[attr-defined, import-not-found]
+    )
+    from System.Threading.Tasks import (
+        Task,  # type: ignore[attr-defined, import-not-found]
+    )
+    from WileyWidget.Business.Interfaces import (
+        IMunicipalAccountRepository,  # type: ignore[attr-defined]
+    )
+except Exception as exc:  # pragma: no cover - environment guard
+    pytest.skip(f"Skipping CLR-backed tests (missing CLR or assemblies): {exc}", allow_module_level=True)
 
 from .helpers import dotnet_utils
 
@@ -128,7 +138,7 @@ def _create_viewmodel(assemblies_dir, repo, grok):
 
 
 @pytest.fixture()
-def viewmodel_success(clr_loader, ensure_assemblies_present, load_wileywidget_core):
+def viewmodel_success(clr_loader, ensure_assemblies_present, load_wileywidget_core, system_runtime):
     clr_loader("Microsoft.Extensions.DependencyInjection")
     accounts = _create_account_list(ensure_assemblies_present)
     repo = _create_repo_interface(ensure_assemblies_present, accounts)
@@ -138,7 +148,7 @@ def viewmodel_success(clr_loader, ensure_assemblies_present, load_wileywidget_co
 
 
 @pytest.fixture()
-def viewmodel_failure(clr_loader, ensure_assemblies_present, load_wileywidget_core):
+def viewmodel_failure(clr_loader, ensure_assemblies_present, load_wileywidget_core, system_runtime):
     repo = _create_repo_interface(ensure_assemblies_present, _create_account_list(ensure_assemblies_present, 0), True)
     grok = _create_grok_stub(ensure_assemblies_present)
     vm = _create_viewmodel(ensure_assemblies_present, repo, grok)
