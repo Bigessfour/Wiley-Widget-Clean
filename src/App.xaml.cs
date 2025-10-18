@@ -14,6 +14,7 @@ using Syncfusion.SfSkinManager;
 using Syncfusion.Licensing;
 using WileyWidget.Views;
 using WileyWidget.Startup.Modules;
+using WileyWidget.Services;
 using Serilog;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -34,8 +35,11 @@ using Microsoft.EntityFrameworkCore;
 using System.Diagnostics.CodeAnalysis;
 using Azure.Identity;
 using System.Text.RegularExpressions;
+using Prism.Events;
+using WileyWidget.ViewModels.Messages;
 // using Microsoft.ApplicationInsights;
 // using Microsoft.ApplicationInsights.Extensibility;
+using Serilog.Events;
 
 namespace WileyWidget
 {
@@ -195,7 +199,7 @@ namespace WileyWidget
             // Register core infrastructure services
             containerRegistry.RegisterSingleton<ISyncfusionLicenseService, SyncfusionLicenseService>();
             containerRegistry.RegisterSingleton<SyncfusionLicenseState>();
-            containerRegistry.RegisterSingleton<ISecretVaultService, LocalSecretVaultService>();
+            containerRegistry.RegisterSingleton<ISecretVaultService, EncryptedLocalSecretVaultService>();
             containerRegistry.RegisterSingleton<SettingsService>();
             containerRegistry.RegisterSingleton<ISettingsService>(provider => provider.Resolve<SettingsService>());
             containerRegistry.RegisterSingleton<ThemeManager>();
@@ -204,6 +208,26 @@ namespace WileyWidget
             // Register IServiceProvider for services that need it
             containerRegistry.RegisterInstance<IServiceProvider>(Container as IServiceProvider);
             Log.Information("✓ Registered core infrastructure services (Syncfusion, Settings, Theme, Dispatcher)");
+
+            // Initialize production secrets (synchronous for reliability)
+            try
+            {
+                var secretVault = Container.Resolve<ISecretVaultService>();
+                secretVault.MigrateSecretsFromEnvironmentAsync().GetAwaiter().GetResult();
+                Log.Information("✓ Environment secrets migrated to local vault");
+
+                // Only populate production secrets if we're in production environment
+                var environment = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") ?? "Production";
+                if (environment.Equals("Production", StringComparison.OrdinalIgnoreCase))
+                {
+                    secretVault.PopulateProductionSecretsAsync().GetAwaiter().GetResult();
+                    Log.Information("✓ Production secrets initialized");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Failed to initialize production secrets");
+            }
             
             // Register Microsoft.Extensions.Caching.Memory infrastructure
             var services = new ServiceCollection();
@@ -279,6 +303,10 @@ namespace WileyWidget
             // Register Scoped Region Service
             containerRegistry.RegisterSingleton<IScopedRegionService, ScopedRegionService>();
             Log.Information("✓ Registered IScopedRegionService for isolated navigation contexts");
+            
+            // Register Prism Error Handler for centralized error handling
+            containerRegistry.RegisterSingleton<IPrismErrorHandler, PrismErrorHandler>();
+            Log.Information("✓ Registered IPrismErrorHandler for centralized error handling and logging");
             
             // Register ViewModels (module-specific ViewModels are now registered in their respective modules)
             containerRegistry.RegisterSingleton<MainViewModel>(provider => new MainViewModel(
@@ -735,7 +763,61 @@ namespace WileyWidget
             // Validate module initialization and region availability
             ValidateModuleInitialization(moduleHealthService);
 
+            // Initialize global error handling for Prism navigation and general errors
+            InitializeGlobalErrorHandling();
+
             Log.Information("✓ Module initialization completed successfully");
+        }
+
+        /// <summary>
+        /// Initializes global error handling for Prism applications.
+        /// Sets up EventAggregator subscriptions for centralized error handling and logging.
+        /// </summary>
+        private void InitializeGlobalErrorHandling()
+        {
+            Log.Information("=== Initializing Global Error Handling ===");
+
+            try
+            {
+                // Resolve the error handler service
+                var errorHandler = Container.Resolve<IPrismErrorHandler>();
+                var eventAggregator = Container.Resolve<Prism.Events.IEventAggregator>();
+
+                // Subscribe to navigation error events for global handling
+                eventAggregator.GetEvent<NavigationErrorEvent>().Subscribe(
+                    errorEvent =>
+                    {
+                        Log.Error("Global navigation error handler: Region '{RegionName}' failed to navigate to '{TargetView}': {ErrorMessage}",
+                            errorEvent.RegionName, errorEvent.TargetView, errorEvent.ErrorMessage);
+                        
+                        // Additional global error handling logic can be added here
+                        // For example: showing error dialogs, sending telemetry, etc.
+                    },
+                    ThreadOption.UIThread); // Handle on UI thread for dialog display
+
+                // Subscribe to general error events for global handling
+                eventAggregator.GetEvent<GeneralErrorEvent>().Subscribe(
+                    errorEvent =>
+                    {
+                        var logLevel = errorEvent.IsHandled ? LogEventLevel.Warning : LogEventLevel.Error;
+                        Log.Write(logLevel, errorEvent.Error, "Global error handler: {Source}.{Operation} - {ErrorMessage}",
+                            errorEvent.Source, errorEvent.Operation, errorEvent.ErrorMessage);
+
+                        // Additional global error handling logic can be added here
+                        // For example: error reporting, user notifications, etc.
+                    },
+                    ThreadOption.UIThread);
+
+                // Register global navigation handlers in the error handler
+                errorHandler.RegisterGlobalNavigationHandlers();
+
+                Log.Information("✓ Global error handling initialized with EventAggregator subscriptions");
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Failed to initialize global error handling");
+                // Don't throw - allow application to continue with degraded error handling
+            }
         }
 
         /// <summary>
@@ -746,10 +828,8 @@ namespace WileyWidget
             // Define module-specific initialization modes
             var moduleInitModes = new Dictionary<string, InitializationMode>
             {
-                // Core infrastructure modules - load immediately
-                ["DiagnosticsModule"] = InitializationMode.WhenAvailable,
-                ["SyncfusionModule"] = InitializationMode.WhenAvailable,
-                ["SettingsModule"] = InitializationMode.WhenAvailable,
+                // Core infrastructure module - load immediately (consolidated from Diagnostics, Syncfusion, Settings)
+                ["CoreModule"] = InitializationMode.WhenAvailable,
                 ["QuickBooksModule"] = InitializationMode.OnDemand,
 
                 // Feature modules - load on demand to improve startup performance
@@ -784,6 +864,7 @@ namespace WileyWidget
             // Define expected regions for each module
             var moduleRegionMap = new Dictionary<string, string[]>
             {
+                ["CoreModule"] = new[] { "SettingsRegion" }, // Core module handles settings
                 ["DashboardModule"] = new[] { "MainRegion" },
                 ["EnterpriseModule"] = new[] { "EnterpriseRegion" },
                 ["BudgetModule"] = new[] { "BudgetRegion", "AnalyticsRegion" },
@@ -791,7 +872,6 @@ namespace WileyWidget
                 ["UtilityCustomerModule"] = new[] { "UtilityCustomerRegion" },
                 ["ReportsModule"] = new[] { "ReportsRegion" },
                 ["AIAssistModule"] = new[] { "AIAssistRegion" },
-                ["SettingsModule"] = new[] { "SettingsRegion" },
                 ["PanelModule"] = new[] { "LeftPanelRegion", "RightPanelRegion", "BottomPanelRegion" },
                 ["ToolsModule"] = new[] { "BottomPanelRegion" }
             };

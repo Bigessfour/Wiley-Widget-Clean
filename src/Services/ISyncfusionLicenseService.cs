@@ -8,5 +8,6 @@ namespace WileyWidget.Services
     public interface ISyncfusionLicenseService
     {
         Task<bool> ValidateLicenseAsync(string licenseKey);
+        void RegisterLicense(string licenseKey);
     }
 }

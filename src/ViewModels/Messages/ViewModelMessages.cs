@@ -66,6 +66,33 @@ public class GroupingMessage : PubSubEvent<GroupingMessage>
 }
 
 /// <summary>
+/// Message sent when a navigation error occurs
+/// Used for centralized error handling and logging via Prism EventAggregator
+/// </summary>
+public class NavigationErrorEvent : PubSubEvent<NavigationErrorEvent>
+{
+    public string RegionName { get; set; } = string.Empty;
+    public string TargetView { get; set; } = string.Empty;
+    public Exception? Error { get; set; }
+    public string ErrorMessage { get; set; } = string.Empty;
+    public DateTime Timestamp { get; } = DateTime.UtcNow;
+}
+
+/// <summary>
+/// Message sent when a general application error occurs
+/// Used for centralized error handling and logging via Prism EventAggregator
+/// </summary>
+public class GeneralErrorEvent : PubSubEvent<GeneralErrorEvent>
+{
+    public string Source { get; set; } = string.Empty;
+    public string Operation { get; set; } = string.Empty;
+    public Exception? Error { get; set; }
+    public string ErrorMessage { get; set; } = string.Empty;
+    public bool IsHandled { get; set; }
+    public DateTime Timestamp { get; } = DateTime.UtcNow;
+}
+
+/// <summary>
 /// Type of change made to an entity
 /// </summary>
 public enum ChangeType

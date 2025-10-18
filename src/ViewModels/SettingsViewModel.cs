@@ -675,11 +675,11 @@ namespace WileyWidget.ViewModels
         {
             try
             {
-                // Prefer environment variables during troubleshooting; Key Vault fallback is commented below
-                QuickBooksClientId = Environment.GetEnvironmentVariable("QUICKBOOKS_CLIENT_ID") ?? "";
-                QuickBooksClientSecret = Environment.GetEnvironmentVariable("QUICKBOOKS_CLIENT_SECRET") ?? "";
-                QuickBooksRedirectUri = Environment.GetEnvironmentVariable("QUICKBOOKS_REDIRECT_URI") ?? "";
-                SelectedQuickBooksEnvironment = Environment.GetEnvironmentVariable("QUICKBOOKS_ENVIRONMENT") ?? "Sandbox";
+                // Load QuickBooks settings from encrypted secret vault
+                QuickBooksClientId = await _secretVaultService.GetSecretAsync("QuickBooks-ClientId") ?? "";
+                QuickBooksClientSecret = await _secretVaultService.GetSecretAsync("QuickBooks-ClientSecret") ?? "";
+                QuickBooksRedirectUri = await _secretVaultService.GetSecretAsync("QuickBooks-RedirectUri") ?? "";
+                SelectedQuickBooksEnvironment = await _secretVaultService.GetSecretAsync("QuickBooks-Environment") ?? "Sandbox";
 
                 // Test connection if credentials are available
                 if (!string.IsNullOrEmpty(QuickBooksClientId))
@@ -705,15 +705,13 @@ namespace WileyWidget.ViewModels
         {
             try
             {
-                // Prefer environment variable for license during troubleshooting
-                SyncfusionLicenseKey = Environment.GetEnvironmentVariable("SYNCFUSION_LICENSE_KEY") ?? "";
+                // Load Syncfusion license from encrypted secret vault
+                SyncfusionLicenseKey = await _secretVaultService.GetSecretAsync("Syncfusion-LicenseKey") ?? "";
 
                 // Simple license validation - check if key exists and is not empty
                 var isValid = !string.IsNullOrEmpty(SyncfusionLicenseKey);
                 SyncfusionLicenseStatus = isValid ? "Valid" : "Invalid or Missing";
                 SyncfusionLicenseStatusColor = isValid ? Brushes.Green : Brushes.Red;
-                // Keep method async without Key Vault calls
-                await Task.CompletedTask;
             }
             catch (Exception ex)
             {
@@ -726,13 +724,14 @@ namespace WileyWidget.ViewModels
         {
             try
             {
-                // Load XAI settings from environment variables or configuration
-                XaiApiKey = Environment.GetEnvironmentVariable("XAI_API_KEY") ?? "";
-                XaiBaseUrl = Environment.GetEnvironmentVariable("XAI_BASE_URL") ?? "https://api.x.ai/v1/";
-                XaiModel = Environment.GetEnvironmentVariable("XAI_MODEL") ?? "grok-4-0709";
+                // Load XAI settings from encrypted secret vault
+                XaiApiKey = await _secretVaultService.GetSecretAsync("XAI-ApiKey") ?? "";
+                XaiBaseUrl = await _secretVaultService.GetSecretAsync("XAI-BaseUrl") ?? "https://api.x.ai/v1/";
+                XaiModel = await _secretVaultService.GetSecretAsync("XAI-Model") ?? "grok-4-0709";
 
-                // Parse timeout from environment
-                if (int.TryParse(Environment.GetEnvironmentVariable("XAI_TIMEOUT_SECONDS"), out var timeout))
+                // Parse timeout from vault
+                var timeoutStr = await _secretVaultService.GetSecretAsync("XAI-TimeoutSeconds");
+                if (int.TryParse(timeoutStr, out var timeout))
                 {
                     XaiTimeoutSeconds = timeout;
                 }
@@ -741,11 +740,12 @@ namespace WileyWidget.ViewModels
                     XaiTimeoutSeconds = 15;
                 }
 
-                // Load additional AI settings
-                ResponseStyle = Environment.GetEnvironmentVariable("XAI_RESPONSE_STYLE") ?? "Balanced";
-                Personality = Environment.GetEnvironmentVariable("XAI_PERSONALITY") ?? "Professional";
+                // Load additional AI settings from vault
+                ResponseStyle = await _secretVaultService.GetSecretAsync("XAI-ResponseStyle") ?? "Balanced";
+                Personality = await _secretVaultService.GetSecretAsync("XAI-Personality") ?? "Professional";
 
-                if (int.TryParse(Environment.GetEnvironmentVariable("XAI_CONTEXT_WINDOW_SIZE"), out var contextSize))
+                var contextSizeStr = await _secretVaultService.GetSecretAsync("XAI-ContextWindowSize");
+                if (int.TryParse(contextSizeStr, out var contextSize))
                 {
                     ContextWindowSize = contextSize;
                 }
@@ -754,7 +754,8 @@ namespace WileyWidget.ViewModels
                     ContextWindowSize = 4096;
                 }
 
-                if (bool.TryParse(Environment.GetEnvironmentVariable("XAI_ENABLE_SAFETY_FILTERS"), out var safetyFilters))
+                var safetyFiltersStr = await _secretVaultService.GetSecretAsync("XAI-EnableSafetyFilters");
+                if (bool.TryParse(safetyFiltersStr, out var safetyFilters))
                 {
                     EnableSafetyFilters = safetyFilters;
                 }
@@ -763,7 +764,8 @@ namespace WileyWidget.ViewModels
                     EnableSafetyFilters = true;
                 }
 
-                if (double.TryParse(Environment.GetEnvironmentVariable("XAI_TEMPERATURE"), out var temp))
+                var tempStr = await _secretVaultService.GetSecretAsync("XAI-Temperature");
+                if (double.TryParse(tempStr, out var temp))
                 {
                     Temperature = temp;
                 }
@@ -772,7 +774,8 @@ namespace WileyWidget.ViewModels
                     Temperature = 0.7;
                 }
 
-                if (int.TryParse(Environment.GetEnvironmentVariable("XAI_MAX_TOKENS"), out var maxTok))
+                var maxTokStr = await _secretVaultService.GetSecretAsync("XAI-MaxTokens");
+                if (int.TryParse(maxTokStr, out var maxTok))
                 {
                     MaxTokens = maxTok;
                 }
@@ -781,7 +784,8 @@ namespace WileyWidget.ViewModels
                     MaxTokens = 2048;
                 }
 
-                if (bool.TryParse(Environment.GetEnvironmentVariable("XAI_ENABLE_STREAMING"), out var streaming))
+                var streamingStr = await _secretVaultService.GetSecretAsync("XAI-EnableStreaming");
+                if (bool.TryParse(streamingStr, out var streaming))
                 {
                     EnableStreaming = streaming;
                 }

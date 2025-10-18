@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace WileyWidget.Services;
@@ -11,4 +12,29 @@ public interface ISecretVaultService
     Task<string?> GetSecretAsync(string secretName);
     Task SetSecretAsync(string secretName, string value);
     Task<bool> TestConnectionAsync();
+
+    /// <summary>
+    /// Migrates secrets from environment variables to the local vault.
+    /// </summary>
+    Task MigrateSecretsFromEnvironmentAsync();
+
+    /// <summary>
+    /// Populates the vault with production-ready default secrets.
+    /// </summary>
+    Task PopulateProductionSecretsAsync();
+
+    /// <summary>
+    /// Exports all secrets to a JSON string for backup.
+    /// </summary>
+    Task<string> ExportSecretsAsync();
+
+    /// <summary>
+    /// Imports secrets from a JSON string.
+    /// </summary>
+    Task ImportSecretsAsync(string jsonSecrets);
+
+    /// <summary>
+    /// Lists all secret keys for inventory purposes.
+    /// </summary>
+    Task<IEnumerable<string>> ListSecretKeysAsync();
 }

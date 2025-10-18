@@ -4,6 +4,7 @@ using System.Linq;
 using Prism;
 using Serilog;
 using Microsoft.Extensions.Logging;
+using WileyWidget.Services;
 
 namespace WileyWidget.Regions
 {
@@ -13,12 +14,14 @@ namespace WileyWidget.Regions
     public class NavigationLoggingBehavior : RegionBehavior
     {
         private readonly ILogger<NavigationLoggingBehavior> _logger;
+        private readonly IPrismErrorHandler _errorHandler;
 
         public const string BehaviorKey = "NavigationLogging";
 
-        public NavigationLoggingBehavior(ILogger<NavigationLoggingBehavior> logger)
+        public NavigationLoggingBehavior(ILogger<NavigationLoggingBehavior> logger, IPrismErrorHandler errorHandler)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _errorHandler = errorHandler ?? throw new ArgumentNullException(nameof(errorHandler));
         }
 
         protected override void OnAttach()
@@ -45,8 +48,15 @@ namespace WileyWidget.Regions
 
         private void OnNavigationFailed(object? sender, RegionNavigationFailedEventArgs e)
         {
-            _logger.LogError(e.Error, "Navigation failed in region {RegionName}: {ErrorMessage}",
-                Region.Name, e.Error?.Message ?? "Unknown error");
+            // Extract navigation target information
+            var uri = e.NavigationContext?.Uri?.ToString() ?? "Unknown";
+            
+            // Use the centralized error handler for consistent error handling and event publishing
+            _errorHandler.HandleNavigationError(
+                Region.Name,
+                uri,
+                e.Error,
+                e.Error?.Message ?? "Unknown navigation error");
         }
     }
 

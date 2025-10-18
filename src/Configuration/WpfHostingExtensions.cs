@@ -244,7 +244,7 @@ public static class WpfHostingExtensions
         
     services.AddSingleton<ThemeManager>();
     services.AddSingleton<IThemeManager>(sp => sp.GetRequiredService<ThemeManager>());
-        services.AddSingleton<ISecretVaultService, LocalSecretVaultService>();
+        services.AddSingleton<ISecretVaultService, EncryptedLocalSecretVaultService>();
         services.AddMemoryCache();
         services.AddSingleton<IDispatcherHelper, DispatcherHelper>();
 

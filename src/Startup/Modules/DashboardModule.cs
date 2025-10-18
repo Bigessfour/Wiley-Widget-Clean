@@ -15,8 +15,10 @@ namespace WileyWidget.Startup.Modules
     /// <summary>
     /// Prism module responsible for dashboard functionality and view registration.
     /// Registers DashboardView with the MainRegion using RegisterViewWithRegion.
+    /// Depends on CoreModule for foundational infrastructure services.
     /// </summary>
     [Module(ModuleName = "DashboardModule")]
+    [ModuleDependency("CoreModule")]
     public class DashboardModule : IModule
     {
         public void OnInitialized(IContainerProvider containerProvider)

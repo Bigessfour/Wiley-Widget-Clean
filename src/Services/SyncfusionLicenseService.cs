@@ -83,5 +83,28 @@ namespace WileyWidget.Services
                 return false;
             }
         }
+
+        /// <summary>
+        /// Registers a Syncfusion license key
+        /// </summary>
+        public void RegisterLicense(string licenseKey)
+        {
+            if (string.IsNullOrEmpty(licenseKey))
+            {
+                _logger.LogWarning("Cannot register empty license key");
+                return;
+            }
+
+            try
+            {
+                SyncfusionLicenseProvider.RegisterLicense(licenseKey);
+                _logger.LogInformation("Syncfusion license registered successfully");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to register Syncfusion license");
+                throw;
+            }
+        }
     }
 }
