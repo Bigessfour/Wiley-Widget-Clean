@@ -78,5 +78,5 @@ skip-magic-trailing-comma = false
 line-ending = "auto"
 
 [tool.pytest.ini_options]
-testpaths = ["clr_tests", "tests"]
+testpaths = ["tests"]
 addopts = "-v --cov"

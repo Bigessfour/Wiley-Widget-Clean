@@ -75,7 +75,7 @@ def municipal_account_viewmodel(mock_municipal_account_repository, mock_grok_sup
     vm.IsAnalyzingAccount = False
 
     # Mock commands - make them actually call the repository
-    async def load_accounts_command():
+    async def load_accounts_command(parameter=None):
         try:
             accounts = await mock_municipal_account_repository.GetAllAsync()
             vm.MunicipalAccounts.Count = len(accounts) if accounts else 0
