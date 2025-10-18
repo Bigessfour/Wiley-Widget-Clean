@@ -2,6 +2,7 @@ using System.Windows;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Diagnostics;
 using System.Net.Http;
 using System.Threading;
 using System.Reflection;
@@ -27,7 +28,6 @@ using DotNetEnv;
 using WileyWidget.Regions;
 using WileyWidget.Business.Interfaces;
 using WileyWidget.Models;
-using WileyWidget.Services;
 using WileyWidget.Services.Excel;
 using WileyWidget.Services.Threading;
 using WileyWidget.ViewModels;
@@ -56,6 +56,7 @@ namespace WileyWidget
             SetupGlobalExceptionHandling();
 
             ConfigureLogging();
+            Trace.WriteLine("[App] ConfigureLogging completed");
 
             base.OnStartup(e);
 
@@ -205,9 +206,13 @@ namespace WileyWidget
             containerRegistry.RegisterSingleton<ThemeManager>();
             containerRegistry.RegisterSingleton<IThemeManager>(provider => provider.Resolve<ThemeManager>());
             containerRegistry.RegisterSingleton<IDispatcherHelper>(provider => new DispatcherHelper());
-            // Register IServiceProvider for services that need it
-            containerRegistry.RegisterInstance<IServiceProvider>(Container as IServiceProvider);
-            Log.Information("✓ Registered core infrastructure services (Syncfusion, Settings, Theme, Dispatcher)");
+
+            // Register IServiceProvider via Unity adapter so framework services can request it per Prism guidance
+            var unityContainer = containerRegistry.GetContainer();
+            var serviceProviderAdapter = new UnityServiceProviderAdapter(unityContainer);
+            containerRegistry.RegisterInstance<IServiceProvider>(serviceProviderAdapter);
+            EnableUnityDiagnostics(unityContainer);
+            Log.Information("✓ Registered core infrastructure services (Syncfusion, Settings, Theme, Dispatcher, IServiceProvider adapter)");
 
             // Initialize production secrets (synchronous for reliability)
             try
@@ -237,14 +242,11 @@ namespace WileyWidget
             containerRegistry.RegisterInstance<IMemoryCache>(memoryCache);
             Log.Information("✓ Registered IMemoryCache for in-memory caching infrastructure");
             
-            // Register data repositories (now handled by individual modules)
-            // containerRegistry.Register<IEnterpriseRepository, WileyWidget.Data.EnterpriseRepository>();
-            // containerRegistry.Register<IUtilityCustomerRepository, WileyWidget.Data.UtilityCustomerRepository>();
-            // containerRegistry.Register<IMunicipalAccountRepository, WileyWidget.Data.MunicipalAccountRepository>();
-            // containerRegistry.Register<IUnitOfWork, WileyWidget.Data.UnitOfWork>();
-            // containerRegistry.Register<IBudgetRepository, WileyWidget.Data.BudgetRepository>();
-            // containerRegistry.Register<IAuditRepository, WileyWidget.Data.AuditRepository>();
-            Log.Information("✓ Data repositories now registered by their respective modules");
+            // Register data repositories required during startup validation to prevent Unity resolution failures
+            containerRegistry.Register<IEnterpriseRepository, WileyWidget.Data.EnterpriseRepository>();
+            containerRegistry.Register<IBudgetRepository, WileyWidget.Data.BudgetRepository>();
+            containerRegistry.Register<IAuditRepository, WileyWidget.Data.AuditRepository>();
+            Log.Information("✓ Registered core data repositories for startup validation (Enterprise, Budget, Audit)");
             
             // Register Microsoft.Extensions.DependencyInjection compatibility BEFORE business services
             // IServiceScopeFactory is required by WhatIfScenarioEngine but Unity doesn't provide it natively
@@ -398,6 +400,24 @@ namespace WileyWidget
             }
 
             Log.Information("✓ All critical services validated successfully");
+        }
+
+        [Conditional("DEBUG")]
+        private static void EnableUnityDiagnostics(IUnityContainer unityContainer)
+        {
+            if (unityContainer == null)
+            {
+                throw new ArgumentNullException(nameof(unityContainer));
+            }
+
+            unityContainer.AddExtension(new UnityDebugExtension());
+
+            if (!Trace.Listeners.OfType<ConsoleTraceListener>().Any(listener => listener.Name == "UnityConsole"))
+            {
+                Trace.Listeners.Add(new ConsoleTraceListener { Name = "UnityConsole" });
+            }
+
+            Trace.WriteLine("[Unity] Debug diagnostics initialized");
         }
 
         /// <summary>
