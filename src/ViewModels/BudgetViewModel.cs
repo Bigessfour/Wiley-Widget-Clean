@@ -12,6 +12,7 @@ using WileyWidget.ViewModels.Messages;
 using System.Threading.Tasks;
 using System.Linq;
 using Serilog;
+using WileyWidget.Services;
 
 namespace WileyWidget.ViewModels;
 
@@ -26,6 +27,7 @@ public partial class BudgetViewModel : BindableBase, IDisposable, IDataErrorInfo
     private readonly IEnterpriseRepository _enterpriseRepository;
     private readonly IBudgetRepository _budgetRepository;
     private readonly IEventAggregator? _eventAggregator;
+    private readonly IThemeManager _themeManager;
     private readonly DispatcherTimer _refreshTimer;
     private bool _disposed;
 
@@ -366,11 +368,14 @@ public partial class BudgetViewModel : BindableBase, IDisposable, IDataErrorInfo
     /// Constructor with dependency injection
     /// Subscribes to enterprise change messages for automatic refresh
     /// </summary>
-    public BudgetViewModel(IEnterpriseRepository enterpriseRepository, IBudgetRepository budgetRepository, IEventAggregator eventAggregator)
+    public BudgetViewModel(IEnterpriseRepository enterpriseRepository, IBudgetRepository budgetRepository, IEventAggregator eventAggregator, IThemeManager? themeManager = null)
     {
         _enterpriseRepository = enterpriseRepository ?? throw new ArgumentNullException(nameof(enterpriseRepository));
         _budgetRepository = budgetRepository;
         _eventAggregator = eventAggregator;
+        _themeManager = themeManager ?? new ThemeManager();
+        _themeManager.ThemeChanged += OnThemeChanged;
+        Log.Debug("BudgetViewModel initialized with theme {Theme}", _themeManager.CurrentTheme);
 
         // Initialize live update timer (refresh every 5 minutes)
         _refreshTimer = new DispatcherTimer
@@ -394,6 +399,11 @@ public partial class BudgetViewModel : BindableBase, IDisposable, IDataErrorInfo
         Log.Information("Received EnterpriseChangedMessage: {EnterpriseName} ({ChangeType})", 
             message.EnterpriseName, message.ChangeType);
         _ = RefreshBudgetDataAsync();
+    }
+
+    private void OnThemeChanged(object? sender, ThemeChangedEventArgs e)
+    {
+        Log.Debug("BudgetViewModel detected theme change from {OldTheme} to {NewTheme}", e.OldTheme, e.NewTheme);
     }
 
     /// <summary>
@@ -698,11 +708,16 @@ public partial class BudgetViewModel : BindableBase, IDisposable, IDataErrorInfo
 
     #endregion
 
+    public BudgetViewModel(IEnterpriseRepository enterpriseRepository, IBudgetRepository budgetRepository, IEventAggregator eventAggregator)
+        : this(enterpriseRepository, budgetRepository, eventAggregator, null)
+    {
+    }
+
     /// <summary>
     /// Constructor with dependency injection (original signature for backward compatibility)
     /// </summary>
     public BudgetViewModel(IEnterpriseRepository enterpriseRepository) 
-        : this(enterpriseRepository, null!, null!)
+        : this(enterpriseRepository, null!, null!, null!)
     {
         // Fallback constructor - budget repository and event aggregator will be null
         // This maintains compatibility with existing tests
@@ -973,6 +988,7 @@ public partial class BudgetViewModel : BindableBase, IDisposable, IDataErrorInfo
                 BudgetDetails.CollectionChanged -= OnBudgetDetailsChanged;
                 BudgetAccounts.CollectionChanged -= OnBudgetAccountsChanged;
                 // Prism EventAggregator subscriptions are automatically cleaned up
+                _themeManager.ThemeChanged -= OnThemeChanged;
                 Log.Debug("BudgetViewModel disposed");
             }
             _disposed = true;

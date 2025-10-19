@@ -3,12 +3,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Diagnostics;
+using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Threading;
 using System.Reflection;
 using Prism.Unity;
 using Prism.Modularity;
 using Prism.Container.Unity;
+using Prism.Ioc;
 using Unity;
 using Unity.Resolution;
 using Syncfusion.SfSkinManager;
@@ -19,7 +22,6 @@ using WileyWidget.Services;
 using Serilog;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using Serilog.Extensions.Logging;
@@ -46,18 +48,94 @@ namespace WileyWidget
 {
     public class App : PrismApplication
     {
+        // Static mapping of expected regions for each module for maintainability and reuse
+        private static readonly Dictionary<string, string[]> moduleRegionMap = new Dictionary<string, string[]>
+        {
+            ["CoreModule"] = new[] { "SettingsRegion" }, // Core module handles settings
+            ["DashboardModule"] = new[] { "MainRegion" },
+            ["EnterpriseModule"] = new[] { "EnterpriseRegion" },
+            ["BudgetModule"] = new[] { "BudgetRegion", "AnalyticsRegion" },
+            ["MunicipalAccountModule"] = new[] { "MunicipalAccountRegion" },
+            ["UtilityCustomerModule"] = new[] { "UtilityCustomerRegion" },
+            ["ReportsModule"] = new[] { "ReportsRegion" },
+            ["AIAssistModule"] = new[] { "AIAssistRegion" },
+            ["PanelModule"] = new[] { "LeftPanelRegion", "RightPanelRegion", "BottomPanelRegion" },
+            ["ToolsModule"] = new[] { "BottomPanelRegion" }
+        };
         public static void LogDebugEvent(string category, string message) => Log.Debug("[{Category}] {Message}", category, message);
         public static void LogStartupTiming(string message, TimeSpan elapsed) => Log.Debug("{Message} completed in {Ms}ms", message, elapsed.TotalMilliseconds);
-        public static object StartupProgress { get; set; }
-        public static void UpdateLatestHealthReport(object report) { /* Stub */ }
+        private static readonly object StartupProgressSyncRoot = new();
+        public static object? StartupProgress { get; private set; }
+        public static DateTimeOffset? LastHealthReportUpdate { get; private set; }
+    private bool _syncfusionLicenseRegistered;
+
+        public static void UpdateLatestHealthReport(object report)
+        {
+            if (report == null)
+            {
+                Log.Warning("Module health report update skipped: report was null");
+                return;
+            }
+
+            lock (StartupProgressSyncRoot)
+            {
+                StartupProgress = report;
+                LastHealthReportUpdate = DateTimeOffset.UtcNow;
+            }
+
+            if (report is IEnumerable<ModuleHealthInfo> moduleHealthInfos)
+            {
+                int totalModules = 0;
+                int healthyModules = 0;
+
+                foreach (ModuleHealthInfo module in moduleHealthInfos)
+                {
+                    totalModules++;
+                    if (module.Status == ModuleHealthStatus.Healthy)
+                    {
+                        healthyModules++;
+                    }
+                }
+
+                Log.Debug("Module health report refreshed: {Healthy}/{Total} modules healthy", healthyModules, totalModules);
+            }
+            else if (report is ModuleHealthInfo singleModule)
+            {
+                Log.Debug("Module health report refreshed for {ModuleName}: {Status}", singleModule.ModuleName, singleModule.Status);
+            }
+            else
+            {
+                Log.Debug("Module health report refreshed ({ReportType})", report.GetType().FullName);
+            }
+        }
 
         protected override void OnStartup(StartupEventArgs e)
         {
             // Set up global exception handling before anything else
             SetupGlobalExceptionHandling();
 
+            // Apply Syncfusion theme globally as early as possible per official docs
+            // Reference: https://help.syncfusion.com/wpf/themes/skin-manager#apply-a-theme-globally-in-the-application
+            try
+            {
+                SfSkinManager.ApplyStylesOnApplication = true;
+                // Default to FluentDark for the entire application
+#pragma warning disable CA2000 // Theme objects are managed by SfSkinManager
+                SfSkinManager.ApplicationTheme = new Theme("FluentDark");
+#pragma warning restore CA2000
+            }
+            catch
+            {
+                // Fallback to FluentLight if FluentDark is unavailable for any reason
+#pragma warning disable CA2000
+                SfSkinManager.ApplicationTheme = new Theme("FluentLight");
+#pragma warning restore CA2000
+            }
+
             ConfigureLogging();
             Trace.WriteLine("[App] ConfigureLogging completed");
+
+            EnsureSyncfusionLicenseRegistered();
 
             base.OnStartup(e);
 
@@ -81,7 +159,7 @@ namespace WileyWidget
             // Handle unhandled exceptions on background threads
             AppDomain.CurrentDomain.UnhandledException += (sender, e) =>
             {
-                var exception = e.ExceptionObject as Exception;
+                Exception? exception = e.ExceptionObject as Exception;
                 Log.Fatal(exception, "Unhandled background thread exception occurred");
                 // Application will terminate after this
             };
@@ -98,29 +176,11 @@ namespace WileyWidget
 
         protected override Window CreateShell()
         {
-            // Syncfusion setup (from Syncfusion WPF docs: Register license before any controls load)
-            try
-            {
-                var cfg = BuildConfiguration();
-                var licenseKey = cfg["Syncfusion:LicenseKey"] ?? cfg["Syncfusion:License"] ?? Environment.GetEnvironmentVariable("SYNCFUSION_LICENSE_KEY");
-                if (!string.IsNullOrWhiteSpace(licenseKey) && !licenseKey.Contains("YOUR_SYNCFUSION_LICENSE_KEY_HERE"))
-                {
-                    SyncfusionLicenseProvider.RegisterLicense(licenseKey);
-                    Log.Information("Syncfusion license registered from configuration (masked: {Mask})", licenseKey.Length > 8 ? licenseKey.Substring(0, 8) + "..." : "(masked)");
-                }
-                else
-                {
-                    Log.Warning("Syncfusion license key not configured. Set Syncfusion:LicenseKey in appsettings.json or SYNCFUSION_LICENSE_KEY environment variable to suppress runtime license dialogs.");
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Warning(ex, "Failed to register Syncfusion license during startup - continuing without license registration (this may show license dialogs on first use)");
-            }
+            EnsureSyncfusionLicenseRegistered();
 
             try
             {
-                var shell = Container.Resolve<MainWindow>();
+                MainWindow shell = Container.Resolve<MainWindow>();
                 Log.Information("MainWindow shell resolved successfully");
                 return shell;
             }
@@ -133,38 +193,98 @@ namespace WileyWidget
 
         protected override void InitializeShell(Window shell)
         {
-            // Initialize global theme using ThemeManager for proper fallback support
-            // This ensures FluentDark as default with FluentLight as fallback
-            var themeManager = Container.Resolve<IThemeManager>();
+            // With SfSkinManager.ApplicationTheme set in OnStartup, all windows inherit the theme automatically
+            Application.Current.MainWindow = shell;
+            shell.Show();
+        }
+
+        private void EnsureSyncfusionLicenseRegistered(bool forceRefresh = false)
+        {
+            if (!forceRefresh && _syncfusionLicenseRegistered)
+            {
+                return;
+            }
+
             try
             {
-                // Apply the current theme (from settings) or default to FluentDark
-                var currentTheme = themeManager.CurrentTheme;
-                if (string.IsNullOrEmpty(currentTheme) || !ThemeManager.AvailableThemes.Contains(currentTheme))
+                IConfiguration configuration = _cachedConfiguration ??= BuildConfiguration();
+                string? licenseKey = null;
+                string licenseSource = "unknown";
+
+                // Priority order: Machine env var > User env var > Configuration
+                // Machine scope is most secure for production deployments
+                
+                // Check machine environment variable first (highest security)
+                licenseKey = Environment.GetEnvironmentVariable("SYNCFUSION_LICENSE_KEY", EnvironmentVariableTarget.Machine);
+                if (!string.IsNullOrWhiteSpace(licenseKey) && !licenseKey.Contains("YOUR_SYNCFUSION_LICENSE_KEY_HERE", StringComparison.OrdinalIgnoreCase))
                 {
-                    currentTheme = "FluentDark";
+                    licenseSource = "machine environment variable";
                 }
-                themeManager.ApplyTheme(currentTheme);
-                Log.Information("Global theme initialized: {Theme}", currentTheme);
+                else
+                {
+                    // Check user/process environment variable
+                    licenseKey = Environment.GetEnvironmentVariable("SYNCFUSION_LICENSE_KEY", EnvironmentVariableTarget.User)
+                             ?? Environment.GetEnvironmentVariable("SYNCFUSION_LICENSE_KEY", EnvironmentVariableTarget.Process);
+
+                    if (!string.IsNullOrWhiteSpace(licenseKey) && !licenseKey.Contains("YOUR_SYNCFUSION_LICENSE_KEY_HERE", StringComparison.OrdinalIgnoreCase))
+                    {
+                        licenseSource = "user environment variable";
+                    }
+                    else
+                    {
+                        // Check configuration as fallback
+                        licenseKey = configuration["Syncfusion:LicenseKey"]
+                                 ?? configuration["Syncfusion:License"];
+
+                        if (!string.IsNullOrWhiteSpace(licenseKey) && !licenseKey.Contains("YOUR_SYNCFUSION_LICENSE_KEY_HERE", StringComparison.OrdinalIgnoreCase))
+                        {
+                            licenseSource = "configuration";
+                        }
+                        else
+                        {
+                            // Check for license key in local secure storage (Azure Key Vault local cache or similar)
+                            // This could be implemented as needed based on the specific key vault solution being used
+                            Log.Debug("Checking for Syncfusion license in local key vault...");
+                            // TODO: Implement specific key vault access if needed
+                        }
+                    }
+                }
+
+                if (string.IsNullOrWhiteSpace(licenseKey)
+                    || licenseKey.Contains("YOUR_SYNCFUSION_LICENSE_KEY_HERE", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (forceRefresh)
+                    {
+                        Log.Debug("Syncfusion license key not configured; skipping re-registration");
+                    }
+                    else
+                    {
+                        Log.Warning("Syncfusion license key not configured. Set Syncfusion:LicenseKey in appsettings.json, SYNCFUSION_LICENSE_KEY environment variable (user or machine scope), or ensure it's available in your local key vault to suppress runtime license dialogs.");
+                    }
+                    return;
+                }
+
+                string masked = licenseKey.Length > 8 ? string.Concat(licenseKey.AsSpan(0, 8), "...") : "(masked)";
+                Log.Information("Registering Syncfusion license (length: {Length}, source: {Source})", licenseKey.Length, licenseSource);
+                SyncfusionLicenseProvider.RegisterLicense(licenseKey);
+                _syncfusionLicenseRegistered = true;
+
+                if (forceRefresh)
+                {
+                    Log.Debug("Syncfusion license re-registered from {Source} (masked: {Mask})", licenseSource, masked);
+                }
+                else
+                {
+                    Log.Information("Syncfusion license registered from {Source} (masked: {Mask})", licenseSource, masked);
+                }
             }
             catch (Exception ex)
             {
-                Log.Warning(ex, "Failed to initialize global theme, falling back to FluentLight");
-                try
-                {
-                    themeManager.ApplyTheme("FluentLight");
-                }
-                catch
-                {
-                    // Last resort - set directly if ThemeManager fails
-#pragma warning disable CA2000
-                    SfSkinManager.ApplicationTheme = new Theme("FluentLight");
-#pragma warning restore CA2000
-                }
+                string message = forceRefresh
+                    ? "Failed to re-register Syncfusion license during shutdown"
+                    : "Failed to register Syncfusion license during startup - continuing without license registration (this may show license dialogs on first use)";
+                Log.Warning(ex, message);
             }
-
-            Application.Current.MainWindow = shell;
-            shell.Show();
         }
 
         protected override void RegisterTypes(IContainerRegistry containerRegistry)
@@ -172,7 +292,7 @@ namespace WileyWidget
             Log.Information("=== Starting DI Container Registration ===");
             
             // Build configuration first
-            var configuration = BuildConfiguration();
+            IConfiguration configuration = BuildConfiguration();
             
             // Register configuration as singleton
             containerRegistry.RegisterInstance<IConfiguration>(configuration);
@@ -180,7 +300,7 @@ namespace WileyWidget
 
             // Register Microsoft.Extensions.Logging integration with Serilog
 #pragma warning disable CA2000
-            var loggerFactory = new SerilogLoggerFactory(Log.Logger, dispose: false);
+            SerilogLoggerFactory loggerFactory = new SerilogLoggerFactory(Log.Logger, dispose: false);
 #pragma warning restore CA2000
             containerRegistry.RegisterInstance<ILoggerFactory>(loggerFactory);
             containerRegistry.Register(typeof(ILogger<>), typeof(Logger<>));
@@ -198,27 +318,23 @@ namespace WileyWidget
             containerRegistry.RegisterSingleton<ISecretVaultService, EncryptedLocalSecretVaultService>();
             containerRegistry.RegisterSingleton<SettingsService>();
             containerRegistry.RegisterSingleton<ISettingsService>(provider => provider.Resolve<SettingsService>());
-            containerRegistry.RegisterSingleton<ThemeManager>();
-            containerRegistry.RegisterSingleton<IThemeManager>(provider => provider.Resolve<ThemeManager>());
+            containerRegistry.RegisterSingleton<IThemeManager, ThemeManager>();
             containerRegistry.RegisterSingleton<IDispatcherHelper>(provider => new DispatcherHelper());
             containerRegistry.RegisterSingleton<AppOptionsConfigurator>();
 
-            // Register IServiceProvider via Unity adapter so framework services can request it per Prism guidance
-            var unityContainer = containerRegistry.GetContainer();
-            var serviceProviderAdapter = new UnityServiceProviderAdapter(unityContainer);
-            containerRegistry.RegisterInstance<IServiceProvider>(serviceProviderAdapter);
+            IUnityContainer unityContainer = containerRegistry.GetContainer();
             EnableUnityDiagnostics(unityContainer);
-            Log.Information("✓ Registered core infrastructure services (Syncfusion, Settings, Theme, Dispatcher, IServiceProvider adapter)");
+            Log.Information("✓ Registered core infrastructure services (Syncfusion, Settings, ThemeManager, Dispatcher)");
 
             // Initialize production secrets (synchronous for reliability)
             try
             {
-                var secretVault = Container.Resolve<ISecretVaultService>();
+                ISecretVaultService secretVault = Container.Resolve<ISecretVaultService>();
                 secretVault.MigrateSecretsFromEnvironmentAsync().GetAwaiter().GetResult();
                 Log.Information("✓ Environment secrets migrated to local vault");
 
                 // Only populate production secrets if we're in production environment
-                var environment = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") ?? "Production";
+                string environment = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") ?? "Production";
                 if (environment.Equals("Production", StringComparison.OrdinalIgnoreCase))
                 {
                     secretVault.PopulateProductionSecretsAsync().GetAwaiter().GetResult();
@@ -231,12 +347,18 @@ namespace WileyWidget
             }
             
             // Register Microsoft.Extensions.Caching.Memory infrastructure
-            var services = new ServiceCollection();
-            services.AddMemoryCache();
-            var serviceProvider = services.BuildServiceProvider();
-            var memoryCache = serviceProvider.GetRequiredService<IMemoryCache>();
+            MemoryCacheOptions memoryCacheOptions = new MemoryCacheOptions();
+            string? configuredSizeLimit = configuration["Caching:MemoryCache:SizeLimit"];
+            if (long.TryParse(configuredSizeLimit, out long sizeLimit) && sizeLimit > 0)
+            {
+                memoryCacheOptions.SizeLimit = sizeLimit;
+            }
+
+#pragma warning disable CA2000 // Unity will dispose the registered singleton when the container is disposed
+            MemoryCache memoryCache = new MemoryCache(memoryCacheOptions);
+#pragma warning restore CA2000
             containerRegistry.RegisterInstance<IMemoryCache>(memoryCache);
-            Log.Information("✓ Registered IMemoryCache for in-memory caching infrastructure");
+            Log.Information("✓ Registered IMemoryCache using Prism-managed MemoryCache instance");
             
             // Register configuration options infrastructure (bridging Microsoft.Extensions.Options into Unity)
             RegisterAppOptions(containerRegistry, configuration, unityContainer);
@@ -245,12 +367,14 @@ namespace WileyWidget
             containerRegistry.Register<IEnterpriseRepository, WileyWidget.Data.EnterpriseRepository>();
             containerRegistry.Register<IBudgetRepository, WileyWidget.Data.BudgetRepository>();
             containerRegistry.Register<IAuditRepository, WileyWidget.Data.AuditRepository>();
-            Log.Information("✓ Registered core data repositories for startup validation (Enterprise, Budget, Audit)");
-            
-            // Register Microsoft.Extensions.DependencyInjection compatibility BEFORE business services
-            // IServiceScopeFactory is required by WhatIfScenarioEngine but Unity doesn't provide it natively
-            // Note: Removed UnityServiceScopeFactory - modules handle their own service scopes
-            Log.Information("✓ Microsoft.Extensions.DependencyInjection compatibility handled by modules");
+            containerRegistry.Register<IMunicipalAccountRepository, WileyWidget.Data.MunicipalAccountRepository>();
+            containerRegistry.Register<IUtilityCustomerRepository, WileyWidget.Data.UtilityCustomerRepository>();
+            containerRegistry.Register<IDepartmentRepository, WileyWidget.Data.DepartmentRepository>();
+            Log.Information("✓ Registered core data repositories for startup validation (Enterprise, Budget, Audit, MunicipalAccount, UtilityCustomer, Department)");
+
+            // Ensure Prism-resolved ViewModels can obtain the UnitOfWork infrastructure
+            containerRegistry.Register<IUnitOfWork, UnitOfWork>();
+            Log.Information("✓ Registered IUnitOfWork infrastructure for Prism ViewModels");
             
             // Register business services
             containerRegistry.RegisterSingleton<IWhatIfScenarioEngine, WhatIfScenarioEngine>();
@@ -322,13 +446,12 @@ namespace WileyWidget
                 provider.Resolve<IAIService>()));
 
             // Register additional ViewModels for Prism ViewModelLocator (infrastructure-only)
-            containerRegistry.Register<SplashScreenWindowViewModel>();
             containerRegistry.Register<AboutViewModel>();
             containerRegistry.Register<ExcelImportViewModel>();
             containerRegistry.Register<ProgressViewModel>();
             
             // Register Region Adapters
-            containerRegistry.Register<WileyWidget.Regions.DockingManagerRegionAdapter>();
+            containerRegistry.RegisterSingleton<WileyWidget.Regions.DockingManagerRegionAdapter>();
 
             // Navigation registrations are now handled by individual modules
 
@@ -350,12 +473,11 @@ namespace WileyWidget
         {
             Log.Information("Validating critical service registrations...");
 
-            var criticalServices = new[]
+            (string ServiceName, Type ServiceType)[] criticalServices = new[]
             {
                 ("IConfiguration", typeof(IConfiguration)),
                 ("ILoggerFactory", typeof(ILoggerFactory)),
                 ("ISettingsService", typeof(ISettingsService)),
-                ("IThemeManager", typeof(IThemeManager)),
                 ("IEnterpriseRepository", typeof(IEnterpriseRepository)),
                 ("IBudgetRepository", typeof(IBudgetRepository)),
                 ("IAIService", typeof(IAIService)),
@@ -365,14 +487,14 @@ namespace WileyWidget
                 ("IModuleHealthService", typeof(IModuleHealthService)),
             };
 
-            var validationErrors = new List<string>();
+            List<string> validationErrors = new List<string>();
 
-            foreach (var (serviceName, serviceType) in criticalServices)
+            foreach ((string serviceName, Type serviceType) in criticalServices)
             {
                 try
                 {
-                    var unityContainer = containerRegistry.GetContainer();
-                    var service = unityContainer.Resolve(serviceType);
+                    IUnityContainer validationContainer = containerRegistry.GetContainer();
+                    object service = validationContainer.Resolve(serviceType);
                     if (service == null)
                     {
                         validationErrors.Add($"{serviceName} resolved to null");
@@ -517,39 +639,65 @@ namespace WileyWidget
             
             try
             {
-                // Create a service collection for HttpClient registration (Microsoft.Extensions.DependencyInjection pattern)
-                var services = new ServiceCollection();
-                
-                // Configure named HttpClient for AI services with timeout and base address
-                var xaiBaseUrl = configuration["XAI:BaseUrl"] ?? "https://api.x.ai/v1/";
-                var timeoutSeconds = double.Parse(configuration["XAI:TimeoutSeconds"] ?? "30");
-                
-                services.AddHttpClient("AIServices", client =>
+                var xaiBaseUrl = configuration["XAI:BaseUrl"];
+                if (string.IsNullOrWhiteSpace(xaiBaseUrl))
                 {
-                    client.BaseAddress = new Uri(xaiBaseUrl);
-                    client.Timeout = TimeSpan.FromSeconds(timeoutSeconds);
-                    client.DefaultRequestHeaders.Add("User-Agent", "WileyWidget/1.0");
-                    client.DefaultRequestHeaders.Add("Accept", "application/json");
-                })
-                .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+                    xaiBaseUrl = "https://api.x.ai/v1/";
+                }
+
+                if (!double.TryParse(configuration["XAI:TimeoutSeconds"], out var timeoutSeconds) || timeoutSeconds <= 0)
                 {
-                    AllowAutoRedirect = true,
-                    MaxAutomaticRedirections = 3,
-                    UseDefaultCredentials = false
-                })
-                .SetHandlerLifetime(TimeSpan.FromMinutes(5)); // Connection pooling for 5 minutes
-                
-                // Build the service provider and extract IHttpClientFactory
-                var serviceProvider = services.BuildServiceProvider();
-                var httpClientFactory = serviceProvider.GetRequiredService<IHttpClientFactory>();
-                
-                // Register IHttpClientFactory as singleton in Unity container
+                    timeoutSeconds = 30d;
+                }
+
+                var aiTimeout = TimeSpan.FromSeconds(timeoutSeconds);
+                var defaultTimeout = TimeSpan.FromSeconds(30);
+
+                Func<string, HttpClient> clientBuilder = name =>
+                {
+                    var normalized = string.IsNullOrWhiteSpace(name) ? "Default" : name;
+
+                    var handler = new SocketsHttpHandler
+                    {
+                        AllowAutoRedirect = true,
+                        MaxAutomaticRedirections = 3,
+                        AutomaticDecompression = DecompressionMethods.All,
+                        PooledConnectionLifetime = TimeSpan.FromMinutes(5),
+                        PooledConnectionIdleTimeout = TimeSpan.FromMinutes(2)
+                    };
+
+                    var client = new HttpClient(handler, disposeHandler: true)
+                    {
+                        Timeout = defaultTimeout
+                    };
+
+                    client.DefaultRequestHeaders.UserAgent.Clear();
+                    client.DefaultRequestHeaders.UserAgent.ParseAdd("WileyWidget/1.0");
+                    client.DefaultRequestHeaders.Accept.Clear();
+                    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+                    if (string.Equals(normalized, "AIServices", StringComparison.OrdinalIgnoreCase))
+                    {
+                        client.BaseAddress = new Uri(xaiBaseUrl);
+                        client.Timeout = aiTimeout;
+                        Log.Debug("Configured HttpClient '{ClientName}' with BaseAddress {BaseAddress} and Timeout {TimeoutSeconds}s", normalized, client.BaseAddress, aiTimeout.TotalSeconds);
+                    }
+                    else
+                    {
+                        Log.Debug("Configured HttpClient '{ClientName}' with default timeout {TimeoutSeconds}s", normalized, defaultTimeout.TotalSeconds);
+                    }
+
+                    return client;
+                };
+
+                #pragma warning disable CA2000 // Prism container manages the lifetime of the registered factory singleton
+                var httpClientFactory = new PrismHttpClientFactory(clientBuilder);
+                #pragma warning restore CA2000
                 containerRegistry.RegisterInstance<IHttpClientFactory>(httpClientFactory);
-                
-                Log.Information("✓ Registered IHttpClientFactory with named client 'AIServices'");
-                Log.Information($"  - Base URL: {xaiBaseUrl}");
-                Log.Information($"  - Timeout: {timeoutSeconds} seconds");
-                Log.Information($"  - Handler Lifetime: 5 minutes (connection pooling)");
+
+                Log.Information("✓ Registered PrismHttpClientFactory for IHttpClientFactory");
+                Log.Information("  - Named client 'AIServices' => Base URL: {BaseUrl}, Timeout: {Timeout}s", xaiBaseUrl, aiTimeout.TotalSeconds);
+                Log.Information("  - Default timeout for unnamed clients: {DefaultTimeout}s", defaultTimeout.TotalSeconds);
             }
             catch (Exception ex)
             {
@@ -794,7 +942,7 @@ namespace WileyWidget
             // including TabControl, ContentControl, ItemsControl, and Selector
 
             // Custom adapter for Syncfusion controls (e.g., DockingManager)
-            regionAdapterMappings.RegisterMapping(typeof(Syncfusion.Windows.Tools.Controls.DockingManager), Container.Resolve<WileyWidget.Regions.DockingManagerRegionAdapter>());
+            regionAdapterMappings.RegisterMapping<Syncfusion.Windows.Tools.Controls.DockingManager>(Container.Resolve<WileyWidget.Regions.DockingManagerRegionAdapter>());
 
             // Register region behaviors
             var regionBehaviorFactory = Container.Resolve<IRegionBehaviorFactory>();
@@ -818,6 +966,9 @@ namespace WileyWidget
             Log.Information("✓ Registered Prism region behaviors: NavigationLogging, AutoSave, NavigationHistory, AutoActivate");
         }
 
+        // Cache configuration to avoid redundant loading
+        private IConfiguration? _cachedConfiguration;
+
         protected override void ConfigureModuleCatalog(IModuleCatalog moduleCatalog)
         {
             Log.Information("=== Configuring Prism Module Catalog with Auto-Discovery and Initialization Modes ===");
@@ -835,7 +986,7 @@ namespace WileyWidget
             Log.Information("Found {Count} modules with [Module] attribute", moduleTypes.Count);
 
             // Get initialization mode from configuration
-            var configuration = BuildConfiguration();
+            IConfiguration configuration = _cachedConfiguration ??= BuildConfiguration();
             var defaultInitMode = configuration.GetValue("Prism:DefaultModuleInitializationMode", "WhenAvailable");
 
             foreach (var moduleType in moduleTypes)
@@ -858,7 +1009,7 @@ namespace WileyWidget
 
         protected override void InitializeModules()
         {
-            Log.Information("=== Initializing Prism Modules ===");
+            Log.Information("Modules initializing...");
 
             base.InitializeModules();
 
@@ -871,7 +1022,7 @@ namespace WileyWidget
             // Initialize global error handling for Prism navigation and general errors
             InitializeGlobalErrorHandling();
 
-            Log.Information("✓ Module initialization completed successfully");
+            Log.Information("Modules initialized.");
         }
 
         /// <summary>
@@ -888,46 +1039,50 @@ namespace WileyWidget
                 var errorHandler = Container.Resolve<IPrismErrorHandler>();
                 var eventAggregator = Container.Resolve<Prism.Events.IEventAggregator>();
 
-                // Subscribe to navigation error events for global handling
-                eventAggregator.GetEvent<NavigationErrorEvent>().Subscribe(
-                    errorEvent =>
-                    {
-                        Log.Error("Global navigation error handler: Region '{RegionName}' failed to navigate to '{TargetView}': {ErrorMessage}",
-                            errorEvent.RegionName, errorEvent.TargetView, errorEvent.ErrorMessage);
-                        
-                        // Additional global error handling logic can be added here
-                        // For example: showing error dialogs, sending telemetry, etc.
-                    },
-                    ThreadOption.UIThread); // Handle on UI thread for dialog display
+                if (eventAggregator == null)
+                {
+                    Log.Warning("IEventAggregator could not be resolved from the container. Global error handling subscriptions will not be registered.");
+                }
+                else
+                {
+                    // Subscribe to navigation error events for global handling
+                    eventAggregator.GetEvent<NavigationErrorEvent>().Subscribe(
+                        errorEvent =>
+                        {
+                            Log.Error("Global navigation error handler: Region '{RegionName}' failed to navigate to '{TargetView}': {ErrorMessage}",
+                                errorEvent.RegionName, errorEvent.TargetView, errorEvent.ErrorMessage);
+                        },
+                        ThreadOption.UIThread); // Handle on UI thread for dialog display
 
-                // Subscribe to general error events for global handling
-                eventAggregator.GetEvent<GeneralErrorEvent>().Subscribe(
-                    errorEvent =>
-                    {
-                        var logLevel = errorEvent.IsHandled ? LogEventLevel.Warning : LogEventLevel.Error;
-                        Log.Write(logLevel, errorEvent.Error, "Global error handler: {Source}.{Operation} - {ErrorMessage}",
-                            errorEvent.Source, errorEvent.Operation, errorEvent.ErrorMessage);
+                    // Subscribe to general error events for global handling
+                    eventAggregator.GetEvent<GeneralErrorEvent>().Subscribe(
+                        errorEvent =>
+                        {
+                            var logLevel = errorEvent.IsHandled ? LogEventLevel.Warning : LogEventLevel.Error;
+                            Log.Write(logLevel, errorEvent.Error, "Global error handler: {Source}.{Operation} - {ErrorMessage}",
+                                errorEvent.Source, errorEvent.Operation, errorEvent.ErrorMessage);
+                        },
+                        ThreadOption.UIThread);
+                }
 
-                        // Additional global error handling logic can be added here
-                        // For example: error reporting, user notifications, etc.
-                    },
-                    ThreadOption.UIThread);
-
-                // Register global navigation handlers in the error handler
-                errorHandler.RegisterGlobalNavigationHandlers();
+                if (errorHandler != null)
+                {
+                    errorHandler.RegisterGlobalNavigationHandlers();
+                    Log.Information("✓ Global navigation handlers registered");
+                }
+                else
+                {
+                    Log.Warning("IPrismErrorHandler could not be resolved from the container. Global navigation handlers not registered.");
+                }
 
                 Log.Information("✓ Global error handling initialized with EventAggregator subscriptions");
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Failed to initialize global error handling");
-                // Don't throw - allow application to continue with degraded error handling
             }
         }
 
-        /// <summary>
-        /// Determines the initialization mode for a specific module.
-        /// </summary>
         private InitializationMode GetModuleInitializationMode(string moduleName, string defaultMode)
         {
             // Define module-specific initialization modes
@@ -938,7 +1093,7 @@ namespace WileyWidget
                 ["QuickBooksModule"] = InitializationMode.OnDemand,
 
                 // Feature modules - load on demand to improve startup performance
-                ["DashboardModule"] = InitializationMode.OnDemand,
+                ["DashboardModule"] = InitializationMode.WhenAvailable,
                 ["EnterpriseModule"] = InitializationMode.OnDemand,
                 ["BudgetModule"] = InitializationMode.OnDemand,
                 ["MunicipalAccountModule"] = InitializationMode.OnDemand,
@@ -961,25 +1116,23 @@ namespace WileyWidget
         /// <param name="moduleHealthService">The module health service for status checking</param>
         private void ValidateModuleInitialization(IModuleHealthService moduleHealthService)
         {
-            Log.Information("=== Validating Module Initialization and Region Availability ===");
-
-            var regionManager = Container.Resolve<IRegionManager>();
-            var validationResults = new List<string>();
-
-            // Define expected regions for each module
             var moduleRegionMap = new Dictionary<string, string[]>
             {
-                ["CoreModule"] = new[] { "SettingsRegion" }, // Core module handles settings
-                ["DashboardModule"] = new[] { "MainRegion" },
-                ["EnterpriseModule"] = new[] { "EnterpriseRegion" },
-                ["BudgetModule"] = new[] { "BudgetRegion", "AnalyticsRegion" },
-                ["MunicipalAccountModule"] = new[] { "MunicipalAccountRegion" },
-                ["UtilityCustomerModule"] = new[] { "UtilityCustomerRegion" },
+                ["DashboardModule"] = new[] { "MainContentRegion" },
+                ["EnterpriseModule"] = new[] { "MainContentRegion" },
+                ["BudgetModule"] = new[] { "MainContentRegion" },
+                ["MunicipalAccountModule"] = new[] { "MainContentRegion" },
+                ["UtilityCustomerModule"] = new[] { "MainContentRegion" },
                 ["ReportsModule"] = new[] { "ReportsRegion" },
                 ["AIAssistModule"] = new[] { "AIAssistRegion" },
                 ["PanelModule"] = new[] { "LeftPanelRegion", "RightPanelRegion", "BottomPanelRegion" },
                 ["ToolsModule"] = new[] { "BottomPanelRegion" }
             };
+
+            Log.Information("=== Validating Module Initialization and Region Availability ===");
+
+            var regionManager = Container.Resolve<IRegionManager>();
+            var validationResults = new List<string>();
 
             foreach (var moduleStatus in moduleHealthService.GetAllModuleStatuses())
             {
@@ -1209,25 +1362,8 @@ namespace WileyWidget
 
             try
             {
-                // Best-effort: re-register Syncfusion license in case some syncfusion component needs it during shutdown
-                try
-                {
-                    var cfg = BuildConfiguration();
-                    var licenseKey = cfg["Syncfusion:LicenseKey"] ?? Environment.GetEnvironmentVariable("SYNCFUSION_LICENSE_KEY");
-                    if (!string.IsNullOrWhiteSpace(licenseKey))
-                    {
-                        try
-                        {
-                            SyncfusionLicenseProvider.RegisterLicense(licenseKey);
-                            Log.Debug("Re-registered Syncfusion license during shutdown (masked)");
-                        }
-                        catch (Exception rex)
-                        {
-                            Log.Warning(rex, "Re-registering Syncfusion license during shutdown failed - continuing with shutdown");
-                        }
-                    }
-                }
-                catch (Exception) { /* ignore configuration read errors during shutdown */ }
+                // Best-effort: re-register Syncfusion license in case some Syncfusion component needs it during shutdown
+                EnsureSyncfusionLicenseRegistered(forceRefresh: true);
 
                 base.OnExit(e);
                 Log.Information("Application shutdown completed successfully");
@@ -1255,31 +1391,18 @@ namespace WileyWidget
         }
 
         /// <summary>
-        /// Gets the active service provider from the current application instance.
+        /// Provides access to Prism's active container provider for scenarios where
+        /// code-behind needs to resolve services outside of the ViewModelLocator pipeline.
         /// </summary>
-        /// <returns>The IServiceProvider from the DI container</returns>
-        public static IServiceProvider GetActiveServiceProvider()
+        public static IContainerProvider GetContainerProvider()
         {
-            var app = Application.Current as App;
-            if (app == null)
+            if (Application.Current is not App app)
             {
-                throw new InvalidOperationException("Application is not initialized or not of type App");
+                throw new InvalidOperationException("Application is not initialized or not of type App.");
             }
-            return app.Container as IServiceProvider ?? throw new InvalidOperationException("DI container is not available");
-        }
 
-        /// <summary>
-        /// Gets or sets the splash screen window instance.
-        /// </summary>
-        public static SplashScreenWindow? SplashScreenInstance { get; private set; }
-
-        /// <summary>
-        /// Sets the splash screen window instance.
-        /// </summary>
-        /// <param name="splashScreen">The splash screen window to set</param>
-        public static void SetSplashScreenInstance(SplashScreenWindow splashScreen)
-        {
-            SplashScreenInstance = splashScreen;
+            return app.Container
+                ?? throw new InvalidOperationException("Prism container is not available during application lifetime.");
         }
     }
 }
